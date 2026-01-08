@@ -1,0 +1,36 @@
+##TITLE= Audit trail, TopSpin 3.6.2
+##JCAMPDX= 5.01
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= nmrsu
+$$ C:/NMR-Data/disk2/nmrsu/PSP-SSEA-3/7/pdata/1/auditp.txt
+##AUDIT TRAIL=  $$ (NUMBER, WHEN, WHO, WHERE, PROCESS, VERSION, WHAT)
+(   1,<2020-02-28 11:44:10.181 +0100>,<nmrsu>,<AVHD600>,<splitx_au>,<TopSpin 3.6.2>,
+      <created by splitx 3 2. dataset from
+       C:/NMR-Data/disk2/nmrsu/PSP-SSEA-3/4
+       data hash MD5: 1K * 256
+       7B 5B B3 BD 71 68 71 93 BE 0D 8B 6E 6E DA D6 D2>)
+(   2,<2020-02-28 11:44:12.095 +0100>,<nmrsu>,<AVHD600>,<proc2d>,<TopSpin 3.6.2>,
+      <Start of raw data processing
+       xfb same F2: SI = 512 WDW = 4 SSB = 2 FT_mod = 6 PKNL = 1 F1: SI = 512 ME_mod = 2 NCOEF = 256 LPBIN = 256 WDW = 4 SSB = 2 FT_mod = 6 FCOR = 0.5
+       data hash MD5: 512 * 512
+       56 52 F1 C1 BB 26 2E 57 55 D7 FE 2B DA DE 5F C7>)
+(   3,<2020-02-28 11:44:12.377 +0100>,<nmrsu>,<AVHD600>,<proc2d>,<TopSpin 3.6.2>,
+      <mc2 F2: PH_mod = 2
+       data hash MD5: 512 * 512
+       4C 07 7A F6 EC C2 6E A8 9C 7C 34 64 88 2F 9F 39>)
+(   4,<2020-02-28 11:44:12.655 +0100>,<nmrsu>,<AVHD600>,<proc2d>,<TopSpin 3.6.2>,
+      <abs1 F1: ABSG = 5 ABSF1 = 188.9063 ABSF2 = 4.828831
+       data hash MD5: 512 * 512
+       9B 53 82 E2 88 89 0B D5 3B E9 95 8D 72 F5 5E 1E>)
+(   5,<2020-02-28 11:44:12.909 +0100>,<nmrsu>,<AVHD600>,<proc2d>,<TopSpin 3.6.2>,
+      <abs2 F2: ABSG = 5 ABSF1 = 11.78729 ABSF2 = -0.2873885
+       data hash MD5: 512 * 512
+       36 31 A4 53 E5 76 9E 42 D6 75 95 9A 59 4E 71 EA>)
+(   6,<2020-02-28 11:44:14.189 +0100>,<nmrsu>,<AVHD600>,<dirdata>,<TopSpin 3.6.2>,
+      <wrpa from 1 4002 "PSP-SSEA-3" "C:/NMR-Data/disk2/nmrsu"
+       data hash MD5: 512 * 512
+       36 31 A4 53 E5 76 9E 42 D6 75 95 9A 59 4E 71 EA>)
+##END=
+
+$$ hash MD5
+$$ 43 F7 34 7E 82 66 09 F5 31 28 F0 29 1F 31 8F 15

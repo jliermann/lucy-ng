@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PeakList modified="2016-04-26T14:13:30">
+  <PeakList1D>
+    <PeakList1DHeader creator="Sebi" date="2016-04-26T14:12:34" expNo="1" name="4-(1-Hydroxyethyl)benzoic acid isopropylester" owner="" procNo="1" source="C:/Bruker/TopSpin3.2/data/Uebung/nmr">
+      <PeakPickDetails>F1=16.409740ppm, F2=-4.142276ppm, MI=0.05cm, MAXI=10000.00cm, PC=1.000
+      </PeakPickDetails>
+    </PeakList1DHeader>
+    <Peak1D F1="8.0295" intensity="0.38" type="0"/>
+    <Peak1D F1="8.0250" intensity="2.84" type="0"/>
+    <Peak1D F1="8.0205" intensity="0.89" type="0"/>
+    <Peak1D F1="8.0086" intensity="0.93" type="0"/>
+    <Peak1D F1="8.0040" intensity="3.14" type="0"/>
+    <Peak1D F1="7.9995" intensity="0.44" type="0"/>
+    <Peak1D F1="7.4435" intensity="2.83" type="0"/>
+    <Peak1D F1="7.4388" intensity="0.79" type="0"/>
+    <Peak1D F1="7.4266" intensity="0.78" type="0"/>
+    <Peak1D F1="7.4227" intensity="2.41" type="0"/>
+    <Peak1D F1="7.4181" intensity="0.33" type="0"/>
+    <Peak1D F1="7.2597" intensity="3.57" type="0"/>
+    <Peak1D F1="5.2929" intensity="0.06" type="0"/>
+    <Peak1D F1="5.2772" intensity="0.37" type="0"/>
+    <Peak1D F1="5.2616" intensity="0.96" type="0"/>
+    <Peak1D F1="5.2460" intensity="1.31" type="0"/>
+    <Peak1D F1="5.2303" intensity="0.98" type="0"/>
+    <Peak1D F1="5.2147" intensity="0.39" type="0"/>
+    <Peak1D F1="5.1990" intensity="0.07" type="0"/>
+    <Peak1D F1="4.9917" intensity="0.15" type="0"/>
+    <Peak1D F1="4.9827" intensity="0.16" type="0"/>
+    <Peak1D F1="4.9756" intensity="0.46" type="0"/>
+    <Peak1D F1="4.9667" intensity="0.47" type="0"/>
+    <Peak1D F1="4.9594" intensity="0.48" type="0"/>
+    <Peak1D F1="4.9505" intensity="0.47" type="0"/>
+    <Peak1D F1="4.9434" intensity="0.17" type="0"/>
+    <Peak1D F1="4.9344" intensity="0.16" type="0"/>
+    <Peak1D F1="1.8968" intensity="1.33" type="0"/>
+    <Peak1D F1="1.8876" intensity="1.29" type="0"/>
+    <Peak1D F1="1.5075" intensity="6.96" type="0"/>
+    <Peak1D F1="1.4913" intensity="6.95" type="0"/>
+    <Peak1D F1="1.3718" intensity="15.00" type="0"/>
+    <Peak1D F1="1.3561" intensity="14.92" type="0"/>
+  </PeakList1D>
+</PeakList>

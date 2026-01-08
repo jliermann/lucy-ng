@@ -1,0 +1,87 @@
+
+Current Data Parameters
+NAME            ibuprof                
+EXPNO                 7                
+PROCNO                1                
+
+F2 - Acquisition Parameters
+Date_          20030228                
+Time              15.01                
+INSTRUM    DRX500-Essen                
+PROBHD   5 mm TBI Z8292                
+PULPROG  inv4gplplrndqf                
+TD                 1024                
+SOLVENT           CDCl3                
+NS                    2                
+DS                   16                
+SWH            3858.025 Hz             
+FIDRES         3.767602 Hz             
+AQ            0.1328900 sec            
+RG               5792.6                
+DW              129.600 usec           
+DE                 6.00 usec           
+TE                298.0 K              
+CNST2       145.0000000                
+d0           0.00000300 sec            
+D1           1.96661699 sec            
+d2           0.00344828 sec            
+D6           0.06000000 sec            
+d13          0.00000400 sec            
+D16          0.00050000 sec            
+IN0          0.00002000 sec            
+MCREST       0.00000000 sec            
+MCWRK        1.96661699 sec            
+
+======== CHANNEL f1 ========
+NUC1                 1H                
+P1                 8.00 usec           
+p2                16.00 usec           
+PL1                3.00 dB             
+SFO1        499.8720286 MHz            
+
+======== CHANNEL f2 ========
+NUC2                13C                
+P3                19.20 usec           
+PL2                3.00 dB             
+SFO2        125.7045668 MHz            
+
+====== GRADIENT CHANNEL =====
+GPNAM1         SINE.100                
+GPNAM2         SINE.100                
+GPNAM3         SINE.100                
+GPX1               0.00 %              
+GPX2               0.00 %              
+GPX3               0.00 %              
+GPY1               0.00 %              
+GPY2               0.00 %              
+GPY3               0.00 %              
+GPZ1              50.00 %              
+GPZ2              30.00 %              
+GPZ3              40.00 %              
+P16             2000.00 usec           
+
+F1 - Acquisition parameters
+ND0                   2                
+TD                  256                
+SFO1           125.7046 MHz            
+FIDRES        97.656250 Hz             
+SW              198.879 ppm            
+FnMODE               QF                
+
+F2 - Processing parameters
+SI                 2048                
+SF          499.8700272 MHz            
+WDW                SINE                
+SSB                   0                
+LB                 0.00 Hz             
+GB                    0                
+PC                 1.40                
+
+F1 - Processing parameters
+SI                 1024                
+MC2                  QF                
+SF          125.6924158 MHz            
+WDW                SINE                
+SSB                   0                
+LB                 0.00 Hz             
+GB                    0                

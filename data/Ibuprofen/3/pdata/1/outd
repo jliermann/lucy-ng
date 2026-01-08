@@ -1,0 +1,15 @@
+##TITLE= Parameter file, XWIN-NMR		Version 2.6
+##JCAMPDX= 5.0
+##DATATYPE= Parameter Values
+##ORIGIN= UXNMR, Bruker Analytische Messtechnik GmbH
+##OWNER= root
+$$ Tue Jan 25 15:50:29 2000 GMT (UT+0h)  bandmann@drx500
+$$ /u/exp/stan/nmr/par/E.C13DEPT135///outd
+##$CURPLOT= <hpclj>
+##$CURPRIN= <$hpclj>
+##$DFORMAT= <normdp>
+##$LAYOUT= <>
+##$LFORMAT= <normlp>
+##$PFORMAT= <normpl>
+##$SURQMSG= 1
+##END=

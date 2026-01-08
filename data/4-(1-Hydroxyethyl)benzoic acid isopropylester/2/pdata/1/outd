@@ -1,0 +1,17 @@
+##TITLE= Parameter file, TOPSPIN		Version 2.1
+##JCAMPDX= 5.0
+##DATATYPE= Parameter Values
+##NPOINTS= 1	$$ modification sequence number
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= nmr
+$$ 2016-04-12 22:06:58.463 +0200  nmr@DRX400
+$$ D:\Topspin/data/las/nmr/las_S013/2/pdata/1/outd
+$$ process C:\Bruker\TOPSPIN2.1\prog\mod\xwish3.exe
+##$CURPLOT= <PRF108 (HP LaserJet P4015)>
+##$CURPRIN= <$PRF108 (HP LaserJet P4015)>
+##$DFORMAT= <normdp>
+##$LAYOUT= <+/1D_X.xwp>
+##$LFORMAT= <normlp>
+##$PFORMAT= <normpl>
+##$SURQMSG= 0
+##END=

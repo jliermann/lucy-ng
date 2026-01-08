@@ -1,0 +1,46 @@
+##TITLE= Parameter file, TopSpin 3.6.2
+##JCAMPDX= 5.0
+##DATATYPE= Parameter Values
+##NPOINTS= 3	$$ modification sequence number
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= nmrsu
+$$ 2021-08-18 11:58:22.549 +0200  nmrsu@AVHD600
+$$ C:/NMR-Data/disk2/nmrsu/HC003_I/1/pdata/1//eretic
+$$ process C:\Bruker\TopSpin3.6.2\prog\mod\dataserver.exe
+##$CAL= 1
+##$CALACQUDATE= <>
+##$CALDATE= <>
+##$ECONC= 15
+##$ECONCU= <mmol/l>
+##$ECORR= 1
+##$EINT= 533545163.2
+##$ELW= 1
+##$EPOS= 0
+##$ESCAL= 1
+##$EUNIT= <>
+##$INTSCL= 1
+##$NS= 128
+##$P1= 11.25
+##$PP= <zg>
+##$PROBHD= <>
+##$QUANTACQUDATE= <>
+##$QUANTDATE= <>
+##$RECONC= 15
+##$RECONCU= <mmol/l>
+##$REFSPEC= <C:/NMR-Data/disk2/nmrsu/benzoesaeure_15/11>
+##$REINT= 533545163.2
+##$REINTERR= 2049518.744572
+##$RELW= 1
+##$RENSPIN= 5
+##$REPOS= 0
+##$REREG= <8.102375/7.784871 7.783532/7.561145 7.561145/7.341438>
+##$REUNIT= <>
+##$RG= 90.5
+##$RORIGIN= <C:/NMR-Data/disk2/nmrsu/benzoesaeure_15/11/pdata/1\eretic>
+##$RPROBHD= <Z130037_0004 (CPP BBO 600S3 BB-H&F-D-05 Z ET)>
+##$SI= 65536
+##$SW= 20.0275882659213
+##$TE= 297.9998
+##$scaledByNS= no
+##$scaledByRG= no
+##END=

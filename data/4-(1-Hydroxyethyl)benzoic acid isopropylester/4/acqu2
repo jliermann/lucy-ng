@@ -1,0 +1,18 @@
+##TITLE= Parameter file, TOPSPIN		Version 2.1
+##JCAMPDX= 5.0
+##DATATYPE= Parameter Values
+##NPOINTS= 2	$$ modification sequence number
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= nmr
+$$ 2016-04-12 22:59:02.931 +0200  nmr@DRX400
+$$ D:\Topspin/data/las/nmr/las_S013/4/acqu2
+$$ process C:\Bruker\TOPSPIN2.1\prog\mod\getlim.exe
+##$BF1= 100.615283
+##$FnMODE= 1
+##$NUC1= <13C>
+##$O1= 12073.83396
+##$SFO1= 100.62735683396
+##$SW= 250
+##$SW_h= 22348.3883225352
+##$TD= 256
+##END=

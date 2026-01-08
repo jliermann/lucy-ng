@@ -1,0 +1,24 @@
+##TITLE= Parameter file, TopSpin 3.6.2
+##JCAMPDX= 5.0
+##DATATYPE= Parameter Values
+##NPOINTS= 1	$$ modification sequence number
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= nmrsu
+$$ 2020-02-28 11:44:18.522 +0100  nmrsu@AVHD600
+$$ C:/NMR-Data/disk2/nmrsu/PSP-SSEA-3/5/acqu2s
+$$ process C:\Bruker\TopSpin3.6.2\prog\mod\dirdata.exe
+##$ACQT0= 0
+##$BF1= 600.13
+##$FnILOOP= 0
+##$FnMODE= 6
+##$NUC1= <1H>
+##$NusJSP= 0
+##$NusT2= 1
+##$NusTD= 768
+##$O1= 3471.28705402611
+##$ProjAngle= 0
+##$SFO1= 600.133471287054
+##$SW= 12.0746096647177
+##$SW_h= 7246.37741252325
+##$TD= 256
+##END=

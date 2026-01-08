@@ -1,0 +1,17 @@
+##TITLE= Parameter file, TOPSPIN		Version 2.1
+##JCAMPDX= 5.0
+##DATATYPE= Parameter Values
+##NPOINTS= 1	$$ modification sequence number
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= nmr
+$$ 2016-04-13 00:28:20.931 +0200  nmr@DRX400
+$$ D:\Topspin/data/las/nmr/las_S013/5/pdata/1001/outd
+$$ process C:\Bruker\TOPSPIN2.1\prog\mod\dirdata.exe
+##$CURPLOT= <HP LaserJet 4V>
+##$CURPRIN= <$HP LaserJet 4V>
+##$DFORMAT= <normdp>
+##$LAYOUT= <+/1D_X.xwp>
+##$LFORMAT= <normlp>
+##$PFORMAT= <normpl>
+##$SURQMSG= 1
+##END=

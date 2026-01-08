@@ -1,0 +1,11 @@
+   Current data set:
+   NAME =	4-(1-Hydroxyethyl)benzoic acid isopropylester	EXPNO =	102	PROCNO = 1
+   DU   =	C:/Bruker/TopSpin3.2/data/Uebung/nmr
+
+   Number   Integrated Region     Integral
+     1      8.098      7.925         1.94538
+     2      7.516      7.391         1.95831
+     3      5.362      5.158         0.96000
+     4      5.048      4.875         0.97095
+     5      1.523      1.471         3.03247
+     6      1.388      1.330         6.06031

@@ -1,0 +1,10 @@
+   Current data set:
+   NAME =	Sali_Eth_5	EXPNO =	1	PROCNO = 1
+   DU   =	Z:/Torsten/NMR/data/spek-vl/nmr
+
+   Number   Integrated Region     Integral
+     1      9.107      8.834         1.00000
+     2      8.316      7.933         1.00102
+     3      7.505      7.096         3.04309
+     4      3.082      2.758         2.08621
+     5      1.458      1.075         3.12559

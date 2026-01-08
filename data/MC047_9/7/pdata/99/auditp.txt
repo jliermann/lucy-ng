@@ -1,0 +1,15 @@
+##TITLE= Audit trail, TOPSPIN		Version 3.2
+##JCAMPDX= 5.01
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= nmrsu
+$$ C:/NMR-Data/disk2/nmrsu/MC047_9/7/pdata/99/auditp.txt
+##AUDIT TRAIL=  $$ (NUMBER, WHEN, WHO, WHERE, PROCESS, VERSION, WHAT)
+(   1,<2015-07-09 14:02:07.116 +0200>,<nmrsu>,<AVHD600>,<mvrow>,<TOPSPIN 3.2>,
+      <rvpp from
+       1 7 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       data hash MD5: 1K
+       A6 05 0B 09 7C AD 08 8A 53 F2 F0 7B E3 BE 8B 97>)
+##END=
+
+$$ hash MD5
+$$ B5 56 92 CF 75 FF 00 BE 3D 1A 8C EA 99 78 7F 2B

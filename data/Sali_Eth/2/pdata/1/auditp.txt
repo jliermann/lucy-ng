@@ -1,0 +1,65 @@
+##TITLE= Audit trail, TopSpin 3.6.2
+##JCAMPDX= 5.01
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= nmrsu
+$$ C:/NMR-Data/disk2/nmrsu/Sali_Eth_5/2/pdata/1/auditp.txt
+##AUDIT TRAIL=  $$ (NUMBER, WHEN, WHO, WHERE, PROCESS, VERSION, WHAT)
+(   1,<2021-03-09 10:59:09.864 +0100>,<nmrsu>,<AVHD600>,<go4>,<TopSpin 3.6.2>,
+      <created by zg
+	started at 2021-03-09 10:46:14.670 +0100,
+	POWCHK enabled, PULCHK disabled,
+       configuration hash MD5:
+       FA BB 5E 36 5C 4B D9 53 7A 0A 61 05 0D 66 EA 2D
+       data hash MD5: 64K
+       B5 64 BB A4 74 B0 55 2C 5D D8 C0 3C 59 29 4D E4>)
+(   2,<2021-03-09 10:59:10.337 +0100>,<nmrsu>,<AVHD600>,<audit>,<TopSpin 3.6.2>,
+      <user comment:
+       ICON-NMR User ID: nmrsu
+       data hash MD5: 64K
+       B5 64 BB A4 74 B0 55 2C 5D D8 C0 3C 59 29 4D E4>)
+(   3,<2021-03-09 10:59:12.658 +0100>,<nmrsu>,<AVHD600>,<proc1d>,<TopSpin 3.6.2>,
+      <Start of raw data processing
+       ef LB = 1 FT_mod = 6 PKNL = 1 SI = 32K 
+       data hash MD5: 32K
+       91 CB 9C 3E A0 0A 4C DD 95 FD 16 82 36 59 56 36>)
+(   4,<2021-03-09 10:59:13.519 +0100>,<nmrsu>,<AVHD600>,<proc1d>,<TopSpin 3.6.2>,
+      <apk 
+       data hash MD5: 32K
+       B3 CA C0 71 5F 53 63 BE DF 39 64 28 33 99 FF 45>)
+(   5,<2021-03-09 10:59:14.164 +0100>,<nmrsu>,<AVHD600>,<proc1d>,<TopSpin 3.6.2>,
+      <abs ABSG = 5 
+       data hash MD5: 32K
+       70 AD D1 8D A9 1C EE 0F 74 99 1E 98 F7 79 EE 3D>)
+(   6,<2021-03-09 11:20:43.528 +0100>,<nmrsu>,<AVHD600>,<proc1d>,<TopSpin 3.6.2>,
+      <pk fgphup PHC0 = -0.95 PHC1 = 0 
+       data hash MD5: 32K
+       AF CB 0B 59 6D C3 07 DE 51 72 BC C5 65 FC 42 9D>)
+(   7,<2021-03-09 11:23:56.954 +0100>,<nmrsu>,<AVHD600>,<dataserver>,<TopSpin 3.6.2>,
+      <INTEGRAL 2021-03-09 11:23:36.027 +0100
+       DEFINE [162.257;159.334]
+       data hash MD5: 32K
+       AF CB 0B 59 6D C3 07 DE 51 72 BC C5 65 FC 42 9D>)
+(   8,<2021-03-09 11:23:56.984 +0100>,<nmrsu>,<AVHD600>,<dataserver>,<TopSpin 3.6.2>,
+      <INTEGRAL 2021-03-09 11:23:37.354 +0100
+       DEFINE [147.953;144.262]
+       data hash MD5: 32K
+       AF CB 0B 59 6D C3 07 DE 51 72 BC C5 65 FC 42 9D>)
+(   9,<2021-03-09 11:23:57.025 +0100>,<nmrsu>,<AVHD600>,<dataserver>,<TopSpin 3.6.2>,
+      <INTEGRAL 2021-03-09 11:23:38.811 +0100
+       DEFINE [134.573;124.422]
+       data hash MD5: 32K
+       AF CB 0B 59 6D C3 07 DE 51 72 BC C5 65 FC 42 9D>)
+(  10,<2021-03-09 11:23:57.055 +0100>,<nmrsu>,<AVHD600>,<dataserver>,<TopSpin 3.6.2>,
+      <INTEGRAL 2021-03-09 11:23:40.834 +0100
+       DEFINE [28.299;24.300]
+       data hash MD5: 32K
+       AF CB 0B 59 6D C3 07 DE 51 72 BC C5 65 FC 42 9D>)
+(  11,<2021-03-09 11:23:57.087 +0100>,<nmrsu>,<AVHD600>,<dataserver>,<TopSpin 3.6.2>,
+      <INTEGRAL 2021-03-09 11:23:42.042 +0100
+       DEFINE [18.456;14.918]
+       data hash MD5: 32K
+       AF CB 0B 59 6D C3 07 DE 51 72 BC C5 65 FC 42 9D>)
+##END=
+
+$$ hash MD5
+$$ B1 07 3F D3 CA 3A A2 09 BB C9 F8 8F 25 F6 83 D8

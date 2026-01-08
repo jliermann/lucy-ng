@@ -1,0 +1,36 @@
+##TITLE= Audit trail, TOPSPIN		Version 2.1
+##JCAMPDX= 5.01
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= nmr
+$$ D:\Topspin/data/las/nmr/las_S013/6/pdata/1/auditp.txt
+##AUDIT TRAIL=  $$ (NUMBER, WHEN, WHO, WHERE, PROCESS, VERSION, WHAT)
+(   1,<2016-04-13 00:54:07.791 +0200>,<nmr>,<DRX400>,<go>,<TOPSPIN 2.1>,
+      <created by zg
+	started at 2016-04-13 00:28:54.728 +0200,
+	POWCHK disabled, PULCHK disabled,
+       configuration hash MD5:
+       CA 82 C1 9E 0A F3 E2 00 06 E0 A4 4E 3A 24 FA E9
+       data hash MD5: 2K * 128
+       EB 05 6C 9F 45 D6 24 28 E3 7F B2 8B AA 50 3A B4>)
+(   2,<2016-04-13 00:54:22.291 +0200>,<nmr>,<DRX400>,<audit>,<TOPSPIN 2.1>,
+      <user comment:
+       ICON-NMR User ID: las
+       data hash MD5: 2K * 128
+       EB 05 6C 9F 45 D6 24 28 E3 7F B2 8B AA 50 3A B4>)
+(   3,<2016-04-13 00:54:24.869 +0200>,<nmr>,<DRX400>,<proc2d>,<TOPSPIN 2.1>,
+      <Start of raw data processing
+       xfb same F2: SI = 1K WDW = 4 SSB = 2 FT_mod = 6 PKNL = 1 PHC0 = -63.4535 PHC1 = -13.65425 F1: SI = 1K WDW = 4 SSB = 2 FT_mod = 4 PHC0 = 90 PHC1 = -180
+       data hash MD5: 1K * 1K
+       A3 26 C0 65 54 DD B6 D4 2C 35 7D CD 03 62 BE C9>)
+(   4,<2016-04-13 00:54:25.166 +0200>,<nmr>,<DRX400>,<proc2d>,<TOPSPIN 2.1>,
+      <abs2 F2: ABSG = 5 ABSF1 = 8.57045 ABSF2 = 0.8091911
+       data hash MD5: 1K * 1K
+       8B 00 57 D6 4E 03 9F 1F 01 54 29 B9 30 00 2D D2>)
+(   5,<2016-04-13 00:54:25.681 +0200>,<nmr>,<DRX400>,<proc2d>,<TOPSPIN 2.1>,
+      <abs1 F1: ABSG = 5 ABSF1 = 8.57045 ABSF2 = 0.8091911
+       data hash MD5: 1K * 1K
+       BC B2 93 3B 84 63 9A 2D 67 B8 87 07 11 30 69 98>)
+##END=
+
+$$ hash MD5
+$$ D1 7A 8B 58 A1 CE 55 01 9B 0F 08 44 4F D3 1C 8E

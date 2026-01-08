@@ -1,0 +1,211 @@
+##TITLE= Audit trail, TOPSPIN		Version 3.2
+##JCAMPDX= 5.01
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= nmrsu
+$$ C:/NMR-Data/disk2/nmrsu/MC047_9/6/pdata/1000/auditp.txt
+##AUDIT TRAIL=  $$ (NUMBER, WHEN, WHO, WHERE, PROCESS, VERSION, WHAT)
+(   1,<2015-07-09 13:20:43.373 +0200>,<nmrsu>,<AVHD600>,<mvrow>,<TOPSPIN 3.2>,
+      <rsr 41 from
+       1 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       data hash MD5: 1K
+       76 80 41 25 C5 DE 7C 00 4E 54 8F BA C8 76 47 ED>)
+(   2,<2015-07-09 13:20:43.560 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TOPSPIN 3.2>,
+      <add DC = 1 DATMOD = 1 of
+       1000 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       1001 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       data hash MD5: 1K
+       08 A8 EF C0 38 2A 5D BB CC 02 60 22 BB 13 AC C5>)
+(   3,<2015-07-09 13:20:43.685 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TOPSPIN 3.2>,
+      <add DC = 1 DATMOD = 1 of
+       1000 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       1001 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       data hash MD5: 1K
+       E3 29 B0 40 F5 BE 8D 97 4B D1 5C FF 4F B0 41 C5>)
+(   4,<2015-07-09 13:20:43.825 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TOPSPIN 3.2>,
+      <add DC = 1 DATMOD = 1 of
+       1000 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       1001 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       data hash MD5: 1K
+       AC 78 23 D1 8C F5 BD 37 84 C0 6C BD 26 34 C2 48>)
+(   5,<2015-07-09 13:20:43.966 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TOPSPIN 3.2>,
+      <add DC = 1 DATMOD = 1 of
+       1000 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       1001 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       data hash MD5: 1K
+       B7 02 0E EF A0 8A 6B B2 34 8C 2D 5C 20 60 FB 29>)
+(   6,<2015-07-09 13:20:44.091 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TOPSPIN 3.2>,
+      <add DC = 1 DATMOD = 1 of
+       1000 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       1001 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       data hash MD5: 1K
+       38 D5 72 95 E0 FA 78 88 31 3C 30 7C 14 B5 9F A7>)
+(   7,<2015-07-09 13:20:44.231 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TOPSPIN 3.2>,
+      <add DC = 1 DATMOD = 1 of
+       1000 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       1001 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       data hash MD5: 1K
+       0A 90 73 0C 71 77 67 A2 DC 1E E9 9B EB 49 24 B9>)
+(   8,<2015-07-09 13:20:44.356 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TOPSPIN 3.2>,
+      <add DC = 1 DATMOD = 1 of
+       1000 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       1001 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       data hash MD5: 1K
+       B7 08 0D 84 E6 2D 1D A5 F6 5C 25 DA E7 AF B9 6B>)
+(   9,<2015-07-09 13:20:44.496 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TOPSPIN 3.2>,
+      <add DC = 1 DATMOD = 1 of
+       1000 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       1001 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       data hash MD5: 1K
+       A7 E2 6D 91 06 B1 C7 36 40 18 B4 59 95 AD 4F D6>)
+(  10,<2015-07-09 13:20:44.605 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TOPSPIN 3.2>,
+      <add DC = 1 DATMOD = 1 of
+       1000 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       1001 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       data hash MD5: 1K
+       B3 29 44 41 7F A1 1B 28 AF CA B5 59 C4 95 C9 D4>)
+(  11,<2015-07-09 13:20:44.715 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TOPSPIN 3.2>,
+      <add DC = 1 DATMOD = 1 of
+       1000 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       1001 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       data hash MD5: 1K
+       15 DE A1 F0 09 53 43 6A 9D 8B F0 38 E0 B5 03 CD>)
+(  12,<2015-07-09 13:20:44.949 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TOPSPIN 3.2>,
+      <add DC = 1 DATMOD = 1 of
+       1000 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       1001 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       data hash MD5: 1K
+       C3 E6 4D 2D E3 32 A8 8C 81 8C 9C 46 80 10 39 1B>)
+(  13,<2015-07-09 13:20:45.105 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TOPSPIN 3.2>,
+      <add DC = 1 DATMOD = 1 of
+       1000 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       1001 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       data hash MD5: 1K
+       96 24 E3 36 4C E2 E7 2E DC 18 AA 2E 0B 76 FA C6>)
+(  14,<2015-07-09 13:20:45.229 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TOPSPIN 3.2>,
+      <add DC = 1 DATMOD = 1 of
+       1000 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       1001 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       data hash MD5: 1K
+       E3 91 DB 84 5D C6 28 9D 88 05 FD 74 74 D3 44 56>)
+(  15,<2015-07-09 13:20:45.370 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TOPSPIN 3.2>,
+      <add DC = 1 DATMOD = 1 of
+       1000 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       1001 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       data hash MD5: 1K
+       90 5B DF 36 97 6D A1 92 3C 75 44 BA 54 1A 75 11>)
+(  16,<2015-07-09 13:20:45.495 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TOPSPIN 3.2>,
+      <add DC = 1 DATMOD = 1 of
+       1000 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       1001 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       data hash MD5: 1K
+       3A 4B 5E DC C5 21 82 89 25 7C A7 4E 9B 66 C1 2A>)
+(  17,<2015-07-09 13:20:45.635 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TOPSPIN 3.2>,
+      <add DC = 1 DATMOD = 1 of
+       1000 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       1001 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       data hash MD5: 1K
+       6F 67 4B FE 36 AD 77 F6 53 DB 3F 26 50 2D CF 91>)
+(  18,<2015-07-09 13:20:45.775 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TOPSPIN 3.2>,
+      <add DC = 1 DATMOD = 1 of
+       1000 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       1001 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       data hash MD5: 1K
+       FA B5 63 1F 0E 09 D9 62 73 56 E9 AF 3D 02 18 20>)
+(  19,<2015-07-09 13:20:45.900 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TOPSPIN 3.2>,
+      <add DC = 1 DATMOD = 1 of
+       1000 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       1001 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       data hash MD5: 1K
+       EB 28 72 94 1C 64 34 FC DD 3B A4 58 C0 3B 72 C2>)
+(  20,<2015-07-09 13:20:46.041 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TOPSPIN 3.2>,
+      <add DC = 1 DATMOD = 1 of
+       1000 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       1001 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       data hash MD5: 1K
+       3E 01 47 24 5D FA A2 1F 48 81 CF 56 55 66 D9 FD>)
+(  21,<2015-07-09 13:20:46.212 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TOPSPIN 3.2>,
+      <add DC = 1 DATMOD = 1 of
+       1000 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       1001 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       data hash MD5: 1K
+       EB FD 56 4E 4C 5B 94 35 86 F5 9E 28 64 16 A6 28>)
+(  22,<2015-07-09 13:20:46.431 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TOPSPIN 3.2>,
+      <add DC = 1 DATMOD = 1 of
+       1000 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       1001 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       data hash MD5: 1K
+       65 37 98 63 80 FC F1 EF 4A 81 2B 8C D5 DB 13 5C>)
+(  23,<2015-07-09 13:20:46.696 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TOPSPIN 3.2>,
+      <add DC = 1 DATMOD = 1 of
+       1000 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       1001 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       data hash MD5: 1K
+       11 8B 26 BA A1 8C 52 2D C1 82 72 0A 3D 63 84 79>)
+(  24,<2015-07-09 13:20:46.930 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TOPSPIN 3.2>,
+      <add DC = 1 DATMOD = 1 of
+       1000 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       1001 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       data hash MD5: 1K
+       BE 60 BE 77 5D 5E 2C DF BA 0F ED 08 AE 98 90 37>)
+(  25,<2015-07-09 13:20:47.117 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TOPSPIN 3.2>,
+      <add DC = 1 DATMOD = 1 of
+       1000 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       1001 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       data hash MD5: 1K
+       F6 FD 19 BD 42 E7 96 31 D3 99 11 A6 36 FE CD D7>)
+(  26,<2015-07-09 13:20:47.335 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TOPSPIN 3.2>,
+      <add DC = 1 DATMOD = 1 of
+       1000 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       1001 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       data hash MD5: 1K
+       ED 39 29 CD 53 91 52 32 11 59 40 46 5D C8 7F D0>)
+(  27,<2015-07-09 13:20:47.569 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TOPSPIN 3.2>,
+      <add DC = 1 DATMOD = 1 of
+       1000 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       1001 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       data hash MD5: 1K
+       3B 59 09 89 9D 7E 29 87 86 9B 6D 0F B7 84 3E AA>)
+(  28,<2015-07-09 13:20:47.694 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TOPSPIN 3.2>,
+      <add DC = 1 DATMOD = 1 of
+       1000 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       1001 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       data hash MD5: 1K
+       A9 93 78 C7 FD DF 3B D5 7B 13 14 D9 3C 8D 59 F5>)
+(  29,<2015-07-09 13:20:47.819 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TOPSPIN 3.2>,
+      <add DC = 1 DATMOD = 1 of
+       1000 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       1001 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       data hash MD5: 1K
+       97 B8 6A 7F 7B 97 EA 61 92 65 75 16 B2 A3 63 7C>)
+(  30,<2015-07-09 13:20:47.959 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TOPSPIN 3.2>,
+      <add DC = 1 DATMOD = 1 of
+       1000 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       1001 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       data hash MD5: 1K
+       14 20 9E 4F 7B D0 09 EA 1C 1A 15 E3 51 DF 10 5C>)
+(  31,<2015-07-09 13:20:48.084 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TOPSPIN 3.2>,
+      <add DC = 1 DATMOD = 1 of
+       1000 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       1001 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       data hash MD5: 1K
+       11 C9 39 FA 37 83 08 23 9A E6 BA A0 ED D2 CF 52>)
+(  32,<2015-07-09 13:20:48.209 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TOPSPIN 3.2>,
+      <add DC = 1 DATMOD = 1 of
+       1000 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       1001 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       data hash MD5: 1K
+       DA 72 09 26 86 79 EC 2E FE 0A 77 23 08 26 E2 42>)
+(  33,<2015-07-09 13:20:48.334 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TOPSPIN 3.2>,
+      <add DC = 1 DATMOD = 1 of
+       1000 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       1001 6 "MC047_9" "C:/NMR-Data/disk2/nmrsu"
+       data hash MD5: 1K
+       48 EE 82 B5 DD 7E C9 D6 A9 B0 B6 7E FD 03 BD 29>)
+(  34,<2015-07-09 13:20:48.427 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TOPSPIN 3.2>,
+      <apk 
+       data hash MD5: 1K
+       59 BB 56 D3 2C 01 7E D4 DA 81 05 43 01 8F 30 BD>)
+##END=
+
+$$ hash MD5
+$$ EF 06 C0 07 9C 40 08 02 13 80 38 8B 3C 62 E3 0C

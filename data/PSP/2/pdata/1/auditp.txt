@@ -1,0 +1,49 @@
+##TITLE= Audit trail, TopSpin 3.6.2
+##JCAMPDX= 5.01
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= nmrsu
+$$ C:/NMR-Data/disk2/nmrsu/PSP-SSEA-3/2/pdata/1/auditp.txt
+##AUDIT TRAIL=  $$ (NUMBER, WHEN, WHO, WHERE, PROCESS, VERSION, WHAT)
+(   1,<2020-02-28 11:32:37.987 +0100>,<nmrsu>,<AVHD600>,<go4>,<TopSpin 3.6.2>,
+      <created by zg
+	started at 2020-02-28 11:25:56.263 +0100,
+	POWCHK enabled, PULCHK disabled,
+       terminated by command 'stop'
+       configuration hash MD5:
+       44 90 1E DC 4B B4 E2 23 A6 5F D9 21 41 FB AA EE
+       data hash MD5: 64K
+       B5 08 BC 94 DC BD 3E C3 93 0B F7 29 53 E1 2D 83>)
+(   2,<2020-02-28 11:32:38.530 +0100>,<nmrsu>,<AVHD600>,<audit>,<TopSpin 3.6.2>,
+      <user comment:
+       ICON-NMR User ID: nmrsu
+       data hash MD5: 64K
+       B5 08 BC 94 DC BD 3E C3 93 0B F7 29 53 E1 2D 83>)
+(   3,<2020-02-28 11:32:41.187 +0100>,<nmrsu>,<AVHD600>,<proc1d>,<TopSpin 3.6.2>,
+      <Start of raw data processing
+       ef LB = 1 FT_mod = 6 PKNL = 1 SI = 32K 
+       data hash MD5: 32K
+       14 12 B1 DD C9 0E D0 23 BA AD 37 4F 95 3C 2D 27>)
+(   4,<2020-02-28 11:32:44.321 +0100>,<nmrsu>,<AVHD600>,<dataserver>,<TopSpin 3.6.2>,
+      <apbk
+       data hash MD5: 32K
+       A5 5B 2E 8E 47 78 29 84 29 C5 E1 56 B0 22 D6 E6>)
+(   5,<2020-02-28 11:32:44.605 +0100>,<nmrsu>,<AVHD600>,<proc1d>,<TopSpin 3.6.2>,
+      <ht 
+       data hash MD5: 32K
+       A5 5B 2E 8E 47 78 29 84 29 C5 E1 56 B0 22 D6 E6>)
+(   6,<2020-02-28 11:32:45.825 +0100>,<nmrsu>,<AVHD600>,<proc1d>,<TopSpin 3.6.2>,
+      <apk0 
+       data hash MD5: 32K
+       18 DB 5E 64 15 8A 46 67 9C 10 2D 6C 92 C2 D1 25>)
+(   7,<2020-02-28 11:32:46.089 +0100>,<nmrsu>,<AVHD600>,<proc1d>,<TopSpin 3.6.2>,
+      <abs ABSG = 5 
+       data hash MD5: 32K
+       B8 04 D3 B9 54 9C 7F 76 7B 5A 02 58 90 2F E8 5E>)
+(   8,<2020-02-28 14:24:35.788 +0100>,<nmrsu>,<AVHD600>,<proc1d>,<TopSpin 3.6.2>,
+      <pk fgphup PHC0 = 23.10162 PHC1 = -30.30313 
+       data hash MD5: 32K
+       24 BB 33 96 AA 1B 6B B0 EC 85 7B 8A FF DB C8 58>)
+##END=
+
+$$ hash MD5
+$$ E0 F1 A9 A0 09 9D 5E 66 78 34 A2 98 45 0C 52 09

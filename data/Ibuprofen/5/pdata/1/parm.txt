@@ -1,0 +1,74 @@
+
+Current Data Parameters
+NAME            ibuprof                
+EXPNO                 5                
+PROCNO                1                
+
+F2 - Acquisition Parameters
+Date_          20030228                
+Time              14.49                
+INSTRUM    DRX500-Essen                
+PROBHD   5 mm TBI Z8292                
+PULPROG        cosygpqf                
+TD                 1024                
+SOLVENT           CDCl3                
+NS                    1                
+DS                    8                
+SWH            3858.025 Hz             
+FIDRES         3.767602 Hz             
+AQ            0.1328900 sec            
+RG                   64                
+DW              129.600 usec           
+DE                 6.00 usec           
+TE                298.0 K              
+d0           0.00000300 sec            
+D1           1.97091699 sec            
+d13          0.00000400 sec            
+D16          0.00050000 sec            
+IN0          0.00025920 sec            
+MCREST       0.00000000 sec            
+MCWRK        1.97091699 sec            
+
+======== CHANNEL f1 ========
+NUC1                 1H                
+P0                 8.00 usec           
+P1                 8.00 usec           
+PL1                3.00 dB             
+SFO1        499.8720286 MHz            
+
+====== GRADIENT CHANNEL =====
+GPNAM1         SINE.100                
+GPNAM2         SINE.100                
+GPX1               0.00 %              
+GPX2               0.00 %              
+GPY1               0.00 %              
+GPY2               0.00 %              
+GPZ1              10.00 %              
+GPZ2              10.00 %              
+P16             2000.00 usec           
+
+F1 - Acquisition parameters
+ND0                   1                
+TD                  256                
+SFO1            499.872 MHz            
+FIDRES        15.070409 Hz             
+SW                7.718 ppm            
+FnMODE               QF                
+
+F2 - Processing parameters
+SI                 1024                
+SF          499.8700272 MHz            
+WDW                SINE                
+SSB                   0                
+LB                 0.00 Hz             
+GB                    0                
+PC                 1.40                
+
+F1 - Processing parameters
+SI                  512                
+MC2                  QF                
+SF          499.8700272 MHz            
+WDW                SINE                
+SSB                   0                
+LB                 0.00 Hz             
+GB                    0                

@@ -1,0 +1,29 @@
+##TITLE= Parameter file, TopSpin 4.0.8
+##JCAMPDX= 5.0
+##DATATYPE= Parameter Values
+##NPOINTS= 4	$$ modification sequence number
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= nmr
+$$ 2021-03-02 14:18:41.404 +0100  Admin@Lenovo-SK
+$$ W:/NMR/data/Uebung/nmr/4-(1-Hydroxyethyl)benzoic acid isopropylester/4/pdata/1/curdat2
+$$ process C:\Bruker\TopSpin4.0.8\prog\mod\dataserver.exe
+##$CUREXP= <>
+##$DATPATH2= <W:/NMR/data/Uebung/nmr>
+##$DETAILS= <>
+##$DU= </u>
+##$DU2= <>
+##$DU3= <D:\Topspin>
+##$EXPNO= 1
+##$EXPNO2= 1
+##$EXPNO3= 4
+##$NAME= <>
+##$NAME2= <4-(1-Hydroxyethyl)benzoic acid isopropylester>
+##$NAME3= <las_S013>
+##$PROCNO= 1
+##$PROCNO2= 1
+##$PROCNO3= 99
+##$TYPE= <>
+##$USER= <>
+##$USER2= <>
+##$USER3= <las>
+##END=

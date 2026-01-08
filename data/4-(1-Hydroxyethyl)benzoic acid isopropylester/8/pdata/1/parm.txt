@@ -1,0 +1,66 @@
+
+Current Data Parameters
+NAME     4-(1-Hydroxyethyl)benzoic acid isopropylester              
+EXPNO                 8              
+PROCNO                1              
+
+F2 - Acquisition Parameters
+Date_          20160413              
+Time               0.55              
+INSTRUM           Spect              
+PROBHD   5 mm DUL 13C-1              
+PULPROG        cosygpqf              
+TD                 2048              
+SOLVENT           CDCl3              
+NS                    4              
+DS                   16              
+SWH            3105.590 Hz           
+FIDRES         1.516401 Hz           
+AQ            0.3297280 sec          
+RG                  161              
+DW              161.000 usec         
+DE                 6.50 usec         
+TE                294.1 K            
+D0           0.00000300 sec          
+D1           1.36729002 sec          
+D13          0.00000400 sec          
+D16          0.00020000 sec          
+IN0          0.00032200 sec          
+
+======== CHANNEL f1 ========
+NUC1                 1H              
+P0                11.50 usec         
+P1                11.50 usec         
+PL1               -3.00 dB           
+PL1W        17.54155350 W            
+SFO1        400.1418766 MHz          
+
+====== GRADIENT CHANNEL =====
+GPNAM[1]       SINE.100              
+GPZ1              10.00 %            
+P16             1000.00 usec         
+
+F1 - Acquisition parameters
+TD                  128              
+SFO1           400.1419 MHz          
+FIDRES        48.524845 Hz           
+SW                7.761 ppm          
+FnMODE               QF              
+
+F2 - Processing parameters
+SI                 1024              
+SF          400.1400167 MHz          
+WDW                SINE              
+SSB      0              
+LB       0 Hz           
+GB       0              
+PC                 1.40              
+
+F1 - Processing parameters
+SI                 1024              
+MC2                  QF              
+SF          400.1400167 MHz          
+WDW                SINE              
+SSB      0              
+LB       0 Hz           
+GB       0              

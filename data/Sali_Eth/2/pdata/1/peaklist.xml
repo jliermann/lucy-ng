@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PeakList>
+  <PeakList1D>
+    <PeakList1DHeader creator="nmrsu" date="2021-03-09T10:59:14.553+01:00" expNo="2" name="Sali_Eth_5" owner="" procNo="1" source="C:/NMR-Data/disk2/nmrsu">
+      <PeakPickDetails>F1=220.931702ppm, F2=-19.169304ppm, MI=0.00cm, MAXI=10000.00cm, PC=1.400
+      </PeakPickDetails>
+    </PeakList1DHeader>
+    <Peak1D F1="160.799942" intensity="1.195478e+001" type="0"/>
+    <Peak1D F1="145.758331" intensity="5.666265e+000" type="0"/>
+    <Peak1D F1="132.621765" intensity="4.559151e+000" type="0"/>
+    <Peak1D F1="131.667145" intensity="1.083403e+001" type="0"/>
+    <Peak1D F1="130.209473" intensity="1.138561e+001" type="0"/>
+    <Peak1D F1="128.458267" intensity="1.162347e+001" type="0"/>
+    <Peak1D F1="126.903755" intensity="1.285297e+001" type="0"/>
+    <Peak1D F1="67.399040" intensity="4.102494e-001" type="0"/>
+    <Peak1D F1="67.172409" intensity="2.733894e+001" type="0"/>
+    <Peak1D F1="67.098892" intensity="1.064650e+000" type="0"/>
+    <Peak1D F1="67.028053" intensity="2.769278e+001" type="0"/>
+    <Peak1D F1="66.943687" intensity="1.008213e+002" type="0"/>
+    <Peak1D F1="66.884422" intensity="3.166196e+001" type="0"/>
+    <Peak1D F1="66.799416" intensity="2.051304e+002" type="0"/>
+    <Peak1D F1="66.727234" intensity="1.181645e+001" type="0"/>
+    <Peak1D F1="66.656334" intensity="3.008724e+002" type="0"/>
+    <Peak1D F1="66.586540" intensity="1.157547e+001" type="0"/>
+    <Peak1D F1="66.512390" intensity="2.087262e+002" type="0"/>
+    <Peak1D F1="66.368439" intensity="9.964834e+001" type="0"/>
+    <Peak1D F1="26.461851" intensity="1.354207e+001" type="0"/>
+    <Peak1D F1="16.708956" intensity="1.500000e+001" type="0"/>
+  </PeakList1D>
+</PeakList>

@@ -1,0 +1,52 @@
+##TITLE= Audit trail, TopSpin 3.6.2
+##JCAMPDX= 5.01
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= nmrsu
+$$ C:/NMR-Data/disk2/nmrsu/HC003_I/8/pdata/1/auditp.txt
+##AUDIT TRAIL=  $$ (NUMBER, WHEN, WHO, WHERE, PROCESS, VERSION, WHAT)
+(   1,<2021-08-18 12:51:10.144 +0200>,<nmrsu>,<AVHD600>,<go4>,<TopSpin 3.6.2>,
+      <created by zg
+	started at 2021-08-18 12:26:33.366 +0200,
+	POWCHK enabled, PULCHK disabled,
+       configuration hash MD5:
+       4F D3 72 75 BA CD 2E BC B4 D6 8A D6 5F 90 AD A5
+       data hash MD5: 2K * 256
+       17 80 15 D1 A2 B7 1F E5 D9 02 66 0B 09 40 9F AF>)
+(   2,<2021-08-18 12:51:10.621 +0200>,<nmrsu>,<AVHD600>,<audit>,<TopSpin 3.6.2>,
+      <user comment:
+       ICON-NMR User ID: nmrsu
+       data hash MD5: 2K * 256
+       17 80 15 D1 A2 B7 1F E5 D9 02 66 0B 09 40 9F AF>)
+(   3,<2021-08-18 12:51:19.230 +0200>,<nmrsu>,<AVHD600>,<proc2d>,<TopSpin 3.6.2>,
+      <Start of raw data processing
+       xfb same F2: SI = 1K WDW = 4 SSB = 2 FT_mod = 6 PKNL = 1 PHC0 = 148.34 PHC1 = 0 F1: SI = 1K WDW = 4 SSB = 2 FT_mod = 4 FCOR = 1 PHC0 = 90 PHC1 = -180
+       data hash MD5: 1K * 1K
+       4E 33 D7 10 7A A2 FD A4 2A BB 2D 0F D9 BA 59 0F>)
+(   4,<2021-08-18 12:51:19.654 +0200>,<nmrsu>,<AVHD600>,<proc2d>,<TopSpin 3.6.2>,
+      <abs2 F2: ABSG = 5 ABSF1 = 8.886225 ABSF2 = 4.72046
+       data hash MD5: 1K * 1K
+       61 27 DA 36 F0 F3 AA F2 07 98 2B 18 E2 65 F6 78>)
+(   5,<2021-08-18 12:51:20.101 +0200>,<nmrsu>,<AVHD600>,<proc2d>,<TopSpin 3.6.2>,
+      <abs1 F1: ABSG = 5 ABSF1 = 8.886225 ABSF2 = 4.72046
+       data hash MD5: 1K * 1K
+       13 0B B5 9A F0 7E 68 A7 BD 20 34 78 77 8D 45 78>)
+(   6,<2021-08-18 12:56:44.863 +0200>,<nmrsu>,<AVHD600>,<proc2d>,<TopSpin 3.6.2>,
+      <abs1 F1: ABSG = 5 ABSF1 = 8.700526 ABSF2 = 4.534762
+       data hash MD5: 1K * 1K
+       0E 46 CC D8 5E 13 8E 9B 8A A2 17 B2 DB E8 BE 01>)
+(   7,<2021-08-18 12:56:45.510 +0200>,<nmrsu>,<AVHD600>,<proc2d>,<TopSpin 3.6.2>,
+      <abs2 F2: ABSG = 5 ABSF1 = 8.700526 ABSF2 = 4.534762
+       data hash MD5: 1K * 1K
+       32 01 05 B0 A2 AF 80 38 80 EC 06 91 AF 61 1F 0A>)
+(   8,<2021-08-18 13:39:25.337 +0200>,<nmrsu>,<AVHD600>,<proc2d>,<TopSpin 3.6.2>,
+      <pk2 fgphup F2: PHC0 = 0 PHC1 = 0
+       data hash MD5: 1K * 1K
+       32 01 05 B0 A2 AF 80 38 80 EC 06 91 AF 61 1F 0A>)
+(   9,<2021-08-18 13:39:39.079 +0200>,<nmrsu>,<AVHD600>,<proc2d>,<TopSpin 3.6.2>,
+      <pk1 fgphup F1: PHC0 = 0 PHC1 = 0
+       data hash MD5: 1K * 1K
+       32 01 05 B0 A2 AF 80 38 80 EC 06 91 AF 61 1F 0A>)
+##END=
+
+$$ hash MD5
+$$ 9F 53 57 43 19 84 DF BB 68 95 C7 B8 84 7C 26 8D

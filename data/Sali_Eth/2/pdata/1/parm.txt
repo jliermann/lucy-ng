@@ -1,0 +1,47 @@
+
+Current Data Parameters
+NAME         Sali_Eth_5              
+EXPNO                 2              
+PROCNO                1              
+
+F2 - Acquisition Parameters
+Date_          20210309              
+Time              10.59 h            
+INSTRUM           spect              
+PROBHD   Z130037_0004 (              
+PULPROG          zgpg30              
+TD                65536              
+SOLVENT         Dioxane              
+NS                  256              
+DS                    4              
+SWH           36231.883 Hz           
+FIDRES         1.105709 Hz           
+AQ            0.9043968 sec          
+RG                  203              
+DW               13.800 usec         
+DE                18.00 usec         
+TE                298.0 K            
+D1           2.00000000 sec          
+D11          0.03000000 sec          
+TD0                   1              
+SFO1        150.9178988 MHz          
+NUC1                13C              
+P0                 3.27 usec         
+P1                 9.80 usec         
+PLW1        60.00000000 W            
+SFO2        600.1324005 MHz          
+NUC2                 1H              
+CPDPRG[2        waltz65              
+PCPD2             70.00 usec         
+PLW2        23.00000000 W            
+PLW12        0.64805001 W            
+PLW13        0.32596001 W            
+
+F2 - Processing parameters
+SI                32768              
+SF          150.9026756 MHz          
+WDW                  EM              
+SSB                   0              
+LB                 1.00 Hz           
+GB                    0              
+PC                 1.40              

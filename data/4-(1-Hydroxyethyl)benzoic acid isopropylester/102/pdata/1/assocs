@@ -1,0 +1,11 @@
+##TITLE= Parameter file, TOPSPIN		Version 3.2
+##JCAMPDX= 5.0
+##DATATYPE= Parameter Values
+##NPOINTS= 2	$$ modification sequence number
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= Sebi
+$$ 2016-06-03 14:18:50.673 +0200  Sebi@NMRofficeC6
+$$ C:/Bruker/TopSpin3.2/data/Uebung/nmr/4-(1-Hydroxyethyl)benzoic acid isopropylester/102/pdata/1/assocs
+$$ process C:\Bruker\TopSpin3.2\prog\mod\dataserver.exe
+##$MULTDISP= <C:/Bruker/TopSpin3.2/data/Uebung/nmr/4-(1-Hydroxyethyl)benzoic acid isopropylester/1/pdata/1>
+##END=

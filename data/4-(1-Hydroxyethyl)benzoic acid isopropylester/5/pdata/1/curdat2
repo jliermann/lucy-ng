@@ -1,0 +1,28 @@
+##TITLE= Parameter file, TOPSPIN		Version 2.1
+##JCAMPDX= 5.0
+##DATATYPE= Parameter Values
+##NPOINTS= 1	$$ modification sequence number
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= nmr
+$$ 2016-04-12 18:15:10.806 +0200  nmr@DRX400
+$$ C:/Bruker/TOPSPIN2.1/prog/curdir/changer/inmrchanger/Apr04-2016-0725-nmr/42/data/nmr/las_S013/5/pdata/1/curdat2
+$$ process C:\Bruker\TOPSPIN2.1\prog\mod\xwish3.exe
+##$CUREXP= <>
+##$DETAILS= <>
+##$DU= </u>
+##$DU2= <D:\Topspin>
+##$DU3= <>
+##$EXPNO= 1
+##$EXPNO2= 3
+##$EXPNO3= 0
+##$NAME= <>
+##$NAME2= <las_S013>
+##$NAME3= <>
+##$PROCNO= 1
+##$PROCNO2= 1
+##$PROCNO3= 1
+##$TYPE= <nmr>
+##$USER= <>
+##$USER2= <las>
+##$USER3= <>
+##END=

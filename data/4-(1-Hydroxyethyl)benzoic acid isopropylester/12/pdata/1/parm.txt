@@ -1,0 +1,54 @@
+
+Current Data Parameters
+NAME     4-(1-Hydroxyethyl)benzoic acid isopropylester              
+EXPNO                12              
+PROCNO                1              
+
+F2 - Acquisition Parameters
+Date_          20160426              
+Time              21.01              
+INSTRUM           Spect              
+PROBHD   5 mm DUL 13C-1              
+PULPROG          zgpg30              
+TD                32768              
+SOLVENT           CDCl3              
+NS                 1024              
+DS                    4              
+SWH           30864.197 Hz           
+FIDRES         0.941901 Hz           
+AQ            0.5308416 sec          
+RG                 2050              
+DW               16.200 usec         
+DE                10.00 usec         
+TE                295.6 K            
+D1           2.20000005 sec          
+D11          0.03000000 sec          
+TD0                   1              
+
+======== CHANNEL f1 ========
+NUC1                13C              
+P1                 7.20 usec         
+PL1               -2.00 dB           
+PL1W        56.53121948 W            
+SFO1        100.6301238 MHz          
+
+======== CHANNEL f2 ========
+CPDPRG[2        waltz16              
+NUC2                 1H              
+PCPD2             90.00 usec         
+PL2               -3.00 dB           
+PL12              15.26 dB           
+PL13              14.80 dB           
+PL2W        17.54155350 W            
+PL12W        0.26185930 W            
+PL13W        0.29111731 W            
+SFO2        400.1420007 MHz          
+
+F2 - Processing parameters
+SI                32768              
+SF          100.6152717 MHz          
+WDW                  EM              
+SSB      0              
+LB                 1.00 Hz           
+GB       0              
+PC                 1.40              

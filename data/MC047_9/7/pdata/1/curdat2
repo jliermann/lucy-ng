@@ -1,0 +1,31 @@
+##TITLE= Parameter file, TopSpin 4.1.0
+##JCAMPDX= 5.0
+##DATATYPE= Parameter Values
+##NPOINTS= 3	$$ modification sequence number
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= nmrsu
+$$ 2022-01-04 16:20:34.313 +0100  torsten@Lamor
+$$ Z:/Torsten/NMR/data/spek-vl/nmr/MC047_9/7/pdata/1/curdat2
+$$ process C:\Bruker\TopSpin4.1.0\prog\mod\dataserver.exe
+##$CUREXP= <>
+##$DATPATH= <>
+##$DATPATH2= <C:/NMR-Data/disk2/nmrsu>
+##$DATPATH3= <Z:/Torsten/NMR/data/spek-vl/nmr>
+##$DETAILS= <>
+##$DU= </u>
+##$DU2= <C:\NMR-Data\disk2>
+##$DU3= <>
+##$EXPNO= 1
+##$EXPNO2= 1
+##$EXPNO3= 2
+##$NAME= <>
+##$NAME2= <MC047_9>
+##$NAME3= <MC047_9>
+##$PROCNO= 1
+##$PROCNO2= 1
+##$PROCNO3= 1
+##$TYPE= <>
+##$USER= <>
+##$USER2= <nmrsu>
+##$USER3= <>
+##END=

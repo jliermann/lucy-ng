@@ -1,0 +1,19 @@
+##TITLE= Audit trail, TopSpin 3.6.2
+##JCAMPDX= 5.01
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= nmrsu
+$$ C:/NMR-Data/disk2/nmrsu/Sali_Eth_5/7/audita.txt
+##AUDIT TRAIL=  $$ (NUMBER, WHEN, WHO, WHERE, PROCESS, VERSION, WHAT)
+(   1,<2021-03-09 13:10:32.079 +0100>,<nmrsu>,<AVHD600>,<splitx_au>,<TopSpin 3.6.2>,
+      <created by splitx 2 2. dataset from
+       C:/NMR-Data/disk2/nmrsu/Sali_Eth_5/3
+       data hash MD5: 2K * 256
+       F3 E2 95 BB 95 2A 4D 4C F7 2C C7 9E D4 BD 4E C6>)
+(   2,<2021-03-09 13:10:43.531 +0100>,<nmrsu>,<AVHD600>,<dirdata>,<TopSpin 3.6.2>,
+      <wrpa from 1 3002 "Sali_Eth_5" "C:/NMR-Data/disk2/nmrsu" overriding existing data
+       data hash MD5: 2K * 256
+       F3 E2 95 BB 95 2A 4D 4C F7 2C C7 9E D4 BD 4E C6>)
+##END=
+
+$$ hash MD5
+$$ D5 AD E8 A8 E0 A6 2E 2B D7 9C A0 99 70 CF 4A 57

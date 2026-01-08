@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PeakList>
+  <PeakList1D>
+    <PeakList1DHeader creator="las" date="2016-04-26T21:32:57.063+02:00" expNo="3" name="las_S013_II" owner="" procNo="1" source="D:\Topspin">
+      <PeakPickDetails>F1=249.271ppm, F2=-4.271ppm, MI=0.00cm, MAXI=10000.00cm, PC=1.400
+      </PeakPickDetails>
+    </PeakList1DHeader>
+    <Peak1D F1="129.8223" intensity="10.43" type="0"/>
+    <Peak1D F1="125.1961" intensity="11.72" type="0"/>
+    <Peak1D F1="70.0744" intensity="5.40" type="0"/>
+    <Peak1D F1="68.3522" intensity="3.95" type="0"/>
+    <Peak1D F1="25.3902" intensity="7.06" type="0"/>
+    <Peak1D F1="21.9874" intensity="15.00" type="0"/>
+  </PeakList1D>
+</PeakList>

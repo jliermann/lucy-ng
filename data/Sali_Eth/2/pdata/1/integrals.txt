@@ -1,0 +1,11 @@
+   Current data set:
+   NAME =	Sali_Eth_5	EXPNO =	2	PROCNO = 1
+   DU   =	C:/NMR-Data/disk2/nmrsu
+
+   Number   Integrated Region     Integral
+     1    162.257    159.334         0.00830
+     2    147.953    144.262         0.00325
+     3    134.573    124.422         0.03232
+     4     67.351     65.395         0.94173
+     5     28.299     24.300         0.00634
+     6     18.456     14.918         0.00806

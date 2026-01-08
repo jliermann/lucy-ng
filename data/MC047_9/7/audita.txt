@@ -1,0 +1,23 @@
+##TITLE= Audit trail, TOPSPIN		Version 3.2
+##JCAMPDX= 5.01
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= nmrsu
+$$ C:/NMR-Data/disk2/nmrsu/MC047_9/7/audita.txt
+##AUDIT TRAIL=  $$ (NUMBER, WHEN, WHO, WHERE, PROCESS, VERSION, WHAT)
+(   1,<2015-07-09 14:02:01.687 +0200>,<nmrsu>,<AVHD600>,<go>,<TOPSPIN 3.2>,
+      <created by zg
+	started at 2015-07-09 13:20:56.337 +0200,
+	POWCHK enabled, PULCHK disabled,
+       configuration hash MD5:
+       D9 31 0E A6 99 BC 12 53 AD 06 B2 56 0D FE B2 14
+       data hash MD5: 4K * 256
+       FC 0A A4 B1 95 1A 70 54 FF DB 1B E9 D7 F0 2C CF>)
+(   2,<2015-07-09 14:02:02.046 +0200>,<nmrsu>,<AVHD600>,<audit>,<TOPSPIN 3.2>,
+      <user comment:
+       ICON-NMR User ID: nmrsu
+       data hash MD5: 4K * 256
+       FC 0A A4 B1 95 1A 70 54 FF DB 1B E9 D7 F0 2C CF>)
+##END=
+
+$$ hash MD5
+$$ 8D 26 DC 05 E2 CD 03 5C 6A CF 7D 82 88 28 AA 23

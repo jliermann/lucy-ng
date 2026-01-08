@@ -1,0 +1,92 @@
+
+Current Data Parameters
+NAME         Sali_Eth_5              
+EXPNO                 6              
+PROCNO                1              
+
+F2 - Acquisition Parameters
+Date_          20210309              
+Time              13.03 h            
+INSTRUM           spect              
+PROBHD   Z130037_0004 (              
+PULPROG  hsqcedetgpsisp              
+TD                 2048              
+SOLVENT         Dioxane              
+NS                    1              
+DS                    8              
+SWH            5813.954 Hz           
+FIDRES         5.677689 Hz           
+AQ            0.1761280 sec          
+RG                  203              
+DW               86.000 usec         
+DE                12.00 usec         
+TE                298.0 K            
+CNST2       150.6811066              
+CNST13        8.0000000              
+D0           0.00000300 sec          
+D1           0.97296619 sec          
+D2           0.00331827 sec          
+D4           0.00165913 sec          
+D6           0.06250000 sec          
+D16          0.00020000 sec          
+IN0          0.00001800 sec          
+L3                  128              
+NBL                   1              
+ZGOPTNS          -DEDIT              
+SFO1        600.1330755 MHz          
+NUC1                 1H              
+P1                11.75 usec         
+P2                23.50 usec         
+PLW1        23.00000000 W            
+SFO2        150.9160416 MHz          
+NUC2                13C              
+CPDPRG[2      wudec.cpd              
+P3                 9.80 usec         
+P14              500.00 usec         
+P31             1339.20 usec         
+PCPD2          27968.00 usec         
+PLW2        60.00000000 W            
+PLW12        1.60070002 W            
+SPNAM[3]    wu180C13.wv              
+SPOAL3            0.500              
+SPOFFS3               0 Hz           
+SPW3        11.39011955 W            
+SPNAM[15       wudec.wv              
+SPOAL15           0.500              
+SPOFFS15              0 Hz           
+SPNAM[18  wu180Jcomp.wv              
+SPOAL18           0.500              
+SPOFFS18              0 Hz           
+SPW18        2.76173997 W            
+GPNAM[0]     SMSQ10.100              
+GPZ0              17.13 %            
+GPNAM[1]     SMSQ10.100              
+GPZ1              80.00 %            
+GPNAM[2]     SMSQ10.100              
+GPZ2              40.20 %            
+P16             1000.00 usec         
+
+F1 - Acquisition parameters
+TD                  256              
+SFO1            150.916 MHz          
+FIDRES       217.013885 Hz           
+SW              184.061 ppm          
+FnMODE    Echo-Antiecho              
+
+F2 - Processing parameters
+SI                 4096              
+SF          600.1300206 MHz          
+WDW               QSINE              
+SSB                   2              
+LB                    0 Hz           
+GB                    0              
+PC                 1.40              
+
+F1 - Processing parameters
+SI                 1024              
+MC2       echo-antiecho              
+SF          150.9026756 MHz          
+WDW               QSINE              
+SSB                   2              
+LB                    0 Hz           
+GB                    0              

@@ -1,0 +1,19 @@
+##TITLE= Audit trail, TopSpin 3.6.2
+##JCAMPDX= 5.01
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= nmrsu
+$$ C:/NMR-Data/disk2/nmrsu/HC003_I/7/audita.txt
+##AUDIT TRAIL=  $$ (NUMBER, WHEN, WHO, WHERE, PROCESS, VERSION, WHAT)
+(   1,<2021-08-18 10:42:30.058 +0200>,<nmrsu>,<AVHD600>,<splitx_au>,<TopSpin 3.6.2>,
+      <created by splitx 3 1. dataset from
+       C:/NMR-Data/disk2/nmrsu/HC003_I/3
+       data hash MD5: 1K * 384
+       31 15 97 A5 5D 9B 32 14 3B FC 48 39 50 0D C9 A3>)
+(   2,<2021-08-18 10:42:38.176 +0200>,<nmrsu>,<AVHD600>,<dirdata>,<TopSpin 3.6.2>,
+      <wrpa from 1 3001 "HC003_I" "C:/NMR-Data/disk2/nmrsu"
+       data hash MD5: 1K * 384
+       31 15 97 A5 5D 9B 32 14 3B FC 48 39 50 0D C9 A3>)
+##END=
+
+$$ hash MD5
+$$ FB 54 E4 B3 B6 45 F5 69 7F 33 07 8C A6 F3 5D 97

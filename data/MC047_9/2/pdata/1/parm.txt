@@ -1,0 +1,50 @@
+
+Current Data Parameters
+NAME            MC047_9              
+EXPNO                 2              
+PROCNO                1              
+
+F2 - Acquisition Parameters
+Date_          20150709              
+Time               9.00              
+INSTRUM           spect              
+PROBHD   5 mm CPPBBO BB              
+PULPROG          zgpg30              
+TD                65536              
+SOLVENT           CDCl3              
+NS                   64              
+DS                    4              
+SWH           36057.691 Hz           
+FIDRES         0.550197 Hz           
+AQ            0.9087659 sec          
+RG                  203              
+DW               13.867 usec         
+DE                18.00 usec         
+TE                298.0 K            
+D1           2.00000000 sec          
+D11          0.03000000 sec          
+TD0                   1              
+
+======== CHANNEL f1 ========
+SFO1        150.9178981 MHz          
+NUC1                13C              
+P1                 9.80 usec         
+PLW1        60.00000000 W            
+
+======== CHANNEL f2 ========
+SFO2        600.1324005 MHz          
+NUC2                 1H              
+CPDPRG[2        waltz16              
+PCPD2             70.00 usec         
+PLW2        23.00000000 W            
+PLW12        0.56699997 W            
+PLW13        0.33120000 W            
+
+F2 - Processing parameters
+SI                32768              
+SF          150.9027936 MHz          
+WDW                  EM              
+SSB      0              
+LB                 1.00 Hz           
+GB       0              
+PC                 1.40              

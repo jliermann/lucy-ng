@@ -1,0 +1,11 @@
+##TITLE= Parameter file, TopSpin 4.1.0
+##JCAMPDX= 5.0
+##DATATYPE= Parameter Values
+##NPOINTS= 1	$$ modification sequence number
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= torsten
+$$ 2022-01-10 15:50:53.752 +0100  torsten@Lamor
+$$ Z:/Torsten/NMR/data/spek-vl/nmr/Sali_Eth_5/1/pdata/1/assocs
+$$ process C:\Bruker\TopSpin4.1.0\prog\mod\dataserver.exe
+##$MULTDISP= <Z:/Torsten/NMR/data/spek-vl/nmr/Sali_Eth_2/1/pdata/1|Z:/Torsten/NMR/data/spek-vl/nmr/Sali_Eth/1/pdata/1>
+##END=

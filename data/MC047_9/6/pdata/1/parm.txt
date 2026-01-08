@@ -1,0 +1,103 @@
+
+Current Data Parameters
+NAME            MC047_9              
+EXPNO                 6              
+PROCNO                1              
+
+F2 - Acquisition Parameters
+Date_          20150709              
+Time              12.43              
+INSTRUM           spect              
+PROBHD   5 mm CPPBBO BB              
+PULPROG  hsqcedetgpsisp2.3              
+TD                 2048              
+SOLVENT           CDCl3              
+NS                    4              
+DS                   32              
+SWH            7211.539 Hz           
+FIDRES         3.521259 Hz           
+AQ            0.1419947 sec          
+RG                  203              
+DW               69.333 usec         
+DE                10.00 usec         
+TE                298.0 K            
+CNST2       145.0000000              
+CNST17       -0.5000000              
+D0           0.00000300 sec          
+D1           2.00000000 sec          
+D4           0.00172414 sec          
+D11          0.03000000 sec          
+D16          0.00020000 sec          
+D21          0.00360000 sec          
+D24          0.00089000 sec          
+IN0          0.00002010 sec          
+
+======== CHANNEL f1 ========
+SFO1        600.1328206 MHz          
+NUC1                 1H              
+P1                11.50 usec         
+P2                23.00 usec         
+P28                   0 usec         
+PLW1        23.00000000 W            
+
+======== CHANNEL f2 ========
+SFO2        150.9133717 MHz          
+NUC2                13C              
+CPDPRG[2           garp              
+P3                 9.80 usec         
+P14              500.00 usec         
+P24             2000.00 usec         
+P31             1730.00 usec         
+PCPD2             60.00 usec         
+PLW0                  0 W            
+PLW2        60.00000000 W            
+PLW12        1.60070002 W            
+SPNAM[3] Crp60,0.5,20.1              
+SPOAL3            0.500              
+SPOFFS3               0 Hz           
+SPW3         8.80430031 W            
+SPNAM[7]    Crp60comp.4              
+SPOAL7            0.500              
+SPOFFS7               0 Hz           
+SPW7         8.80430031 W            
+SPNAM[18  Crp60_xfilt.2              
+SPOAL18           0.500              
+SPOFFS18              0 Hz           
+SPW18        2.54460001 W            
+
+====== GRADIENT CHANNEL =====
+GPNAM[1]     SMSQ10.100              
+GPNAM[2]     SMSQ10.100              
+GPNAM[3]     SMSQ10.100              
+GPNAM[4]     SMSQ10.100              
+GPZ1              80.00 %            
+GPZ2              20.10 %            
+GPZ3              11.00 %            
+GPZ4              -5.00 %            
+P16             1000.00 usec         
+P19              600.00 usec         
+
+F1 - Acquisition parameters
+TD                  256              
+SFO1           150.9134 MHz          
+FIDRES       194.340790 Hz           
+SW              164.834 ppm          
+FnMODE    Echo-Antiecho              
+
+F2 - Processing parameters
+SI                 1024              
+SF          600.1300000 MHz          
+WDW               QSINE              
+SSB                   2              
+LB                    0 Hz           
+GB                    0              
+PC                 1.40              
+
+F1 - Processing parameters
+SI                 1024              
+MC2       echo-antiecho              
+SF          150.9028090 MHz          
+WDW               QSINE              
+SSB                   2              
+LB                    0 Hz           
+GB                    0              

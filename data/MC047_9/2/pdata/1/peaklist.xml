@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PeakList>
+  <PeakList1D>
+    <PeakList1DHeader creator="nmrsu" date="2015-07-09T12:36:47.077+02:00" expNo="2" name="MC047_9" owner="" procNo="1" source="C:/NMR-Data/disk2/nmrsu">
+      <PeakPickDetails>F1=219.568ppm, F2=-19.379ppm, MI=0.00cm, MAXI=10000.00cm, PC=1.400
+      </PeakPickDetails>
+    </PeakList1DHeader>
+    <Peak1D F1="166.9422" intensity="3.411017e+000" type="0"/>
+    <Peak1D F1="163.0946" intensity="3.599091e+000" type="0"/>
+    <Peak1D F1="147.1470" intensity="3.097751e-001" type="0"/>
+    <Peak1D F1="143.8597" intensity="8.960964e+000" type="0"/>
+    <Peak1D F1="113.2019" intensity="1.375852e+001" type="0"/>
+    <Peak1D F1="102.7226" intensity="1.127722e+001" type="0"/>
+    <Peak1D F1="77.3679" intensity="3.268940e+001" type="0"/>
+    <Peak1D F1="77.1564" intensity="3.296100e+001" type="0"/>
+    <Peak1D F1="76.9446" intensity="3.246271e+001" type="0"/>
+    <Peak1D F1="33.9232" intensity="1.227157e+001" type="0"/>
+    <Peak1D F1="32.0332" intensity="2.838904e-001" type="0"/>
+    <Peak1D F1="31.2412" intensity="1.018283e+001" type="0"/>
+    <Peak1D F1="26.6887" intensity="1.500000e+001" type="0"/>
+    <Peak1D F1="22.4299" intensity="1.369296e+001" type="0"/>
+    <Peak1D F1="22.2692" intensity="3.364056e-001" type="0"/>
+    <Peak1D F1="14.0297" intensity="1.446139e+001" type="0"/>
+  </PeakList1D>
+</PeakList>

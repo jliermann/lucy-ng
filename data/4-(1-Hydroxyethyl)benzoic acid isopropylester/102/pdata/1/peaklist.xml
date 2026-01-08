@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PeakList modified="2016-06-03T14:21:06">
+  <PeakList1D>
+    <PeakList1DHeader creator="Sebi" date="2016-06-03T14:19:51" expNo="102" name="4-(1-Hydroxyethyl)benzoic acid isopropylester" owner="" procNo="1" source="C:/Bruker/TopSpin3.2/data/Uebung/nmr">
+      <PeakPickDetails>F1=16.409571ppm, F2=-4.142446ppm, MI=0.36cm, MAXI=10000.00cm, PC=1.000
+      </PeakPickDetails>
+    </PeakList1DHeader>
+    <Peak1D F1="8.0228" intensity="2.85" type="0"/>
+    <Peak1D F1="8.0019" intensity="3.31" type="0"/>
+    <Peak1D F1="7.4416" intensity="3.12" type="0"/>
+    <Peak1D F1="7.4203" intensity="2.86" type="0"/>
+    <Peak1D F1="7.2597" intensity="5.12" type="0"/>
+    <Peak1D F1="5.2759" intensity="0.37" type="0"/>
+    <Peak1D F1="5.2603" intensity="0.96" type="0"/>
+    <Peak1D F1="5.2446" intensity="1.29" type="0"/>
+    <Peak1D F1="5.2290" intensity="0.97" type="0"/>
+    <Peak1D F1="5.2134" intensity="0.39" type="0"/>
+    <Peak1D F1="4.9765" intensity="0.37" type="0"/>
+    <Peak1D F1="4.9602" intensity="1.09" type="0"/>
+    <Peak1D F1="4.9440" intensity="1.10" type="0"/>
+    <Peak1D F1="4.9279" intensity="0.37" type="0"/>
+    <Peak1D F1="1.5834" intensity="0.74" type="0"/>
+    <Peak1D F1="1.5041" intensity="6.83" type="0"/>
+    <Peak1D F1="1.4880" intensity="7.00" type="0"/>
+    <Peak1D F1="1.3707" intensity="14.84" type="0"/>
+    <Peak1D F1="1.3551" intensity="15.00" type="0"/>
+  </PeakList1D>
+  <PeakList1D>
+    <PeakList1DHeader creator="Sebi@NMRofficeC6" date="2016-06-03T14:21:14" expNo="102" name="4-(1-Hydroxyethyl)benzoic acid isopropylester" owner="Sebi" procNo="1" source="C:/Bruker/TopSpin3.2/data/Uebung/nmr">
+      <PeakPickDetails>Manually picked peaks
+</PeakPickDetails>
+    </PeakList1DHeader>
+    <Peak1D F1="5.2915" intensity="0.05" type="1"/>
+    <Peak1D F1="5.1998" intensity="0.04" type="1"/>
+  </PeakList1D>
+</PeakList>

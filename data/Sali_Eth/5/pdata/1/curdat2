@@ -1,0 +1,33 @@
+##TITLE= Parameter file, TopSpin 3.6.2
+##JCAMPDX= 5.0
+##DATATYPE= Parameter Values
+##NPOINTS= 4	$$ modification sequence number
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= nmrsu
+$$ 2021-03-09 13:32:44.149 +0100  nmrsu@AVHD600
+$$ C:/NMR-Data/disk2/nmrsu/Sali_Eth_5/5/pdata/1/curdat2
+$$ process C:\Bruker\TopSpin3.6.2\prog\au\bin\proc_2dsym.exe
+##$CUREXP= <>
+##$DATPATH= <>
+##$DATPATH2= <C:/NMR-Data/disk2/nmrsu>
+##$DATPATH3= <C:/NMR-Data/disk2/nmrsu>
+##$DETAILS= <>
+##$DU= </u>
+##$DU2= <C:\NMR-Data\disk2>
+##$DU3= <>
+##$EXPNO= 1
+##$EXPNO2= 1
+##$EXPNO3= 1
+##$NAME= <>
+##$NAME2= <Sali_Eth_5>
+##$NAME3= <Sali_Eth_5>
+##$PROCNO= 1
+##$PROCNO2= 1
+##$PROCNO3= 1
+##$SCALE2= 1
+##$SCALE3= 1
+##$TYPE= <nmr>
+##$USER= <>
+##$USER2= <nmrsu>
+##$USER3= <>
+##END=

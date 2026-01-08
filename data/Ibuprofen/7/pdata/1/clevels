@@ -1,0 +1,28 @@
+##TITLE= Parameter file, TOPSPIN		Version 2.0
+##JCAMPDX= 5.0
+##DATATYPE= Parameter Values
+##NPOINTS= 8	$$ modification sequence number
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= cor3e0
+$$ 2008-10-06 16:36:47.529 +0200  cor3e0@LARMOR
+$$ D:/NMR/data/spek-vl/nmr/ibuprof/7/pdata/1/clevels
+$$ process C:\Bruker\TOPSPIN\prog\mod\dataserver.exe
+##$LEVELS= (0..255)
+-44633534.1009408 -24796407.833856 -13775782.12992 -7653212.2944 -4251784.608 
+-2362102.56 -1312279.2 -729044 729044 1312279.2 2362102.56 4251784.608 
+7653212.2944 13775782.12992 24796407.833856 44633534.1009408 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+##$LEVSIGN= 3
+##$MAXLEV= 8
+##$METHOD= 0
+##$NEGBASE= -729044
+##$NEGINCR= 1.8
+##$POSBASE= 729044
+##$POSINCR= 1.8
+##END=

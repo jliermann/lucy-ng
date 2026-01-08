@@ -1,0 +1,211 @@
+##TITLE= Audit trail, TopSpin 3.6.2
+##JCAMPDX= 5.01
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= nmrsu
+$$ C:/NMR-Data/disk2/nmrsu/HC003_I/1/pdata/1/auditp.txt
+##AUDIT TRAIL=  $$ (NUMBER, WHEN, WHO, WHERE, PROCESS, VERSION, WHAT)
+(   1,<2021-08-18 09:02:24.271 +0200>,<nmrsu>,<AVHD600>,<go4>,<TopSpin 3.6.2>,
+      <created by zg
+	started at 2021-08-18 09:01:07.283 +0200,
+	POWCHK enabled, PULCHK disabled,
+       configuration hash MD5:
+       4F D3 72 75 BA CD 2E BC B4 D6 8A D6 5F 90 AD A5
+       data hash MD5: 64K
+       D8 6C 46 BA E5 05 08 B5 BB E0 3C EE 1B 94 A5 41>)
+(   2,<2021-08-18 09:02:24.643 +0200>,<nmrsu>,<AVHD600>,<audit>,<TopSpin 3.6.2>,
+      <user comment:
+       ICON-NMR User ID: nmrsu
+       data hash MD5: 64K
+       D8 6C 46 BA E5 05 08 B5 BB E0 3C EE 1B 94 A5 41>)
+(   3,<2021-08-18 09:02:26.795 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TopSpin 3.6.2>,
+      <Start of raw data processing
+       ef LB = 0.3 FT_mod = 6 PKNL = 1 SI = 64K 
+       data hash MD5: 64K
+       15 60 C4 6A 86 90 14 BD F1 0B 0C A5 F5 A9 19 B6>)
+(   4,<2021-08-18 09:02:31.312 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TopSpin 3.6.2>,
+      <apk0 
+       data hash MD5: 64K
+       54 69 C5 57 9F 7B 95 47 DF CC 67 A4 19 49 F8 89>)
+(   5,<2021-08-18 09:02:31.929 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TopSpin 3.6.2>,
+      <abs ABSG = 5 
+       data hash MD5: 64K
+       17 9C 56 88 CC 50 7E CF F0 83 06 21 A3 54 FA 10>)
+(   6,<2021-08-18 09:04:45.964 +0200>,<nmrsu>,<AVHD600>,<dataserver>,<TopSpin 3.6.2>,
+      <INTEGRAL 2021-08-18 09:03:13.924 +0200
+       DELETE [8.533;8.013]
+       data hash MD5: 64K
+       17 9C 56 88 CC 50 7E CF F0 83 06 21 A3 54 FA 10>)
+(   7,<2021-08-18 09:04:45.987 +0200>,<nmrsu>,<AVHD600>,<dataserver>,<TopSpin 3.6.2>,
+      <INTEGRAL 2021-08-18 09:03:13.924 +0200
+       DELETE [8.013;7.498]
+       data hash MD5: 64K
+       17 9C 56 88 CC 50 7E CF F0 83 06 21 A3 54 FA 10>)
+(   8,<2021-08-18 09:04:46.004 +0200>,<nmrsu>,<AVHD600>,<dataserver>,<TopSpin 3.6.2>,
+      <INTEGRAL 2021-08-18 09:03:13.924 +0200
+       DELETE [7.498;7.132]
+       data hash MD5: 64K
+       17 9C 56 88 CC 50 7E CF F0 83 06 21 A3 54 FA 10>)
+(   9,<2021-08-18 09:04:46.021 +0200>,<nmrsu>,<AVHD600>,<dataserver>,<TopSpin 3.6.2>,
+      <INTEGRAL 2021-08-18 09:03:13.924 +0200
+       DELETE [5.997;5.074]
+       data hash MD5: 64K
+       17 9C 56 88 CC 50 7E CF F0 83 06 21 A3 54 FA 10>)
+(  10,<2021-08-18 09:04:46.037 +0200>,<nmrsu>,<AVHD600>,<dataserver>,<TopSpin 3.6.2>,
+      <INTEGRAL 2021-08-18 09:03:13.924 +0200
+       DELETE [2.215;1.313]
+       data hash MD5: 64K
+       17 9C 56 88 CC 50 7E CF F0 83 06 21 A3 54 FA 10>)
+(  11,<2021-08-18 09:04:46.051 +0200>,<nmrsu>,<AVHD600>,<dataserver>,<TopSpin 3.6.2>,
+      <INTEGRAL 2021-08-18 09:03:23.521 +0200
+       DEFINE [8.137;8.062]
+       data hash MD5: 64K
+       17 9C 56 88 CC 50 7E CF F0 83 06 21 A3 54 FA 10>)
+(  12,<2021-08-18 09:04:46.067 +0200>,<nmrsu>,<AVHD600>,<dataserver>,<TopSpin 3.6.2>,
+      <INTEGRAL 2021-08-18 09:03:27.560 +0200
+       DEFINE [8.054;8.023]
+       data hash MD5: 64K
+       17 9C 56 88 CC 50 7E CF F0 83 06 21 A3 54 FA 10>)
+(  13,<2021-08-18 09:04:46.081 +0200>,<nmrsu>,<AVHD600>,<dataserver>,<TopSpin 3.6.2>,
+      <INTEGRAL 2021-08-18 09:03:36.056 +0200
+       DEFINE [7.279;7.225]
+       data hash MD5: 64K
+       17 9C 56 88 CC 50 7E CF F0 83 06 21 A3 54 FA 10>)
+(  14,<2021-08-18 09:04:46.115 +0200>,<nmrsu>,<AVHD600>,<dataserver>,<TopSpin 3.6.2>,
+      <INTEGRAL 2021-08-18 09:03:46.168 +0200
+       DEFINE [7.729;7.653]
+       data hash MD5: 64K
+       17 9C 56 88 CC 50 7E CF F0 83 06 21 A3 54 FA 10>)
+(  15,<2021-08-18 09:04:46.132 +0200>,<nmrsu>,<AVHD600>,<dataserver>,<TopSpin 3.6.2>,
+      <INTEGRAL 2021-08-18 09:03:51.624 +0200
+       DEFINE [7.641;7.584]
+       data hash MD5: 64K
+       17 9C 56 88 CC 50 7E CF F0 83 06 21 A3 54 FA 10>)
+(  16,<2021-08-18 09:04:46.147 +0200>,<nmrsu>,<AVHD600>,<dataserver>,<TopSpin 3.6.2>,
+      <INTEGRAL 2021-08-18 09:03:55.504 +0200
+       DEFINE [7.553;7.501]
+       data hash MD5: 64K
+       17 9C 56 88 CC 50 7E CF F0 83 06 21 A3 54 FA 10>)
+(  17,<2021-08-18 09:04:46.162 +0200>,<nmrsu>,<AVHD600>,<dataserver>,<TopSpin 3.6.2>,
+      <INTEGRAL 2021-08-18 09:04:43.431 +0200
+       DEFINE [5.902;5.123]
+       data hash MD5: 64K
+       17 9C 56 88 CC 50 7E CF F0 83 06 21 A3 54 FA 10>)
+(  18,<2021-08-18 09:22:08.772 +0200>,<nmrsu>,<AVHD600>,<dataserver>,<TopSpin 3.6.2>,
+      <INTEGRAL 2021-08-18 09:15:00.326 +0200
+       DELETE [8.137;8.062]
+       data hash MD5: 64K
+       17 9C 56 88 CC 50 7E CF F0 83 06 21 A3 54 FA 10>)
+(  19,<2021-08-18 09:22:08.798 +0200>,<nmrsu>,<AVHD600>,<dataserver>,<TopSpin 3.6.2>,
+      <INTEGRAL 2021-08-18 09:15:00.326 +0200
+       DELETE [8.054;8.023]
+       data hash MD5: 64K
+       17 9C 56 88 CC 50 7E CF F0 83 06 21 A3 54 FA 10>)
+(  20,<2021-08-18 09:22:08.821 +0200>,<nmrsu>,<AVHD600>,<dataserver>,<TopSpin 3.6.2>,
+      <INTEGRAL 2021-08-18 09:15:00.326 +0200
+       DELETE [7.729;7.653]
+       data hash MD5: 64K
+       17 9C 56 88 CC 50 7E CF F0 83 06 21 A3 54 FA 10>)
+(  21,<2021-08-18 09:22:08.840 +0200>,<nmrsu>,<AVHD600>,<dataserver>,<TopSpin 3.6.2>,
+      <INTEGRAL 2021-08-18 09:15:00.326 +0200
+       DELETE [7.641;7.584]
+       data hash MD5: 64K
+       17 9C 56 88 CC 50 7E CF F0 83 06 21 A3 54 FA 10>)
+(  22,<2021-08-18 09:22:08.866 +0200>,<nmrsu>,<AVHD600>,<dataserver>,<TopSpin 3.6.2>,
+      <INTEGRAL 2021-08-18 09:15:00.326 +0200
+       DELETE [7.553;7.501]
+       data hash MD5: 64K
+       17 9C 56 88 CC 50 7E CF F0 83 06 21 A3 54 FA 10>)
+(  23,<2021-08-18 09:22:08.884 +0200>,<nmrsu>,<AVHD600>,<dataserver>,<TopSpin 3.6.2>,
+      <INTEGRAL 2021-08-18 09:15:00.326 +0200
+       DELETE [7.279;7.225]
+       data hash MD5: 64K
+       17 9C 56 88 CC 50 7E CF F0 83 06 21 A3 54 FA 10>)
+(  24,<2021-08-18 09:22:08.902 +0200>,<nmrsu>,<AVHD600>,<dataserver>,<TopSpin 3.6.2>,
+      <INTEGRAL 2021-08-18 09:15:00.326 +0200
+       DELETE [5.902;5.123]
+       data hash MD5: 64K
+       17 9C 56 88 CC 50 7E CF F0 83 06 21 A3 54 FA 10>)
+(  25,<2021-08-18 09:22:08.928 +0200>,<nmrsu>,<AVHD600>,<dataserver>,<TopSpin 3.6.2>,
+      <INTEGRAL 2021-08-18 09:15:07.615 +0200
+       DEFINE [7.929;7.878]
+       data hash MD5: 64K
+       17 9C 56 88 CC 50 7E CF F0 83 06 21 A3 54 FA 10>)
+(  26,<2021-08-18 09:22:08.946 +0200>,<nmrsu>,<AVHD600>,<dataserver>,<TopSpin 3.6.2>,
+      <INTEGRAL 2021-08-18 09:15:12.343 +0200
+       DEFINE [7.877;7.842]
+       data hash MD5: 64K
+       17 9C 56 88 CC 50 7E CF F0 83 06 21 A3 54 FA 10>)
+(  27,<2021-08-18 10:01:29.313 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TopSpin 3.6.2>,
+      <abs ABSG = 5 
+       data hash MD5: 64K
+       2B A6 D3 FC 9E FC 66 C1 13 6B 7B E0 8F 16 3F 91>)
+(  28,<2021-08-18 10:01:56.089 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TopSpin 3.6.2>,
+      <abs ABSG = 5 
+       data hash MD5: 64K
+       4A 28 C2 7B 3D 35 E6 81 F2 96 59 29 C7 61 BB 74>)
+(  29,<2021-08-18 10:02:05.181 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TopSpin 3.6.2>,
+      <abs ABSG = 5 
+       data hash MD5: 64K
+       A8 D2 C9 9C C4 05 F3 52 13 80 BB E4 D1 90 CB B0>)
+(  30,<2021-08-18 10:02:13.391 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TopSpin 3.6.2>,
+      <abs ABSG = 5 
+       data hash MD5: 64K
+       4C DE 27 97 EF BD E9 66 AC B8 27 3B 3C 78 0C 22>)
+(  31,<2021-08-18 10:02:26.018 +0200>,<nmrsu>,<AVHD600>,<proc1d>,<TopSpin 3.6.2>,
+      <abs ABSG = 5 
+       data hash MD5: 64K
+       33 0E A1 04 A0 3B BB 80 F2 C5 FD 02 11 9E 75 E6>)
+(  32,<2021-08-18 10:03:18.951 +0200>,<nmrsu>,<AVHD600>,<dataserver>,<TopSpin 3.6.2>,
+      <INTEGRAL 2021-08-18 10:02:40.471 +0200
+       DELETE [8.327;7.828]
+       data hash MD5: 64K
+       33 0E A1 04 A0 3B BB 80 F2 C5 FD 02 11 9E 75 E6>)
+(  33,<2021-08-18 10:03:18.972 +0200>,<nmrsu>,<AVHD600>,<dataserver>,<TopSpin 3.6.2>,
+      <INTEGRAL 2021-08-18 10:02:40.471 +0200
+       DELETE [7.827;7.312]
+       data hash MD5: 64K
+       33 0E A1 04 A0 3B BB 80 F2 C5 FD 02 11 9E 75 E6>)
+(  34,<2021-08-18 10:03:18.994 +0200>,<nmrsu>,<AVHD600>,<dataserver>,<TopSpin 3.6.2>,
+      <INTEGRAL 2021-08-18 10:02:40.471 +0200
+       DELETE [7.312;6.947]
+       data hash MD5: 64K
+       33 0E A1 04 A0 3B BB 80 F2 C5 FD 02 11 9E 75 E6>)
+(  35,<2021-08-18 10:03:19.012 +0200>,<nmrsu>,<AVHD600>,<dataserver>,<TopSpin 3.6.2>,
+      <INTEGRAL 2021-08-18 10:02:40.471 +0200
+       DELETE [5.811;4.888]
+       data hash MD5: 64K
+       33 0E A1 04 A0 3B BB 80 F2 C5 FD 02 11 9E 75 E6>)
+(  36,<2021-08-18 10:03:19.030 +0200>,<nmrsu>,<AVHD600>,<dataserver>,<TopSpin 3.6.2>,
+      <INTEGRAL 2021-08-18 10:02:47.430 +0200
+       DEFINE [7.943;7.870]
+       data hash MD5: 64K
+       33 0E A1 04 A0 3B BB 80 F2 C5 FD 02 11 9E 75 E6>)
+(  37,<2021-08-18 10:03:19.049 +0200>,<nmrsu>,<AVHD600>,<dataserver>,<TopSpin 3.6.2>,
+      <INTEGRAL 2021-08-18 10:02:52.390 +0200
+       DEFINE [7.551;7.385]
+       data hash MD5: 64K
+       33 0E A1 04 A0 3B BB 80 F2 C5 FD 02 11 9E 75 E6>)
+(  38,<2021-08-18 10:03:19.069 +0200>,<nmrsu>,<AVHD600>,<dataserver>,<TopSpin 3.6.2>,
+      <INTEGRAL 2021-08-18 10:02:57.566 +0200
+       DEFINE [7.378;7.317]
+       data hash MD5: 64K
+       33 0E A1 04 A0 3B BB 80 F2 C5 FD 02 11 9E 75 E6>)
+(  39,<2021-08-18 10:03:19.093 +0200>,<nmrsu>,<AVHD600>,<dataserver>,<TopSpin 3.6.2>,
+      <INTEGRAL 2021-08-18 10:03:00.158 +0200
+       DEFINE [7.103;7.016]
+       data hash MD5: 64K
+       33 0E A1 04 A0 3B BB 80 F2 C5 FD 02 11 9E 75 E6>)
+(  40,<2021-08-18 10:03:19.117 +0200>,<nmrsu>,<AVHD600>,<dataserver>,<TopSpin 3.6.2>,
+      <INTEGRAL 2021-08-18 10:03:13.026 +0200
+       DEFINE [6.831;6.300]
+       data hash MD5: 64K
+       33 0E A1 04 A0 3B BB 80 F2 C5 FD 02 11 9E 75 E6>)
+(  41,<2021-08-18 10:03:19.141 +0200>,<nmrsu>,<AVHD600>,<dataserver>,<TopSpin 3.6.2>,
+      <INTEGRAL 2021-08-18 10:03:17.510 +0200
+       DEFINE [8.605;8.140]
+       data hash MD5: 64K
+       33 0E A1 04 A0 3B BB 80 F2 C5 FD 02 11 9E 75 E6>)
+##END=
+
+$$ hash MD5
+$$ 48 65 45 26 4D 2C DC 57 A5 30 41 28 86 99 E9 80

@@ -1,0 +1,35 @@
+NAME           las_S013                
+EXPNO                 3                
+PROCNO                1                
+Date_          20160412                
+Time              22.58                
+INSTRUM           Spect                
+PROBHD   5 mm DUL 13C-1                
+PULPROG            zg30                
+TD                65536                
+SOLVENT           CDCl3                
+NS                   16                
+DS                    2                
+SWH            8223.685 Hz             
+FIDRES         0.125483 Hz             
+AQ            3.9846387 sec            
+RG                  322                
+DW               60.800 usec           
+DE                 6.50 usec           
+TE                294.7 K              
+D1           1.00000000 sec            
+TD0                   1                
+
+======== CHANNEL f1 ========
+NUC1                 1H                
+P1                11.50 usec           
+PL1               -3.00 dB             
+PL1W        17.54155350 W              
+SFO1        400.1424710 MHz            
+SI                32768                
+SF          400.1400000 MHz            
+WDW                  EM                
+SSB                   0                
+LB                 0.00 Hz             
+GB                    0                
+PC                 1.00                

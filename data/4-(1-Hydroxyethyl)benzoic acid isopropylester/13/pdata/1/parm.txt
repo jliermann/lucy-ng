@@ -1,0 +1,53 @@
+NAME        las_S013_II                
+EXPNO                 3                
+PROCNO                1                
+Date_          20160426                
+Time              21.32                
+INSTRUM           Spect                
+PROBHD   5 mm DUL 13C-1                
+PULPROG            dept                
+TD                65536                
+SOLVENT           CDCl3                
+NS                  512                
+DS                    4                
+SWH           25510.203 Hz             
+FIDRES         0.389255 Hz             
+AQ            1.2845556 sec            
+RG                 2050                
+DW               19.600 usec           
+DE                10.00 usec           
+TE                294.6 K              
+CNST2       145.0000000                
+CNST12        1.5000000                
+D1           2.20000005 sec            
+D2           0.00344828 sec            
+D12          0.00002000 sec            
+TD0                   1                
+
+======== CHANNEL f1 ========
+NUC1                13C                
+P1                 7.20 usec           
+P2                14.40 usec           
+PL1               -2.00 dB             
+PL1W        56.53121948 W              
+SFO1        100.6276084 MHz            
+
+======== CHANNEL f2 ========
+CPDPRG2         waltz16                
+NUC2                 1H                
+P0                16.50 usec           
+P3                11.00 usec           
+P4                22.00 usec           
+PCPD2             90.00 usec           
+PL2               -3.00 dB             
+PL12              15.26 dB             
+PL2W        17.54155350 W              
+PL12W        0.26185930 W              
+SFO2        400.1416006 MHz            
+SI                32768                
+SF          100.6152830 MHz            
+WDW                  EM                
+SSB                   0                
+LB                 1.00 Hz             
+GB                    0                
+PC                 1.40                

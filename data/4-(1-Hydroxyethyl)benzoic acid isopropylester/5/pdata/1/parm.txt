@@ -1,0 +1,107 @@
+
+Current Data Parameters
+NAME     4-(1-Hydroxyethyl)benzoic acid isopropylester              
+EXPNO                 5              
+PROCNO                1              
+
+F2 - Acquisition Parameters
+Date_          20160413              
+Time               0.08              
+INSTRUM           Spect              
+PROBHD   5 mm DUL 13C-1              
+PULPROG  hsqcedetgpsisp2.3              
+TD                 2048              
+SOLVENT           CDCl3              
+NS                    4              
+DS                   16              
+SWH            3105.590 Hz           
+FIDRES         1.516401 Hz           
+AQ            0.3297280 sec          
+RG                 2050              
+DW              161.000 usec         
+DE                 6.50 usec         
+TE                294.6 K            
+CNST2       145.0000000              
+CNST17       -0.5000000              
+D0           0.00000300 sec          
+D1           1.86729002 sec          
+D4           0.00172414 sec          
+D11          0.03000000 sec          
+D16          0.00020000 sec          
+D21          0.00344830 sec          
+D24          0.00086210 sec          
+IN0          0.00002840 sec          
+
+======== CHANNEL f1 ========
+NUC1                 1H              
+P1                11.50 usec         
+P2                23.00 usec         
+P28             1000.00 usec         
+PL1               -3.00 dB           
+PL1W        17.54155350 W            
+SFO1        400.1418766 MHz          
+
+======== CHANNEL f2 ========
+CPDPRG[2           garp              
+NUC2                13C              
+P3                 7.20 usec         
+P14              500.00 usec         
+P24             2000.00 usec         
+P31             2118.00 usec         
+PCPD2             70.00 usec         
+PL0              120.00 dB           
+PL2               -2.00 dB           
+PL12              17.76 dB           
+PL0W     0 W            
+PL2W        56.53121948 W            
+PL12W        0.59743178 W            
+SFO2        100.6235838 MHz          
+SP3                9.01 dB           
+SP7                9.01 dB           
+SP18              16.16 dB           
+SPNAM[3] Crp60,0.5,20.1              
+SPNAM[7]    Crp60comp.4              
+SPNAM[18  Crp60_xfilt.2              
+SPOAL3            0.500              
+SPOAL7            0.500              
+SPOAL18           0.500              
+SPOFFS3  0 Hz           
+SPOFFS7  0 Hz           
+SPOFFS18 0 Hz           
+
+====== GRADIENT CHANNEL =====
+GPNAM[1]       SINE.100              
+GPNAM[2]       SINE.100              
+GPNAM[3]       SINE.100              
+GPNAM[4]       SINE.100              
+GPZ1              80.00 %            
+GPZ2              20.10 %            
+GPZ3              11.00 %            
+GPZ4              -5.00 %            
+P16             1000.00 usec         
+P19              600.00 usec         
+
+F1 - Acquisition parameters
+TD                  128              
+SFO1           100.6236 MHz          
+FIDRES       275.142609 Hz           
+SW              175.000 ppm          
+FnMODE    Echo-Antiecho              
+
+F2 - Processing parameters
+SI                 2048              
+SF          400.1400167 MHz          
+WDW               QSINE              
+SSB                   2              
+LB       0 Hz           
+GB       0              
+PC                 1.40              
+
+F1 - Processing parameters
+SI                 1024              
+MC2       echo-antiecho              
+SF          100.6152717 MHz          
+WDW               QSINE              
+SSB                   2              
+LB       0 Hz           
+GB       0              

@@ -1,0 +1,22 @@
+##TITLE= Parameter file, TOPSPIN		Version 3.2
+##JCAMPDX= 5.0
+##DATATYPE= Parameter Values
+##NPOINTS= 257	$$ modification sequence number
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= nmrsu
+$$ 2015-07-09 14:01:59.206 +0200  nmrsu@AVHD600
+$$ C:/NMR-Data/disk2/nmrsu/MC047_9/7/acqu2s
+$$ process C:\Bruker\TopSpin3.2.3\prog\mod\go.exe
+##$ACQT0= 0
+##$BF1= 150.902809
+##$FnMODE= 6
+##$NUC1= <13C>
+##$NusJSP= 0
+##$NusT2= 1
+##$NusTD= 256
+##$O1= 15064.3569281783
+##$SFO1= 150.917873356928
+##$SW= 222.353033696027
+##$SW_h= 33557.0469798658
+##$TD= 256
+##END=

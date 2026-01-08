@@ -1,0 +1,30 @@
+##TITLE= Parameter file, TopSpin 3.5 pl 7
+##JCAMPDX= 5.0
+##DATATYPE= Parameter Values
+##NPOINTS= 5	$$ modification sequence number
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= nmr
+$$ 2021-03-02 15:48:39.263 +0100  WIN\sebastian_kemper@rdanalytik
+$$ W:/NMR/data/Uebung/nmr/4-(1-Hydroxyethyl)benzoic acid isopropylester/8/pdata/1/curdat2
+$$ process C:\Program Files (x86)\bruker\TopSpin 3.5PL7\prog\mod\dataserver.exe
+##$CUREXP= <>
+##$DATPATH2= <W:/NMR/data/Uebung/nmr>
+##$DATPATH3= <W:/NMR/data/Uebung/nmr>
+##$DETAILS= <>
+##$DU= </u>
+##$DU2= <>
+##$DU3= <>
+##$EXPNO= 1
+##$EXPNO2= 1
+##$EXPNO3= 1
+##$NAME= <>
+##$NAME2= <4-(1-Hydroxyethyl)benzoic acid isopropylester>
+##$NAME3= <4-(1-Hydroxyethyl)benzoic acid isopropylester>
+##$PROCNO= 1
+##$PROCNO2= 1
+##$PROCNO3= 1
+##$TYPE= <>
+##$USER= <>
+##$USER2= <>
+##$USER3= <>
+##END=

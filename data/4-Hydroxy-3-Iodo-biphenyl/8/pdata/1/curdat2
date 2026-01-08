@@ -1,0 +1,33 @@
+##TITLE= Parameter file, TopSpin 4.1.0
+##JCAMPDX= 5.0
+##DATATYPE= Parameter Values
+##NPOINTS= 6	$$ modification sequence number
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= nmrsu
+$$ 2022-01-10 16:28:58.402 +0100  torsten@Lamor
+$$ Z:/Torsten/NMR/data/spek-vl/nmr/OHI-Biphenyl/8/pdata/1/curdat2
+$$ process C:\Bruker\TopSpin4.1.0\prog\mod\dataserver.exe
+##$CUREXP= <>
+##$DATPATH= <>
+##$DATPATH2= <Z:/Torsten/NMR/data/spek-vl/nmr>
+##$DATPATH3= <Z:/Torsten/NMR/data/spek-vl/nmr>
+##$DETAILS= <>
+##$DU= </u>
+##$DU2= <>
+##$DU3= <>
+##$EXPNO= 1
+##$EXPNO2= 1
+##$EXPNO3= 1
+##$NAME= <>
+##$NAME2= <OHI-Biphenyl>
+##$NAME3= <OHI-Biphenyl>
+##$PROCNO= 1
+##$PROCNO2= 1
+##$PROCNO3= 1
+##$SCALE2= 1
+##$SCALE3= 1
+##$TYPE= <>
+##$USER= <>
+##$USER2= <>
+##$USER3= <>
+##END=

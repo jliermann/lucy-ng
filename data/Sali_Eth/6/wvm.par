@@ -1,0 +1,27 @@
+## Wavemaker parameter file. 
+## PULPROG: noah2_SB 
+
+wu180Jcomp:f2 
+  cawurst-40(280 ppm; Jcomp, L2H)
+  nuc = 13C 
+  p90 =   9.800 us
+  pl =   60.000000 W
+  BF =  150.9028090 MHz
+  ofs =  87.689758 ppm 
+
+wu180C13:f2 
+  cawurst-20(60 kHz, 0.5 ms; L2H)
+  nuc = 13C 
+  p90 =   9.800 us
+  pl =   60.000000 W
+  BF =  150.9028090 MHz
+  ofs =  87.689758 ppm 
+
+wudec:f2 
+  cawurst_d-20(220 ppm, 1.4 ms; L2H)
+  nuc = 13C 
+  p90 =   9.800 us
+  pl =   60.000000 W
+  BF =  150.9028090 MHz
+  ofs =  87.689758 ppm 
+

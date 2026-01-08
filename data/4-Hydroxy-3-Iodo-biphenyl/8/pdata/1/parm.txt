@@ -1,0 +1,66 @@
+
+Current Data Parameters
+NAME            HC003_I              
+EXPNO                 8              
+PROCNO                1              
+
+F2 - Acquisition Parameters
+Date_          20210818              
+Time              12.27 h            
+INSTRUM           spect              
+PROBHD   Z130037_0004 (              
+PULPROG     noesygpphpp              
+TD                 2048              
+SOLVENT           CDCl3              
+NS                    2              
+DS                    8              
+SWH            2500.000 Hz           
+FIDRES         2.441406 Hz           
+AQ            0.4096000 sec          
+RG                   57              
+DW              200.000 usec         
+DE                30.27 usec         
+TE                298.0 K            
+D0           0.00018504 sec          
+D1           1.76079297 sec          
+D8           0.60000002 sec          
+D11          0.03000000 sec          
+D12          0.00002000 sec          
+D16          0.00020000 sec          
+IN0          0.00040000 sec          
+TDav                  1              
+SFO1        600.1339989 MHz          
+NUC1                 1H              
+P1                11.75 usec         
+P2                23.50 usec         
+P17             2500.00 usec         
+PLW1        23.00000000 W            
+PLW10        5.08069992 W            
+GPNAM[1]     SMSQ10.100              
+GPZ1              40.00 %            
+P16             1000.00 usec         
+
+F1 - Acquisition parameters
+TD                  256              
+SFO1            600.134 MHz          
+FIDRES        19.531250 Hz           
+SW                4.166 ppm          
+FnMODE      States-TPPI              
+
+F2 - Processing parameters
+SI                 1024              
+SF          600.1299160 MHz          
+WDW               QSINE              
+SSB                   2              
+LB                    0 Hz           
+GB                    0              
+PC                 1.00              
+
+F1 - Processing parameters
+SI                 1024              
+MC2         States-TPPI              
+SF          600.1299160 MHz          
+WDW               QSINE              
+SSB                   2              
+LB                    0 Hz           
+GB                    0              

@@ -1,0 +1,23 @@
+##TITLE= Audit trail, TOPSPIN		Version 2.1
+##JCAMPDX= 5.01
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= nmr
+$$ D:\Topspin/data/las/nmr/las_S013/6/audita.txt
+##AUDIT TRAIL=  $$ (NUMBER, WHEN, WHO, WHERE, PROCESS, VERSION, WHAT)
+(   1,<2016-04-13 00:54:07.791 +0200>,<nmr>,<DRX400>,<go>,<TOPSPIN 2.1>,
+      <created by zg
+	started at 2016-04-13 00:28:54.728 +0200,
+	POWCHK disabled, PULCHK disabled,
+       configuration hash MD5:
+       CA 82 C1 9E 0A F3 E2 00 06 E0 A4 4E 3A 24 FA E9
+       data hash MD5: 2K * 128
+       EB 05 6C 9F 45 D6 24 28 E3 7F B2 8B AA 50 3A B4>)
+(   2,<2016-04-13 00:54:22.291 +0200>,<nmr>,<DRX400>,<audit>,<TOPSPIN 2.1>,
+      <user comment:
+       ICON-NMR User ID: las
+       data hash MD5: 2K * 128
+       EB 05 6C 9F 45 D6 24 28 E3 7F B2 8B AA 50 3A B4>)
+##END=
+
+$$ hash MD5
+$$ 37 D9 54 56 A4 24 16 59 D0 7A 4B E2 B4 F4 02 9D

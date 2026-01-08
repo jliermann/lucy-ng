@@ -1,0 +1,18 @@
+##TITLE= Parameter file, TOPSPIN		Version 3.2
+##JCAMPDX= 5.0
+##DATATYPE= Parameter Values
+##NPOINTS= 2	$$ modification sequence number
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= nmrsu
+$$ 2015-07-09 13:20:43.389 +0200  nmrsu@AVHD600
+$$ C:/NMR-Data/disk2/nmrsu/MC047_9/6/pdata/1000/curdat2
+$$ process C:\Bruker\TopSpin3.2.3\prog\au\bin\proc_2dinv.exe
+##$DATPATH2= <C:/NMR-Data/disk2/nmrsu>
+##$DATPATH3= <C:/NMR-Data/disk2/nmrsu>
+##$EXPNO2= 6
+##$EXPNO3= 6
+##$NAME2= <MC047_9>
+##$NAME3= <MC047_9>
+##$PROCNO2= 1000
+##$PROCNO3= 1001
+##END=

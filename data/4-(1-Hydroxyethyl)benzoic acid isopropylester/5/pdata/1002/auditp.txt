@@ -1,0 +1,15 @@
+##TITLE= Audit trail, TOPSPIN		Version 2.1
+##JCAMPDX= 5.01
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= nmr
+$$ D:\Topspin/data/las/nmr/las_S013/5/pdata/1002/auditp.txt
+##AUDIT TRAIL=  $$ (NUMBER, WHEN, WHO, WHERE, PROCESS, VERSION, WHAT)
+(   1,<2016-04-13 00:28:20.994 +0200>,<nmr>,<DRX400>,<mvrow>,<TOPSPIN 2.1>,
+      <rsr 986 from
+       1 5 "las_S013" "las" "D:\Topspin"
+       data hash MD5: 2K
+       FD 7C A3 8C 87 AC 71 DB E9 5F E0 13 5A 5F 27 3C>)
+##END=
+
+$$ hash MD5
+$$ B0 67 F8 46 13 2B D3 5C 98 C5 21 CB 21 DE 22 94

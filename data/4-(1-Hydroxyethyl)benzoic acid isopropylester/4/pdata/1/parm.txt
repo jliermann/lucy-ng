@@ -1,0 +1,71 @@
+NAME           las_S013                
+EXPNO                 4                
+PROCNO                1                
+Date_          20160412                
+Time              23.00                
+INSTRUM           Spect                
+PROBHD   5 mm DUL 13C-1                
+PULPROG    hmbcgplpndqf                
+TD                 4096                
+SOLVENT           CDCl3                
+NS                    8                
+DS                   16                
+SWH            3105.590 Hz             
+FIDRES         0.758201 Hz             
+AQ            0.6595060 sec            
+RG                 2050                
+DW              161.000 usec           
+DE                 6.50 usec           
+TE                294.6 K              
+CNST2       145.0000000                
+CNST13       10.0000000                
+D0           0.00000300 sec            
+D1           1.23457897 sec            
+D2           0.00344828 sec            
+D6           0.05000000 sec            
+D16          0.00020000 sec            
+IN0          0.00001990 sec            
+
+======== CHANNEL f1 ========
+NUC1                 1H                
+P1                11.50 usec           
+P2                23.00 usec           
+PL1               -3.00 dB             
+PL1W        17.54155350 W              
+SFO1        400.1418766 MHz            
+
+======== CHANNEL f2 ========
+NUC2                13C                
+P3                 7.20 usec           
+PL2               -2.00 dB             
+PL2W        56.53121948 W              
+SFO2        100.6273568 MHz            
+
+====== GRADIENT CHANNEL =====
+GPNAM1         SINE.100                
+GPNAM2         SINE.100                
+GPNAM3         SINE.100                
+GPZ1              50.00 %              
+GPZ2              30.00 %              
+GPZ3              40.10 %              
+P16             1000.00 usec           
+ND0                   2                
+TD                  256                
+SFO1           100.6274 MHz            
+FIDRES        98.268906 Hz             
+SW              250.000 ppm            
+FnMODE               QF                
+SI                 2048                
+SF          400.1400000 MHz            
+WDW                SINE                
+SSB                   0                
+LB                 0.00 Hz             
+GB                    0                
+PC                 1.40                
+SI                 1024                
+MC2                  QF                
+SF          100.6152830 MHz            
+WDW                SINE                
+SSB                   0                
+LB                 0.00 Hz             
+GB                    0                

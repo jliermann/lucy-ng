@@ -1,0 +1,19 @@
+##TITLE= Parameter file, XWIN-NMR		Version 3.0
+##JCAMPDX= 5.0
+##DATATYPE= Parameter Values
+##ORIGIN= Bruker Analytik GmbH
+##OWNER= bandmann
+$$ Mon Feb 17 12:58:54 2003 MEZ (UT+1h)  bandmann@drx500
+$$ /disk2/data/schaller/nmr/ibuprof/4/pdata/1/curdat2
+##$DU2= </disk2>
+##$DU3= </disk2>
+##$EXPNO2= 2
+##$EXPNO3= 4
+##$NAME2= <ibuprof>
+##$NAME3= <ibuprof>
+##$PROCNO2= 1
+##$PROCNO3= 2
+##$TYPE= <nmr>
+##$USER2= <schaller>
+##$USER3= <schaller>
+##END=
