@@ -83,8 +83,8 @@
 
 | Phase | Status | Plans |
 |-------|--------|-------|
-| 1. Foundation | Planning | 01-01-PLAN.md |
-| 2. 1D NMR Reading | Not Started | — |
+| 1. Foundation | Complete | 01-01-PLAN.md, 01-01-SUMMARY.md |
+| 2. 1D NMR Reading | Complete | 01-02-PLAN.md, 01-02-SUMMARY.md |
 | 3. 2D NMR Reading | Not Started | — |
 | 4. Peak Picking | Not Started | — |
 | 5. LSD Integration | Not Started | — |

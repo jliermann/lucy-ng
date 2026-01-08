@@ -3,13 +3,16 @@
 ## Current Position
 
 **Milestone**: 1.0 — Core CASE Pipeline
-**Phase**: 1 (Foundation)
-**Status**: Not Started
+**Phase**: 2 (1D NMR Reading) — Complete
+**Status**: Ready for Phase 3
 
 ## Recent Progress
 
-- Project initialized with PROJECT.md
-- Roadmap created with 7 phases
+- Phase 2 1D NMR Reading complete (3 commits)
+- BrukerReader class implemented with read_1d() method
+- Parameter extraction with edge case handling
+- 14 tests written using real Ibuprofen data
+- Module exports configured
 
 ## Key Decisions
 
@@ -18,7 +21,10 @@
 | Hybrid CLI + MCP interface | 2026-01-08 | MCP for agent iteration, CLI for testing |
 | Bruker-only for v1 | 2026-01-08 | Focus on most common format |
 | LSD/pyLSD as primary solvers | 2026-01-08 | Established CASE tools with CLI |
-| Research-first for NMR parsing | 2026-01-08 | Evaluate options before committing |
+| nmrglue for NMR parsing | 2026-01-08 | Most mature, BSD licensed, native Bruker support |
+| Pydantic v2 for models | 2026-01-08 | Type safety, validation, JSON serialization |
+| hatch build system | 2026-01-08 | Modern Python packaging |
+| Use processed data | 2026-01-08 | Read from pdata/1/ not raw FID |
 
 ## Open Questions
 
@@ -30,7 +36,9 @@
 
 ## Session Continuity
 
-*No active sessions*
+**Last session**: 2026-01-08
+**Completed**: Phase 2 1D NMR Reading (01-02-PLAN.md executed)
+**Next**: Phase 3 2D NMR Reading
 
 ---
 *Last updated: 2026-01-08*
