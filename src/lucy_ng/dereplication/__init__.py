@@ -1,4 +1,4 @@
-"""Dereplication module for matching compounds against nmrshiftdb."""
+"""Dereplication module for matching compounds against reference databases."""
 
 from lucy_ng.dereplication.matcher import (
     MatchingConfig,
@@ -19,6 +19,10 @@ from lucy_ng.dereplication.service import (
     DereplicationService,
     create_observed_peaks_with_dept,
 )
+from lucy_ng.dereplication.sherlock import (
+    SherlockEntry,
+    SherlockLoader,
+)
 
 __all__ = [
     # nmrshiftdb
@@ -26,6 +30,9 @@ __all__ = [
     "CarbonSignal",
     "NMRShiftDBEntry",
     "NMRShiftDBLoader",
+    # sherlock
+    "SherlockEntry",
+    "SherlockLoader",
     # matcher
     "MatchMode",
     "MatchingConfig",
