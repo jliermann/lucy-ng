@@ -71,8 +71,9 @@ class BrukerReader:
         num_scans = _get_param(dic, "NS")
         temperature = _get_param(dic, "TE")
 
-        # Generate ppm scale
-        uc = ng.bruker.make_uc(dic, data)
+        # Generate ppm scale using universal dictionary
+        udic = ng.bruker.guess_udic(dic, data)
+        uc = ng.fileiobase.uc_from_udic(udic, dim=0)
         ppm_scale = uc.ppm_scale()
 
         # Build metadata

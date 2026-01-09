@@ -265,19 +265,20 @@ class SpectrumMatcher:
         coverage = matched_peaks / observed_peaks
 
         # How much of the reference did we match?
-        # Adjusted by overlap expectation
+        # Adjusted by overlap expectation, capped at 1.0
         adjusted_reference = reference_peaks * overlap_factor
-        reference_coverage = (
+        reference_coverage = min(
+            1.0,
             matched_peaks / adjusted_reference if adjusted_reference > 0 else 0.0
         )
 
-        # Base score: geometric mean of coverages
+        # Base score: geometric mean of coverages (both are now <= 1.0)
         base_score = (coverage * reference_coverage) ** 0.5
 
-        # DEPT bonus: if multiplicities also match, boost score
+        # DEPT: penalize mismatches (shifts match but DEPT doesn't)
         if dept_matches is not None and matched_peaks > 0:
             dept_ratio = dept_matches / matched_peaks
-            # Up to 20% boost for perfect DEPT matching
+            # Penalize up to 20% for DEPT mismatches
             base_score *= 0.8 + 0.2 * dept_ratio
 
-        return min(1.0, base_score)  # Cap at 1.0
+        return base_score

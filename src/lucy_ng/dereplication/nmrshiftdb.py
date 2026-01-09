@@ -216,8 +216,9 @@ class NMRShiftDBLoader:
         Returns:
             Number of carbons in the formula
         """
-        # Match C followed by optional number
-        match = re.search(r"C(\d*)", formula)
+        # Match C followed by optional number, but not Cl, Ca, Co, Cr, Cu, Cs, Ce, etc.
+        # Use negative lookahead to exclude other elements starting with C
+        match = re.search(r"C(?![laroudsefgmnptb])(\d*)", formula)
         if not match:
             return 0
 

@@ -168,8 +168,7 @@ class TestSimplePeakPicker:
         """Test picking peaks from Ibuprofen 13C spectrum."""
         from lucy_ng.readers import BrukerReader
 
-        reader = BrukerReader(IBUPROFEN_DIR / "2")
-        spectrum = reader.read_1d()
+        spectrum = BrukerReader.read_1d(IBUPROFEN_DIR / "2")
 
         peaks = SimplePeakPicker.pick_peaks(spectrum, threshold=0.05)
 
@@ -482,8 +481,7 @@ class TestIntegration:
         loader.load()
 
         # Load Ibuprofen spectrum
-        reader = BrukerReader(IBUPROFEN_DIR / "2")
-        spectrum = reader.read_1d()
+        spectrum = BrukerReader.read_1d(IBUPROFEN_DIR / "2")
 
         # Pick peaks
         peaks = SimplePeakPicker.pick_peaks(spectrum, threshold=0.05)
@@ -509,8 +507,7 @@ class TestIntegration:
         loader = NMRShiftDBLoader(SD_FILE)
         loader.load()
 
-        reader = BrukerReader(IBUPROFEN_DIR / "2")
-        spectrum = reader.read_1d()
+        spectrum = BrukerReader.read_1d(IBUPROFEN_DIR / "2")
 
         service = DereplicationService(loader)
         result = service.dereplicate_from_spectrum(

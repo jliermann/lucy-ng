@@ -68,11 +68,14 @@ class TestNmrglueBrukerAPI:
             dic['acqus']['SFO1']  # Spectrometer frequency
             dic['acqus']['NUC1']  # Nucleus
 
-        PPM scale calculation:
-            uc = nmrglue.bruker.make_uc(dic, data)
+        PPM scale calculation (nmrglue >= 0.10):
+            udic = nmrglue.bruker.guess_udic(dic, data)
+            uc = nmrglue.fileiobase.uc_from_udic(udic, dim=0)
             ppm_scale = uc.ppm_scale()
         """
-        from nmrglue import bruker
+        from nmrglue import bruker, fileiobase
 
-        # Verify make_uc exists for unit conversion
-        assert hasattr(bruker, "make_uc")
+        # Verify guess_udic exists for universal dictionary generation
+        assert hasattr(bruker, "guess_udic")
+        # Verify uc_from_udic exists for unit conversion
+        assert hasattr(fileiobase, "uc_from_udic")
