@@ -198,6 +198,7 @@ class TestSpectrumMatcher:
         ]
         return NMRShiftDBEntry(
             nmrshiftdb_id=1,
+            name="Test Compound",
             molecular_formula="C10H12O2",
             carbon_count=10,
             inchi="",
@@ -320,6 +321,7 @@ class TestDereplicationService:
                 self._entries = [
                     NMRShiftDBEntry(
                         nmrshiftdb_id=1,
+                        name="Mock Compound 1",
                         molecular_formula="C10H12O2",
                         carbon_count=10,
                         inchi="",
@@ -332,6 +334,7 @@ class TestDereplicationService:
                     ),
                     NMRShiftDBEntry(
                         nmrshiftdb_id=2,
+                        name="Mock Compound 2",
                         molecular_formula="C10H12O2",
                         carbon_count=10,
                         inchi="",

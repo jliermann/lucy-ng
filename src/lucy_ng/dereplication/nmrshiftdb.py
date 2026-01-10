@@ -42,6 +42,7 @@ class NMRShiftDBEntry:
     """A compound entry from nmrshiftdb with 13C spectrum."""
 
     nmrshiftdb_id: int
+    name: str
     molecular_formula: str
     carbon_count: int
     inchi: str
@@ -97,18 +98,25 @@ class NMRShiftDBLoader:
             if not signals:
                 continue
 
-            # Get molecular formula
-            mol_formula = rdMolDescriptors.CalcMolFormula(mol)
+            # Get molecule name (from SD file header)
+            name = mol.GetProp("_Name") if mol.HasProp("_Name") else ""
 
             # Get InChI info
-            inchi = mol.GetProp("INCHI") if mol.HasProp("INCHI") else ""
-            inchi_key = mol.GetProp("INCHI_KEY") if mol.HasProp("INCHI_KEY") else ""
+            inchi = mol.GetProp("INChI") if mol.HasProp("INChI") else ""
+            inchi_key = mol.GetProp("INChI key") if mol.HasProp("INChI key") else ""
+
+            # Get molecular formula from InChI (more reliable than CalcMolFormula)
+            mol_formula = self._extract_formula_from_inchi(inchi)
+            if not mol_formula:
+                # Fallback to RDKit calculation (may be missing hydrogens)
+                mol_formula = rdMolDescriptors.CalcMolFormula(mol)
 
             # Count carbons from formula
             carbon_count = self.count_carbons(mol_formula)
 
             entry = NMRShiftDBEntry(
                 nmrshiftdb_id=entry_id,
+                name=name,
                 molecular_formula=mol_formula,
                 carbon_count=carbon_count,
                 inchi=inchi,
@@ -226,6 +234,36 @@ class NMRShiftDBLoader:
         if count_str == "":
             return 1  # Just "C" means 1 carbon
         return int(count_str)
+
+    @staticmethod
+    def _extract_formula_from_inchi(inchi: str) -> str | None:
+        """Extract molecular formula from InChI string.
+
+        InChI format: InChI=1S/C15H22O3/c.../h.../...
+        The formula is the second component after the version.
+
+        Args:
+            inchi: InChI string
+
+        Returns:
+            Molecular formula or None if not extractable
+        """
+        if not inchi or not inchi.startswith("InChI="):
+            return None
+
+        # Split by '/' and get the formula part (second element after version)
+        parts = inchi.split("/")
+        if len(parts) < 2:
+            return None
+
+        # The formula is the second part (index 1)
+        formula = parts[1]
+
+        # Validate it looks like a formula (starts with element symbol)
+        if not formula or not formula[0].isupper():
+            return None
+
+        return formula
 
     @staticmethod
     def _normalize_formula(formula: str) -> str:

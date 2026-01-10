@@ -115,12 +115,13 @@ def dereplicate_c13(
             "match_mode": result.match_mode.value,
             "top_matches": [
                 {
-                    "name": m.reference.name,
-                    "smiles": m.reference.smiles,
+                    "name": m.entry.name,
+                    "formula": m.entry.molecular_formula,
+                    "inchi": m.entry.inchi,
                     "score": m.score,
                     "matched_peaks": m.matched_peaks,
-                    "unmatched_query": m.unmatched_query,
-                    "unmatched_ref": m.unmatched_ref,
+                    "unmatched_observed": m.unmatched_observed,
+                    "unmatched_reference": m.unmatched_reference,
                 }
                 for m in result.top_matches
             ],
@@ -137,9 +138,9 @@ def dereplicate_c13(
         if result.top_matches:
             click.echo("Top matches:")
             for i, m in enumerate(result.top_matches, 1):
-                click.echo(f"  {i}. {m.reference.name}")
+                click.echo(f"  {i}. {m.entry.name or m.entry.inchi_key}")
                 click.echo(f"     Score: {m.score:.3f}")
-                click.echo(f"     SMILES: {m.reference.smiles}")
+                click.echo(f"     Formula: {m.entry.molecular_formula}")
                 click.echo(f"     Matched: {m.matched_peaks}/{result.observed_peaks} peaks")
         else:
             click.echo("No matches found.")
