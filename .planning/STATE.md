@@ -3,8 +3,8 @@
 ## Current Position
 
 **Milestone**: 1.0 — Core CASE Pipeline
-**Phase**: 2.1 (1D Carbon Dereplication) — Complete
-**Status**: Ready for Phase 3
+**Phase**: 3 (2D NMR Reading) — Planned
+**Status**: Ready to execute 01-03-PLAN.md
 
 ## Roadmap Evolution
 
@@ -49,11 +49,12 @@
 
 ## Session Continuity
 
-**Last session**: 2026-01-09
+**Last session**: 2026-01-10
 **Completed**:
 - Phase 2.1 1D Carbon Dereplication (01-02.1-PLAN.md executed)
 - Sherlock database extraction (928K compounds → `data/reference/sherlock_13c.json`)
-**Next**: Phase 3 2D NMR Reading
+- Phase 3 planning (01-03-PLAN.md created)
+**Next**: Execute Phase 3 (2D NMR Reading)
 
 ---
-*Last updated: 2026-01-09*
+*Last updated: 2026-01-10*
