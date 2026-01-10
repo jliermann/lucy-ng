@@ -101,7 +101,7 @@
 | 2. 1D NMR Reading | Complete | 01-02-PLAN.md, 01-02-SUMMARY.md |
 | 2.1 1D Carbon Dereplication | Complete | 01-02.1-PLAN.md, 01-02.1-SUMMARY.md |
 | 3. 2D NMR Reading | Complete | 01-03-PLAN.md, 01-03-SUMMARY.md |
-| 4. Peak Picking | Not Started | — |
+| 4. Peak Picking | Complete | 01-04-PLAN.md, 01-04-SUMMARY.md |
 | 5. LSD Integration | Not Started | — |
 | 6. CLI Interface | Not Started | — |
 | 7. MCP Server | Not Started | — |
