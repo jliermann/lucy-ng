@@ -3,23 +3,22 @@
 ## Current Position
 
 **Milestone**: 1.0 — Core CASE Pipeline
-**Phase**: 4.1 (2D Peak Validation) — Planned
-**Status**: Ready to execute 01-04.1-PLAN.md
+**Phase**: 4.1 (2D Peak Validation) — Complete
+**Status**: Ready for Phase 5 (LSD Integration)
 
 ## Roadmap Evolution
 
 - Phase 2.1 inserted after Phase 2: 1D Carbon Dereplication with nmrshiftdb (INSERTED)
   - Rationale: Validate pipeline works with 1D data before adding 2D complexity
 - Phase 4.1 inserted after Phase 4: 2D Peak Picking Validation (INSERTED)
-  - Rationale: Ensure 2D peak picking produces scientifically reasonable results by cross-validating HSQC peaks against 1D 13C peaks
+  - Rationale: Ensure 2D peak picking produces scientifically reasonable results
 
 ## Recent Progress
 
-- Phase 4 Peak Picking complete (3 commits)
-- PeakPicker2D class for HSQC, HMBC, COSY, NOESY
-- SNR-based and threshold-based picking
-- Corner-based noise estimation
-- 17 new tests, all 86 tests passing
+- Phase 4.1 2D Peak Validation complete (3 commits)
+- PeakValidator class for HSQC and COSY validation
+- filter_validated_peaks() to remove artifacts
+- 16 new tests, all 102 tests passing
 
 ## Key Decisions
 
@@ -39,6 +38,7 @@
 | inv4* long-range detection | 2026-01-10 | Distinguish HMBC from HSQC in inv4 pulse programs |
 | nmrglue connected-region algorithm | 2026-01-10 | For 2D peak picking, handles overlapping peaks |
 | Corner-based 2D noise estimation | 2026-01-10 | Corners rarely contain real peaks |
+| Tolerance-based peak validation | 2026-01-10 | 0.5-1.0 ppm tolerance for 2D vs 1D matching |
 
 ## Open Questions
 
@@ -54,11 +54,11 @@
 **Last session**: 2026-01-10
 **Completed**:
 - Phase 3 2D NMR Reading
-- Phase 4 2D Peak Picking (01-04-PLAN.md executed)
-- PeakPicker2D with threshold and SNR-based picking
-- 17 comprehensive tests
-- Phase 4.1 inserted for 2D peak validation
-**Next**: Plan and execute Phase 4.1 (2D Peak Validation)
+- Phase 4 2D Peak Picking
+- Phase 4.1 2D Peak Validation (01-04.1-PLAN.md executed)
+- PeakValidator with HSQC and COSY validation
+- 16 comprehensive tests
+**Next**: Plan and execute Phase 5 (LSD Integration)
 
 ---
 *Last updated: 2026-01-10*
