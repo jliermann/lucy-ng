@@ -3,6 +3,11 @@
 import click
 
 from lucy_ng import __version__
+from lucy_ng.cli.analyze import analyze
+from lucy_ng.cli.dereplicate import dereplicate
+from lucy_ng.cli.lsd import lsd
+from lucy_ng.cli.pick import pick
+from lucy_ng.cli.read import read
 
 
 @click.group()
@@ -12,8 +17,22 @@ def cli() -> None:
 
     A command-line interface for NMR processing and structure elucidation
     of organic natural products.
+
+    Commands:
+
+    \b
+      read        Read NMR spectra (1D, 2D)
+      pick        Peak picking from spectra
+      analyze     Analysis tools (symmetry detection)
+      dereplicate Match against reference databases
+      lsd         LSD structure elucidation
     """
     pass
 
 
-# Command groups will be added in subsequent tasks
+# Register command groups
+cli.add_command(read)
+cli.add_command(pick)
+cli.add_command(analyze)
+cli.add_command(dereplicate)
+cli.add_command(lsd)
