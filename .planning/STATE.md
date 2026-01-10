@@ -3,8 +3,8 @@
 ## Current Position
 
 **Milestone**: 1.0 — Core CASE Pipeline
-**Phase**: 3 (2D NMR Reading) — Complete
-**Status**: Ready for Phase 4 (Peak Picking)
+**Phase**: 4 (Peak Picking) — Planned
+**Status**: Ready to execute 01-04-PLAN.md
 
 ## Roadmap Evolution
 
@@ -51,7 +51,9 @@
 - Phase 3 2D NMR Reading (01-03-PLAN.md executed)
 - BrukerReader.read_2d() with experiment type detection
 - 12 comprehensive 2D tests
-**Next**: Plan and execute Phase 4 (Peak Picking)
+- Phase 4 planning (01-04-PLAN.md created)
+**Next**: Execute Phase 4 (2D Peak Picking)
+**Note**: 1D peak picking already implemented in Phase 2.1 (SimplePeakPicker, AdaptivePeakPicker)
 
 ---
 *Last updated: 2026-01-10*
