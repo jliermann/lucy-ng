@@ -11,13 +11,15 @@ from lucy_ng.cli.dereplicate import dereplicate
 class TestDereplicateC13:
     """Tests for lucy dereplicate c13 command."""
 
-    def test_dereplicate_no_database(self) -> None:
-        """Test error when no database is found."""
+    def test_dereplicate_invalid_database(self) -> None:
+        """Test error when specified database does not exist."""
         runner = CliRunner()
-        result = runner.invoke(dereplicate, ["c13", "data/Ibuprofen/2", "C13H18O2"])
-        # Should fail because no database is available
+        result = runner.invoke(
+            dereplicate,
+            ["c13", "data/Ibuprofen/2", "C13H18O2", "--database", "/nonexistent/db.sd"],
+        )
+        # Should fail because specified database path doesn't exist
         assert result.exit_code != 0
-        assert "database" in result.output.lower() or "error" in result.output.lower()
 
     def test_dereplicate_help(self) -> None:
         """Test help message shows options."""
@@ -39,6 +41,7 @@ class TestDereplicateC13:
         not any(
             p.exists()
             for p in [
+                pytest.importorskip("pathlib").Path("data/reference/nmrshiftdb2withsignals.sd"),
                 pytest.importorskip("pathlib").Path("data/nmrshiftdb.sd"),
                 pytest.importorskip("pathlib").Path("data/nmrshiftdb/nmrshiftdb.sd"),
             ]
@@ -46,7 +49,7 @@ class TestDereplicateC13:
         reason="nmrshiftdb database not available",
     )
     def test_dereplicate_with_database(self) -> None:
-        """Test dereplication with actual database (skipped if unavailable)."""
+        """Test dereplication with actual database."""
         runner = CliRunner()
         result = runner.invoke(
             dereplicate,

@@ -65,6 +65,22 @@ Test data is Bruker format in `data/` directory:
 - `data/4-Hydroxy-3-Iodo-biphenyl/` - includes NOESY
 - Processed data read from `pdata/1/` subdirectory
 
+## Reference Data
+
+Reference databases for dereplication are stored in `data/reference/`:
+
+| File | Description | Size |
+|------|-------------|------|
+| `nmrshiftdb2withsignals.sd` | NMRShiftDB SD file with 13C chemical shifts | ~100 MB |
+| `sherlock_13c.json` | Pre-processed 13C reference data | ~350 MB |
+| `coconut_predicted.sd` | COCONUT natural products (predicted shifts) | ~4.8 GB |
+
+**Usage**: The CLI `lucy dereplicate c13` command auto-discovers `data/reference/nmrshiftdb2withsignals.sd` when no `--database` is specified.
+
+**Note**: These files are gitignored due to size. Obtain them separately:
+- NMRShiftDB: https://nmrshiftdb.nmr.uni-koeln.de/
+- COCONUT: https://coconut.naturalproducts.net/
+
 ## Key Patterns
 
 ### Reading NMR data

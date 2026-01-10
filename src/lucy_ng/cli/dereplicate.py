@@ -64,8 +64,9 @@ def dereplicate_c13(
     """
     # Find database path
     if database is None:
-        # Try default location
+        # Try default locations
         default_paths = [
+            Path("data/reference/nmrshiftdb2withsignals.sd"),
             Path("data/nmrshiftdb.sd"),
             Path("data/nmrshiftdb/nmrshiftdb.sd"),
             Path.home() / ".lucy" / "nmrshiftdb.sd",
@@ -85,8 +86,8 @@ def dereplicate_c13(
 
     # Load database
     try:
-        loader = NMRShiftDBLoader()
-        loader.load(database)
+        loader = NMRShiftDBLoader(database)
+        loader.load()
     except Exception as e:
         click.echo(f"Error loading database: {e}", err=True)
         raise SystemExit(1)
