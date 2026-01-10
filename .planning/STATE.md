@@ -3,8 +3,8 @@
 ## Current Position
 
 **Milestone**: 1.0 — Core CASE Pipeline
-**Phase**: 3 (2D NMR Reading) — Planned
-**Status**: Ready to execute 01-03-PLAN.md
+**Phase**: 3 (2D NMR Reading) — Complete
+**Status**: Ready for Phase 4 (Peak Picking)
 
 ## Roadmap Evolution
 
@@ -13,14 +13,10 @@
 
 ## Recent Progress
 
-- Phase 2.1 1D Carbon Dereplication complete (6 commits)
-- NMRShiftDBLoader for parsing reference SD file with DEPT info
-- SimplePeakPicker with threshold-based detection
-- SpectrumMatcher with multi-mode matching and fuzzy tolerances
-- DereplicationService with three entry points
-- 18 comprehensive tests
-- **Sherlock database extracted** (2026-01-09): 928K compounds from nmrshiftdb+COCONUT
-  - Saved to `data/reference/sherlock_13c.json` (338MB, indexed by molecular formula)
+- Phase 3 2D NMR Reading complete (2 commits)
+- BrukerReader.read_2d() for HSQC, HMBC, COSY, TOCSY, NOESY, ROESY
+- Experiment type detection from pulse program patterns
+- 12 new tests, all 69 tests passing
 
 ## Key Decisions
 
@@ -37,6 +33,7 @@
 | Overlap-adjusted scoring | 2026-01-09 | Account for fewer peaks than expected carbons |
 | Variable tolerance by region | 2026-01-09 | Tighter for aliphatic (0.8), looser for carbonyl (1.5) |
 | RDKit for SD parsing | 2026-01-09 | Industry standard, handles MOL blocks and properties |
+| inv4* long-range detection | 2026-01-10 | Distinguish HMBC from HSQC in inv4 pulse programs via lr/lplr/lrnd patterns |
 
 ## Open Questions
 
@@ -51,10 +48,10 @@
 
 **Last session**: 2026-01-10
 **Completed**:
-- Phase 2.1 1D Carbon Dereplication (01-02.1-PLAN.md executed)
-- Sherlock database extraction (928K compounds → `data/reference/sherlock_13c.json`)
-- Phase 3 planning (01-03-PLAN.md created)
-**Next**: Execute Phase 3 (2D NMR Reading)
+- Phase 3 2D NMR Reading (01-03-PLAN.md executed)
+- BrukerReader.read_2d() with experiment type detection
+- 12 comprehensive 2D tests
+**Next**: Plan and execute Phase 4 (Peak Picking)
 
 ---
 *Last updated: 2026-01-10*
