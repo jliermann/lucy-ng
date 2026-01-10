@@ -3,8 +3,8 @@
 ## Current Position
 
 **Milestone**: 1.0 — Core CASE Pipeline
-**Phase**: 5.2 (Symmetry Detection from Spectroscopic Data) — COMPLETE
-**Status**: Ready for Phase 6 (CLI Interface)
+**Phase**: 6 (CLI Interface) — COMPLETE
+**Status**: Ready for Phase 7 (MCP Server)
 
 ## Roadmap Evolution
 
@@ -21,6 +21,12 @@
 
 ## Recent Progress
 
+- **Phase 6 CLI Interface complete**:
+  - Click-based CLI with 5 command groups (read, pick, analyze, dereplicate, lsd)
+  - All commands support `--format text|json` output
+  - Auto-detection of experiment types from Bruker data
+  - Full pipeline integration from reading to LSD generation
+  - 44 CLI tests (43 passing, 1 skipped)
 - **Phase 5.2 Symmetry Detection complete**:
   - New `lucy_ng.analysis` module with AI-oriented convenience tools
   - `HydrogenBudgetAnalyzer`: Compare MF H count with observed carbon-assigned H
@@ -28,12 +34,7 @@
   - `SymmetryAnalyzer`: Combined summary for AI-driven symmetry reasoning
   - Tools expose data with suggestions; AI makes final reasoning decisions
 - Phase 5 LSD Integration complete and enhanced
-- Added HMBCGuidedPicker for validated HMBC peak picking
-- **Automatic spectroscopic constraint inference**:
-  - Carbonyl carbons detected from chemical shift (165-185 ppm or 190-220 ppm)
-  - BOND constraints auto-generated between carbonyl C and sp2 oxygen
-  - Missing hydrogens (from MF vs carbon H count) assigned to sp3 oxygens
-- 266 total tests passing (4 skipped when LSD not installed)
+- 309 total tests passing (5 skipped)
 
 ## Key Decisions
 
@@ -60,6 +61,8 @@
 | LSD 2-param HMBC format | 2026-01-10 | LSD defaults to 2-3 bond distance; simpler than 4-param format |
 | Real data over manual correlations | 2026-01-10 | Manual test correlations produced 900+ solutions; real data provides stronger constraints |
 | Spectroscopic constraint inference | 2026-01-10 | Carbonyl C identified from shift; missing H assigned to O; derives BOND constraints automatically |
+| Click CLI framework | 2026-01-10 | Simpler than Typer, no extra dependencies, widely used |
+| JSON output option | 2026-01-10 | Enables MCP server reuse of CLI functionality |
 
 ## Open Questions
 
@@ -76,24 +79,25 @@
 
 **Last session**: 2026-01-10
 **Completed**:
-- **Phase 5.2 Symmetry Detection complete**
-- New `lucy_ng.analysis` module with 3 convenience tools:
-  - `HydrogenBudgetAnalyzer` - compare MF H vs observed carbon-assigned H
-  - `IntensityReporter` - relative HSQC intensities with equivalence flagging
-  - `SymmetryAnalyzer` - combined AI-readable summary
-- Module exported from main `lucy_ng` package
-- 21 new tests for symmetry analysis tools
-- Verified with Ibuprofen data (correctly detects 5 missing carbons, aromatic pairs)
-- 266 total tests passing
+- **Phase 6 CLI Interface complete**
+- Click-based CLI with 5 command groups:
+  - `lucy read` - Read 1D/2D NMR spectra
+  - `lucy pick` - Peak picking (1D, 2D, HSQC, HMBC)
+  - `lucy analyze` - Symmetry analysis
+  - `lucy dereplicate` - nmrshiftdb matching
+  - `lucy lsd` - LSD generation and execution
+- All commands support `--format json` for MCP integration
+- Auto-detection of experiment types from Bruker data
+- 44 new CLI tests, 309 total tests passing
+- Entry point registered: `lucy` command available after install
 
 **Key technical insights**:
-- AI-driven architecture: tools expose data, AI does reasoning
-- H budget: compare MF H count with observed carbon-assigned H
-- Intensity analysis: equivalent atoms show ~2× HSQC intensity
-- Interpretation hints generated but AI makes final decisions
-- Para-disubstituted benzene pattern correctly identified in Ibuprofen
+- CLI mirrors library API for consistency
+- JSON output enables MCP server reuse
+- Experiment detection via pulse program metadata
+- Full pipeline integration tested
 
-**Next**: Phase 6 (CLI Interface)
+**Next**: Phase 7 (MCP Server)
 
 ---
 *Last updated: 2026-01-10*

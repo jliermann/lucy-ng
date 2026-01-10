@@ -161,8 +161,8 @@
 | 4.2 DEPT-Guided Adaptive HSQC | Complete | 01-04.2-PLAN.md, 01-04.2-SUMMARY.md |
 | 5. LSD Integration | Complete | 01-05-PLAN.md, 01-05-SUMMARY.md |
 | 5.1 HMBC-Guided Peak Picking | Complete | — |
-| 5.2 Symmetry Detection | Not Started | — |
-| 6. CLI Interface | Not Started | — |
+| 5.2 Symmetry Detection | Complete | — |
+| 6. CLI Interface | Complete | 01-06-PLAN.md, 01-06-SUMMARY.md |
 | 7. MCP Server | Not Started | — |
 
 ---
