@@ -73,6 +73,20 @@
 
 ---
 
+### Phase 4.2: DEPT-Guided Adaptive HSQC Peak Picking (INSERTED)
+**Goal**: Use DEPT data as ground truth to adaptively tune HSQC peak picking
+
+- Read DEPT-135 spectrum to identify all protonated carbons
+- Use DEPT peaks as validation targets for HSQC
+- Adaptively lower HSQC threshold until all DEPT carbons are matched
+- Filter HSQC peaks to only those corresponding to real carbons
+- Return validated, noise-free HSQC peak list
+
+**Depends on:** Phase 4.1
+**Rationale**: DEPT provides definitive ground truth for which carbons carry hydrogens; HSQC must find all of them
+
+---
+
 ### Phase 5: LSD Integration
 **Goal**: Generate input files and execute LSD/pyLSD solvers
 
@@ -116,6 +130,7 @@
 | 3. 2D NMR Reading | Complete | 01-03-PLAN.md, 01-03-SUMMARY.md |
 | 4. Peak Picking | Complete | 01-04-PLAN.md, 01-04-SUMMARY.md |
 | 4.1 2D Peak Validation | Complete | 01-04.1-PLAN.md, 01-04.1-SUMMARY.md |
+| 4.2 DEPT-Guided Adaptive HSQC | Complete | 01-04.2-PLAN.md, 01-04.2-SUMMARY.md |
 | 5. LSD Integration | Not Started | — |
 | 6. CLI Interface | Not Started | — |
 | 7. MCP Server | Not Started | — |

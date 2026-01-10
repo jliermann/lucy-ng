@@ -3,7 +3,7 @@
 ## Current Position
 
 **Milestone**: 1.0 — Core CASE Pipeline
-**Phase**: 4.1 (2D Peak Validation) — Complete
+**Phase**: 4.2 (DEPT-Guided Adaptive HSQC) — Complete
 **Status**: Ready for Phase 5 (LSD Integration)
 
 ## Roadmap Evolution
@@ -12,13 +12,16 @@
   - Rationale: Validate pipeline works with 1D data before adding 2D complexity
 - Phase 4.1 inserted after Phase 4: 2D Peak Picking Validation (INSERTED)
   - Rationale: Ensure 2D peak picking produces scientifically reasonable results
+- Phase 4.2 inserted after Phase 4.1: DEPT-Guided Adaptive HSQC Peak Picking (INSERTED)
+  - Rationale: DEPT provides ground truth for protonated carbons; HSQC must find all of them
 
 ## Recent Progress
 
-- Phase 4.1 2D Peak Validation complete (3 commits)
-- PeakValidator class for HSQC and COSY validation
-- filter_validated_peaks() to remove artifacts
-- 16 new tests, all 102 tests passing
+- Phase 4.2 DEPT-Guided Adaptive HSQC complete (2 commits)
+- DEPTGuidedPicker with adaptive threshold algorithm
+- DEPTGuidedResult with peaks, multiplicities, metadata
+- DEPT-90 support for CH/CH3 distinction
+- 18 new tests, all 120 tests passing
 
 ## Key Decisions
 
@@ -39,6 +42,8 @@
 | nmrglue connected-region algorithm | 2026-01-10 | For 2D peak picking, handles overlapping peaks |
 | Corner-based 2D noise estimation | 2026-01-10 | Corners rarely contain real peaks |
 | Tolerance-based peak validation | 2026-01-10 | 0.5-1.0 ppm tolerance for 2D vs 1D matching |
+| DEPT-guided adaptive thresholding | 2026-01-10 | Lower HSQC threshold until all DEPT carbons matched |
+| Multiplicative threshold reduction | 2026-01-10 | ×0.5 factor gives logarithmic steps |
 
 ## Open Questions
 
@@ -55,9 +60,10 @@
 **Completed**:
 - Phase 3 2D NMR Reading
 - Phase 4 2D Peak Picking
-- Phase 4.1 2D Peak Validation (01-04.1-PLAN.md executed)
-- PeakValidator with HSQC and COSY validation
-- 16 comprehensive tests
+- Phase 4.1 2D Peak Validation
+- Phase 4.2 DEPT-Guided Adaptive HSQC (01-04.2-PLAN.md executed)
+- DEPTGuidedPicker with adaptive threshold algorithm
+- 18 comprehensive tests, 120 total passing
 **Next**: Plan and execute Phase 5 (LSD Integration)
 
 ---
