@@ -3,7 +3,7 @@
 ## Current Position
 
 **Milestone**: 1.0 — Core CASE Pipeline
-**Phase**: 5 (LSD Integration) — Complete
+**Phase**: 5 (LSD Integration) — Complete, enhanced with guided peak picking
 **Status**: Phase 6 ready for planning
 
 ## Roadmap Evolution
@@ -14,15 +14,18 @@
   - Rationale: Ensure 2D peak picking produces scientifically reasonable results
 - Phase 4.2 inserted after Phase 4.1: DEPT-Guided Adaptive HSQC Peak Picking (INSERTED)
   - Rationale: DEPT provides ground truth for protonated carbons; HSQC must find all of them
+- Phase 5.1 added: HMBC-Guided Peak Picking (COMPLETE)
+  - Rationale: Filter HMBC noise by requiring correlation to known C and H positions
 
 ## Recent Progress
 
-- Phase 5 LSD Integration complete (5 commits)
-- LSD data models: LSDAtom, LSDCorrelation, LSDProblem
-- LSD input generator with from_dept_result() integration
-- LSD runner with subprocess execution and timeout handling
-- LSD output parser for .sol files and SMILES
-- 84 new tests, 204 total passing (6 skipped when LSD not installed)
+- Phase 5 LSD Integration complete and enhanced
+- Added HMBCGuidedPicker for validated HMBC peak picking
+- Fixed LSD runner (stderr parsing, success detection)
+- Simplified HMBC format to 2 params (LSD defaults to 2-3 bonds)
+- Added molecular formula parsing and heteroatom handling
+- Comprehensive documentation of guided peak picking rationale
+- 229 total tests passing (4 skipped when LSD not installed)
 
 ## Key Decisions
 
@@ -45,10 +48,15 @@
 | Tolerance-based peak validation | 2026-01-10 | 0.5-1.0 ppm tolerance for 2D vs 1D matching |
 | DEPT-guided adaptive thresholding | 2026-01-10 | Lower HSQC threshold until all DEPT carbons matched |
 | Multiplicative threshold reduction | 2026-01-10 | ×0.5 factor gives logarithmic steps |
+| HMBC-guided peak picking | 2026-01-10 | Filter HMBC by requiring C match in 13C/DEPT and H match in HSQC |
+| LSD 2-param HMBC format | 2026-01-10 | LSD defaults to 2-3 bond distance; simpler than 4-param format |
+| Real data over manual correlations | 2026-01-10 | Manual test correlations produced 900+ solutions; real data provides stronger constraints |
 
 ## Open Questions
 
-(none)
+- **Symmetry detection**: How to detect equivalent atoms from signal count vs molecular formula?
+  - Affects LSD input (SYME command for equivalent atoms)
+  - Quaternary carbons can also be in symmetry tuples, not just DEPT-visible carbons
 
 ## Resolved Questions
 
@@ -60,10 +68,20 @@
 
 **Last session**: 2026-01-10
 **Completed**:
-- Phase 5 LSD Integration (01-05-PLAN.md executed)
-- LSD data models, generator, runner, parser
-- 84 new tests for LSD module
-- 204 total tests passing
+- Phase 5 LSD Integration complete and enhanced
+- HMBCGuidedPicker for validated HMBC peak picking
+- LSD runner fixes (stderr parsing, success detection)
+- HMBC format simplified to 2 params
+- Molecular formula parsing and heteroatom handling in generator
+- Comprehensive documentation in CLAUDE.md
+- 229 total tests passing
+
+**Key technical insights documented**:
+- Guided peak picking rationale (noise reduction, constraint quality)
+- Molecular symmetry effects on signal count
+- LSD input quality directly affects solution count
+- Real experimental data essential (manual correlations insufficient)
+
 **Next**: Plan and execute Phase 6 (CLI Interface)
 
 ---
