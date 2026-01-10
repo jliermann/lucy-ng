@@ -3,13 +3,15 @@
 ## Current Position
 
 **Milestone**: 1.0 — Core CASE Pipeline
-**Phase**: 4 (Peak Picking) — Complete
-**Status**: Ready for Phase 5 (LSD Integration)
+**Phase**: 4.1 (2D Peak Validation) — Planned
+**Status**: Ready to execute 01-04.1-PLAN.md
 
 ## Roadmap Evolution
 
 - Phase 2.1 inserted after Phase 2: 1D Carbon Dereplication with nmrshiftdb (INSERTED)
   - Rationale: Validate pipeline works with 1D data before adding 2D complexity
+- Phase 4.1 inserted after Phase 4: 2D Peak Picking Validation (INSERTED)
+  - Rationale: Ensure 2D peak picking produces scientifically reasonable results by cross-validating HSQC peaks against 1D 13C peaks
 
 ## Recent Progress
 
@@ -55,7 +57,8 @@
 - Phase 4 2D Peak Picking (01-04-PLAN.md executed)
 - PeakPicker2D with threshold and SNR-based picking
 - 17 comprehensive tests
-**Next**: Plan and execute Phase 5 (LSD Integration)
+- Phase 4.1 inserted for 2D peak validation
+**Next**: Plan and execute Phase 4.1 (2D Peak Validation)
 
 ---
 *Last updated: 2026-01-10*

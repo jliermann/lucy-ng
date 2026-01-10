@@ -60,6 +60,19 @@
 
 ---
 
+### Phase 4.1: 2D Peak Picking Validation (INSERTED)
+**Goal**: Validate that 2D peak picking produces scientifically reasonable results
+
+- Cross-validate HSQC peaks against 1D 13C peaks
+- Every HSQC F1 position should correspond to a 1D 13C peak
+- Develop validation utility for peak list quality assurance
+- Tolerance-based matching between 2D F1 and 1D peak positions
+
+**Depends on:** Phase 4
+**Rationale**: Ensure 2D peak picking is physically plausible before using peaks for structure elucidation
+
+---
+
 ### Phase 5: LSD Integration
 **Goal**: Generate input files and execute LSD/pyLSD solvers
 
@@ -102,6 +115,7 @@
 | 2.1 1D Carbon Dereplication | Complete | 01-02.1-PLAN.md, 01-02.1-SUMMARY.md |
 | 3. 2D NMR Reading | Complete | 01-03-PLAN.md, 01-03-SUMMARY.md |
 | 4. Peak Picking | Complete | 01-04-PLAN.md, 01-04-SUMMARY.md |
+| 4.1 2D Peak Validation | Not Started | — |
 | 5. LSD Integration | Not Started | — |
 | 6. CLI Interface | Not Started | — |
 | 7. MCP Server | Not Started | — |
