@@ -110,3 +110,47 @@ class Spectrum2D(BaseModel):
     def from_dict(cls, d: dict[str, Any]) -> "Spectrum2D":
         """Create from dictionary."""
         return cls(**d)
+
+    def f1_ppm_to_index(self, ppm: float) -> int:
+        """Convert F1 ppm value to nearest array index.
+
+        Args:
+            ppm: Chemical shift in ppm
+
+        Returns:
+            Nearest array index
+        """
+        return int(np.argmin(np.abs(self.f1_ppm_scale - ppm)))
+
+    def f2_ppm_to_index(self, ppm: float) -> int:
+        """Convert F2 ppm value to nearest array index.
+
+        Args:
+            ppm: Chemical shift in ppm
+
+        Returns:
+            Nearest array index
+        """
+        return int(np.argmin(np.abs(self.f2_ppm_scale - ppm)))
+
+    def f1_index_to_ppm(self, index: int) -> float:
+        """Convert F1 array index to ppm value.
+
+        Args:
+            index: Array index
+
+        Returns:
+            Chemical shift in ppm
+        """
+        return float(self.f1_ppm_scale[index])
+
+    def f2_index_to_ppm(self, index: int) -> float:
+        """Convert F2 array index to ppm value.
+
+        Args:
+            index: Array index
+
+        Returns:
+            Chemical shift in ppm
+        """
+        return float(self.f2_ppm_scale[index])
