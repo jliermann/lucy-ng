@@ -12,6 +12,9 @@ from lucy_ng.processing import (
 )
 from lucy_ng.readers import BrukerReader
 
+# LSD integration (import from lucy_ng.lsd for full access)
+from lucy_ng.lsd import LSDInputGenerator, LSDProblem, LSDRunner
+
 __version__ = "0.1.0"
 
 __all__ = [
@@ -32,4 +35,8 @@ __all__ = [
     "PeakValidator",
     "SimplePeakPicker",
     "ValidationResult",
+    # LSD
+    "LSDInputGenerator",
+    "LSDProblem",
+    "LSDRunner",
 ]
