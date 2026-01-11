@@ -38,26 +38,26 @@ Lucy-ng's Python dependencies will be installed automatically. The core dependen
 
 ## Quick Installation
 
-### From PyPI (Recommended)
+### From GitHub (Recommended)
+
+Lucy-ng is currently installed directly from GitHub:
 
 ```bash
-pip install lucy-ng
-```
+# Basic installation
+pip install "lucy-ng @ git+https://github.com/steinbeck/lucy-ng.git"
 
-### With MCP Server Support
-
-```bash
-pip install "lucy-ng[mcp]"
+# With MCP server support (recommended for AI integration)
+pip install "lucy-ng[mcp] @ git+https://github.com/steinbeck/lucy-ng.git"
 ```
 
 This adds the `mcp[cli]>=1.2.0` dependency for AI agent integration.
 
-> **Note for macOS/zsh users**: The quotes around `"lucy-ng[mcp]"` are required because zsh interprets square brackets as glob patterns. Without quotes, you'll get "no matches found" error.
+> **Note for macOS/zsh users**: The quotes are required because zsh interprets square brackets as glob patterns. Without quotes, you'll get "no matches found" error.
 
 ### Full Installation (All Features)
 
 ```bash
-pip install "lucy-ng[mcp,dev]"
+pip install "lucy-ng[mcp,dev] @ git+https://github.com/steinbeck/lucy-ng.git"
 ```
 
 ## Installation Options
@@ -67,10 +67,10 @@ pip install "lucy-ng[mcp,dev]"
 Install for the current user only (no root required):
 
 ```bash
-pip install --user "lucy-ng[mcp]"
+pip install --user "lucy-ng[mcp] @ git+https://github.com/steinbeck/lucy-ng.git"
 ```
 
-### Option 2: Virtual Environment (Recommended for Development)
+### Option 2: Virtual Environment (Recommended)
 
 ```bash
 # Create virtual environment
@@ -79,10 +79,10 @@ source lucy-env/bin/activate  # Linux/macOS
 # or: lucy-env\Scripts\activate  # Windows
 
 # Install lucy-ng
-pip install "lucy-ng[mcp]"
+pip install "lucy-ng[mcp] @ git+https://github.com/steinbeck/lucy-ng.git"
 ```
 
-### Option 3: Development Installation
+### Option 3: Development Installation (For Contributors)
 
 For contributing or modifying lucy-ng:
 
@@ -105,7 +105,7 @@ pytest
 ### Option 4: System-Wide Installation
 
 ```bash
-sudo pip install "lucy-ng[mcp]"
+sudo pip install "lucy-ng[mcp] @ git+https://github.com/steinbeck/lucy-ng.git"
 ```
 
 ## External Dependencies

@@ -125,16 +125,14 @@ Real experimental data with proper filtering provides much stronger constraints 
 
 ## Installation
 
-### Basic Installation
+### From GitHub
 
 ```bash
-pip install lucy-ng
-```
+# Basic installation
+pip install "lucy-ng @ git+https://github.com/steinbeck/lucy-ng.git"
 
-### With MCP Server Support
-
-```bash
-pip install "lucy-ng[mcp]"
+# With MCP server support (recommended)
+pip install "lucy-ng[mcp] @ git+https://github.com/steinbeck/lucy-ng.git"
 ```
 
 > **Note for macOS/zsh users**: The quotes are required because zsh interprets square brackets as glob patterns.
