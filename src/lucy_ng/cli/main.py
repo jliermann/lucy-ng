@@ -7,6 +7,7 @@ from lucy_ng.cli.analyze import analyze
 from lucy_ng.cli.dereplicate import dereplicate
 from lucy_ng.cli.lsd import lsd
 from lucy_ng.cli.pick import pick
+from lucy_ng.cli.predict import predict
 from lucy_ng.cli.read import read
 
 
@@ -25,6 +26,7 @@ def cli() -> None:
       pick        Peak picking from spectra
       analyze     Analysis tools (symmetry detection)
       dereplicate Match against reference databases
+      predict     Predict NMR chemical shifts
       lsd         LSD structure elucidation
     """
     pass
@@ -35,4 +37,5 @@ cli.add_command(read)
 cli.add_command(pick)
 cli.add_command(analyze)
 cli.add_command(dereplicate)
+cli.add_command(predict)
 cli.add_command(lsd)
