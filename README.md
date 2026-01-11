@@ -134,8 +134,10 @@ pip install lucy-ng
 ### With MCP Server Support
 
 ```bash
-pip install lucy-ng[mcp]
+pip install "lucy-ng[mcp]"
 ```
+
+> **Note for macOS/zsh users**: The quotes are required because zsh interprets square brackets as glob patterns.
 
 ### Development Installation
 

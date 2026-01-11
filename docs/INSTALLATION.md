@@ -47,15 +47,17 @@ pip install lucy-ng
 ### With MCP Server Support
 
 ```bash
-pip install lucy-ng[mcp]
+pip install "lucy-ng[mcp]"
 ```
 
 This adds the `mcp[cli]>=1.2.0` dependency for AI agent integration.
 
+> **Note for macOS/zsh users**: The quotes around `"lucy-ng[mcp]"` are required because zsh interprets square brackets as glob patterns. Without quotes, you'll get "no matches found" error.
+
 ### Full Installation (All Features)
 
 ```bash
-pip install lucy-ng[mcp,dev]
+pip install "lucy-ng[mcp,dev]"
 ```
 
 ## Installation Options
@@ -65,7 +67,7 @@ pip install lucy-ng[mcp,dev]
 Install for the current user only (no root required):
 
 ```bash
-pip install --user lucy-ng[mcp]
+pip install --user "lucy-ng[mcp]"
 ```
 
 ### Option 2: Virtual Environment (Recommended for Development)
@@ -77,7 +79,7 @@ source lucy-env/bin/activate  # Linux/macOS
 # or: lucy-env\Scripts\activate  # Windows
 
 # Install lucy-ng
-pip install lucy-ng[mcp]
+pip install "lucy-ng[mcp]"
 ```
 
 ### Option 3: Development Installation
@@ -103,7 +105,7 @@ pytest
 ### Option 4: System-Wide Installation
 
 ```bash
-sudo pip install lucy-ng[mcp]
+sudo pip install "lucy-ng[mcp]"
 ```
 
 ## External Dependencies
