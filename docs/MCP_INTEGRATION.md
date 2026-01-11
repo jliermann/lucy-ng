@@ -12,6 +12,7 @@ This guide explains how to integrate lucy-ng with AI agents using the Model Cont
 - [Programmatic Usage](#programmatic-usage)
 - [Example Conversations](#example-conversations)
 - [Troubleshooting](#troubleshooting)
+- [AI Guide](#ai-guide)
 
 ## What is MCP?
 
@@ -416,3 +417,20 @@ dereplicate_c13(..., database_path="data/reference/nmrshiftdb2withsignals.sd")
   }
 }
 ```
+
+## AI Guide
+
+For AI agents using lucy-ng, we provide a comprehensive guide covering:
+
+- **Structure Elucidation Workflow**: Step-by-step process from dereplication to LSD solving
+- **Scientific Background**: NMR experiment types, chemical shift regions, data interpretation
+- **Critical Pitfalls**: Signal count vs. atom count, molecular symmetry, quaternary carbons, HMBC noise
+- **Decision Trees**: When to proceed, how to handle symmetry, interpreting LSD results
+- **Example Reasoning**: Worked examples showing proper analytical approach
+
+See **[AI_GUIDE.md](AI_GUIDE.md)** for the complete guide.
+
+This guide can be used as:
+1. A reference document for AI agents during analysis
+2. A system prompt or context for Claude Desktop/Claude Code
+3. Training material for understanding the CASE workflow

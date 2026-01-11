@@ -325,6 +325,8 @@ Then ask Claude: *"Use lucy-ng to analyze the NMR data in data/Ibuprofen and ide
 
 See [docs/MCP_INTEGRATION.md](docs/MCP_INTEGRATION.md) for detailed setup instructions.
 
+**AI Agent Guide**: For comprehensive guidance on structure elucidation workflow, pitfalls, and best practices, see [docs/AI_GUIDE.md](docs/AI_GUIDE.md).
+
 ## Architecture
 
 ```
