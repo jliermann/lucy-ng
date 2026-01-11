@@ -3,8 +3,8 @@
 ## Current Position
 
 **Milestone**: 1.0 — Core CASE Pipeline
-**Phase**: 6 (CLI Interface) — COMPLETE
-**Status**: Ready for Phase 7 (MCP Server)
+**Phase**: 7 (MCP Server) — PLANNED
+**Status**: Ready to execute 01-07-PLAN.md
 
 ## Roadmap Evolution
 
@@ -97,7 +97,7 @@
 - Experiment detection via pulse program metadata
 - Full pipeline integration tested
 
-**Next**: Phase 7 (MCP Server)
+**Next**: Execute 01-07-PLAN.md (MCP Server)
 
 ---
-*Last updated: 2026-01-10*
+*Last updated: 2026-01-11*

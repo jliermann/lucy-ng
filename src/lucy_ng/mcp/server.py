@@ -10,6 +10,7 @@ from pathlib import Path
 
 from lucy_ng.analysis import SymmetryAnalyzer
 from lucy_ng.dereplication import CoconutLoader, DereplicationService, NMRShiftDBLoader
+from lucy_ng.lsd import LSDInputGenerator, LSDRunner
 from lucy_ng.processing import DEPTGuidedPicker, HMBCGuidedPicker, SimplePeakPicker
 from lucy_ng.readers import BrukerReader
 
@@ -397,6 +398,207 @@ def dereplicate_c13(
                 }
                 for m in result.top_matches
             ],
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+# =============================================================================
+# LSD Integration Tools
+# =============================================================================
+
+
+@mcp.tool()
+def check_lsd_availability() -> dict:
+    """Check if LSD solver is installed and available.
+
+    Returns:
+        Dictionary with availability status, path, and version
+    """
+    available = LSDRunner.is_available()
+    result = {
+        "success": True,
+        "available": available,
+    }
+
+    if available:
+        runner = LSDRunner()
+        result["path"] = str(runner.lsd_path)
+        version = LSDRunner.get_version()
+        if version:
+            result["version"] = version
+
+    return result
+
+
+@mcp.tool()
+def generate_lsd_input(
+    data_dir: str,
+    molecular_formula: str,
+    output_file: str | None = None,
+) -> dict:
+    """Generate LSD input file from NMR data directory.
+
+    Reads NMR spectra from a Bruker data directory and generates
+    an LSD input file with atom definitions and correlations.
+
+    Required spectra:
+    - DEPT-135 (or 13C) for carbon atoms
+    - HSQC for direct C-H correlations
+
+    Optional spectra:
+    - HMBC for long-range correlations (strongly recommended)
+    - DEPT-90 for CH/CH3 disambiguation
+    - COSY for H-H correlations
+
+    Args:
+        data_dir: Path to compound directory containing Bruker experiments
+        molecular_formula: Molecular formula (e.g., "C13H18O2")
+        output_file: Optional path for output .lsd file
+
+    Returns:
+        Dictionary with generated LSD input content and file path
+    """
+    try:
+        data_path = Path(data_dir)
+        if not data_path.exists():
+            return {"success": False, "error": f"Data directory not found: {data_dir}"}
+
+        # Find experiment directories
+        experiments = {}
+        for exp_dir in sorted(data_path.iterdir()):
+            if exp_dir.is_dir() and exp_dir.name.isdigit():
+                try:
+                    # Try to read as 1D first
+                    try:
+                        spec = BrukerReader.read_1d(str(exp_dir))
+                        exp_type = spec.nucleus
+                        if "DEPT" in spec.metadata.get("pulse_program", "").upper():
+                            if "90" in spec.metadata.get("pulse_program", ""):
+                                exp_type = "DEPT90"
+                            else:
+                                exp_type = "DEPT135"
+                        experiments[exp_type] = exp_dir
+                    except Exception:
+                        # Try 2D
+                        spec = BrukerReader.read_2d(str(exp_dir))
+                        experiments[spec.experiment_type] = exp_dir
+                except Exception:
+                    continue
+
+        # Check required spectra
+        dept_path = experiments.get("DEPT135") or experiments.get("13C")
+        hsqc_path = experiments.get("HSQC")
+
+        if not dept_path:
+            return {"success": False, "error": "No DEPT-135 or 13C spectrum found"}
+        if not hsqc_path:
+            return {"success": False, "error": "No HSQC spectrum found"}
+
+        # Load spectra
+        hsqc = BrukerReader.read_2d(str(hsqc_path))
+        dept135 = BrukerReader.read_1d(str(dept_path))
+
+        # Pick HSQC peaks with DEPT guidance
+        dept90_path = experiments.get("DEPT90")
+        if dept90_path:
+            dept90 = BrukerReader.read_1d(str(dept90_path))
+            dept_result = DEPTGuidedPicker.pick_hsqc_peaks_with_dept90(hsqc, dept135, dept90)
+        else:
+            dept_result = DEPTGuidedPicker.pick_hsqc_peaks(hsqc, dept135)
+
+        # Load optional HMBC
+        hmbc_peaks = None
+        hmbc_path = experiments.get("HMBC")
+        c13_path = experiments.get("13C")
+        if hmbc_path and c13_path:
+            hmbc = BrukerReader.read_2d(str(hmbc_path))
+            c13 = BrukerReader.read_1d(str(c13_path))
+            hmbc_result = HMBCGuidedPicker.pick_hmbc_peaks_from_spectra(
+                hmbc=hmbc, carbon_spectrum=c13, hsqc=hsqc, dept135=dept135
+            )
+            hmbc_peaks = hmbc_result.peaks
+
+        # Generate LSD problem
+        problem = LSDInputGenerator.from_dept_result(
+            dept_result=dept_result,
+            hmbc_peaks=hmbc_peaks,
+            molecular_formula=molecular_formula,
+            name=data_path.name,
+        )
+
+        # Generate content
+        content = LSDInputGenerator.generate(problem)
+
+        # Write to file if requested
+        written_path = None
+        if output_file:
+            output_path = Path(output_file)
+            output_path.write_text(content)
+            written_path = str(output_path)
+
+        return {
+            "success": True,
+            "molecular_formula": molecular_formula,
+            "atom_count": len(problem.atoms),
+            "correlation_count": len(problem.correlations),
+            "constraint_count": len(problem.constraints),
+            "experiments_found": list(experiments.keys()),
+            "output_file": written_path,
+            "content": content,
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+@mcp.tool()
+def run_lsd(
+    input_file: str,
+    timeout: int = 60,
+    output_dir: str | None = None,
+) -> dict:
+    """Execute LSD solver on an input file.
+
+    Runs the LSD (Logic for Structure Determination) solver on the
+    provided input file and returns the results.
+
+    Args:
+        input_file: Path to LSD input file (.lsd)
+        timeout: Maximum execution time in seconds (default: 60)
+        output_dir: Optional directory for output files
+
+    Returns:
+        Dictionary with solution count, success status, and solution contents
+    """
+    try:
+        if not LSDRunner.is_available():
+            return {
+                "success": False,
+                "error": "LSD solver not found. Install LSD and ensure it's in PATH.",
+            }
+
+        input_path = Path(input_file)
+        if not input_path.exists():
+            return {"success": False, "error": f"Input file not found: {input_file}"}
+
+        runner = LSDRunner()
+        out_dir = Path(output_dir) if output_dir else None
+
+        result = runner.run_file(
+            input_file=input_path,
+            output_dir=out_dir,
+            timeout=timeout,
+        )
+
+        return {
+            "success": result.success,
+            "solution_count": result.solution_count,
+            "return_code": result.return_code,
+            "output_dir": str(result.output_dir) if result.output_dir else None,
+            "output_files": [str(f) for f in result.output_files],
+            "solutions": result.solutions[:10],  # Limit to first 10 solutions
+            "stdout": result.stdout[:1000] if result.stdout else "",
+            "stderr": result.stderr[:1000] if result.stderr else "",
         }
     except Exception as e:
         return {"success": False, "error": str(e)}
