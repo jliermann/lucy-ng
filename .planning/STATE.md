@@ -3,8 +3,8 @@
 ## Current Position
 
 **Milestone**: 1.0 — Core CASE Pipeline
-**Phase**: 7 (MCP Server) — PLANNED
-**Status**: Ready to execute 01-07-PLAN.md
+**Phase**: 7 (MCP Server) — COMPLETE
+**Status**: Milestone 1.0 Complete - All phases finished
 
 ## Roadmap Evolution
 
@@ -77,27 +77,34 @@
 
 ## Session Continuity
 
-**Last session**: 2026-01-10
+**Last session**: 2026-01-11
 **Completed**:
-- **Phase 6 CLI Interface complete**
-- Click-based CLI with 5 command groups:
-  - `lucy read` - Read 1D/2D NMR spectra
-  - `lucy pick` - Peak picking (1D, 2D, HSQC, HMBC)
-  - `lucy analyze` - Symmetry analysis
-  - `lucy dereplicate` - nmrshiftdb matching
-  - `lucy lsd` - LSD generation and execution
-- All commands support `--format json` for MCP integration
-- Auto-detection of experiment types from Bruker data
-- 44 new CLI tests, 309 total tests passing
-- Entry point registered: `lucy` command available after install
+- **Phase 7 MCP Server complete**
+- FastMCP-based server with 10 tools:
+  - `read_spectrum_1d`, `read_spectrum_2d` - Spectrum reading
+  - `pick_peaks_1d`, `pick_hsqc_peaks`, `pick_hmbc_peaks` - Peak picking
+  - `analyze_symmetry` - Symmetry detection
+  - `dereplicate_c13` - Database matching
+  - `check_lsd_availability`, `generate_lsd_input`, `run_lsd` - LSD integration
+- Entry point: `lucy-mcp` command
+- 18 MCP server tests
+- Refactored SimplePeakPicker → AdaptivePeakPicker with static methods
+- 325+ total tests passing
+
+**Documentation complete**:
+- Comprehensive README.md
+- docs/INSTALLATION.md
+- docs/USER_GUIDE.md
+- docs/ARCHITECTURE.md
+- docs/MCP_INTEGRATION.md
 
 **Key technical insights**:
-- CLI mirrors library API for consistency
-- JSON output enables MCP server reuse
-- Experiment detection via pulse program metadata
-- Full pipeline integration tested
+- FastMCP uses `name` and `instructions`, not `version`/`description`
+- MCP tools return `{"success": bool, ...}` pattern
+- Experiment detection: try 2D first, fall back to 1D
+- COCONUT streaming mode handles 4.8GB database efficiently
 
-**Next**: Execute 01-07-PLAN.md (MCP Server)
+**Milestone 1.0 Complete** - All 7 phases finished
 
 ---
 *Last updated: 2026-01-11*

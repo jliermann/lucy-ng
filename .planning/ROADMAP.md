@@ -163,7 +163,19 @@
 | 5.1 HMBC-Guided Peak Picking | Complete | — |
 | 5.2 Symmetry Detection | Complete | — |
 | 6. CLI Interface | Complete | 01-06-PLAN.md, 01-06-SUMMARY.md |
-| 7. MCP Server | Not Started | — |
+| 7. MCP Server | Complete | 01-07-PLAN.md |
 
 ---
-*Last updated: 2026-01-10*
+
+## Milestone 1.0 Complete
+
+All phases of the Core CASE Pipeline milestone are now complete:
+
+- **10 MCP Tools**: Spectrum reading, peak picking, analysis, dereplication, LSD integration
+- **Full CLI**: 5 command groups with JSON output support
+- **Python API**: Direct library access for all functionality
+- **325+ Tests**: Comprehensive test coverage
+- **Documentation**: README, User Guide, Architecture, MCP Integration
+
+---
+*Last updated: 2026-01-11*
