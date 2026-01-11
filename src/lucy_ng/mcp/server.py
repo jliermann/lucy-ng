@@ -679,7 +679,7 @@ def rank_lsd_solutions(
         if not sol_path.exists():
             return {"success": False, "error": f"Solutions directory not found: {solutions_dir}"}
 
-        solutions = LSDOutputParser.parse_directory(sol_path)
+        solutions = LSDOutputParser.parse_solutions(sol_path)
         if not solutions:
             return {"success": False, "error": "No LSD solutions found in directory"}
 

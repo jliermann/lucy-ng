@@ -94,6 +94,9 @@ class SolutionRanker:
         # Sort by MAE (lower is better), then by match count (higher is better)
         ranked.sort(key=lambda r: (r.mae, -r.matched_count))
 
+        # Store count before limiting
+        total_ranked = len(ranked)
+
         # Limit results if requested
         if top_n is not None:
             ranked = ranked[:top_n]
@@ -102,7 +105,7 @@ class SolutionRanker:
             solutions=ranked,
             experimental_shifts=experimental_shifts,
             total_solutions=len(solutions),
-            ranked_count=len(ranked),
+            ranked_count=total_ranked,
             skipped_count=skipped,
             tolerance=self.tolerance,
         )

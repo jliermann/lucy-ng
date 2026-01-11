@@ -69,10 +69,13 @@ class LSDOutputParser:
         out_file = output_dir / "outlsd.out"
         if out_file.exists():
             smiles_list = LSDOutputParser.parse_outlsd_output(out_file)
-            # Match SMILES to solutions by index
+            # Create index -> solution mapping for correct matching
+            index_to_solution = {s.index: s for s in solutions}
+            # Match SMILES to solutions by numeric index (outlsd outputs in order 1, 2, 3, ...)
             for i, smiles in enumerate(smiles_list):
-                if i < len(solutions):
-                    solutions[i].smiles = smiles
+                sol_index = i + 1  # outlsd SMILES are 1-indexed
+                if sol_index in index_to_solution:
+                    index_to_solution[sol_index].smiles = smiles
 
         return sorted(solutions, key=lambda s: s.index)
 

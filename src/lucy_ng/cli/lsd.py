@@ -344,7 +344,7 @@ def lsd_rank(
     # Load solutions
     solutions_dir = Path(solutions_path)
     try:
-        solutions = LSDOutputParser.parse_directory(solutions_dir)
+        solutions = LSDOutputParser.parse_solutions(solutions_dir)
     except Exception as e:
         click.echo(f"Error loading solutions: {e}", err=True)
         raise SystemExit(1)
