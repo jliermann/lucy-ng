@@ -6,7 +6,10 @@ via the Model Context Protocol (MCP).
 
 from mcp.server.fastmcp import FastMCP
 
+from pathlib import Path
+
 from lucy_ng.analysis import SymmetryAnalyzer
+from lucy_ng.dereplication import CoconutLoader, DereplicationService, NMRShiftDBLoader
 from lucy_ng.processing import DEPTGuidedPicker, HMBCGuidedPicker, SimplePeakPicker
 from lucy_ng.readers import BrukerReader
 
@@ -293,6 +296,107 @@ def analyze_symmetry(
                 ],
             },
             "summary": result.summary(),
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+# =============================================================================
+# Dereplication Tools
+# =============================================================================
+
+
+@mcp.tool()
+def dereplicate_c13(
+    c13_path: str,
+    molecular_formula: str,
+    database_path: str | None = None,
+    top_n: int = 5,
+    match_threshold: float = 0.7,
+) -> dict:
+    """Dereplicate 13C spectrum against reference database.
+
+    Matches observed 13C peaks against reference spectra filtered by
+    molecular formula. Uses COCONUT by default (~895K natural products),
+    falls back to nmrshiftdb (~33K compounds) if COCONUT unavailable.
+
+    COCONUT uses streaming mode - only parses entries matching the formula,
+    making it practical for large databases.
+
+    Args:
+        c13_path: Path to 13C Bruker experiment directory
+        molecular_formula: Target molecular formula (e.g., "C13H18O2")
+        database_path: Optional path to SD file (auto-discovers if not set)
+        top_n: Number of top matches to return (default: 5)
+        match_threshold: Score threshold for is_match (default: 0.7)
+
+    Returns:
+        Dictionary with candidates found, match scores, and top matches
+    """
+    try:
+        # Auto-discover database
+        db_path = database_path
+        is_coconut = False
+
+        if db_path is None:
+            search_paths = [
+                (Path("data/reference/coconut_predicted.sd"), True),
+                (Path("data/reference/nmrshiftdb2withsignals.sd"), False),
+                (Path.home() / ".lucy" / "coconut_predicted.sd", True),
+                (Path.home() / ".lucy" / "nmrshiftdb.sd", False),
+            ]
+            for p, coconut_flag in search_paths:
+                if p.exists():
+                    db_path = str(p)
+                    is_coconut = coconut_flag
+                    break
+
+        if db_path is None:
+            return {"success": False, "error": "No reference database found"}
+
+        # Determine database type if path was provided
+        if database_path is not None:
+            is_coconut = "coconut" in Path(db_path).name.lower()
+
+        # Create loader (COCONUT uses streaming, nmrshiftdb loads fully)
+        if is_coconut:
+            loader = CoconutLoader(db_path)
+        else:
+            loader = NMRShiftDBLoader(db_path)
+            loader.load()
+
+        # Run dereplication
+        spectrum = BrukerReader.read_1d(c13_path)
+        service = DereplicationService(loader)
+        result = service.dereplicate_from_spectrum(
+            spectrum=spectrum,
+            molecular_formula=molecular_formula,
+            top_n=top_n,
+            match_threshold=match_threshold,
+        )
+
+        return {
+            "success": True,
+            "database": Path(db_path).name,
+            "molecular_formula": result.molecular_formula,
+            "expected_carbons": result.expected_carbons,
+            "observed_peaks": result.observed_peaks,
+            "candidates_found": result.candidates_found,
+            "best_score": result.best_score,
+            "is_match": result.is_match,
+            "match_mode": result.match_mode.value,
+            "top_matches": [
+                {
+                    "name": m.entry.name,
+                    "formula": m.entry.molecular_formula,
+                    "inchi": m.entry.inchi,
+                    "score": m.score,
+                    "matched_peaks": m.matched_peaks,
+                    "unmatched_observed": len(m.unmatched_observed),
+                    "unmatched_reference": len(m.unmatched_reference),
+                }
+                for m in result.top_matches
+            ],
         }
     except Exception as e:
         return {"success": False, "error": str(e)}
