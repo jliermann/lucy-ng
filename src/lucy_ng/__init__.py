@@ -6,6 +6,7 @@ from lucy_ng.analysis import (
     SymmetryAnalyzer,
 )
 from lucy_ng.models import Peak1D, Peak2D, PeakList1D, PeakList2D, Spectrum1D, Spectrum2D
+from lucy_ng.prediction import C13Predictor, HOSECodeGenerator, HOSELookupTable
 from lucy_ng.processing import (
     AdaptivePeakPicker,
     DEPTGuidedPicker,
@@ -42,6 +43,10 @@ __all__ = [
     "HydrogenBudgetAnalyzer",
     "IntensityReporter",
     "SymmetryAnalyzer",
+    # Prediction
+    "C13Predictor",
+    "HOSECodeGenerator",
+    "HOSELookupTable",
     # LSD
     "LSDInputGenerator",
     "LSDProblem",
