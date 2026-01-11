@@ -20,6 +20,9 @@ from lucy_ng.readers import BrukerReader
 # LSD integration (import from lucy_ng.lsd for full access)
 from lucy_ng.lsd import LSDInputGenerator, LSDProblem, LSDRunner
 
+# Ranking
+from lucy_ng.ranking import SolutionRanker
+
 __version__ = "0.1.0"
 
 __all__ = [
@@ -51,4 +54,6 @@ __all__ = [
     "LSDInputGenerator",
     "LSDProblem",
     "LSDRunner",
+    # Ranking
+    "SolutionRanker",
 ]

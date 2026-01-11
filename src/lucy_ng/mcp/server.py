@@ -11,7 +11,9 @@ from pathlib import Path
 from lucy_ng.analysis import SymmetryAnalyzer
 from lucy_ng.dereplication import CoconutLoader, DereplicationService, NMRShiftDBLoader
 from lucy_ng.lsd import LSDInputGenerator, LSDRunner
+from lucy_ng.lsd.parser import LSDOutputParser
 from lucy_ng.prediction import C13Predictor, HOSELookupTable
+from lucy_ng.ranking import SolutionRanker
 from lucy_ng.processing import DEPTGuidedPicker, HMBCGuidedPicker, AdaptivePeakPicker
 from lucy_ng.readers import BrukerReader
 
@@ -607,6 +609,109 @@ def run_lsd(
             "solutions": result.solutions[:10],  # Limit to first 10 solutions
             "stdout": result.stdout[:1000] if result.stdout else "",
             "stderr": result.stderr[:1000] if result.stderr else "",
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+def _get_default_hose_table() -> Path | None:
+    """Find the default HOSE lookup table."""
+    search_paths = [
+        Path("data/reference/hose_nmrshiftdb.json.gz"),
+        Path("data/reference/hose_lookup.json.gz"),
+        Path.home() / ".lucy" / "hose_nmrshiftdb.json.gz",
+        Path.home() / ".lucy" / "hose_lookup.json.gz",
+    ]
+    for p in search_paths:
+        if p.exists():
+            return p
+    return None
+
+
+@mcp.tool()
+def rank_lsd_solutions(
+    solutions_dir: str,
+    experimental_shifts: list[float],
+    top_n: int = 10,
+    tolerance: float = 3.0,
+    table_path: str | None = None,
+) -> dict:
+    """Rank LSD solutions by comparing predicted vs experimental 13C shifts.
+
+    Uses local HOSE-based prediction to estimate 13C shifts for each LSD
+    solution structure, then ranks by Mean Absolute Error (MAE) against
+    the experimental spectrum.
+
+    This is the key tool for reducing LSD solution space - solutions with
+    predicted shifts matching the experimental spectrum rank higher.
+
+    Args:
+        solutions_dir: Directory containing LSD solution files (.sol)
+        experimental_shifts: List of experimental 13C peak positions in ppm
+        top_n: Number of top results to return (default: 10)
+        tolerance: Max ppm difference for shift matching (default: 3.0)
+        table_path: Optional path to HOSE lookup table (uses default if not set)
+
+    Returns:
+        Dictionary with ranked solutions including:
+        - mae: Mean Absolute Error in ppm (lower = better match)
+        - matched_count: Number of carbons matched to experimental peaks
+        - prediction_rate: Fraction of carbons successfully predicted
+    """
+    try:
+        # Find table path
+        t_path: Path | None = None
+        if table_path:
+            t_path = Path(table_path)
+            if not t_path.exists():
+                return {"success": False, "error": f"Table not found: {table_path}"}
+        else:
+            t_path = _get_default_hose_table()
+            if t_path is None:
+                return {
+                    "success": False,
+                    "error": "No HOSE lookup table found. Build with: "
+                    "lucy predict build-table --source nmrshiftdb",
+                }
+
+        # Load solutions
+        sol_path = Path(solutions_dir)
+        if not sol_path.exists():
+            return {"success": False, "error": f"Solutions directory not found: {solutions_dir}"}
+
+        solutions = LSDOutputParser.parse_directory(sol_path)
+        if not solutions:
+            return {"success": False, "error": "No LSD solutions found in directory"}
+
+        # Create ranker
+        ranker = SolutionRanker.from_table_file(
+            table_path=str(t_path),
+            tolerance=tolerance,
+        )
+
+        # Rank solutions
+        result = ranker.rank(solutions, experimental_shifts, top_n=top_n)
+
+        return {
+            "success": True,
+            "total_solutions": result.total_solutions,
+            "ranked_count": result.ranked_count,
+            "skipped_count": result.skipped_count,
+            "experimental_shifts": result.experimental_shifts,
+            "tolerance": result.tolerance,
+            "solutions": [
+                {
+                    "rank": i + 1,
+                    "solution_index": sol.solution_index,
+                    "smiles": sol.smiles,
+                    "mae": round(sol.mae, 3),
+                    "matched_count": sol.matched_count,
+                    "total_carbons": sol.total_carbons,
+                    "prediction_rate": round(sol.prediction_rate, 3),
+                    "match_rate": round(sol.match_rate, 3),
+                }
+                for i, sol in enumerate(result.solutions)
+            ],
         }
     except Exception as e:
         return {"success": False, "error": str(e)}

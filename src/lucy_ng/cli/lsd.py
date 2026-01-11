@@ -6,8 +6,10 @@ from pathlib import Path
 import click
 
 from lucy_ng.lsd import LSDInputGenerator, LSDProblem, LSDRunner
-from lucy_ng.processing import DEPTGuidedPicker
+from lucy_ng.lsd.parser import LSDOutputParser
+from lucy_ng.processing import AdaptivePeakPicker, DEPTGuidedPicker
 from lucy_ng.processing.hmbc_guided_picker import HMBCGuidedPicker
+from lucy_ng.ranking import SolutionRanker
 from lucy_ng.readers import BrukerReader
 
 
@@ -215,3 +217,204 @@ def lsd_run(
             click.echo(f"LSD failed (return code: {result.return_code})")
             if result.stderr:
                 click.echo(f"  Error: {result.stderr[:500]}")
+
+
+def _get_default_table_path() -> Path:
+    """Get the default HOSE lookup table path."""
+    import lucy_ng
+
+    package_dir = Path(lucy_ng.__file__).parent
+    # Check package data first
+    package_table = package_dir / "data" / "hose_nmrshiftdb.json.gz"
+    if package_table.exists():
+        return package_table
+
+    # Check project data directory
+    project_root = package_dir.parent.parent.parent
+    project_table = project_root / "data" / "reference" / "hose_nmrshiftdb.json.gz"
+    if project_table.exists():
+        return project_table
+
+    raise FileNotFoundError(
+        "HOSE lookup table not found. "
+        "Build with: lucy predict build-table --source nmrshiftdb"
+    )
+
+
+@lsd.command("rank")
+@click.argument("solutions_path", type=click.Path(exists=True))
+@click.option(
+    "--spectrum",
+    "-s",
+    type=click.Path(exists=True),
+    default=None,
+    help="Path to Bruker 13C spectrum directory for experimental shifts.",
+)
+@click.option(
+    "--shifts",
+    type=str,
+    default=None,
+    help="Comma-separated list of experimental 13C shifts in ppm.",
+)
+@click.option(
+    "--top",
+    "-n",
+    type=int,
+    default=10,
+    help="Number of top results to show.",
+)
+@click.option(
+    "--tolerance",
+    "-t",
+    type=float,
+    default=3.0,
+    help="Tolerance in ppm for shift matching.",
+)
+@click.option(
+    "--table",
+    type=click.Path(exists=True),
+    default=None,
+    help="Path to HOSE lookup table (auto-detected if not set).",
+)
+@click.option(
+    "--format",
+    "output_format",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format.",
+)
+def lsd_rank(
+    solutions_path: str,
+    spectrum: str | None,
+    shifts: str | None,
+    top: int,
+    tolerance: float,
+    table: str | None,
+    output_format: str,
+) -> None:
+    """Rank LSD solutions by 13C spectrum similarity.
+
+    SOLUTIONS_PATH is the directory containing LSD solution files (.sol).
+
+    Provide experimental shifts via --spectrum (Bruker 13C directory) or
+    --shifts (comma-separated ppm values).
+
+    Examples:
+
+      lucy lsd rank ./solutions --spectrum data/Ibuprofen/2
+
+      lucy lsd rank ./solutions --shifts "180.5,140.8,137.0,129.4"
+    """
+    # Get experimental shifts
+    if spectrum and shifts:
+        click.echo("Error: Provide either --spectrum or --shifts, not both", err=True)
+        raise SystemExit(1)
+
+    if not spectrum and not shifts:
+        click.echo("Error: Provide --spectrum or --shifts", err=True)
+        raise SystemExit(1)
+
+    experimental_shifts: list[float] = []
+
+    if shifts:
+        # Parse comma-separated shifts
+        try:
+            experimental_shifts = [float(s.strip()) for s in shifts.split(",")]
+        except ValueError:
+            click.echo("Error: Invalid shifts format. Use comma-separated numbers.", err=True)
+            raise SystemExit(1)
+    else:
+        # Read from spectrum
+        try:
+            spec = BrukerReader.read_1d(str(spectrum))
+            if spec.nucleus != "13C":
+                click.echo(f"Warning: Spectrum is {spec.nucleus}, expected 13C", err=True)
+            # Pick peaks
+            picker = AdaptivePeakPicker(spec.data, spec.ppm_scale)
+            peaks = picker.pick_peaks()
+            experimental_shifts = [p.ppm for p in peaks]
+        except Exception as e:
+            click.echo(f"Error reading spectrum: {e}", err=True)
+            raise SystemExit(1)
+
+    if not experimental_shifts:
+        click.echo("Error: No experimental shifts found", err=True)
+        raise SystemExit(1)
+
+    # Load solutions
+    solutions_dir = Path(solutions_path)
+    try:
+        solutions = LSDOutputParser.parse_directory(solutions_dir)
+    except Exception as e:
+        click.echo(f"Error loading solutions: {e}", err=True)
+        raise SystemExit(1)
+
+    if not solutions:
+        click.echo("Error: No solutions found in directory", err=True)
+        raise SystemExit(1)
+
+    # Get table path
+    table_path: Path
+    if table:
+        table_path = Path(table)
+    else:
+        try:
+            table_path = _get_default_table_path()
+        except FileNotFoundError as e:
+            click.echo(f"Error: {e}", err=True)
+            raise SystemExit(1)
+
+    # Create ranker and rank solutions
+    try:
+        ranker = SolutionRanker.from_table_file(
+            table_path=str(table_path),
+            tolerance=tolerance,
+        )
+    except Exception as e:
+        click.echo(f"Error loading HOSE table: {e}", err=True)
+        raise SystemExit(1)
+
+    result = ranker.rank(solutions, experimental_shifts, top_n=top)
+
+    # Output results
+    if output_format == "json":
+        data = {
+            "total_solutions": result.total_solutions,
+            "ranked_count": result.ranked_count,
+            "skipped_count": result.skipped_count,
+            "experimental_shifts": result.experimental_shifts,
+            "tolerance": result.tolerance,
+            "solutions": [
+                {
+                    "rank": i + 1,
+                    "solution_index": sol.solution_index,
+                    "smiles": sol.smiles,
+                    "mae": round(sol.mae, 3),
+                    "matched_count": sol.matched_count,
+                    "total_carbons": sol.total_carbons,
+                    "prediction_rate": round(sol.prediction_rate, 3),
+                }
+                for i, sol in enumerate(result.solutions)
+            ],
+        }
+        click.echo(json.dumps(data, indent=2))
+    else:
+        click.echo(f"Ranking {result.total_solutions} LSD solutions")
+        click.echo(f"  Successfully ranked: {result.ranked_count}")
+        click.echo(f"  Skipped (no SMILES): {result.skipped_count}")
+        click.echo(f"  Experimental peaks: {len(experimental_shifts)}")
+        click.echo(f"  Tolerance: {tolerance} ppm")
+        click.echo()
+
+        if result.solutions:
+            click.echo(f"Top {len(result.solutions)} solutions:")
+            click.echo("-" * 70)
+            for i, sol in enumerate(result.solutions):
+                click.echo(
+                    f"{i+1:3}. Solution {sol.solution_index}: "
+                    f"MAE={sol.mae:.2f} ppm, "
+                    f"matched={sol.matched_count}/{sol.total_carbons}"
+                )
+                click.echo(f"     {sol.smiles}")
+        else:
+            click.echo("No solutions could be ranked.")
