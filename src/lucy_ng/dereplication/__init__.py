@@ -1,5 +1,6 @@
 """Dereplication module for matching compounds against reference databases."""
 
+from lucy_ng.dereplication.coconut import CoconutLoader
 from lucy_ng.dereplication.matcher import (
     MatchingConfig,
     MatchMode,
@@ -25,6 +26,8 @@ from lucy_ng.dereplication.sherlock import (
 )
 
 __all__ = [
+    # coconut
+    "CoconutLoader",
     # nmrshiftdb
     "HydrogenCount",
     "CarbonSignal",

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import click
 
-from lucy_ng.dereplication import DereplicationService, NMRShiftDBLoader
+from lucy_ng.dereplication import CoconutLoader, DereplicationService, NMRShiftDBLoader
 from lucy_ng.readers import BrukerReader
 
 
@@ -23,7 +23,7 @@ def dereplicate() -> None:
     "-d",
     type=click.Path(exists=True),
     default=None,
-    help="Path to nmrshiftdb SD file. Uses default if not specified.",
+    help="Path to reference SD file (COCONUT or nmrshiftdb). Uses COCONUT if available.",
 )
 @click.option(
     "--top",
@@ -54,42 +54,51 @@ def dereplicate_c13(
     threshold: float,
     output_format: str,
 ) -> None:
-    """Dereplicate 13C spectrum against nmrshiftdb.
+    """Dereplicate 13C spectrum against reference database.
 
     C13_PATH is the path to the 13C Bruker experiment.
     FORMULA is the molecular formula (e.g., C13H18O2).
 
-    Matches observed 13C peaks against reference spectra in nmrshiftdb
-    filtered by molecular formula.
+    Matches observed 13C peaks against reference spectra filtered by molecular formula.
+    Uses COCONUT database by default (larger), falls back to nmrshiftdb if unavailable.
     """
     # Find database path
+    is_coconut = False
     if database is None:
-        # Try default locations
+        # Try default locations (COCONUT first - larger database)
         default_paths = [
-            Path("data/reference/nmrshiftdb2withsignals.sd"),
-            Path("data/nmrshiftdb.sd"),
-            Path("data/nmrshiftdb/nmrshiftdb.sd"),
-            Path.home() / ".lucy" / "nmrshiftdb.sd",
+            (Path("data/reference/coconut_predicted.sd"), True),
+            (Path("data/reference/nmrshiftdb2withsignals.sd"), False),
+            (Path("data/nmrshiftdb.sd"), False),
+            (Path.home() / ".lucy" / "coconut_predicted.sd", True),
+            (Path.home() / ".lucy" / "nmrshiftdb.sd", False),
         ]
-        for p in default_paths:
+        for p, coconut in default_paths:
             if p.exists():
                 database = str(p)
+                is_coconut = coconut
                 break
 
         if database is None:
             click.echo(
-                "Error: No nmrshiftdb database found. "
-                "Specify path with --database or place at data/nmrshiftdb.sd",
+                "Error: No reference database found. "
+                "Specify path with --database or place coconut_predicted.sd in data/reference/",
                 err=True,
             )
             raise SystemExit(1)
+    else:
+        # Auto-detect format from filename
+        is_coconut = "coconut" in Path(database).name.lower()
 
-    # Load database
+    # Create loader (streaming - no upfront load needed)
     try:
-        loader = NMRShiftDBLoader(database)
-        loader.load()
+        if is_coconut:
+            loader = CoconutLoader(database)
+        else:
+            loader = NMRShiftDBLoader(database)
+            loader.load()  # nmrshiftdb is small enough to load fully
     except Exception as e:
-        click.echo(f"Error loading database: {e}", err=True)
+        click.echo(f"Error initializing database: {e}", err=True)
         raise SystemExit(1)
 
     # Read spectrum

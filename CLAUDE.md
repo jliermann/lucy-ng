@@ -69,17 +69,21 @@ Test data is Bruker format in `data/` directory:
 
 Reference databases for dereplication are stored in `data/reference/`:
 
-| File | Description | Size |
-|------|-------------|------|
-| `nmrshiftdb2withsignals.sd` | NMRShiftDB SD file with 13C chemical shifts | ~100 MB |
-| `sherlock_13c.json` | Pre-processed 13C reference data | ~350 MB |
-| `coconut_predicted.sd` | COCONUT natural products (predicted shifts) | ~4.8 GB |
+| File | Description | Entries | Size |
+|------|-------------|---------|------|
+| `coconut_predicted.sd` | COCONUT natural products (predicted shifts) - **default** | ~895,000 | ~4.8 GB |
+| `nmrshiftdb2withsignals.sd` | NMRShiftDB SD file with 13C chemical shifts | ~33,000 | ~100 MB |
+| `sherlock_13c.json` | Pre-processed 13C reference data | - | ~350 MB |
 
-**Usage**: The CLI `lucy dereplicate c13` command auto-discovers `data/reference/nmrshiftdb2withsignals.sd` when no `--database` is specified.
+**Usage**: The CLI `lucy dereplicate c13` command auto-discovers COCONUT as the default database. Falls back to nmrshiftdb if COCONUT is unavailable.
+
+**Loaders**:
+- `CoconutLoader` - For COCONUT SD files (parses `<CNMR_SHIFTS>`, `<Quaternaries>`, etc.)
+- `NMRShiftDBLoader` - For nmrshiftdb SD files (parses `<Spectrum 13C 0>` field)
 
 **Note**: These files are gitignored due to size. Obtain them separately:
-- NMRShiftDB: https://nmrshiftdb.nmr.uni-koeln.de/
 - COCONUT: https://coconut.naturalproducts.net/
+- NMRShiftDB: https://nmrshiftdb.nmr.uni-koeln.de/
 
 ## Key Patterns
 

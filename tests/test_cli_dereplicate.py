@@ -41,15 +41,14 @@ class TestDereplicateC13:
         not any(
             p.exists()
             for p in [
+                pytest.importorskip("pathlib").Path("data/reference/coconut_predicted.sd"),
                 pytest.importorskip("pathlib").Path("data/reference/nmrshiftdb2withsignals.sd"),
-                pytest.importorskip("pathlib").Path("data/nmrshiftdb.sd"),
-                pytest.importorskip("pathlib").Path("data/nmrshiftdb/nmrshiftdb.sd"),
             ]
         ),
-        reason="nmrshiftdb database not available",
+        reason="Reference database not available",
     )
     def test_dereplicate_with_database(self) -> None:
-        """Test dereplication with actual database."""
+        """Test dereplication with actual database (COCONUT or nmrshiftdb)."""
         runner = CliRunner()
         result = runner.invoke(
             dereplicate,

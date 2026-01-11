@@ -5,6 +5,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from lucy_ng.dereplication.coconut import CoconutLoader
 from lucy_ng.dereplication.matcher import (
     MatchingConfig,
     MatchMode,
@@ -27,7 +28,8 @@ from lucy_ng.processing import SimplePeakPicker
 
 # Path to test data
 DATA_DIR = Path(__file__).parent.parent / "data"
-SD_FILE = DATA_DIR / "reference" / "nmrshiftdb2withsignals.sd"
+COCONUT_FILE = DATA_DIR / "reference" / "coconut_predicted.sd"
+NMRSHIFTDB_FILE = DATA_DIR / "reference" / "nmrshiftdb2withsignals.sd"
 IBUPROFEN_DIR = DATA_DIR / "Ibuprofen"
 
 
@@ -85,10 +87,10 @@ class TestNMRShiftDBLoader:
         assert NMRShiftDBLoader._normalize_formula("C₁₃H₁₈O₂") == "C13H18O2"
         assert NMRShiftDBLoader._normalize_formula("C 13 H 18 O 2") == "C13H18O2"
 
-    @pytest.mark.skipif(not SD_FILE.exists(), reason="SD file not available")
+    @pytest.mark.skipif(not NMRSHIFTDB_FILE.exists(), reason="SD file not available")
     def test_nmrshiftdb_loader_basic(self):
         """Test loading SD file (requires actual file)."""
-        loader = NMRShiftDBLoader(SD_FILE)
+        loader = NMRShiftDBLoader(NMRSHIFTDB_FILE)
         entries = loader.load()
 
         assert len(entries) > 0
@@ -98,10 +100,10 @@ class TestNMRShiftDBLoader:
         assert entry.carbon_count > 0
         assert len(entry.signals) > 0
 
-    @pytest.mark.skipif(not SD_FILE.exists(), reason="SD file not available")
+    @pytest.mark.skipif(not NMRSHIFTDB_FILE.exists(), reason="SD file not available")
     def test_formula_filter(self):
         """Test filtering by molecular formula (requires actual file)."""
-        loader = NMRShiftDBLoader(SD_FILE)
+        loader = NMRShiftDBLoader(NMRSHIFTDB_FILE)
         loader.load()
 
         # Ibuprofen formula
@@ -464,24 +466,106 @@ class TestHelperFunctions:
 
 
 # ============================================================================
+# CoconutLoader Tests
+# ============================================================================
+
+
+class TestCoconutLoader:
+    """Tests for CoconutLoader."""
+
+    def test_parse_coconut_spectrum_basic(self):
+        """Test parsing COCONUT CNMR_SHIFTS field format."""
+        field = "0:2|73.89;1:3|101.13;2:5|154.84"
+        mult_map = {2: HydrogenCount.CH, 3: HydrogenCount.CH, 5: HydrogenCount.C}
+        signals = CoconutLoader._parse_coconut_spectrum(field, mult_map)
+
+        assert len(signals) == 3
+        assert signals[0].shift == pytest.approx(73.89)
+        assert signals[0].atom_index == 2
+        assert signals[0].hydrogen_count == HydrogenCount.CH
+        assert signals[1].shift == pytest.approx(101.13)
+        assert signals[2].hydrogen_count == HydrogenCount.C  # Quaternary
+
+    def test_parse_multiplicity_field(self):
+        """Test parsing COCONUT multiplicity fields."""
+        field = "5\t154.84\n6\t108.70\n7\t153.41"
+        atom_indices = CoconutLoader._parse_multiplicity_field(field)
+
+        assert len(atom_indices) == 3
+        assert atom_indices == [5, 6, 7]
+
+    def test_count_carbons(self):
+        """Test carbon counting from formula."""
+        assert CoconutLoader._count_carbons("C13H18O2") == 13
+        assert CoconutLoader._count_carbons("C6H12O6") == 6
+        assert CoconutLoader._count_carbons("CH4") == 1
+        assert CoconutLoader._count_carbons("H2O") == 0
+
+    @pytest.mark.skipif(not COCONUT_FILE.exists(), reason="COCONUT file not available")
+    @pytest.mark.slow
+    def test_coconut_loader_full_load(self):
+        """Test loading entire COCONUT SD file (requires actual file).
+
+        WARNING: This loads ~895K entries and takes several minutes.
+        Use streaming get_by_formula() instead for normal use.
+        """
+        loader = CoconutLoader(COCONUT_FILE)
+        entries = loader.load()
+
+        # Should have many entries
+        assert len(entries) > 100000
+
+        # Check first entry has expected fields
+        entry = entries[0]
+        assert entry.name  # CNP ID
+        assert entry.molecular_formula
+        assert entry.carbon_count > 0
+        assert len(entry.signals) > 0
+
+    @pytest.mark.skipif(not COCONUT_FILE.exists(), reason="COCONUT file not available")
+    def test_coconut_streaming_formula_filter(self):
+        """Test streaming filter by molecular formula (requires actual file).
+
+        This uses streaming mode - only parses entries matching the formula.
+        Much faster than load() for large databases like COCONUT.
+        """
+        loader = CoconutLoader(COCONUT_FILE)
+        # Don't call load() - use streaming via get_by_formula directly
+
+        # Ibuprofen formula - should have many candidates in COCONUT
+        candidates = loader.get_by_formula("C13H18O2")
+        assert len(candidates) > 50  # COCONUT has ~111 entries for this formula
+
+        # Verify entries have expected fields
+        entry = candidates[0]
+        assert entry.name  # CNP ID
+        assert entry.molecular_formula == "C13H18O2"
+        assert entry.carbon_count == 13
+        assert len(entry.signals) > 0
+
+
+# ============================================================================
 # Integration Tests (require real data)
 # ============================================================================
 
 
 @pytest.mark.skipif(
-    not (SD_FILE.exists() and IBUPROFEN_DIR.exists()),
+    not (COCONUT_FILE.exists() and IBUPROFEN_DIR.exists()),
     reason="Test data not available",
 )
 class TestIntegration:
-    """Integration tests with real data."""
+    """Integration tests with real data using COCONUT database.
+
+    These tests use streaming mode for COCONUT - no upfront load() call.
+    The service calls get_by_formula() which streams and filters.
+    """
 
     def test_dereplicate_ibuprofen_ranking(self):
         """Test that Ibuprofen ranks highly among C13H18O2 candidates."""
         from lucy_ng.readers import BrukerReader
 
-        # Load reference database
-        loader = NMRShiftDBLoader(SD_FILE)
-        loader.load()
+        # Create COCONUT loader (streaming - no load() call needed)
+        loader = CoconutLoader(COCONUT_FILE)
 
         # Load Ibuprofen spectrum
         spectrum = BrukerReader.read_1d(IBUPROFEN_DIR / "2")
@@ -490,7 +574,7 @@ class TestIntegration:
         peaks = SimplePeakPicker.pick_peaks(spectrum, threshold=0.05)
         observed = [ObservedPeak(shift=p.position) for p in peaks.peaks]
 
-        # Create service and dereplicate
+        # Create service and dereplicate (uses streaming get_by_formula)
         service = DereplicationService(loader)
         result = service.dereplicate_from_peaks(
             peaks=observed,
@@ -498,8 +582,8 @@ class TestIntegration:
             top_n=10,
         )
 
-        # Should find candidates
-        assert result.candidates_found > 0
+        # Should find candidates (COCONUT has many)
+        assert result.candidates_found > 50
         # Top match should have reasonable score
         assert result.best_score > 0.3
 
@@ -507,8 +591,8 @@ class TestIntegration:
         """Test full pipeline from raw spectrum."""
         from lucy_ng.readers import BrukerReader
 
-        loader = NMRShiftDBLoader(SD_FILE)
-        loader.load()
+        # Create loader (streaming - no load() needed)
+        loader = CoconutLoader(COCONUT_FILE)
 
         spectrum = BrukerReader.read_1d(IBUPROFEN_DIR / "2")
 
@@ -518,5 +602,5 @@ class TestIntegration:
             molecular_formula="C13H18O2",
         )
 
-        assert result.candidates_found > 0
+        assert result.candidates_found > 50
         assert result.observed_peaks > 0
