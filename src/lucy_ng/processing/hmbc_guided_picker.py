@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 
 from lucy_ng.models import Peak2D, PeakList1D, PeakList2D, Spectrum1D, Spectrum2D
-from lucy_ng.processing.peak_picker import SimplePeakPicker
+from lucy_ng.processing.peak_picker import AdaptivePeakPicker
 from lucy_ng.processing.peak_picker_2d import PeakPicker2D
 
 
@@ -114,7 +114,7 @@ class HMBCGuidedPicker:
         carbon_positions: list[float] = []
 
         if carbon_spectrum is not None:
-            c13_peaks = SimplePeakPicker.pick_peaks(carbon_spectrum, threshold=carbon_threshold)
+            c13_peaks = AdaptivePeakPicker.pick_peaks(carbon_spectrum, threshold=carbon_threshold)
             carbon_positions.extend(p.position for p in c13_peaks.peaks)
 
         if dept_peaks is not None:

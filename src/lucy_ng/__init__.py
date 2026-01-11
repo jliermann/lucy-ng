@@ -12,7 +12,6 @@ from lucy_ng.processing import (
     DEPTGuidedResult,
     PeakPicker2D,
     PeakValidator,
-    SimplePeakPicker,
     ValidationResult,
 )
 from lucy_ng.readers import BrukerReader
@@ -38,7 +37,6 @@ __all__ = [
     "DEPTGuidedResult",
     "PeakPicker2D",
     "PeakValidator",
-    "SimplePeakPicker",
     "ValidationResult",
     # Analysis
     "HydrogenBudgetAnalyzer",

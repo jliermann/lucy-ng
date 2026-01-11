@@ -11,7 +11,7 @@ from lucy_ng.dereplication.matcher import (
 )
 from lucy_ng.dereplication.nmrshiftdb import HydrogenCount, NMRShiftDBLoader
 from lucy_ng.models import Spectrum1D
-from lucy_ng.processing import SimplePeakPicker
+from lucy_ng.processing import AdaptivePeakPicker
 
 
 @dataclass
@@ -72,7 +72,7 @@ class DereplicationService:
             DereplicationResult with candidates and match status
         """
         # Pick peaks from spectrum
-        peak_list = SimplePeakPicker.pick_peaks(spectrum, threshold=peak_threshold)
+        peak_list = AdaptivePeakPicker.pick_peaks(spectrum, threshold=peak_threshold)
 
         # Convert to ObservedPeak (no DEPT info from raw spectrum)
         observed = [ObservedPeak(shift=p.position) for p in peak_list.peaks]

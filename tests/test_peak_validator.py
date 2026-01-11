@@ -6,7 +6,7 @@ import pytest
 
 from lucy_ng.models import Peak1D, Peak2D, PeakList1D, PeakList2D
 from lucy_ng.processing.peak_validator import PeakValidator, ValidationResult
-from lucy_ng.processing import PeakPicker2D, SimplePeakPicker
+from lucy_ng.processing import PeakPicker2D, AdaptivePeakPicker
 from lucy_ng.readers import BrukerReader
 
 # Test data paths
@@ -358,7 +358,7 @@ class TestIbuprofenIntegration:
         hsqc_spectrum = BrukerReader.read_2d(IBUPROFEN_HSQC)
 
         # Pick peaks
-        carbon_peaks = SimplePeakPicker.pick_peaks(carbon_spectrum, threshold=0.02)
+        carbon_peaks = AdaptivePeakPicker.pick_peaks(carbon_spectrum, threshold=0.02)
         hsqc_peaks = PeakPicker2D.pick_peaks(hsqc_spectrum, threshold=0.05)
 
         # Validate
@@ -383,7 +383,7 @@ class TestIbuprofenIntegration:
         carbon_spectrum = BrukerReader.read_1d(IBUPROFEN_13C)
         hsqc_spectrum = BrukerReader.read_2d(IBUPROFEN_HSQC)
 
-        carbon_peaks = SimplePeakPicker.pick_peaks(carbon_spectrum, threshold=0.02)
+        carbon_peaks = AdaptivePeakPicker.pick_peaks(carbon_spectrum, threshold=0.02)
         hsqc_peaks = PeakPicker2D.pick_peaks(hsqc_spectrum, threshold=0.05)
 
         # Filter to remove artifacts

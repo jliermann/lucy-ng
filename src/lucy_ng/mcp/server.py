@@ -11,7 +11,7 @@ from pathlib import Path
 from lucy_ng.analysis import SymmetryAnalyzer
 from lucy_ng.dereplication import CoconutLoader, DereplicationService, NMRShiftDBLoader
 from lucy_ng.lsd import LSDInputGenerator, LSDRunner
-from lucy_ng.processing import DEPTGuidedPicker, HMBCGuidedPicker, SimplePeakPicker
+from lucy_ng.processing import DEPTGuidedPicker, HMBCGuidedPicker, AdaptivePeakPicker
 from lucy_ng.readers import BrukerReader
 
 # Create MCP server instance
@@ -105,7 +105,7 @@ def pick_peaks_1d(path: str, threshold: float | None = None) -> dict:
         spectrum = BrukerReader.read_1d(path)
         if threshold is None:
             threshold = 0.05
-        peaks = SimplePeakPicker.pick_peaks(spectrum, threshold=threshold)
+        peaks = AdaptivePeakPicker.pick_peaks(spectrum, threshold=threshold)
         return {
             "success": True,
             "count": len(peaks.peaks),
@@ -469,20 +469,26 @@ def generate_lsd_input(
         for exp_dir in sorted(data_path.iterdir()):
             if exp_dir.is_dir() and exp_dir.name.isdigit():
                 try:
-                    # Try to read as 1D first
+                    # Try to read as 2D first, then 1D
                     try:
-                        spec = BrukerReader.read_1d(str(exp_dir))
-                        exp_type = spec.nucleus
-                        if "DEPT" in spec.metadata.get("pulse_program", "").upper():
-                            if "90" in spec.metadata.get("pulse_program", ""):
-                                exp_type = "DEPT90"
-                            else:
-                                exp_type = "DEPT135"
-                        experiments[exp_type] = exp_dir
+                        spec2d = BrukerReader.read_2d(str(exp_dir))
+                        experiments[spec2d.experiment_type.upper()] = exp_dir
                     except Exception:
-                        # Try 2D
-                        spec = BrukerReader.read_2d(str(exp_dir))
-                        experiments[spec.experiment_type] = exp_dir
+                        # Fall back to 1D
+                        spec1d = BrukerReader.read_1d(str(exp_dir))
+                        # Distinguish DEPT from regular 13C
+                        pulse_prog = spec1d.metadata.get("pulse_program", "").lower()
+                        if "dept135" in pulse_prog or "dept-135" in pulse_prog:
+                            experiments["DEPT135"] = exp_dir
+                        elif "dept90" in pulse_prog or "dept-90" in pulse_prog:
+                            experiments["DEPT90"] = exp_dir
+                        elif "dept" in pulse_prog:
+                            # Generic DEPT, assume 135
+                            experiments["DEPT135"] = exp_dir
+                        elif spec1d.nucleus == "13C":
+                            experiments["13C"] = exp_dir
+                        elif spec1d.nucleus == "1H":
+                            experiments["1H"] = exp_dir
                 except Exception:
                     continue
 

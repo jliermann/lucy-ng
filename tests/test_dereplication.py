@@ -24,7 +24,7 @@ from lucy_ng.dereplication.service import (
     create_observed_peaks_with_dept,
 )
 from lucy_ng.models import Peak1D, PeakList1D, Spectrum1D
-from lucy_ng.processing import SimplePeakPicker
+from lucy_ng.processing import AdaptivePeakPicker
 
 # Path to test data
 DATA_DIR = Path(__file__).parent.parent / "data"
@@ -116,8 +116,8 @@ class TestNMRShiftDBLoader:
 # ============================================================================
 
 
-class TestSimplePeakPicker:
-    """Tests for SimplePeakPicker."""
+class TestAdaptivePeakPicker:
+    """Tests for AdaptivePeakPicker."""
 
     def test_pick_peaks_basic(self):
         """Test basic peak picking."""
@@ -143,7 +143,7 @@ class TestSimplePeakPicker:
             frequency=100.0,
         )
 
-        peaks = SimplePeakPicker.pick_peaks(spectrum, threshold=0.1)
+        peaks = AdaptivePeakPicker.pick_peaks(spectrum, threshold=0.1)
 
         assert len(peaks.peaks) == 4
         assert peaks.nucleus == "13C"
@@ -160,8 +160,8 @@ class TestSimplePeakPicker:
 
         spectrum = Spectrum1D(data=data, ppm_scale=ppm, nucleus="13C", frequency=100.0)
 
-        peaks_low = SimplePeakPicker.pick_peaks(spectrum, threshold=0.05)
-        peaks_high = SimplePeakPicker.pick_peaks(spectrum, threshold=0.5)
+        peaks_low = AdaptivePeakPicker.pick_peaks(spectrum, threshold=0.05)
+        peaks_high = AdaptivePeakPicker.pick_peaks(spectrum, threshold=0.5)
 
         assert len(peaks_low.peaks) >= len(peaks_high.peaks)
 
@@ -172,7 +172,7 @@ class TestSimplePeakPicker:
 
         spectrum = BrukerReader.read_1d(IBUPROFEN_DIR / "2")
 
-        peaks = SimplePeakPicker.pick_peaks(spectrum, threshold=0.05)
+        peaks = AdaptivePeakPicker.pick_peaks(spectrum, threshold=0.05)
 
         # Ibuprofen has 13 carbons, but some may overlap
         # Expect reasonable number of peaks (8-15)
@@ -571,7 +571,7 @@ class TestIntegration:
         spectrum = BrukerReader.read_1d(IBUPROFEN_DIR / "2")
 
         # Pick peaks
-        peaks = SimplePeakPicker.pick_peaks(spectrum, threshold=0.05)
+        peaks = AdaptivePeakPicker.pick_peaks(spectrum, threshold=0.05)
         observed = [ObservedPeak(shift=p.position) for p in peaks.peaks]
 
         # Create service and dereplicate (uses streaming get_by_formula)

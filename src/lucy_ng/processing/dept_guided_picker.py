@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 
 from lucy_ng.models import Peak1D, PeakList1D, PeakList2D, Spectrum1D, Spectrum2D
-from lucy_ng.processing.peak_picker import SimplePeakPicker
+from lucy_ng.processing.peak_picker import AdaptivePeakPicker
 from lucy_ng.processing.peak_picker_2d import PeakPicker2D
 from lucy_ng.processing.peak_validator import PeakValidator
 
@@ -222,7 +222,7 @@ class DEPTGuidedPicker:
         )
 
         # Pick DEPT-90 peaks (only CH visible)
-        dept90_peaks = SimplePeakPicker.pick_peaks(dept90, threshold=dept_threshold)
+        dept90_peaks = AdaptivePeakPicker.pick_peaks(dept90, threshold=dept_threshold)
         dept90_positions = set(p.position for p in dept90_peaks.peaks)
 
         # Refine multiplicities using DEPT-90
