@@ -2,16 +2,22 @@
 
 import gzip
 import json
+import multiprocessing as mp
+import os
 import statistics
 from collections import defaultdict
+from functools import partial
 from pathlib import Path
 from typing import Iterator
 
-from rdkit import Chem
+from rdkit import Chem, RDLogger
 from tqdm import tqdm
 
 from .hose import HOSECodeGenerator
 from .models import ShiftEntry
+
+# Suppress RDKit warnings in worker processes
+RDLogger.DisableLog("rdApp.*")
 
 
 class HOSELookupTable:
@@ -285,6 +291,140 @@ class HOSELookupTable:
 
         return shifts
 
+    @classmethod
+    def build_from_nmrshiftdb(
+        cls,
+        sd_path: Path,
+        max_radius: int = 6,
+        progress: bool = True,
+        limit: int | None = None,
+        n_jobs: int | None = None,
+    ) -> "HOSELookupTable":
+        """Build lookup table from nmrshiftdb2 SD file with parallel processing.
+
+        Args:
+            sd_path: Path to nmrshiftdb2 SD file
+            max_radius: Maximum HOSE code radius (default 6)
+            progress: Show progress bar
+            limit: Optional limit on number of molecules to process
+            n_jobs: Number of parallel workers (default: CPU count)
+
+        Returns:
+            Populated HOSELookupTable
+        """
+        sd_path = Path(sd_path)
+        if not sd_path.exists():
+            raise FileNotFoundError(f"SD file not found: {sd_path}")
+
+        # Collect molecules with shifts
+        mol_data = cls._collect_molecules_nmrshiftdb(sd_path, limit)
+
+        if not mol_data:
+            return cls()
+
+        # Process in parallel
+        n_jobs = n_jobs or mp.cpu_count()
+        worker = partial(_process_molecule_worker, max_radius=max_radius)
+
+        table = cls()
+
+        if n_jobs > 1:
+            with mp.Pool(n_jobs) as pool:
+                if progress:
+                    results = list(
+                        tqdm(
+                            pool.imap(worker, mol_data, chunksize=50),
+                            total=len(mol_data),
+                            desc="Building HOSE table",
+                            unit=" mol",
+                        )
+                    )
+                else:
+                    results = pool.map(worker, mol_data, chunksize=50)
+        else:
+            # Serial processing
+            if progress:
+                mol_data = tqdm(mol_data, desc="Building HOSE table", unit=" mol")
+            results = [worker(md) for md in mol_data]
+
+        # Aggregate results
+        for entries in results:
+            for hose_code, shift in entries:
+                table.add_entry(hose_code, shift)
+            if entries:
+                table._molecule_count += 1
+
+        return table
+
+    @staticmethod
+    def _collect_molecules_nmrshiftdb(
+        sd_path: Path,
+        limit: int | None = None,
+    ) -> list[tuple[str, dict[int, float]]]:
+        """Collect molecules and shifts from nmrshiftdb2 SD file.
+
+        Returns list of (molblock, {atom_idx: shift}) tuples for parallel processing.
+        """
+        supplier = Chem.SDMolSupplier(str(sd_path), removeHs=False)
+        mol_data = []
+
+        for mol in supplier:
+            if mol is None:
+                continue
+
+            # Parse shifts from nmrshiftdb2 format
+            shifts = HOSELookupTable._parse_nmrshiftdb_shifts(mol)
+            if not shifts:
+                continue
+
+            # Store molblock for serialization to workers
+            molblock = Chem.MolToMolBlock(mol)
+            mol_data.append((molblock, shifts))
+
+            if limit and len(mol_data) >= limit:
+                break
+
+        return mol_data
+
+    @staticmethod
+    def _parse_nmrshiftdb_shifts(mol: Chem.Mol) -> dict[int, float]:
+        """Parse nmrshiftdb2 Spectrum 13C field.
+
+        Format: 'shift;coupling;atom_idx|shift;coupling;atom_idx|...'
+        Example: '17.6;0.0Q;10|18.3;0.0T;0|22.6;0.0Q;12|'
+
+        Args:
+            mol: RDKit Mol with properties
+
+        Returns:
+            Dict mapping atom index to chemical shift
+        """
+        shifts: dict[int, float] = {}
+
+        if not mol.HasProp("Spectrum 13C 0"):
+            return shifts
+
+        field = mol.GetProp("Spectrum 13C 0")
+
+        for part in field.strip().split("|"):
+            part = part.strip()
+            if not part:
+                continue
+
+            # Format: shift;coupling;atom_idx
+            parts = part.split(";")
+            if len(parts) < 3:
+                continue
+
+            try:
+                shift = float(parts[0])
+                atom_idx = int(parts[2])
+                shifts[atom_idx] = shift
+            except (ValueError, IndexError):
+                continue
+
+        return shifts
+
     def __len__(self) -> int:
         """Return number of unique HOSE codes."""
         return len(self._table)
@@ -295,3 +435,47 @@ class HOSELookupTable:
             f"HOSELookupTable(codes={self.unique_codes}, "
             f"entries={self.total_entries}, molecules={self.molecule_count})"
         )
+
+
+def _process_molecule_worker(
+    mol_data: tuple[str, dict[int, float]],
+    max_radius: int = 6,
+) -> list[tuple[str, float]]:
+    """Worker function to process a single molecule.
+
+    Args:
+        mol_data: Tuple of (molblock, {atom_idx: shift})
+        max_radius: Maximum HOSE code radius
+
+    Returns:
+        List of (hose_code, shift) tuples
+    """
+    from hosegen import HoseGenerator
+
+    molblock, shifts = mol_data
+    entries: list[tuple[str, float]] = []
+
+    mol = Chem.MolFromMolBlock(molblock, removeHs=False)
+    if mol is None:
+        return entries
+
+    mol_h = Chem.AddHs(mol)
+    hose_gen = HoseGenerator()
+
+    for atom_idx, shift in shifts.items():
+        try:
+            atom = mol_h.GetAtomWithIdx(atom_idx)
+            if atom.GetSymbol() != "C":
+                continue
+
+            for radius in range(1, max_radius + 1):
+                try:
+                    hose_code = hose_gen.get_Hose_codes(mol_h, atom_idx, max_radius=radius)
+                    if hose_code:
+                        entries.append((hose_code, shift))
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+    return entries

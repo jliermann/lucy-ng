@@ -129,6 +129,13 @@ def predict_c13(
     help=f"Output file path (default: {DEFAULT_TABLE_PATH}).",
 )
 @click.option(
+    "--source",
+    "-s",
+    type=click.Choice(["coconut", "nmrshiftdb", "auto"]),
+    default="auto",
+    help="Source format (auto-detects by default).",
+)
+@click.option(
     "--max-radius",
     "-r",
     type=int,
@@ -143,6 +150,13 @@ def predict_c13(
     help="Limit number of molecules to process (for testing).",
 )
 @click.option(
+    "--workers",
+    "-w",
+    type=int,
+    default=None,
+    help="Number of parallel workers (default: CPU count).",
+)
+@click.option(
     "--no-compress",
     is_flag=True,
     help="Don't compress output file.",
@@ -150,33 +164,56 @@ def predict_c13(
 def build_table(
     sd_path: str,
     output: str,
+    source: str,
     max_radius: int,
     limit: int | None,
+    workers: int | None,
     no_compress: bool,
 ) -> None:
-    """Build HOSE lookup table from COCONUT SD file.
+    """Build HOSE lookup table from SD file with 13C shifts.
 
-    SD_PATH is the path to the COCONUT SD file with predicted 13C shifts.
+    SD_PATH is the path to an SD file with 13C chemical shifts.
+    Supports COCONUT (CNMR_SHIFTS field) and nmrshiftdb2 (Spectrum 13C 0 field).
 
-    This is a one-time operation that builds the lookup table for predictions.
-    The resulting table file can be reused for all future predictions.
+    Uses parallel processing for faster table building on multi-core machines.
 
-    Example:
+    Examples:
 
-        lucy predict build-table data/reference/coconut_predicted.sd
+        lucy predict build-table data/reference/nmrshiftdb2withsignals.sd
+
+        lucy predict build-table data/reference/coconut_predicted.sd -w 8
     """
+    import multiprocessing as mp
+
+    # Auto-detect source format
+    if source == "auto":
+        source = _detect_sd_format(sd_path)
+        click.echo(f"Auto-detected format: {source}")
+
+    n_workers = workers or mp.cpu_count()
     click.echo(f"Building HOSE lookup table from: {sd_path}")
+    click.echo(f"Source format: {source}")
     click.echo(f"Max radius: {max_radius}")
+    click.echo(f"Workers: {n_workers}")
     if limit:
         click.echo(f"Limit: {limit} molecules")
 
     try:
-        table = HOSELookupTable.build_from_coconut(
-            sd_path=Path(sd_path),
-            max_radius=max_radius,
-            progress=True,
-            limit=limit,
-        )
+        if source == "nmrshiftdb":
+            table = HOSELookupTable.build_from_nmrshiftdb(
+                sd_path=Path(sd_path),
+                max_radius=max_radius,
+                progress=True,
+                limit=limit,
+                n_jobs=n_workers,
+            )
+        else:
+            table = HOSELookupTable.build_from_coconut(
+                sd_path=Path(sd_path),
+                max_radius=max_radius,
+                progress=True,
+                limit=limit,
+            )
     except Exception as e:
         click.echo(f"Error building table: {e}", err=True)
         raise SystemExit(1)
@@ -193,6 +230,27 @@ def build_table(
     click.echo(f"  Molecules processed: {table.molecule_count:,}")
     click.echo(f"  Unique HOSE codes: {table.unique_codes:,}")
     click.echo(f"  Total entries: {table.total_entries:,}")
+
+
+def _detect_sd_format(sd_path: str) -> str:
+    """Auto-detect SD file format by checking field names."""
+    from rdkit import Chem
+
+    supplier = Chem.SDMolSupplier(sd_path, removeHs=False)
+
+    # Check first few molecules
+    for i, mol in enumerate(supplier):
+        if mol is None:
+            continue
+        if mol.HasProp("Spectrum 13C 0"):
+            return "nmrshiftdb"
+        if mol.HasProp("CNMR_SHIFTS"):
+            return "coconut"
+        if i > 10:
+            break
+
+    # Default to coconut
+    return "coconut"
 
 
 @predict.command("table-info")
