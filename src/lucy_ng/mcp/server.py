@@ -6,6 +6,7 @@ via the Model Context Protocol (MCP).
 
 from mcp.server.fastmcp import FastMCP
 
+from lucy_ng.analysis import SymmetryAnalyzer
 from lucy_ng.processing import DEPTGuidedPicker, HMBCGuidedPicker, SimplePeakPicker
 from lucy_ng.readers import BrukerReader
 
@@ -217,6 +218,81 @@ def pick_hmbc_peaks(
                 }
                 for p in result.peaks.peaks
             ],
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+# =============================================================================
+# Analysis Tools
+# =============================================================================
+
+
+@mcp.tool()
+def analyze_symmetry(
+    molecular_formula: str,
+    hsqc_path: str,
+    dept135_path: str,
+) -> dict:
+    """Analyze molecular symmetry from spectroscopic data.
+
+    Compares expected atom counts from molecular formula with observed
+    NMR signals to detect equivalent atoms due to symmetry. This is
+    critical for correct LSD input generation.
+
+    Common symmetry patterns:
+    - Para-disubstituted benzene: 2 equivalent CH carbons (2 pairs)
+    - Isopropyl group: 2 equivalent CH3 carbons
+    - tert-Butyl group: 3 equivalent CH3 carbons
+
+    Args:
+        molecular_formula: Molecular formula (e.g., "C13H18O2")
+        hsqc_path: Path to HSQC experiment directory
+        dept135_path: Path to DEPT-135 experiment directory
+
+    Returns:
+        Dictionary with symmetry analysis including:
+        - signal_count vs expected_carbons
+        - hydrogen budget (expected vs observed)
+        - intensity analysis for potential equivalents
+        - interpretation hints for AI reasoning
+    """
+    try:
+        hsqc = BrukerReader.read_2d(hsqc_path)
+        dept135 = BrukerReader.read_1d(dept135_path)
+        dept_result = DEPTGuidedPicker.pick_hsqc_peaks(hsqc, dept135)
+
+        result = SymmetryAnalyzer.analyze(molecular_formula, dept_result, hsqc)
+
+        return {
+            "success": True,
+            "molecular_formula": result.molecular_formula,
+            "signal_count": result.signal_count,
+            "expected_carbons": result.expected_carbons,
+            "missing_carbons": result.missing_carbons,
+            "has_symmetry": result.has_symmetry,
+            "hydrogen_budget": {
+                "expected_h": result.hydrogen_budget.expected_h,
+                "total_accounted": result.hydrogen_budget.total_accounted,
+                "missing_h": result.hydrogen_budget.missing_h,
+                "has_equivalents": result.hydrogen_budget.has_equivalents,
+            },
+            "intensity_report": {
+                "peak_count": len(result.intensity_report.peaks),
+                "has_potential_equivalents": result.intensity_report.has_potential_equivalents,
+                "high_intensity_peaks": [
+                    {
+                        "carbon_ppm": float(p.carbon_shift),
+                        "proton_ppm": float(p.proton_shift),
+                        "multiplicity": p.multiplicity,
+                        "relative_intensity": float(p.relative_intensity),
+                        "is_potential_equivalent": p.is_potential_equivalent,
+                    }
+                    for p in result.intensity_report.peaks
+                    if p.is_potential_equivalent
+                ],
+            },
+            "summary": result.summary(),
         }
     except Exception as e:
         return {"success": False, "error": str(e)}
