@@ -11,6 +11,7 @@ from pathlib import Path
 from lucy_ng.analysis import SymmetryAnalyzer
 from lucy_ng.dereplication import CoconutLoader, DereplicationService, NMRShiftDBLoader
 from lucy_ng.lsd import LSDInputGenerator, LSDRunner
+from lucy_ng.prediction import C13Predictor, HOSELookupTable
 from lucy_ng.processing import DEPTGuidedPicker, HMBCGuidedPicker, AdaptivePeakPicker
 from lucy_ng.readers import BrukerReader
 
@@ -19,7 +20,8 @@ mcp = FastMCP(
     name="lucy-ng",
     instructions="AI-powered Computer-Assisted Structure Elucidation for NMR data. "
     "Use these tools to read NMR spectra, pick peaks, analyze symmetry, "
-    "dereplicate against databases, and generate LSD input for structure elucidation.",
+    "dereplicate against databases, predict 13C shifts from structure, "
+    "and generate LSD input for structure elucidation.",
 )
 
 
@@ -605,6 +607,109 @@ def run_lsd(
             "solutions": result.solutions[:10],  # Limit to first 10 solutions
             "stdout": result.stdout[:1000] if result.stdout else "",
             "stderr": result.stderr[:1000] if result.stderr else "",
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+# =============================================================================
+# Prediction Tools
+# =============================================================================
+
+
+# Cache for lookup table to avoid reloading
+_prediction_cache: dict[str, C13Predictor] = {}
+
+
+def _get_predictor(table_path: str | None = None) -> C13Predictor | None:
+    """Get or create a predictor instance, caching the lookup table."""
+    # Find table path
+    if table_path is None:
+        search_paths = [
+            Path("data/reference/hose_lookup.json.gz"),
+            Path.home() / ".lucy" / "hose_lookup.json.gz",
+            Path("hose_lookup.json.gz"),
+            Path("hose_lookup.json"),
+        ]
+        for p in search_paths:
+            if p.exists():
+                table_path = str(p)
+                break
+
+    if table_path is None:
+        return None
+
+    # Check cache
+    if table_path in _prediction_cache:
+        return _prediction_cache[table_path]
+
+    # Load and cache
+    try:
+        predictor = C13Predictor.from_table_file(Path(table_path))
+        _prediction_cache[table_path] = predictor
+        return predictor
+    except Exception:
+        return None
+
+
+@mcp.tool()
+def predict_c13_shifts(
+    smiles: str,
+    table_path: str | None = None,
+    max_radius: int = 6,
+) -> dict:
+    """Predict 13C NMR chemical shifts for a molecule from its structure.
+
+    Uses HOSE (Hierarchically Ordered Spherical Environment) codes to
+    look up chemical shifts in a reference database built from COCONUT.
+    Falls back to shorter HOSE radii when exact matches aren't found.
+
+    This tool is useful for:
+    - Ranking LSD solutions by comparing predicted vs experimental shifts
+    - Validating proposed structures
+    - Estimating shifts for structure elucidation
+
+    Args:
+        smiles: Molecule structure in SMILES format
+        table_path: Optional path to HOSE lookup table (uses default if not set)
+        max_radius: Maximum HOSE radius for lookup (default: 6)
+
+    Returns:
+        Dictionary with predictions for each carbon including:
+        - shift: predicted chemical shift in ppm
+        - confidence: prediction confidence (0-1)
+        - radius_used: HOSE radius at which match was found
+        - match_count: number of reference matches
+    """
+    predictor = _get_predictor(table_path)
+    if predictor is None:
+        return {
+            "success": False,
+            "error": "No HOSE lookup table found. Build one with: "
+            "lucy predict build-table <coconut.sd>",
+        }
+
+    try:
+        result = predictor.predict_from_smiles(smiles)
+
+        return {
+            "success": True,
+            "smiles": result.smiles,
+            "carbon_count": result.carbon_count,
+            "success_count": result.success_count,
+            "success_rate": result.success_rate,
+            "predictions": [
+                {
+                    "atom_index": p.atom_index,
+                    "shift": round(p.shift, 2),
+                    "confidence": p.confidence,
+                    "radius_used": p.radius_used,
+                    "match_count": p.match_count,
+                    "std_dev": round(p.std_dev, 2),
+                    "range": [round(p.min_shift, 2), round(p.max_shift, 2)],
+                }
+                for p in result.get_shifts_sorted()
+            ],
         }
     except Exception as e:
         return {"success": False, "error": str(e)}
