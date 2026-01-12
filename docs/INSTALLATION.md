@@ -35,6 +35,14 @@ Lucy-ng's Python dependencies will be installed automatically. The core dependen
 | pydantic | >=2.0 | Data model validation |
 | rdkit | >=2023.0 | SD file parsing for databases |
 | click | >=8.0 | CLI framework |
+| tqdm | >=4.0 | Progress bars |
+
+**Optional dependencies:**
+
+| Package | Purpose | Notes |
+|---------|---------|-------|
+| hose-code-generator | 13C shift prediction | See [Python 3.12 note](#13c-prediction-python-312) |
+| mcp[cli] | MCP server for AI agents | Installed with `[mcp]` extra |
 
 ## Quick Installation
 
@@ -106,6 +114,39 @@ pytest
 
 ```bash
 sudo pip install "lucy-ng[mcp] @ git+https://github.com/steinbeck/lucy-ng.git"
+```
+
+## 13C Prediction (Python 3.12)
+
+The 13C shift prediction feature (`lucy predict c13`, `predict_c13_shifts` MCP tool, solution ranking) requires the `hose-code-generator` package for HOSE code generation.
+
+### Python 3.10/3.11
+
+On Python 3.10 or 3.11, hosegen installs automatically with all its dependencies.
+
+### Python 3.12+
+
+On Python 3.12, the `hose-code-generator` package has a broken test dependency (`xmlrunner`) that fails to install. Install it manually without dependencies:
+
+```bash
+# After installing lucy-ng
+pip install git+https://github.com/Ratsemaat/HOSE_code_generator.git --no-deps
+```
+
+The `--no-deps` flag skips the broken `xmlrunner` dependency, which is only needed for running hosegen's own tests, not for HOSE code generation. The prediction features work correctly without it.
+
+### Checking Availability
+
+You can check if HOSE code prediction is available:
+
+```python
+from lucy_ng.prediction import HOSEGEN_AVAILABLE
+print(f"HOSE prediction available: {HOSEGEN_AVAILABLE}")
+```
+
+Or via CLI:
+```bash
+lucy predict c13 "CCO"  # Will show error if hosegen not installed
 ```
 
 ## External Dependencies
@@ -320,6 +361,24 @@ ulimit -v unlimited
 # Or use NMRShiftDB instead
 lucy dereplicate c13 spectrum formula --database data/reference/nmrshiftdb2withsignals.sd
 ```
+
+### HOSE Code Generator Issues (Python 3.12)
+
+**Problem**: Installation fails with `xmlrunner` or `_TextTestResult` errors
+
+```
+ImportError: cannot import name '_TextTestResult' from 'unittest'
+```
+
+**Solution**: This is a known issue with Python 3.12. Install hosegen without its broken test dependency:
+
+```bash
+pip install git+https://github.com/Ratsemaat/HOSE_code_generator.git --no-deps
+```
+
+**Problem**: `hosegen package not installed` error when using prediction
+
+**Solution**: Install hosegen as shown above. The prediction features require this package for HOSE code generation.
 
 ## Next Steps
 

@@ -151,6 +151,16 @@ cd lucy-ng
 pip install -e ".[dev,mcp]"
 ```
 
+### 13C Prediction Support (Python 3.12)
+
+The 13C shift prediction feature requires the `hose-code-generator` package. On Python 3.12, install it separately:
+
+```bash
+pip install git+https://github.com/Ratsemaat/HOSE_code_generator.git --no-deps
+```
+
+> **Note**: The `--no-deps` flag skips a broken test dependency (`xmlrunner`) that doesn't work with Python 3.12. The prediction feature works fine without it.
+
 ### External Dependencies
 
 **LSD Solver** (optional, for structure generation):
