@@ -27,7 +27,7 @@ The Model Context Protocol (MCP) is an open standard by Anthropic for connecting
 
 ## Available Tools
 
-Lucy-ng exposes 10 MCP tools:
+Lucy-ng exposes 12 MCP tools:
 
 ### Spectrum Reading
 
@@ -63,6 +63,13 @@ Lucy-ng exposes 10 MCP tools:
 | `check_lsd_availability` | Check if LSD is installed | (none) |
 | `generate_lsd_input` | Generate LSD input file | `data_dir`, `molecular_formula`, `output_file` (optional) |
 | `run_lsd` | Execute LSD solver | `input_file`, `timeout`, `output_dir` (optional) |
+| `rank_lsd_solutions` | Rank solutions by 13C prediction | `solutions_dir`, `experimental_shifts`, `tolerance`, `top_n` |
+
+### Prediction
+
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `predict_c13_shifts` | Predict 13C shifts from SMILES | `smiles`, `table_path` (optional), `max_radius` (optional) |
 
 ## Setup
 
@@ -303,6 +310,46 @@ This opens a web interface where you can:
 >
 > The hydrogen budget shows 16 expected vs 8 directly observed on unique carbons,
 > consistent with each signal representing two equivalent positions.
+
+### Solution Ranking
+
+**User:**
+> LSD generated 50 candidate structures. Which one is most likely correct?
+
+**Claude uses:**
+1. `rank_lsd_solutions(solutions_dir="output/", experimental_shifts=[18.5, 22.4, ...], top_n=10)` - Rank by spectrum prediction
+
+**Response:**
+> I ranked the 50 LSD solutions by comparing predicted vs experimental 13C shifts:
+>
+> **Top candidates:**
+> 1. Solution 23 (MAE: 1.8 ppm) - Best match
+> 2. Solution 45 (MAE: 2.1 ppm)
+> 3. Solution 12 (MAE: 2.4 ppm)
+>
+> Solution 23 shows excellent agreement between predicted and experimental shifts.
+> The largest deviation is 3.2 ppm at 140 ppm (aromatic region).
+
+### Shift Prediction
+
+**User:**
+> What 13C shifts would you expect for caffeine?
+
+**Claude uses:**
+1. `predict_c13_shifts(smiles="Cn1cnc2c1c(=O)n(c(=O)n2C)C")` - Predict from SMILES
+
+**Response:**
+> Predicted 13C shifts for caffeine (C8H10N4O2):
+>
+> | Carbon | Predicted (ppm) | Confidence |
+> |--------|-----------------|------------|
+> | C-2 | 151.8 | High |
+> | C-4 | 148.5 | High |
+> | C-5 | 107.2 | High |
+> | C-6 | 155.1 | High |
+> | N-CH3 | 27.8, 29.5, 33.4 | High |
+>
+> Predictions are based on HOSE code lookup with 6-sphere radius.
 
 ## Troubleshooting
 

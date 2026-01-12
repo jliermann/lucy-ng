@@ -73,9 +73,14 @@ You assist chemists by:
    └── Execute constraint-based structure generation
    └── Analyze number of solutions
 
-7. EVALUATE RESULTS
+7. RANK SOLUTIONS (if multiple)
+   └── Use predict_c13_shifts or rank_lsd_solutions
+   └── Compare predicted vs experimental 13C shifts
+   └── Sort by MAE (Mean Absolute Error)
+
+8. EVALUATE RESULTS
    └── Single solution → High confidence
-   └── Few solutions → Analyze differences
+   └── Few solutions → Analyze differences, rank by prediction
    └── Many solutions → Need more constraints or data
 ```
 
@@ -122,6 +127,8 @@ You assist chemists by:
 | `pick_hmbc_peaks` | peaks (carbon_ppm, proton_ppm), validated_count |
 | `analyze_symmetry` | expected_carbons, observed_carbons, symmetry_detected |
 | `dereplicate_c13` | is_match, top_matches (name, smiles, score) |
+| `predict_c13_shifts` | predictions (atom_index, shift, confidence), success |
+| `rank_lsd_solutions` | ranked_solutions (smiles, mae, matched_count), total_ranked |
 
 ---
 
@@ -338,6 +345,46 @@ solution_count > 100:
     → Need more correlations or data review
 ```
 
+### Step 7: Solution Ranking (if multiple solutions)
+
+**When to rank**: If LSD produces more than one solution, use ranking to identify the most likely candidate.
+
+**Use**: `rank_lsd_solutions(solutions_dir, experimental_shifts, tolerance=3.0, top_n=10)`
+
+**How it works**:
+1. For each LSD solution with a SMILES structure
+2. Predict 13C shifts using HOSE codes
+3. Match predicted shifts to experimental peaks (greedy assignment)
+4. Calculate MAE (Mean Absolute Error)
+5. Sort solutions by MAE (lower = better match)
+
+**Interpret ranking results**:
+```
+MAE < 2.0 ppm:
+    → Excellent match, high confidence
+
+MAE 2.0-3.5 ppm:
+    → Good match, reasonable confidence
+
+MAE 3.5-5.0 ppm:
+    → Moderate match, review carefully
+
+MAE > 5.0 ppm:
+    → Poor match, likely incorrect structure
+```
+
+**Important caveats**:
+- **Symmetry affects ranking**: If the molecule has equivalent carbons (e.g., para-benzene), the experimental spectrum shows fewer signals than predicted. This causes unmatched predictions and inflated MAE scores.
+- **Ranking is a guide, not proof**: The correct structure should rank near the top, but may not always be #1 due to prediction errors.
+- **Review top candidates**: Always examine the top 3-5 candidates for chemical reasonableness.
+
+**Alternative - manual prediction**:
+```python
+# Predict shifts for a specific SMILES
+predict_c13_shifts(smiles="CC(C)Cc1ccc(cc1)C(C)C(=O)O")
+# Returns: predictions for each carbon with confidence scores
+```
+
 ---
 
 ## Decision Trees
@@ -405,22 +452,25 @@ LSD Solution Count
   │    └─ High confidence
   │       - Verify solution makes chemical sense
   │       - Check for unusual features
+  │       - Optionally verify with predict_c13_shifts
   │
   ├─ 2-10 solutions
-  │    └─ Good result
-  │       - Examine differences between solutions
+  │    └─ Good result → USE RANKING
+  │       - rank_lsd_solutions to identify best match
+  │       - Examine differences between top candidates
   │       - Often differ in stereochemistry or regiochemistry
   │
   ├─ 10-100 solutions
-  │    └─ Needs review
+  │    └─ Needs review → USE RANKING
+  │       - rank_lsd_solutions to narrow candidates
+  │       - Review top 10 for reasonableness
   │       - Missing HMBC correlations?
-  │       - Quaternary carbon connectivity unclear?
   │
   └─ >100 solutions
        └─ Under-constrained
           - Request additional NMR data
           - Review peak picking parameters
-          - Check for missing correlations
+          - Ranking may still help identify best candidates
 ```
 
 ---
@@ -570,7 +620,9 @@ the HMBC spectrum?
 2. **Check symmetry** - Explains "missing" signals
 3. **Use guided peak picking** - Reduces noise dramatically
 4. **Validate data** - Cross-check between experiments
-5. **Interpret results conservatively** - Report uncertainty
+5. **Run LSD** - Generate candidate structures
+6. **Rank solutions** - Use `rank_lsd_solutions` if multiple candidates
+7. **Interpret results conservatively** - Report uncertainty
 
 ### Red Flags to Watch For
 - Fewer signals than expected atoms → Symmetry
@@ -583,6 +635,7 @@ the HMBC spectrum?
 - HSQC validation: ±1.0 ppm (13C dimension)
 - HMBC validation: ±1.5 ppm (13C), ±0.1 ppm (1H)
 - Dereplication match: score > 0.85 = high confidence
+- Solution ranking: MAE < 2.0 ppm = excellent, 2-3.5 ppm = good, > 5 ppm = poor
 
 ### When to Ask for Help
 - Conflicting data between experiments

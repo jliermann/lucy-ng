@@ -68,6 +68,12 @@ Lucy-ng automates this entire pipeline while exposing each step as a programmabl
 - **LSD Integration**: Generate input files and execute the LSD solver
 - **Symmetry Detection**: Identifies equivalent atoms from hydrogen budget and intensity analysis
 - **Constraint Generation**: Automatic MULT, HSQC, HMBC, BOND constraints from spectroscopic data
+- **Solution Ranking**: Rank LSD solutions by comparing predicted vs experimental 13C spectra
+
+### 13C Shift Prediction
+- **HOSE Code Prediction**: Predict 13C shifts from molecular structure using HOSE codes
+- **Fallback Strategy**: Automatic radius reduction (6→1) for maximum coverage
+- **Pre-built Lookup Table**: Fast predictions using nmrshiftdb2 reference data
 
 ### AI Integration
 - **MCP Server**: Model Context Protocol tools for Claude Desktop and other AI agents
@@ -280,8 +286,23 @@ lucy lsd generate data/Ibuprofen C13H18O2 -o ibuprofen.lsd
 # Run LSD solver
 lucy lsd run ibuprofen.lsd
 
+# Rank solutions by 13C prediction
+lucy lsd rank output/ data/Ibuprofen/2 --top 10
+
 # Check LSD availability
 lucy lsd check
+```
+
+#### 13C Shift Prediction
+```bash
+# Predict shifts from SMILES
+lucy predict c13 "CC(C)Cc1ccc(cc1)C(C)C(=O)O"
+
+# Build lookup table (one-time setup)
+lucy predict build-table data/reference/nmrshiftdb2withsignals.sd
+
+# Show table info
+lucy predict table-info
 ```
 
 ### Python API
@@ -306,6 +327,8 @@ Lucy-ng includes an MCP (Model Context Protocol) server for AI agent integration
 | `generate_lsd_input` | Generate LSD input from NMR data |
 | `run_lsd` | Execute LSD solver |
 | `check_lsd_availability` | Check if LSD is installed |
+| `rank_lsd_solutions` | Rank solutions by 13C prediction similarity |
+| `predict_c13_shifts` | Predict 13C shifts from SMILES |
 
 #### Claude Desktop Integration
 
@@ -347,9 +370,15 @@ lucy-ng/
 │   ├── lsd/             # LSD solver integration
 │   │   ├── generator.py # LSD input file generation
 │   │   └── runner.py    # LSD execution
+│   ├── prediction/      # 13C shift prediction
+│   │   ├── hose.py      # HOSE code generation
+│   │   ├── lookup.py    # Lookup table management
+│   │   └── predictor.py # C13Predictor
+│   ├── ranking/         # Solution ranking
+│   │   └── ranker.py    # SolutionRanker
 │   ├── cli/             # Click-based CLI
 │   └── mcp/             # MCP server
-│       └── server.py    # FastMCP tools
+│       └── server.py    # FastMCP tools (12 tools)
 ├── tests/               # pytest test suite
 ├── data/                # Test NMR datasets
 └── docs/                # Documentation
