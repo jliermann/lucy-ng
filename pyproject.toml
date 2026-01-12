@@ -49,6 +49,9 @@ mcp = [
     "mcp[cli]>=1.2.0",
 ]
 
+[tool.hatch.metadata]
+allow-direct-references = true
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/lucy_ng"]
 
