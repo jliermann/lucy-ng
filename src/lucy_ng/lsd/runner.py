@@ -56,6 +56,9 @@ class LSDRunner:
 
     Manages execution of the LSD program as a subprocess,
     handling input file creation and output file parsing.
+
+    After LSD runs successfully, automatically runs outlsd to convert
+    solutions to SMILES format for downstream ranking.
     """
 
     # Common locations to search for LSD
@@ -69,6 +72,17 @@ class LSDRunner:
         "~/LSD-3.5.3/lsd",  # Default extraction location
     ]
 
+    # Common locations for outlsd
+    OUTLSD_SEARCH_PATHS = [
+        "/usr/local/bin/outlsd",
+        "/usr/bin/outlsd",
+        "~/.local/bin/outlsd",
+        "~/bin/outlsd",
+        "~/LSD/outlsd",
+        "~/PyLSD/LSD/outlsd",
+        "~/LSD-3.5.3/outlsd",
+    ]
+
     def __init__(self, lsd_path: str | Path | None = None):
         """Initialize with path to LSD executable.
 
@@ -80,6 +94,7 @@ class LSDRunner:
             self.lsd_path = Path(lsd_path).expanduser()
         else:
             self.lsd_path = self._find_lsd()
+        self.outlsd_path = self._find_outlsd()
 
     def run(
         self,
@@ -208,6 +223,12 @@ class LSDRunner:
             # Success if return code is 0 OR if solutions were found
             success = proc.returncode == 0 or solution_count > 0
 
+            # Run outlsd to convert solutions to SMILES if available
+            if success and solution_count > 0 and self.outlsd_path:
+                self._run_outlsd(output_dir, input_file)
+                # Re-scan for output files to include outlsd.out
+                output_files = list(output_dir.glob("*.sol")) + list(output_dir.glob("*.out"))
+
             return LSDResult(
                 success=success,
                 solution_count=solution_count,
@@ -283,6 +304,58 @@ class LSDRunner:
         return None
 
     @classmethod
+    def _find_outlsd(cls) -> Path | None:
+        """Try to find outlsd executable for SMILES conversion.
+
+        Returns:
+            Path to outlsd executable, or None if not found
+        """
+        # Check PATH first
+        outlsd_in_path = shutil.which("outlsd")
+        if outlsd_in_path:
+            return Path(outlsd_in_path)
+
+        # Check common locations
+        for path_str in cls.OUTLSD_SEARCH_PATHS:
+            path = Path(path_str).expanduser()
+            if path.exists() and path.is_file():
+                return path
+
+        return None
+
+    def _run_outlsd(self, output_dir: Path, input_file: Path) -> None:
+        """Run outlsd to convert solutions to SMILES.
+
+        Creates outlsd.out file with SMILES for each solution.
+
+        Args:
+            output_dir: Directory containing solution files
+            input_file: Original LSD input file
+        """
+        if self.outlsd_path is None:
+            return
+
+        try:
+            # outlsd reads from stdin like lsd
+            proc = subprocess.run(
+                [str(self.outlsd_path)],
+                input=input_file.read_text(),
+                capture_output=True,
+                text=True,
+                timeout=30,
+                cwd=output_dir,
+            )
+
+            # Write output to outlsd.out
+            if proc.stdout.strip():
+                outlsd_file = output_dir / "outlsd.out"
+                outlsd_file.write_text(proc.stdout)
+
+        except Exception:
+            # Non-fatal - ranking will just skip solutions without SMILES
+            pass
+
+    @classmethod
     def is_available(cls) -> bool:
         """Check if LSD is available on the system.
 
@@ -290,6 +363,15 @@ class LSDRunner:
             True if LSD executable is found
         """
         return cls._find_lsd() is not None
+
+    @classmethod
+    def is_outlsd_available(cls) -> bool:
+        """Check if outlsd (SMILES converter) is available.
+
+        Returns:
+            True if outlsd executable is found
+        """
+        return cls._find_outlsd() is not None
 
     @classmethod
     def get_version(cls) -> str | None:

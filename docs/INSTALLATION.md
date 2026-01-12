@@ -181,14 +181,37 @@ LSD (Logic for Structure Determination) is required for structure generation. It
    sudo cp lsd /usr/local/bin/
    ```
 
+#### Install outlsd (Recommended)
+
+The `outlsd` program converts LSD solutions to SMILES format, which is required for solution ranking. It is distributed with LSD.
+
+```bash
+# Copy outlsd alongside lsd
+cp outlsd ~/bin/
+# or
+sudo cp outlsd /usr/local/bin/
+```
+
+Without `outlsd`:
+- LSD will still generate solutions
+- But `lucy lsd rank` cannot rank them (no SMILES available)
+- The `rank_lsd_solutions` MCP tool will skip all solutions
+
 #### Verify LSD Installation
 
 ```bash
-# Using CLI
+# Using CLI - shows both lsd and outlsd status
 lucy lsd check
 
 # Or directly
 which lsd
+which outlsd
+```
+
+Expected output:
+```
+LSD: available
+outlsd: available (SMILES conversion enabled)
 ```
 
 ### pyLSD (Alternative Solver)

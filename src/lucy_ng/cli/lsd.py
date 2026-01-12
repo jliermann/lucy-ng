@@ -21,11 +21,21 @@ def lsd() -> None:
 
 @lsd.command("check")
 def lsd_check() -> None:
-    """Check if LSD is installed and available."""
-    if LSDRunner.is_available():
-        click.echo("LSD is available")
+    """Check if LSD and outlsd are installed and available."""
+    lsd_ok = LSDRunner.is_available()
+    outlsd_ok = LSDRunner.is_outlsd_available()
+
+    if lsd_ok:
+        click.echo("LSD: available")
     else:
-        click.echo("LSD is not installed or not in PATH", err=True)
+        click.echo("LSD: not found", err=True)
+
+    if outlsd_ok:
+        click.echo("outlsd: available (SMILES conversion enabled)")
+    else:
+        click.echo("outlsd: not found (solution ranking will be limited)")
+
+    if not lsd_ok:
         raise SystemExit(1)
 
 

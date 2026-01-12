@@ -323,8 +323,14 @@ hmbc_result = pick_hmbc_peaks(hmbc_path, c13_path, hsqc_path, dept135_path)
 
 **First check**: `check_lsd_availability()`
 - If LSD not available, inform the user
+- If outlsd not available, solution ranking will be limited (no SMILES conversion)
 
 **Then run**: `run_lsd(input_file, timeout=60)`
+
+**What happens automatically**:
+1. LSD generates solution files (.sol) with atom connectivity
+2. If outlsd is installed, it automatically converts solutions to SMILES
+3. The SMILES are stored in outlsd.out for ranking
 
 **Interpret results**:
 ```
