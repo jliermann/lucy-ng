@@ -31,7 +31,7 @@ dependencies = [
     "rdkit>=2023.0",
     "scipy>=1.10",
     "tqdm>=4.0",
-    "hosegen @ git+https://github.com/Ratsemaat/HOSE_code_generator.git",
+    "hose-code-generator @ git+https://github.com/Ratsemaat/HOSE_code_generator.git",
 ]
 
 [project.scripts]
