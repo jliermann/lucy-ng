@@ -327,15 +327,22 @@ Options:
 
 **Examples:**
 ```bash
-# Rank using experimental 13C spectrum
-lucy lsd rank output/ --spectrum data/Ibuprofen/2 --top 5
-
-# Rank using manual shift list
+# Rank using curated shift list (RECOMMENDED)
+# Use the peak list that was refined during the CASE workflow
 lucy lsd rank output/ --shifts "180.5,140.8,137.0,129.4,127.1,45.1,40.4,30.2,22.4,18.2"
 
+# Rank using experimental 13C spectrum (re-picks peaks from scratch)
+lucy lsd rank output/ --spectrum data/Ibuprofen/2 --top 5
+
 # With custom tolerance
-lucy lsd rank output/ --spectrum data/Ibuprofen/2 --tolerance 2.0
+lucy lsd rank output/ --shifts "180.5,140.8,137.0,129.4,127.1" --tolerance 2.0
 ```
+
+> **Best Practice**: Use `--shifts` with your curated peak list rather than `--spectrum`.
+> During the CASE workflow, peaks may have been validated against DEPT, adjusted for
+> overlapping signals, or manually curated. Using `--spectrum` would discard this
+> curation and re-pick peaks from scratch, potentially reintroducing noise or
+> missing validated peaks.
 
 **Output:**
 ```

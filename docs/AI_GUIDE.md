@@ -357,6 +357,10 @@ solution_count > 100:
 
 **Use**: `rank_lsd_solutions(solutions_dir, experimental_shifts, tolerance=3.0, top_n=10)`
 
+> **Important**: Use the curated peak list you built during the CASE workflow, not a
+> fresh re-pick from the spectrum. The peak list may have been validated against DEPT,
+> adjusted for overlapping signals, or manually refined. Pass these as `experimental_shifts`.
+
 **How it works**:
 1. For each LSD solution with a SMILES structure
 2. Predict 13C shifts using HOSE codes
