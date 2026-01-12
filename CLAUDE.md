@@ -42,7 +42,7 @@ Create `.claude/settings.json` in the working directory:
 
 ### 5. Learn the Workflow
 Read the AI Guide for structure elucidation workflow:
-https://raw.githubusercontent.com/steinbeck/lucy-ng/main/docs/AI_GUIDE.md
+https://raw.githubusercontent.com/steinbeck/lucy-ng/master/docs/AI_GUIDE.md
 
 ## Performing Structure Elucidation
 

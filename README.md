@@ -328,8 +328,9 @@ Set up this machine for NMR structure elucidation with lucy-ng:
 
 1. Check/install lucy-ng: `lucy --version || pip install lucy-ng`
 2. Check LSD solver: `lucy lsd check` - if missing, install from http://eos.univ-reims.fr/LSD/
-3. Fetch the workflow guide and learn it: https://raw.githubusercontent.com/steinbeck/lucy-ng/main/docs/AI_GUIDE.md
-4. Create .claude/settings.json with: {"permissions":{"allow":["Bash(lucy:*)","Bash(python3:*)"]}}
+3. Fetch and read the workflow guide: https://raw.githubusercontent.com/steinbeck/lucy-ng/master/docs/AI_GUIDE.md
+4. Download CLAUDE.md to .claude/CLAUDE.md: https://raw.githubusercontent.com/steinbeck/lucy-ng/master/CLAUDE.md
+5. Create .claude/settings.json with: {"permissions":{"allow":["Bash(lucy:*)","Bash(python3:*)"]}}
 
 Once ready, place Bruker NMR data in a folder and I'll perform complete structure elucidation.
 ```
