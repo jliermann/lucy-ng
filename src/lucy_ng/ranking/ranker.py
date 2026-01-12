@@ -115,10 +115,16 @@ class SolutionRanker:
         predictions: list[PredictedShift],
         experimental: list[float],
     ) -> tuple[list[ShiftAssignment], float]:
-        """Match predicted shifts to experimental peaks using greedy algorithm.
+        """Match predicted shifts to experimental peaks allowing N:1 matching.
 
-        For each predicted shift (sorted by value, high to low), finds the
-        closest unassigned experimental peak within tolerance.
+        Each predicted shift independently finds its closest experimental peak
+        within tolerance. Multiple predictions CAN match the same experimental
+        peak - this handles molecular symmetry where equivalent carbons produce
+        one signal.
+
+        For example, para-disubstituted benzene has 2 equivalent ortho carbons
+        that both predict ~129 ppm and should both match the single experimental
+        peak at that position.
 
         Args:
             predictions: List of predicted shifts from C13Predictor
@@ -128,37 +134,24 @@ class SolutionRanker:
             Tuple of (list of ShiftAssignments, MAE for matched pairs)
         """
         assignments: list[ShiftAssignment] = []
-        used_experimental: set[int] = set()
+        matched_errors: list[float] = []
+        unmatched_count = 0
 
-        # Sort predictions by shift value (high to low, like typical NMR display)
-        sorted_preds = sorted(predictions, key=lambda p: -p.shift)
-
-        # Sort experimental for efficient matching
-        exp_sorted = sorted(enumerate(experimental), key=lambda x: -x[1])
-
-        errors: list[float] = []
-
-        for pred in sorted_preds:
-            best_match_idx: int | None = None
+        for pred in predictions:
             best_match_shift: float | None = None
             best_error: float | None = None
 
-            # Find closest unassigned experimental peak within tolerance
-            for exp_idx, exp_shift in exp_sorted:
-                if exp_idx in used_experimental:
-                    continue
-
+            # Find closest experimental peak within tolerance (no exclusivity)
+            for exp_shift in experimental:
                 error = abs(pred.shift - exp_shift)
                 if error <= self.tolerance:
                     if best_error is None or error < best_error:
-                        best_match_idx = exp_idx
                         best_match_shift = exp_shift
                         best_error = error
 
             # Record assignment
-            if best_match_idx is not None:
-                used_experimental.add(best_match_idx)
-                errors.append(best_error)  # type: ignore
+            if best_match_shift is not None:
+                matched_errors.append(best_error)  # type: ignore
                 assignment = ShiftAssignment(
                     atom_index=pred.atom_index,
                     predicted_shift=pred.shift,
@@ -166,8 +159,9 @@ class SolutionRanker:
                     error=best_error,
                 )
             else:
-                # Unmatched - penalize with tolerance value
-                errors.append(self.tolerance)
+                # Unmatched - record but don't heavily penalize
+                # (might be due to symmetry or prediction outside experimental range)
+                unmatched_count += 1
                 assignment = ShiftAssignment(
                     atom_index=pred.atom_index,
                     predicted_shift=pred.shift,
@@ -177,8 +171,16 @@ class SolutionRanker:
 
             assignments.append(assignment)
 
-        # Calculate MAE (includes penalty for unmatched)
-        mae = sum(errors) / len(errors) if errors else float("inf")
+        # Calculate MAE from matched pairs only
+        # Unmatched predictions add a smaller penalty (half tolerance)
+        # to slightly favor structures where more predictions match
+        if matched_errors:
+            matched_mae = sum(matched_errors) / len(matched_errors)
+            # Add small penalty for unmatched (0.5 * tolerance per unmatched)
+            unmatched_penalty = (unmatched_count * self.tolerance * 0.5) / len(predictions)
+            mae = matched_mae + unmatched_penalty
+        else:
+            mae = float("inf")
 
         return assignments, mae
 

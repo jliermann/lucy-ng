@@ -91,21 +91,18 @@ class HOSECodeGenerator:
 
     @staticmethod
     def prepare_mol(smiles: str) -> Mol | None:
-        """Prepare a molecule for HOSE code generation.
+        """Prepare a molecule from SMILES for HOSE code generation.
 
-        Parses SMILES and adds explicit hydrogens, which are required
-        for accurate HOSE code generation.
+        Returns molecule without explicit hydrogens to match the HOSE
+        lookup table format (built without explicit H).
 
         Args:
             smiles: SMILES string
 
         Returns:
-            RDKit Mol with explicit hydrogens, or None if parsing fails
+            RDKit Mol without explicit hydrogens, or None if parsing fails
         """
-        mol = Chem.MolFromSmiles(smiles)
-        if mol is None:
-            return None
-        return Chem.AddHs(mol)
+        return Chem.MolFromSmiles(smiles)
 
     @staticmethod
     def prepare_mol_from_molblock(molblock: str) -> Mol | None:
@@ -115,10 +112,7 @@ class HOSECodeGenerator:
             molblock: MOL block string
 
         Returns:
-            RDKit Mol with explicit hydrogens, or None if parsing fails
+            RDKit Mol without explicit hydrogens, or None if parsing fails
         """
-        mol = Chem.MolFromMolBlock(molblock, removeHs=False)
-        if mol is None:
-            return None
-        # Ensure hydrogens are explicit
-        return Chem.AddHs(mol)
+        # Remove explicit hydrogens to match HOSE table format
+        return Chem.MolFromMolBlock(molblock, removeHs=True)

@@ -41,9 +41,6 @@ htmlcov/
 # MyPy
 .mypy_cache/
 
-# Large reference data files (download separately)
-data/reference/
-
 # OS
 .DS_Store
 Thumbs.db

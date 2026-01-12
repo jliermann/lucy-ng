@@ -81,19 +81,15 @@ class C13Predictor:
         """Predict 13C shifts for a molecule.
 
         Args:
-            mol: RDKit Mol object (should have explicit hydrogens)
+            mol: RDKit Mol object
 
         Returns:
             List of PredictedShift for each carbon with successful prediction
         """
         predictions: list[PredictedShift] = []
 
-        # Ensure hydrogens are explicit
-        if mol.GetNumAtoms() > 0:
-            # Check if hydrogens are already explicit
-            has_h = any(atom.GetSymbol() == "H" for atom in mol.GetAtoms())
-            if not has_h:
-                mol = Chem.AddHs(mol)
+        # Remove explicit hydrogens to match HOSE table format
+        mol = Chem.RemoveHs(mol)
 
         for atom in mol.GetAtoms():
             if atom.GetSymbol() != "C":

@@ -455,22 +455,22 @@ def _process_molecule_worker(
     molblock, shifts = mol_data
     entries: list[tuple[str, float]] = []
 
-    mol = Chem.MolFromMolBlock(molblock, removeHs=False)
+    # Use molecule WITHOUT explicit hydrogens for HOSE code generation
+    mol = Chem.MolFromMolBlock(molblock, removeHs=True)
     if mol is None:
         return entries
 
-    mol_h = Chem.AddHs(mol)
     hose_gen = HoseGenerator()
 
     for atom_idx, shift in shifts.items():
         try:
-            atom = mol_h.GetAtomWithIdx(atom_idx)
+            atom = mol.GetAtomWithIdx(atom_idx)
             if atom.GetSymbol() != "C":
                 continue
 
             for radius in range(1, max_radius + 1):
                 try:
-                    hose_code = hose_gen.get_Hose_codes(mol_h, atom_idx, max_radius=radius)
+                    hose_code = hose_gen.get_Hose_codes(mol, atom_idx, max_radius=radius)
                     if hose_code:
                         entries.append((hose_code, shift))
                 except Exception:

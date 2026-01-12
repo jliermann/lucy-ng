@@ -24,8 +24,8 @@ class TestHOSECodeGenerator:
         gen = HOSECodeGenerator()
         mol = gen.prepare_mol("c1ccccc1")  # Benzene
         assert mol is not None
-        # Should have explicit hydrogens
-        assert any(atom.GetSymbol() == "H" for atom in mol.GetAtoms())
+        # Returns without explicit hydrogens (H is added later in predict_from_mol)
+        assert not any(atom.GetSymbol() == "H" for atom in mol.GetAtoms())
 
     def test_prepare_mol_invalid_smiles(self):
         """Test handling of invalid SMILES."""

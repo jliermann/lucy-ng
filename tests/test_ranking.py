@@ -271,7 +271,8 @@ class TestSolutionRankerMatching:
 
         assert len(assignments) == 1
         assert not assignments[0].is_matched
-        assert mae == 2.0  # Penalized with tolerance value
+        # With N:1 matching, when no predictions match, MAE is inf
+        assert mae == float("inf")
 
     def test_greedy_assignment(self, mock_predictor):
         """Test greedy algorithm assigns to closest match."""
@@ -294,7 +295,11 @@ class TestSolutionRankerMatching:
         assert mae == pytest.approx(1.0)
 
     def test_more_predictions_than_experimental(self, mock_predictor):
-        """Test when there are more predictions than experimental peaks."""
+        """Test when there are more predictions than experimental peaks (N:1 matching).
+
+        With N:1 matching, multiple predictions can match the same experimental peak.
+        This handles molecular symmetry where equivalent carbons predict the same shift.
+        """
         ranker = SolutionRanker(mock_predictor, tolerance=3.0)
 
         predictions = [
@@ -307,13 +312,15 @@ class TestSolutionRankerMatching:
         assignments, mae = ranker._match_shifts(predictions, experimental)
 
         assert len(assignments) == 3
-        # 2 matched, 1 unmatched (penalized with tolerance)
+        # 2 matched, 1 unmatched (40.0 is outside tolerance of both peaks)
         matched = [a for a in assignments if a.is_matched]
         unmatched = [a for a in assignments if not a.is_matched]
         assert len(matched) == 2
         assert len(unmatched) == 1
-        # MAE = (0 + 0 + 3.0) / 3 = 1.0
-        assert mae == pytest.approx(1.0)
+        # matched_mae = (0 + 0) / 2 = 0.0
+        # penalty = (1 * 3.0 * 0.5) / 3 = 0.5
+        # total MAE = 0.0 + 0.5 = 0.5
+        assert mae == pytest.approx(0.5)
 
     def test_empty_predictions(self, mock_predictor):
         """Test with empty predictions."""
