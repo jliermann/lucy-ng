@@ -23,6 +23,9 @@ from lucy_ng.lsd import LSDInputGenerator, LSDProblem, LSDRunner
 # Ranking
 from lucy_ng.ranking import SolutionRanker
 
+# NMRXiv
+from lucy_ng.nmrxiv import NMRXivClient
+
 __version__ = "0.1.0"
 
 __all__ = [
@@ -56,4 +59,6 @@ __all__ = [
     "LSDRunner",
     # Ranking
     "SolutionRanker",
+    # NMRXiv
+    "NMRXivClient",
 ]

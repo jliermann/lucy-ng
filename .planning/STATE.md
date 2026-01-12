@@ -2,43 +2,50 @@
 
 ## Current Position
 
-**Milestone**: 1.0 — Core CASE Pipeline
-**Phase**: 9 (LSD Solution Ranking) — NOT STARTED
-**Last Completed**: Phase 8 (HOSE-Based 13C Predictor)
+**Milestone**: 1.0 — Core CASE Pipeline — COMPLETE
+**Phase**: All 12 phases complete
+**Last Completed**: Phase 10 (NMRXiv Dataset Fetching)
+
+## Milestone 1.0 Complete
+
+All phases of the Core CASE Pipeline have been implemented:
+
+| Phase | Name | Status |
+|-------|------|--------|
+| 1 | Foundation | Complete |
+| 2 | 1D NMR Reading | Complete |
+| 2.1 | 1D Carbon Dereplication | Complete |
+| 3 | 2D NMR Reading | Complete |
+| 4 | Peak Picking | Complete |
+| 4.1 | 2D Peak Validation | Complete |
+| 4.2 | DEPT-Guided HSQC | Complete |
+| 5 | LSD Integration | Complete |
+| 5.1 | HMBC-Guided Picking | Complete |
+| 5.2 | Symmetry Detection | Complete |
+| 6 | CLI Interface | Complete |
+| 7 | MCP Server | Complete |
+| 8 | HOSE Predictor | Complete |
+| 9 | LSD Solution Ranking | Complete |
+| 10 | NMRXiv Dataset Fetching | Complete |
 
 ## Roadmap Evolution
 
-- Phase 2.1 inserted after Phase 2: 1D Carbon Dereplication with nmrshiftdb (INSERTED)
-  - Rationale: Validate pipeline works with 1D data before adding 2D complexity
-- Phase 4.1 inserted after Phase 4: 2D Peak Picking Validation (INSERTED)
-  - Rationale: Ensure 2D peak picking produces scientifically reasonable results
-- Phase 4.2 inserted after Phase 4.1: DEPT-Guided Adaptive HSQC Peak Picking (INSERTED)
-  - Rationale: DEPT provides ground truth for protonated carbons; HSQC must find all of them
-- Phase 5.1 added: HMBC-Guided Peak Picking (COMPLETE)
-  - Rationale: Filter HMBC noise by requiring correlation to known C and H positions
-- Phase 5.2 inserted after Phase 5.1: Symmetry Detection from Spectroscopic Data (INSERTED)
-  - Rationale: Molecular symmetry causes fewer NMR signals than atoms; must detect and handle for valid LSD input
-- Phase 8 added: HOSE-Based 13C Predictor (ADDED)
-  - Rationale: Build pure Python 13C predictor using HOSE codes; evaluated GNN tools (nmrgnn, CASCADE, nmr_mpnn) but all had TensorFlow compatibility issues
-- Phase 9 added: LSD Solution Ranking (RENUMBERED from Phase 8)
-  - Rationale: Use Phase 8 predictor to rank LSD solutions by spectrum similarity
+- Phase 2.1: 1D Carbon Dereplication with nmrshiftdb (INSERTED)
+- Phase 4.1: 2D Peak Picking Validation (INSERTED)
+- Phase 4.2: DEPT-Guided Adaptive HSQC Peak Picking (INSERTED)
+- Phase 5.1: HMBC-Guided Peak Picking (COMPLETE)
+- Phase 5.2: Symmetry Detection from Spectroscopic Data (COMPLETE)
+- Phase 8: HOSE-Based 13C Predictor (COMPLETE)
+- Phase 9: LSD Solution Ranking (COMPLETE)
+- Phase 10: NMRXiv Dataset Fetching (COMPLETE)
 
-## Recent Progress
+## Key Capabilities
 
-- **Phase 6 CLI Interface complete**:
-  - Click-based CLI with 5 command groups (read, pick, analyze, dereplicate, lsd)
-  - All commands support `--format text|json` output
-  - Auto-detection of experiment types from Bruker data
-  - Full pipeline integration from reading to LSD generation
-  - 44 CLI tests (43 passing, 1 skipped)
-- **Phase 5.2 Symmetry Detection complete**:
-  - New `lucy_ng.analysis` module with AI-oriented convenience tools
-  - `HydrogenBudgetAnalyzer`: Compare MF H count with observed carbon-assigned H
-  - `IntensityReporter`: Report relative HSQC intensities, flag potential equivalents
-  - `SymmetryAnalyzer`: Combined summary for AI-driven symmetry reasoning
-  - Tools expose data with suggestions; AI makes final reasoning decisions
-- Phase 5 LSD Integration complete and enhanced
-- 309 total tests passing (5 skipped)
+- **13 MCP Tools**: Full AI agent integration
+- **7 CLI Command Groups**: read, pick, analyze, dereplicate, predict, lsd, fetch
+- **Python API**: Direct library access
+- **414+ Tests**: Comprehensive coverage
+- **Documentation**: USER_GUIDE.md, AI_GUIDE.md, MCP_INTEGRATION.md
 
 ## Key Decisions
 
@@ -51,60 +58,29 @@
 | Pydantic v2 for models | 2026-01-08 | Type safety, validation, JSON serialization |
 | hatch build system | 2026-01-08 | Modern Python packaging |
 | Use processed data | 2026-01-08 | Read from pdata/1/ not raw FID |
-| Multi-mode dereplication matching | 2026-01-09 | shifts_only, dept_enhanced modes for different data quality |
-| Overlap-adjusted scoring | 2026-01-09 | Account for fewer peaks than expected carbons |
-| Variable tolerance by region | 2026-01-09 | Tighter for aliphatic (0.8), looser for carbonyl (1.5) |
-| RDKit for SD parsing | 2026-01-09 | Industry standard, handles MOL blocks and properties |
-| inv4* long-range detection | 2026-01-10 | Distinguish HMBC from HSQC in inv4 pulse programs |
-| nmrglue connected-region algorithm | 2026-01-10 | For 2D peak picking, handles overlapping peaks |
-| Corner-based 2D noise estimation | 2026-01-10 | Corners rarely contain real peaks |
-| Tolerance-based peak validation | 2026-01-10 | 0.5-1.0 ppm tolerance for 2D vs 1D matching |
 | DEPT-guided adaptive thresholding | 2026-01-10 | Lower HSQC threshold until all DEPT carbons matched |
-| Multiplicative threshold reduction | 2026-01-10 | ×0.5 factor gives logarithmic steps |
-| HMBC-guided peak picking | 2026-01-10 | Filter HMBC by requiring C match in 13C/DEPT and H match in HSQC |
-| LSD 2-param HMBC format | 2026-01-10 | LSD defaults to 2-3 bond distance; simpler than 4-param format |
-| Real data over manual correlations | 2026-01-10 | Manual test correlations produced 900+ solutions; real data provides stronger constraints |
-| Spectroscopic constraint inference | 2026-01-10 | Carbonyl C identified from shift; missing H assigned to O; derives BOND constraints automatically |
-| Click CLI framework | 2026-01-10 | Simpler than Typer, no extra dependencies, widely used |
-| JSON output option | 2026-01-10 | Enables MCP server reuse of CLI functionality |
-
-## Open Questions
-
-- None at this time
-
-## Resolved Questions
-
-- **NMR parsing library**: nmrglue (2026-01-08) — Most mature, BSD licensed, native Bruker support, academic citations
-- **Dereplication matching strategy**: Multi-mode with fuzzy tolerances (2026-01-09)
-- **LSD vs pyLSD**: LSD first (2026-01-10) — Simpler (no Java), pyLSD builds on it, add ranking later
-- **Symmetry detection**: (2026-01-10) — AI-driven approach with convenience tools exposing H budget + intensity data
+| HMBC-guided peak picking | 2026-01-10 | Filter by requiring C match in 13C/DEPT and H match in HSQC |
+| Click CLI framework | 2026-01-10 | Simpler than Typer, no extra dependencies |
+| N:1 shift matching for ranking | 2026-01-12 | Handles molecular symmetry correctly |
+| DOI-based data fetching | 2026-01-12 | Parse NMRXiv DOIs directly for project/study IDs |
 
 ## Session Continuity
 
-**Last session**: 2026-01-11
-**Completed**:
-- **Phase 8 HOSE-Based 13C Predictor complete**
-- Pure Python predictor using HOSE codes + COCONUT database
-- New `lucy_ng.prediction` module:
-  - `HOSECodeGenerator`: HOSE code generation wrapper
-  - `HOSELookupTable`: Build/save/load lookup tables
-  - `C13Predictor`: Predict shifts with 6→1 radius fallback
-- CLI commands: `lucy predict c13`, `lucy predict build-table`, `lucy predict table-info`
-- MCP tool: `predict_c13_shifts`
-- 28 new tests (all passing)
-- Added hosegen and tqdm dependencies
+**Last session**: 2026-01-12
+**Completed**: Milestone 1.0 Core CASE Pipeline
 
-**Previous session**:
-- Phase 7 MCP Server complete (11 tools total now)
-- 347+ total tests collected
+**Key accomplishments**:
+- Phase 9: LSD Solution Ranking (SolutionRanker, 27 tests)
+- Phase 10: NMRXiv Dataset Fetching (NMRXivClient, 24 tests)
+- All documentation updated
+- All planning files synchronized
 
-**Key technical insights**:
-- HOSE codes work with RDKit only (no TensorFlow needed)
-- GNN tools (nmrgnn, CASCADE, nmr_mpnn) all had TF compatibility issues
-- 6-sphere HOSE radius provides good specificity with fallback safety
-- Lookup table expected size: 1-2GB compressed for full COCONUT
-
-**Next**: Phase 9 - Use predictor for LSD solution ranking
+**Next milestone**: TBD - Consider:
+- Performance optimization
+- Additional data sources
+- Advanced constraint generation
+- COSY/NOESY integration
+- Batch processing
 
 ---
-*Last updated: 2026-01-11*
+*Last updated: 2026-01-12*

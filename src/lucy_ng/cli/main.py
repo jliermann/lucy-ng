@@ -5,6 +5,7 @@ import click
 from lucy_ng import __version__
 from lucy_ng.cli.analyze import analyze
 from lucy_ng.cli.dereplicate import dereplicate
+from lucy_ng.cli.fetch import fetch
 from lucy_ng.cli.lsd import lsd
 from lucy_ng.cli.pick import pick
 from lucy_ng.cli.predict import predict
@@ -28,6 +29,7 @@ def cli() -> None:
       dereplicate Match against reference databases
       predict     Predict NMR chemical shifts
       lsd         LSD structure elucidation
+      fetch       Fetch data from external sources
     """
     pass
 
@@ -39,3 +41,4 @@ cli.add_command(analyze)
 cli.add_command(dereplicate)
 cli.add_command(predict)
 cli.add_command(lsd)
+cli.add_command(fetch)

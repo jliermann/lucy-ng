@@ -175,6 +175,19 @@
 
 ---
 
+### Phase 10: NMRXiv Dataset Fetching
+**Goal**: Fetch spectroscopic datasets from nmrxiv.org for structure elucidation
+
+- Research NMRXiv API and data access methods
+- Implement dataset fetching by identifier or search criteria
+- Parse and convert NMRXiv data to lucy-ng formats
+- CLI command for dataset retrieval
+- MCP tool for agent integration
+
+**Depends on:** Phase 6 (CLI Interface)
+
+---
+
 ## Progress
 
 | Phase | Status | Plans |
@@ -192,20 +205,25 @@
 | 6. CLI Interface | Complete | 01-06-PLAN.md, 01-06-SUMMARY.md |
 | 7. MCP Server | Complete | 01-07-PLAN.md |
 | 8. HOSE-Based 13C Predictor | Complete | 01-08-PLAN.md, 01-08-SUMMARY.md |
-| 9. LSD Solution Ranking | Not Started | 01-09-PLAN.md |
+| 9. LSD Solution Ranking | Complete | 01-09-PLAN.md, 01-09-SUMMARY.md |
+| 10. NMRXiv Dataset Fetching | Complete | 01-10-PLAN.md, 01-10-SUMMARY.md |
 
 ---
 
-## Milestone 1.0 Status
+## Milestone 1.0 Status — COMPLETE
 
-Core CASE Pipeline progress:
+Core CASE Pipeline fully implemented:
 
-- **11 MCP Tools**: Spectrum reading, peak picking, analysis, dereplication, LSD integration, shift prediction
-- **Full CLI**: 6 command groups with JSON output support
+- **13 MCP Tools**: Spectrum reading, peak picking, analysis, dereplication, LSD integration, shift prediction, solution ranking, data fetching
+- **Full CLI**: 7 command groups with JSON output support
 - **Python API**: Direct library access for all functionality
-- **347+ Tests**: Comprehensive test coverage
-- **Documentation**: README, User Guide, Architecture, MCP Integration
-- **13C Prediction**: HOSE-code based predictor ready for solution ranking
+- **414+ Tests**: Comprehensive test coverage
+- **Documentation**: README, User Guide, Architecture, MCP Integration, AI Guide
+- **13C Prediction**: HOSE-code based predictor
+- **Solution Ranking**: LSD solutions ranked by 13C spectrum similarity
+- **Data Fetching**: Download NMR data from NMRXiv by DOI
+
+**12/12 phases complete** — Milestone 1.0 achieved!
 
 ---
-*Last updated: 2026-01-11*
+*Last updated: 2026-01-12*

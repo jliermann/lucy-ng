@@ -837,6 +837,73 @@ def predict_c13_shifts(
         return {"success": False, "error": str(e)}
 
 
+# =============================================================================
+# NMRXiv Tools
+# =============================================================================
+
+
+@mcp.tool()
+def fetch_nmrxiv_dataset(
+    identifier: str,
+    output_dir: str | None = None,
+    study_id: str | None = None,
+    download_all: bool = False,
+) -> dict:
+    """Fetch NMR dataset from NMRXiv repository.
+
+    Downloads NMR spectra from NMRXiv (https://nmrxiv.org) to a local directory.
+    The downloaded data preserves Bruker folder structure and can be directly
+    used with lucy's spectrum reading commands.
+
+    Args:
+        identifier: NMRXiv DOI or ID. Supported formats:
+            - DOI: "10.57992/NMRXIV.P10.S69" or "10.57992/NMRXIV.P10"
+            - Project ID: "P10"
+            - URL: "https://nmrxiv.org/P10"
+        output_dir: Directory to save downloaded files (default: current directory)
+        study_id: Specific study ID to download (overrides DOI study)
+        download_all: If True, download all studies even if DOI specifies one
+
+    Returns:
+        Dictionary with:
+        - project_id: The project identifier
+        - project_name: Project title
+        - doi: Project DOI if available
+        - output_path: Path where files were saved
+        - studies_downloaded: List of study IDs downloaded
+        - total_datasets: Number of datasets downloaded
+        - total_files: Total number of files downloaded
+        - total_size_mb: Total download size in MB
+    """
+    from lucy_ng.nmrxiv import NMRXivClient, NMRXivError
+
+    try:
+        with NMRXivClient() as client:
+            result = client.download(
+                identifier=identifier,
+                output_dir=output_dir or ".",
+                study_id=study_id,
+                download_all=download_all,
+                progress=False,  # No progress bar for MCP
+            )
+
+            return {
+                "success": True,
+                "project_id": result.project_id,
+                "project_name": result.project_name,
+                "doi": result.doi,
+                "output_path": result.output_path,
+                "studies_downloaded": result.studies_downloaded,
+                "total_datasets": result.total_datasets,
+                "total_files": result.total_files,
+                "total_size_mb": round(result.total_size_mb, 2),
+            }
+    except NMRXivError as e:
+        return {"success": False, "error": str(e)}
+    except Exception as e:
+        return {"success": False, "error": f"Unexpected error: {e}"}
+
+
 def main() -> None:
     """Run the MCP server with stdio transport."""
     mcp.run(transport="stdio")

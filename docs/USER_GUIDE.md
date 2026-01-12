@@ -42,6 +42,64 @@ Options:
 | `lucy dereplicate` | Match against databases |
 | `lucy lsd` | LSD solver integration |
 | `lucy predict` | 13C shift prediction |
+| `lucy fetch` | Fetch data from external sources |
+
+---
+
+### Fetching Data from External Sources
+
+#### Fetch from NMRXiv
+
+Download NMR datasets from NMRXiv repository.
+
+```bash
+lucy fetch nmrxiv IDENTIFIER [OPTIONS]
+
+Arguments:
+  IDENTIFIER  NMRXiv DOI, project ID, or URL
+
+Options:
+  -o, --output PATH      Output directory (default: current)
+  --study TEXT           Download specific study only
+  --all                  Download all studies (even if DOI specifies one)
+  --format [text|json]   Output format
+  --quiet                Suppress progress output
+```
+
+**Identifier formats:**
+- DOI: `10.57992/NMRXIV.P10.S69` or `10.57992/NMRXIV.P10`
+- Project ID: `P10`
+- URL: `https://nmrxiv.org/P10`
+
+**Examples:**
+```bash
+# Download by DOI (specific study)
+lucy fetch nmrxiv 10.57992/NMRXIV.P10.S69 --output ./data/
+
+# Download entire project
+lucy fetch nmrxiv P10 --output ./data/
+
+# Download specific study from project
+lucy fetch nmrxiv P10 --study S69 --output ./data/
+
+# JSON output for scripting
+lucy fetch nmrxiv P10 --format json
+```
+
+**Output structure:**
+```
+output_dir/
+└── P10/
+    └── S69/
+        ├── 1H/
+        │   ├── acqus
+        │   ├── fid
+        │   └── ...
+        ├── 13C/
+        └── HSQC/
+```
+
+Downloaded data preserves Bruker folder structure and can be directly used with `lucy read` commands.
 
 ---
 

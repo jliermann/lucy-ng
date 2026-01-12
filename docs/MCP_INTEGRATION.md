@@ -27,7 +27,7 @@ The Model Context Protocol (MCP) is an open standard by Anthropic for connecting
 
 ## Available Tools
 
-Lucy-ng exposes 12 MCP tools:
+Lucy-ng exposes 13 MCP tools:
 
 ### Spectrum Reading
 
@@ -70,6 +70,12 @@ Lucy-ng exposes 12 MCP tools:
 | Tool | Description | Parameters |
 |------|-------------|------------|
 | `predict_c13_shifts` | Predict 13C shifts from SMILES | `smiles`, `table_path` (optional), `max_radius` (optional) |
+
+### Data Fetching
+
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `fetch_nmrxiv_dataset` | Download NMR data from NMRXiv | `identifier`, `output_dir` (optional), `study_id` (optional), `download_all` |
 
 ## Setup
 

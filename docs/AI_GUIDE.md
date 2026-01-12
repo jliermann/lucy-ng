@@ -44,6 +44,10 @@ You assist chemists by:
 ### Recommended Order of Operations
 
 ```
+0. OBTAIN DATA (if needed)
+   └── User provides local Bruker data, OR
+   └── Fetch from NMRXiv using DOI: fetch_nmrxiv_dataset("10.57992/NMRXIV.P10.S69")
+
 1. DEREPLICATION FIRST
    └── Match against known compounds database
    └── If match found → DONE (report the known structure)
