@@ -41,6 +41,7 @@ Options:
 | `lucy analyze` | Analyze spectra |
 | `lucy dereplicate` | Match against databases |
 | `lucy lsd` | LSD solver integration |
+| `lucy predict` | 13C shift prediction |
 
 ---
 
@@ -307,6 +308,92 @@ Options:
   --format [text|json]  Output format
 ```
 
+#### Rank LSD Solutions
+
+```bash
+lucy lsd rank SOLUTIONS_PATH [OPTIONS]
+
+Arguments:
+  SOLUTIONS_PATH  Directory containing LSD solution files (.sol)
+
+Options:
+  -s, --spectrum PATH   Path to Bruker 13C spectrum for experimental shifts
+  --shifts TEXT         Comma-separated 13C shifts in ppm (alternative to --spectrum)
+  -n, --top INTEGER     Number of top results to show (default: 10)
+  -t, --tolerance FLOAT Tolerance in ppm for matching (default: 3.0)
+  --table PATH          Path to HOSE lookup table (auto-detected if not set)
+  --format [text|json]  Output format
+```
+
+**Examples:**
+```bash
+# Rank using experimental 13C spectrum
+lucy lsd rank output/ --spectrum data/Ibuprofen/2 --top 5
+
+# Rank using manual shift list
+lucy lsd rank output/ --shifts "180.5,140.8,137.0,129.4,127.1,45.1,40.4,30.2,22.4,18.2"
+
+# With custom tolerance
+lucy lsd rank output/ --spectrum data/Ibuprofen/2 --tolerance 2.0
+```
+
+**Output:**
+```
+Ranking 50 LSD solutions
+  Successfully ranked: 48
+  Skipped (no SMILES): 2
+  Experimental peaks: 10
+  Tolerance: 3.0 ppm
+
+Top 5 solutions:
+----------------------------------------------------------------------
+  1. Solution 3: MAE=1.85 ppm, matched=10/13
+     CC(C)Cc1ccc(cc1)C(C)C(=O)O
+  2. Solution 7: MAE=2.34 ppm, matched=10/13
+     CC(C)Cc1ccc(C(C)C(=O)O)cc1
+  ...
+```
+
+---
+
+### 13C Shift Prediction
+
+#### Predict Shifts from SMILES
+
+```bash
+lucy predict c13 SMILES [OPTIONS]
+
+Arguments:
+  SMILES  SMILES string of the molecule
+
+Options:
+  --table PATH          Path to HOSE lookup table
+  --format [text|json]  Output format
+```
+
+**Example:**
+```bash
+lucy predict c13 "CC(C)Cc1ccc(cc1)C(C)C(=O)O"
+```
+
+#### Build Lookup Table
+
+```bash
+lucy predict build-table SD_FILE [OPTIONS]
+
+Arguments:
+  SD_FILE  Path to SD file with 13C data (nmrshiftdb or COCONUT)
+
+Options:
+  -o, --output PATH     Output file path
+  --source [nmrshiftdb|coconut]  Database type (auto-detected)
+```
+
+**Example:**
+```bash
+lucy predict build-table data/reference/nmrshiftdb2withsignals.sd
+```
+
 ---
 
 ## Python API
@@ -505,6 +592,92 @@ if LSDRunner.is_available():
         print(sol)
 ```
 
+### Solution Ranking
+
+```python
+from lucy_ng import SolutionRanker, BrukerReader, AdaptivePeakPicker
+from lucy_ng.lsd.parser import LSDOutputParser
+from pathlib import Path
+
+# Load experimental 13C shifts
+spectrum = BrukerReader.read_1d("data/Ibuprofen/2")
+peaks = AdaptivePeakPicker.pick_peaks(spectrum)
+experimental_shifts = [p.position for p in peaks.peaks]
+
+# Or provide shifts directly
+experimental_shifts = [180.5, 140.8, 137.0, 129.4, 127.1, 45.1, 40.4, 30.2, 22.4, 18.2]
+
+# Load LSD solutions
+solutions = LSDOutputParser.parse_solutions(Path("output/"))
+
+# Create ranker from HOSE lookup table
+ranker = SolutionRanker.from_table_file(
+    table_path="data/reference/hose_nmrshiftdb.json.gz",
+    tolerance=3.0,  # ppm tolerance for matching
+)
+
+# Rank solutions
+result = ranker.rank(solutions, experimental_shifts, top_n=10)
+
+# Access results
+print(result.summary())
+print(f"Total solutions: {result.total_solutions}")
+print(f"Successfully ranked: {result.ranked_count}")
+print(f"Skipped (no SMILES): {result.skipped_count}")
+
+# Iterate through ranked solutions (best first)
+for i, sol in enumerate(result.solutions):
+    print(f"\n{i+1}. Solution {sol.solution_index}")
+    print(f"   SMILES: {sol.smiles}")
+    print(f"   MAE: {sol.mae:.2f} ppm")
+    print(f"   Matched: {sol.matched_count}/{sol.total_carbons} carbons")
+    print(f"   Prediction rate: {sol.prediction_rate:.1%}")
+```
+
+### 13C Shift Prediction
+
+```python
+from lucy_ng import C13Predictor, HOSELookupTable
+from pathlib import Path
+
+# Load predictor from lookup table
+predictor = C13Predictor.from_table_file(
+    Path("data/reference/hose_nmrshiftdb.json.gz"),
+    max_radius=6,  # Use up to 6-sphere HOSE codes
+)
+
+# Predict shifts from SMILES
+result = predictor.predict_from_smiles("CC(C)Cc1ccc(cc1)C(C)C(=O)O")
+
+print(f"Carbons: {result.carbon_count}")
+print(f"Success rate: {result.success_rate:.1%}")
+
+for pred in result.predictions:
+    print(f"  Atom {pred.atom_index}: {pred.shift:.1f} ppm "
+          f"(confidence: {pred.confidence:.2f}, radius: {pred.radius_used})")
+
+# Build a lookup table from SD file (one-time setup)
+from lucy_ng.prediction import HOSELookupTable, HOSECodeGenerator
+from lucy_ng.dereplication import NMRShiftDBLoader
+
+loader = NMRShiftDBLoader("data/reference/nmrshiftdb2withsignals.sd")
+loader.load()
+
+table = HOSELookupTable()
+generator = HOSECodeGenerator()
+
+for entry in loader.entries:
+    if entry.smiles:
+        mol = generator.prepare_mol(entry.smiles)
+        if mol:
+            # Add HOSE codes and shifts to table
+            # (simplified - see HOSELookupTable.build_from_loader for full implementation)
+            pass
+
+# Save table for future use
+table.save("my_hose_table.json.gz")
+```
+
 ---
 
 ## Workflow Examples
@@ -513,7 +686,7 @@ if LSDRunner.is_available():
 
 ```python
 from pathlib import Path
-from lucy_ng import BrukerReader
+from lucy_ng import BrukerReader, SolutionRanker, AdaptivePeakPicker
 from lucy_ng.processing import DEPTGuidedPicker, HMBCGuidedPicker
 from lucy_ng.analysis import SymmetryAnalyzer
 from lucy_ng.dereplication import DereplicationService, NMRShiftDBLoader
@@ -575,15 +748,51 @@ def elucidation_workflow(data_dir: str, formula: str):
     print(f"  Correlations: {len(problem.correlations)}")
 
     # Step 7: Run LSD
-    if LSDRunner.is_available():
-        print("Running LSD solver...")
-        runner = LSDRunner()
-        result = runner.run(problem, timeout=120)
-        print(f"  Solutions: {result.solution_count}")
-        return {"solutions": result.solutions, "count": result.solution_count}
-    else:
+    if not LSDRunner.is_available():
         print("  LSD not installed, returning input file")
         return {"lsd_input": LSDInputGenerator.generate(problem)}
+
+    print("Running LSD solver...")
+    runner = LSDRunner()
+    lsd_result = runner.run(problem, timeout=120)
+    print(f"  Solutions: {lsd_result.solution_count}")
+
+    if lsd_result.solution_count == 0:
+        return {"solutions": [], "count": 0}
+
+    if lsd_result.solution_count == 1:
+        print("  Single solution found - no ranking needed")
+        return {"solutions": lsd_result.solutions, "count": 1}
+
+    # Step 8: Rank solutions by 13C spectrum prediction
+    print("Ranking solutions...")
+    try:
+        # Get experimental 13C shifts
+        peaks = AdaptivePeakPicker.pick_peaks(c13)
+        experimental_shifts = [p.position for p in peaks.peaks]
+
+        # Create ranker and rank solutions
+        ranker = SolutionRanker.from_table_file(
+            "data/reference/hose_nmrshiftdb.json.gz",
+            tolerance=3.0,
+        )
+        ranking = ranker.rank(lsd_result.solutions, experimental_shifts, top_n=10)
+
+        print(f"  Ranked {ranking.ranked_count} solutions")
+        if ranking.solutions:
+            best = ranking.solutions[0]
+            print(f"  Best match: Solution {best.solution_index}")
+            print(f"  MAE: {best.mae:.2f} ppm")
+            print(f"  SMILES: {best.smiles}")
+
+        return {
+            "solutions": lsd_result.solutions,
+            "count": lsd_result.solution_count,
+            "ranking": ranking,
+        }
+    except FileNotFoundError:
+        print("  HOSE table not found, skipping ranking")
+        return {"solutions": lsd_result.solutions, "count": lsd_result.solution_count}
 
 # Run workflow
 result = elucidation_workflow("data/Ibuprofen", "C13H18O2")
