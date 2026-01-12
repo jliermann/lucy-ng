@@ -3,7 +3,12 @@
 from rdkit import Chem
 from rdkit.Chem import Mol
 
-from hosegen import HoseGenerator
+try:
+    from hosegen import HoseGenerator
+    HOSEGEN_AVAILABLE = True
+except ImportError:
+    HOSEGEN_AVAILABLE = False
+    HoseGenerator = None  # type: ignore[misc, assignment]
 
 
 class HOSECodeGenerator:
@@ -16,6 +21,11 @@ class HOSECodeGenerator:
 
     def __init__(self) -> None:
         """Initialize the HOSE code generator."""
+        if not HOSEGEN_AVAILABLE:
+            raise ImportError(
+                "hosegen package not installed. Install with:\n"
+                "  pip install git+https://github.com/Ratsemaat/HOSE_code_generator.git --no-deps"
+            )
         self._generator = HoseGenerator()
 
     def generate_for_atom(self, mol: Mol, atom_idx: int, radius: int = 6) -> str:

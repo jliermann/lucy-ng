@@ -31,7 +31,6 @@ dependencies = [
     "rdkit>=2023.0",
     "scipy>=1.10",
     "tqdm>=4.0",
-    "hose-code-generator @ git+https://github.com/Ratsemaat/HOSE_code_generator.git",
 ]
 
 [project.scripts]
@@ -47,6 +46,11 @@ dev = [
 ]
 mcp = [
     "mcp[cli]>=1.2.0",
+]
+prediction = [
+    # NOTE: hose-code-generator has broken dependencies (xmlrunner) on Python 3.12
+    # Install manually: pip install git+https://github.com/Ratsemaat/HOSE_code_generator.git --no-deps
+    # Then install its actual runtime deps: pip install rdkit
 ]
 
 [tool.hatch.metadata]

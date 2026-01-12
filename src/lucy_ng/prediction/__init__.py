@@ -1,12 +1,13 @@
 """NMR chemical shift prediction using HOSE codes."""
 
-from .hose import HOSECodeGenerator
+from .hose import HOSEGEN_AVAILABLE, HOSECodeGenerator
 from .lookup import HOSELookupTable
 from .models import PredictedShift, PredictionResult, ShiftEntry
 from .predictor import C13Predictor
 
 __all__ = [
     "C13Predictor",
+    "HOSEGEN_AVAILABLE",
     "HOSECodeGenerator",
     "HOSELookupTable",
     "PredictedShift",
