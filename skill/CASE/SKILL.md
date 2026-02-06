@@ -20,18 +20,14 @@ This skill performs FULL Computer-Assisted Structure Elucidation (CASE) without 
 
 ---
 
-## Blind CASE Protocol (CRITICAL)
+## Domain Knowledge
 
-**If you discover compound identity in ANY metadata file:**
+> **Reference:** For NMR background, peak picking strategy, symmetry detection,
+> dereplication scoring, LSD reference, and ranking interpretation,
+> see the main skill document: `skill/SKILL.md`
 
-1. ❌ **STOP** - Do not use this information
-2. ❌ Do not look up the compound or its properties
-3. ❌ Do not infer molecular formula from the name
-4. ✅ Treat the compound as **completely unknown**
-5. ✅ Ask user for molecular formula (simulating HRMS)
-6. ✅ Derive ALL structural information from spectra only
-
-**If data needs sanitization, use `/lucy-ng:sanitize` first, then start a fresh session.**
+This skill focuses on the CASE procedure (step-by-step execution). The main skill
+document contains all shared domain knowledge.
 
 ---
 
@@ -295,15 +291,7 @@ Or directly:
 LSD compound.lsd
 ```
 
-**Interpret results:**
-
-| Solutions | Meaning | Action |
-|-----------|---------|--------|
-| 0 | Over-constrained | Check sp2 count, H count, correlations |
-| 1 | Ideal | Verify and report |
-| 2-10 | Good | Rank and report top candidates |
-| 10-100 | Under-constrained | Add more HMBC, check ELIM usage |
-| >100 | Severely under-constrained | Review all constraints |
+For solution count interpretation and troubleshooting, see `skill/SKILL.md` Section 5 (LSD Reference).
 
 ### Step 9: Convert to SMILES
 
@@ -319,14 +307,7 @@ lucy lsd rank solutions.smi --spectrum <13c_exp>
 lucy lsd rank solutions.smi --shifts "187.8,152.5,135.7,..."
 ```
 
-**Interpret MAE scores:**
-
-| MAE (ppm) | Quality | Interpretation |
-|-----------|---------|----------------|
-| < 2.0 | Excellent | High confidence |
-| 2.0 - 3.5 | Good | Reasonable confidence |
-| 3.5 - 5.0 | Moderate | Review carefully |
-| > 5.0 | Poor | Likely incorrect |
+For MAE score interpretation and ranking guidance, see `skill/SKILL.md` Section 6 (Ranking and Prediction).
 
 ### Step 11: Analyze J-Coupling Path Lengths
 
@@ -660,25 +641,9 @@ If `cairosvg` import fails with "no library called cairo", install the system Ca
 
 ## Troubleshooting
 
-### 0 Solutions
+For detailed troubleshooting guidance, see `skill/SKILL.md` Section 5 (LSD Reference) and Section 6 (Ranking and Prediction).
 
-1. **Check sp2 count is EVEN** - count all sp2 atoms
-2. **Check hydrogen count** - sum of (mult × count) = formula H
-3. **Review HMBC correlations** - any errors or artifacts?
-4. **Only then try ELIM** - start with `ELIM 1 0`, increment if needed
-
-### Too Many Solutions (>100)
-
-1. **Remove ELIM** if present
-2. **Add more HMBC correlations**
-3. **Add heteroatom constraints** (BOND or LIST/PROP)
-4. **Verify HSQC correlations** are complete
-
-### Ranking Doesn't Match Expected
-
-1. **HOSE prediction limitations** - carbonyl carbons can vary ±5-10 ppm
-2. **Check top 10-20 candidates** - not just #1
-3. **Consider chemical reasonableness**
+Quick checklist for 0 solutions: sp2 count is EVEN, hydrogen count matches formula, HMBC correlations correct, only then try ELIM 1 0.
 
 ---
 
