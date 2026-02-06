@@ -10,12 +10,12 @@ See: .planning/PROJECT.md (updated 2026-02-06)
 ## Current Position
 
 **Milestone**: v2.0 Robust Multi-Agent CASE
-**Phase**: 21 of 26 (Skill Restructure) -- IN PROGRESS
-**Plan**: 2 of 3 in current phase (Plan 02 complete)
-**Status**: Plan 02 complete (CLAUDE.md restructured, supervisor skill created)
-**Last activity**: 2026-02-06 -- Completed 21-02-PLAN.md (CLAUDE.md restructure + supervisor)
+**Phase**: 21 of 26 (Skill Restructure) -- COMPLETE
+**Plan**: 3 of 3 complete
+**Status**: Phase 21 complete (skill restructure with zero duplication)
+**Last activity**: 2026-02-06 -- Completed 21-03-PLAN.md (subskill deduplication)
 
-Progress: [====================|.........] 73% (21/26 phases in progress, 20 complete)
+Progress: [=====================|........] 77% (21 phases complete, 5 remaining)
 
 ## Completed Milestones
 
@@ -28,15 +28,14 @@ Progress: [====================|.........] 73% (21/26 phases in progress, 20 com
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 24 (v1.0-v1.2 + 20-01, 20-02, 20-03, 21-01, 21-02)
+- Total plans completed: 25 (v1.0-v1.2 + Phase 20 + Phase 21)
 - Average duration: ~3 hours per phase
-- Total execution time: ~60 hours
+- Total execution time: ~63 hours
 
 **Recent Trend:**
 - Phase 20 completed in 3 plans (~15 min total execution)
-- Plan 21-01 completed in 3 min (documentation writing)
-- Plan 21-02 completed in 5 min (documentation restructure)
-- Trend: Accelerating (audit/writing tasks faster than code tasks)
+- Phase 21 completed in 3 plans (~11 min total: 3 min + 5 min + 3 min)
+- Trend: Accelerating on documentation tasks (< 5 min per plan)
 
 ## Accumulated Context
 
@@ -61,10 +60,15 @@ Recent decisions affecting current work:
 - 21-02: CLAUDE.md reduced from 1,080 to 305 lines (72% reduction), keeping only project-level content
 - 21-02: skill/supervisor/SKILL.md created (78 lines) with workflow selection, loop detection, escalation criteria
 - 21-02: Zero domain knowledge remains in CLAUDE.md -- all workflow/reasoning now in skill/SKILL.md
+- 21-03: All subskills deduplicated with cross-references to skill/SKILL.md
+- 21-03: Blind CASE Protocol properly homed in skill/sanitize/SKILL.md
+- 21-03: SKIL-03 (zero cross-document duplication) verified across all 5 audit clusters
+- 21-03: Final line counts: CLAUDE.md (305), SKILL.md (418), CASE (666), sanitize (407), dereplicate (182), supervisor (78)
 
 ### Pending Todos
 
-- Phase 21 Plan 03 ready: With CLAUDE.md lean and supervisor created, deduplicate subskills (sanitize, dereplicate, CASE) by referencing skill/SKILL.md
+- Phase 21 complete: All skill restructure deliverables achieved (SKIL-01 through SKIL-04)
+- Phase 22 ready: Intelligence hotspots (DEPTGuidedPicker 289 lines, HMBCGuidedPicker 226 lines, LSDInputGenerator 478 lines) ready for migration
 - Phase 24 foundation ready: skill/supervisor/SKILL.md provides routing logic, loop detection patterns, escalation criteria for full supervisor agent
 - 8 intelligence hotspot modules (~2,139 lines) identified for progressive migration through Phases 22-26
 - 3 code consolidation targets (experiment auto-discovery, database finder, LSD parser) queued for Phase 26
@@ -76,8 +80,8 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-06
-Stopped at: Completed Phase 21 Plan 02 (CLAUDE.md restructured, supervisor skill created)
+Stopped at: Completed Phase 21 Plan 03 (all subskills deduplicated, zero duplication verified)
 Resume file: None
 
 ---
-*Last updated: 2026-02-06 after Phase 21 Plan 02 completion*
+*Last updated: 2026-02-06 after Phase 21 completion*
