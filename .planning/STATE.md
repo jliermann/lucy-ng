@@ -5,15 +5,17 @@
 See: .planning/PROJECT.md (updated 2026-02-06)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with multi-agent architecture preventing loops
-**Current focus:** Defining requirements for v2.0
+**Current focus:** Phase 20 - System Audit
 
 ## Current Position
 
 **Milestone**: v2.0 Robust Multi-Agent CASE
-**Phase**: Not started (defining requirements)
-**Plan**: —
-**Status**: Defining requirements
-**Last activity**: 2026-02-06 — Milestone v2.0 started
+**Phase**: 20 of 26 (System Audit)
+**Plan**: 0 of TBD in current phase
+**Status**: Ready to plan
+**Last activity**: 2026-02-06 -- Roadmap created for v2.0 (Phases 20-26)
+
+Progress: [===================|..........] 66% (19/26 phases complete overall)
 
 ## Completed Milestones
 
@@ -23,40 +25,42 @@ See: .planning/PROJECT.md (updated 2026-02-06)
 | v1.1 Database-Backed Dereplication | 11-15 | 2026-01-15 |
 | v1.2 HOSE Database Prediction | 16-19 | 2026-01-18 |
 
-## Key Decisions
+## Performance Metrics
 
-| Decision | Date | Context |
-|----------|------|---------|
-| Hybrid CLI + MCP interface | 2026-01-08 | MCP for agent iteration, CLI for testing |
-| Bruker-only for v1 | 2026-01-08 | Focus on most common format |
-| LSD/pyLSD as primary solvers | 2026-01-08 | Established CASE tools with CLI |
-| nmrglue for NMR parsing | 2026-01-08 | Most mature, BSD licensed, native Bruker support |
-| Pydantic v2 for models | 2026-01-08 | Type safety, validation, JSON serialization |
-| hatch build system | 2026-01-08 | Modern Python packaging |
-| Use processed data | 2026-01-08 | Read from pdata/1/ not raw FID |
-| DEPT-guided adaptive thresholding | 2026-01-10 | Lower HSQC threshold until all DEPT carbons matched |
-| HMBC-guided peak picking | 2026-01-10 | Filter by requiring C match in 13C/DEPT and H match in HSQC |
-| Click CLI framework | 2026-01-10 | Simpler than Typer, no extra dependencies |
-| N:1 shift matching for ranking | 2026-01-12 | Handles molecular symmetry correctly |
-| DOI-based data fetching | 2026-01-12 | Parse NMRXiv DOIs directly for project/study IDs |
-| SQLite for dereplication DB | 2026-01-13 | Portable, no server, formula-indexed for fast lookup |
-| Protocol pattern for backends | 2026-01-18 | HOSELookupProtocol for interchangeable prediction |
-| Database-first auto-detection | 2026-01-18 | Prefer database over JSON table |
-| Single database for both features | 2026-01-18 | Same DB powers dereplication AND prediction |
-| AI as intelligence layer | 2026-02-06 | v2.0: Domain knowledge in skill, not Python code |
-| Multi-agent CASE | 2026-02-06 | v2.0: Supervisor prevents loops, specialists handle subtasks |
-| Error tolerance as skill knowledge | 2026-02-06 | v2.0: Teach AI to detect issues, not build Python machinery |
-| Skip COSY for now | 2026-02-06 | Notoriously difficult to analyze, defer |
+**Velocity:**
+- Total plans completed: 19 (v1.0-v1.2)
+- Average duration: ~3 hours per phase
+- Total execution time: ~60 hours
 
-## v2.0 Context
+**Recent Trend:**
+- v1.2 phases completed rapidly (3 days for 4 phases)
+- Trend: Stable
 
-**Trigger**: Virgiline (CASE7) failure analysis revealed that de novo CASE fails not due to tool bugs but due to:
-1. AI agent not detecting ambiguous carbon shifts (close shifts in aliphatic region)
-2. Agent using "throw everything in" HMBC strategy instead of incremental approach
-3. Agent getting stuck in loops (trying ELIM, adjusting constraints, re-running) without a supervisor
-4. Domain knowledge encoded in Python code instead of in the skill where the AI can reason about it
+## Accumulated Context
 
-**Analysis documents**: `CASE7-failed/analysis/SYSTEM_ANALYSIS.pdf`, `CASE7-failed/analysis/Virgiline_HMBC_Analysis.pdf`
+### Decisions
+
+Decisions are logged in PROJECT.md Key Decisions table.
+Recent decisions affecting current work:
+
+- v2.0: AI as intelligence layer -- domain knowledge in skill, not Python code
+- v2.0: Multi-agent CASE -- supervisor prevents loops, specialists handle subtasks
+- v2.0: Error tolerance as skill knowledge -- teach AI to detect issues, not build Python machinery
+- v2.0: Skip COSY -- notoriously difficult to analyze, defer
+
+### Pending Todos
+
+None yet.
+
+### Blockers/Concerns
+
+- Virgiline (CASE7) failure is the motivating case for v2.0 -- supervisor and incremental HMBC should address root causes
+
+## Session Continuity
+
+Last session: 2026-02-06
+Stopped at: Roadmap created for v2.0 milestone (7 phases, 38 requirements mapped)
+Resume file: None
 
 ---
-*Last updated: 2026-02-06 after v2.0 milestone started*
+*Last updated: 2026-02-06 after v2.0 roadmap creation*
