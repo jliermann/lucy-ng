@@ -1,180 +1,33 @@
 ---
 name: lucy-ng
 description: Computer-Assisted Structure Elucidation (CASE) for organic natural products using NMR spectroscopy. Use when the user asks to identify an unknown compound from NMR data, perform structure elucidation, analyze HSQC/HMBC/DEPT/COSY spectra, run dereplication against natural product databases (COCONUT, NMRShiftDB), generate LSD solver input, rank candidate structures by 13C prediction, or determine molecular structure from Bruker NMR data. Requires molecular formula and Bruker-format NMR spectra.
+tools:
+  - read_spectrum_1d
+  - read_spectrum_2d
+  - pick_peaks_1d
+  - pick_hsqc_peaks
+  - pick_hmbc_peaks
+  - analyze_symmetry
+  - dereplicate_c13
+  - check_lsd_availability
+  - generate_lsd_input
+  - run_lsd
+  - rank_lsd_solutions
+  - predict_c13_shifts
+  - get_hose_stats_info
+  - fetch_nmrxiv_dataset
+  - generate_correlation_diagram
 ---
 
-# lucy-ng
+# lucy-ng CASE Domain Knowledge
 
-AI-agent powered Computer-Assisted Structure Elucidation for organic natural products.
-
----
-
-## End-User Setup (First-Time Installation)
-
-When a user asks to set up structure elucidation or perform CASE, run these checks:
-
-### 1. Install lucy-ng
-```bash
-lucy --version || pip install lucy-ng
-```
-
-### 2. Check LSD Solver (REQUIRED)
-```bash
-lucy lsd check
-```
-
-If LSD is not found:
-- Download from: http://eos.univ-reims.fr/LSD/
-- Extract the archive
-- Add the `bin/` directory to PATH (contains `LSD` and `outlsd`)
-- Both `LSD` and `outlsd` are required for full functionality
-
-### 3. Verify Setup
-```bash
-lucy lsd check
-```
-Should report both LSD and outlsd as available.
-
-### 4. Download Compound Database (REQUIRED)
-```bash
-lucy database download
-```
-
-This downloads the pre-built compound database (~830 MB compressed) from Figshare:
-- DOI: 10.6084/m9.figshare.31073554
-- Contains 928K compounds (COCONUT + NMRShiftDB) with 13C NMR shifts
-- Contains 7.9M HOSE statistics for 13C shift prediction
-- Auto-decompresses to `data/reference/lucy-ng-derep.db` (~2.8 GB)
-
-**This single database powers BOTH:**
-- **Dereplication**: Formula-indexed compound lookup
-- **13C Prediction**: HOSE-based shift prediction for ranking LSD solutions
-
-Verify installation:
-```bash
-lucy database info data/reference/lucy-ng-derep.db
-```
-
-### 5. Create Permissions File
-Create `.claude/settings.json` in the working directory:
-```json
-{
-  "permissions": {
-    "allow": ["Bash(lucy:*)", "Bash(python3:*)", "Bash(ls:*)", "Bash(mkdir:*)"]
-  }
-}
-```
+This document contains all domain knowledge needed for Computer-Assisted Structure Elucidation (CASE). An AI agent performing structure elucidation should consult this document for NMR spectroscopy background, peak picking strategies, symmetry detection, dereplication, LSD constraint building, ranking, and workflow guidance.
 
 ---
 
-## Blind CASE Protocol (For Research Evaluation)
+## 1. NMR Background
 
-**CRITICAL**: When evaluating AI-based CASE on datasets from public sources (nmrXiv, metabolomics repositories), compound identity may be present in metadata files.
-
-### If You Discover Compound Identity in Metadata
-
-If you find compound names in title files, peaklist.xml, audit logs, or any other files:
-
-1. **STOP** - Do not use this information for structure determination
-2. **Do not** look up the compound structure or properties
-3. **Do not** infer molecular formula from the name
-4. **Treat** the compound as completely unknown
-5. **Ask** the user to provide the molecular formula (simulating HRMS)
-
-### Data Sanitization
-
-For valid CASE evaluation, use the `/lucy-ng:sanitize` subskill to remove compound identity before analysis. This requires:
-
-1. Run `/lucy-ng:sanitize` on the dataset
-2. Start a **fresh AI session** (to clear memory of compound identity)
-3. Perform CASE in the new session with user-provided molecular formula
-
-### Why This Matters
-
-For AI-based CASE research, the AI must demonstrate it can:
-- Determine structure from NMR correlations alone
-- Handle symmetry and equivalence without prior knowledge
-- Generate and rank candidate structures objectively
-
-Using compound identity from metadata invalidates the evaluation.
-
----
-
-## Available Subskills
-
-| Subskill | Purpose | When to Use |
-|----------|---------|-------------|
-| `/lucy-ng:sanitize` | Remove compound identity from dataset | Before blind CASE evaluation on public data |
-| `/lucy-ng:dereplicate` | Database matching only | Quick check if compound is known |
-| `/lucy-ng:CASE` | Full structure elucidation (skip dereplication) | Novel compounds, research evaluation |
-
-### Workflow Selection
-
-```
-Is this for blind CASE evaluation on public data?
-    ├─ YES → /lucy-ng:sanitize (then fresh session)
-    └─ NO → Continue
-
-Do you want to check databases first?
-    ├─ YES → /lucy-ng:dereplicate
-    │         └─ Match found? → Done
-    │         └─ No match? → /lucy-ng:CASE
-    └─ NO (skip to full CASE) → /lucy-ng:CASE
-```
-
-### Default Behavior
-
-The base `/lucy-ng` skill follows the full workflow: dereplication first, then CASE if needed. Use subskills for specific tasks.
-
----
-
-## Structure Elucidation Workflow
-
-Once setup is complete, follow this workflow.
-
-**STOPPING CRITERIA**: The workflow is complete ONLY when LSD produces 1-10 solutions.
-- **0 solutions**: Over-constrained → relax constraints and re-run LSD
-- **>10 solutions**: Under-constrained → add more HMBC constraints and re-run LSD
-- **Do NOT proceed to ranking with >10 solutions** - you MUST iterate until ≤10 solutions first
-
-In case of no solution structure, constraints and assumptions need to be checked and adjusted. In case of too many solutions, constraints like more HMBC signals or hetero-attachments for specific carbons in the correct shift range need to be added.
-
-**Key Principle: Be Conservative** - Always prefer known compounds over de novo structure determination. Dereplication (database matching) is faster, more reliable, and avoids the combinatorial explosion of possible structures. Only proceed to full structure elucidation if dereplication fails.
-
-### Workflow Steps
-
-0. **Documentation** - Create an `analysis/` folder to document all steps and results. Document immediately after each step below, so that the user can follow while you work.
-1. **Dereplication** - Check known compounds first (see Dereplication section below for details)
-2. **Symmetry** - `lucy analyze symmetry <data_dir> <formula>` - detect equivalent atoms
-3. **Peak Picking**:
-   - `lucy pick 1d <c13>` - carbon peaks
-   - `lucy pick hsqc <hsqc> --dept135 <dept135>` - direct C-H correlations
-   - `lucy pick hmbc <hmbc> --c13 <c13> --hsqc <hsqc>` - long-range correlations
-4. **LSD Generation** - `lucy lsd generate <data_dir> <formula> -o output.lsd`
-5. **Solve** - `lucy lsd run output.lsd`
-   - **CRITICAL**: Check solution count before proceeding:
-     - **0 solutions**: Over-constrained. See troubleshooting, fix constraints, re-run.
-     - **1-10 solutions**: Good. Proceed to step 6.
-     - **>10 solutions**: Under-constrained. Add more HMBC correlations from step 3, then re-run. **Do NOT proceed to ranking until ≤10 solutions.**
-6. **Rank** - `lucy lsd rank <smiles_file> --spectrum <c13>` or `--shifts "..."` (only after achieving ≤10 solutions)
-
-### Validation Checkpoints
-
-Before proceeding past each step, verify:
-
-| After Step | Check | If Failed |
-|------------|-------|-----------|
-| Symmetry analysis | Observed ≈ expected carbons | Account for equivalence in LSD |
-| LSD solve | **1-10 solutions** | Iterate: 0 = relax constraints, >10 = add HMBC |
-| Ranking | Top solution MAE < 3.5 | Review structure assignment |
-
-**The LSD solution count checkpoint is mandatory. Do not skip iteration.**
-
----
-
-## NMR Quick Reference
-
-### Experiment Types
+### Experiment Types and Information
 
 | Experiment | Information Provided | Key Insight |
 |------------|---------------------|-------------|
@@ -197,692 +50,129 @@ Before proceeding past each step, verify:
 | 160-180 | Carboxylic acids, esters, amides |
 | 180-220 | Aldehydes, ketones |
 
-### Lucy-ng Tool Output Reference
+### Common Pitfalls
 
-| Tool | Key Output Fields |
-|------|------------------|
-| `read_spectrum_1d` | nucleus, frequency, ppm_range, data_points |
-| `pick_peaks_1d` | peaks (ppm, intensity), count |
-| `pick_hsqc_peaks` | peaks (carbon_ppm, proton_ppm), multiplicities |
-| `pick_hmbc_peaks` | peaks (carbon_ppm, proton_ppm), validated_count |
-| `analyze_symmetry` | expected_carbons, observed_carbons, symmetry_detected |
-| `dereplicate_c13` | is_match, top_matches (name, smiles, score) |
-| `predict_c13_shifts` | predictions (atom_index, shift, confidence, radius, matches), success |
-| `get_hose_stats_info` | available, total_stats, compound_count, description |
-| `rank_lsd_solutions` | ranked_solutions (smiles, mae, quality, deviations, within_3ppm, within_5ppm) |
+#### Pitfall 1: Signal Count ≠ Atom Count (Symmetry)
 
-**Note**: `predict_c13_shifts` and `rank_lsd_solutions` both use the same database for HOSE-based predictions. The database auto-detects from `data/reference/lucy-ng-derep.db`.
+Molecular symmetry causes equivalent atoms to produce overlapping signals. If the molecular formula indicates 13 carbons but only 10-11 peaks appear in the 13C spectrum, this is usually symmetry, not missing data. Use `analyze_symmetry` to detect discrepancies. Check HSQC intensities - doubled signals show ~2x intensity. Common symmetric motifs: para-substituted benzene (2 pairs of equivalent CH), isopropyl groups (2 equivalent CH3), gem-dimethyl groups, symmetric ethers/esters. If formula hydrogens exceed the sum of (multiplicity × count) from HSQC, equivalent positions are present.
 
----
+#### Pitfall 2: Quaternary Carbons Are Invisible in DEPT/HSQC
 
-## Common Pitfalls and Solutions
+Quaternary carbons (no attached H) appear in 13C but not in DEPT or HSQC. The difference between 13C peak count and DEPT-135 peak count equals the number of quaternary carbons. These connect only through HMBC correlations. Common quaternary carbons: carbonyl C=O (160-220 ppm), aromatic junction carbons (120-160 ppm), bridgehead carbons.
 
-### Pitfall 1: Signal Count ≠ Atom Count (Symmetry)
+#### Pitfall 3: HMBC Noise Creates False Correlations
 
-**The Problem**: The molecular formula says C13H18O2 (13 carbons), but you only see 10-11 peaks in the 13C spectrum.
+Raw HMBC peak picking finds hundreds of peaks, most of which are noise (t1 noise, 1J bleeding). Always use guided HMBC picking. See Peak Picking Strategy section. Guided picking validates carbon positions against 13C/DEPT and proton positions against HSQC, reducing peak count from hundreds to tens. More correlations improve LSD results only if they are real.
 
-**Why This Happens**: Molecular symmetry causes equivalent atoms to produce identical signals that overlap.
+#### Pitfall 4: Too Many LSD Solutions
 
-**What To Do**:
-1. Use `lucy analyze symmetry` to detect discrepancies
-2. Look at HSQC intensities - doubled signals have ~2x intensity
-3. Consider common symmetric motifs:
-   - Para-substituted benzene (2 pairs of equivalent CH)
-   - Isopropyl groups (2 equivalent CH3)
-   - Gem-dimethyl groups (2 equivalent CH3)
-   - Symmetric ethers/esters
+Hundreds or thousands of LSD solutions indicate insufficient constraints. Common causes: missing HMBC correlations, incorrect multiplicities, unaccounted symmetry, quaternary carbons with no HMBC connections. See LSD Reference section for troubleshooting. Do not use ELIM prematurely.
 
-**Key Insight**: If formula hydrogens > sum of (multiplicity × count) from HSQC, you have equivalent positions.
+#### Pitfall 5: Heteroatom Positions
 
-### Pitfall 2: Quaternary Carbons Are Invisible in DEPT/HSQC
-
-**The Problem**: Some carbons appear in the 13C spectrum but have no HSQC correlation.
-
-**Why This Happens**: Quaternary carbons (C with no attached H) don't appear in DEPT or HSQC experiments.
-
-**What To Do**:
-1. Compare 13C peak count with DEPT-135 peak count
-2. The difference = quaternary carbons
-3. Quaternary carbons are only connected to the structure through HMBC correlations
-4. Common quaternary carbons:
-   - Carbonyl carbons (C=O) at 160-220 ppm
-   - Aromatic junction carbons at 120-160 ppm
-   - Bridgehead carbons
-
-### Pitfall 3: HMBC Noise Creates False Correlations
-
-**The Problem**: Raw HMBC peak picking finds hundreds of peaks, most of which are noise.
-
-**Why This Happens**: HMBC is an insensitive experiment with many artifacts (t1 noise, 1J bleeding).
-
-**What To Do**:
-1. **Always use guided HMBC picking** (`lucy pick hmbc`)
-2. The guided picker validates that:
-   - The carbon position exists in 13C/DEPT
-   - The proton position exists in HSQC
-3. This typically reduces peak count from hundreds to tens
-
-**Key Insight**: More HMBC correlations = better LSD results, but only if they're real correlations.
-
-### Pitfall 4: Too Many LSD Solutions
-
-**The Problem**: LSD generates hundreds or thousands of candidate structures.
-
-**Why This Happens**: Insufficient or incorrect constraints.
-
-**Common Causes**:
-1. Missing HMBC correlations (manually constructed vs. real data)
-2. Incorrect atom multiplicities
-3. Symmetry not accounted for
-4. Quaternary carbons with no HMBC connections
-
-**What To Do**:
-1. Verify all HMBC correlations from experimental data
-2. Check that all protonated carbons have HSQC correlations
-3. Ensure molecular formula is correct
-4. Consider if the compound has unusual features (macrocycles, etc.)
-
-**Expected Results**:
-- 1-10 solutions: Good constraint quality
-- 10-100 solutions: May need more data or review
-- 100+ solutions: Likely missing critical constraints
-
-### Pitfall 5: Heteroatom Positions
-
-**The Problem**: Oxygen and nitrogen atoms don't appear directly in standard NMR experiments.
-
-**Why This Happens**: Most heteroatoms have no attached protons (carbonyl O, ether O) or exchange rapidly (OH, NH).
-
-**What To Do**:
-1. Infer heteroatom positions from:
-   - Molecular formula (tells you how many O, N, etc.)
-   - Chemical shifts (C-O carbons appear 50-90 ppm)
-   - Carbonyl carbons (160-220 ppm)
-2. LSD uses the molecular formula to place heteroatoms
-3. Use BOND or LIST/PROP constraints to guide heteroatom attachment
+Oxygen and nitrogen atoms do not appear directly in standard NMR. Infer positions from: molecular formula (count), chemical shifts (C-O at 50-90 ppm, carbonyl at 160-220 ppm), and HMBC connectivity. See LSD Reference section for heteroatom constraint strategies (BOND vs LIST/PROP).
 
 ---
 
-## Reference Data
+## 2. Peak Picking Strategy
 
-### Compound Database
+### Scientific Rationale for Guided Picking
 
-Download the pre-built SQLite database (if not already done during setup):
+Raw 2D peak picking produces noise peaks and artifacts (1J bleeding, t1 noise). Use 1D spectra as ground truth to filter 2D peaks. DEPT provides ground truth for protonated carbons (CH, CH2, CH3). 13C provides all carbon positions including quaternary. HSQC cross-validated against DEPT carbon positions provides valid proton shifts. HMBC cross-validated against both 13C and HSQC provides real long-range correlations. Unfiltered picking causes LSD to produce thousands of solutions instead of a manageable set.
 
-```bash
-lucy database download
-```
+### 1D Adaptive Picker
 
-| Source | DOI | Contents | Size |
-|--------|-----|----------|------|
-| Figshare | 10.6084/m9.figshare.31073554 | 928K compounds + 7.9M HOSE stats | 830 MB (compressed) |
+Use threshold 0.05 as default. The picker uses a two-pass algorithm with FWHM factor 1.5 for baseline discrimination. Override threshold when: spectrum has unusually high noise (increase to 0.08-0.10) or very low intensity peaks are expected (decrease to 0.03). For most well-acquired spectra, 0.05 is optimal.
 
-The database contains:
-- **928K compounds** (COCONUT + NMRShiftDB) with 13C shifts for dereplication
-- **7.9M HOSE statistics** for 13C shift prediction
-- **111,493 unique molecular formulas** indexed for fast lookup
+### HSQC DEPT-Guided Strategy
 
-This is the **only** reference data needed - it powers both dereplication and prediction.
+Use `pick_hsqc_peaks` with DEPT-135 as ground truth. Algorithm iteratively lowers HSQC threshold (starting 0.10, down to 0.005) until all DEPT carbons are matched. Only HSQC peaks at valid DEPT positions are retained. Multiplicity extraction from DEPT-135 peak sign: positive peaks = CH or CH3, negative peaks = CH2. With DEPT-90, distinguish CH (visible) from CH3 (invisible in DEPT-90).
 
----
-
-## Dereplication
-
-Dereplication matches observed 13C shifts against the compound database to identify known compounds before attempting de novo structure elucidation.
-
-### CLI Usage
-
-**From Bruker Spectrum (preferred)**
-```bash
-lucy dereplicate c13 <bruker_experiment_path> <formula>
-```
-Example:
-```bash
-lucy dereplicate c13 data/compound/2 C14H16 -n 10
-```
-
-**From Shift List**
-```bash
-lucy dereplicate c13 --shifts "139.94,138.51,137.16,136.53" C14H16 -n 10
-```
-
-### Interpreting Results
-
-Results are ranked by:
-1. **Score** (higher is better): fraction of peaks matched
-2. **Average deviation** (lower is better): used as tiebreaker when scores are equal
-
-The compound with the highest score AND lowest average deviation ranks #1.
-
----
-
-## LSD Integration
-
-### LSD File Structure
-
-**Important:** LSD does NOT have a molecular formula command. The formula is defined implicitly by the sum of all MULT atom definitions.
-
-**File structure:**
-```
-; Comments start with semicolon
-MULT 1 C 2 0    ; Define atoms with MULT
-MULT 2 C 2 0
-...
-HSQC 4 4        ; Define correlations (HSQC FIRST!)
-HMBC 2 8        ; Then HMBC
-...
-; NO ELIM command on first run - only add if needed
-```
-
-**Note:** Do NOT use `FORM`, `FORMULA`, or similar commands - these are invalid in LSD.
-
-### Correlation Order (CRITICAL)
-
-HSQC/HMQC commands MUST appear BEFORE any HMBC commands that reference those proton positions. LSD defines proton positions through HSQC correlations.
-
-**Correct order:**
-```
-; 1. Atom definitions (MULT)
-MULT 1 C 2 0
-...
-
-; 2. HSQC correlations - defines proton positions
-HSQC 4 4    ; H4 is now defined
-HSQC 6 6    ; H6 is now defined
-
-; 3. HMBC correlations - can now reference H4, H6
-HMBC 2 4    ; C2 correlates to H4
-HMBC 3 6    ; C3 correlates to H6
-```
-
-**Error if wrong order:** "Cannot set an HMBC correlation between X and H-Y because H-Y is not defined by an HMQC command."
-
-### Hybridization Rules
-
-**CRITICAL:** LSD requires an EVEN number of sp2 atoms.
-
-Each double bond connects two sp2 atoms, so an odd count is invalid.
-
-**Common sp2 atoms:**
-- Carbonyl carbons (C=O): sp2
-- Carbonyl oxygens (C=O): sp2
-- Aromatic carbons: sp2
-- Aromatic nitrogens (pyridine-type): sp2
-
-**Common sp3 atoms:**
-- Saturated carbons (CH3, CH2, CH): sp3
-- Ether/hydroxyl oxygens: sp3
-- Amine nitrogens (NR3): sp3
-- N-methyl nitrogens: sp3
-
-**Validation:** Count sp2 atoms before running LSD. If odd, adjust one atom's hybridization.
-
-**Example - Caffeine (C8H10N4O2):**
-- 5 sp2 carbons (2 carbonyl + 3 aromatic)
-- 2 sp2 oxygens (2 carbonyl)
-- 1 sp2 nitrogen (imidazole ring)
-- 3 sp3 nitrogens (N-methyl positions)
-- Total: 8 sp2 atoms (even) ✓
-
-### Heteroatom Attachment Constraints
-
-There are TWO approaches to constrain heteroatom attachment:
-
-#### Approach A: Direct BOND (Simple cases)
-
-Use when you know the exact atoms that should be bonded:
-
-```
-; C1 (carbonyl at 155 ppm) bonded to O13
-BOND 1 13
-
-; N-CH3 carbon bonded to nitrogen
-BOND 6 9
-```
-
-**Pros:** Simple, explicit
-**Cons:** Less flexible, may over-constrain
-
-#### Approach B: LIST + ELEM + PROP (Flexible)
-
-Use when you want to constrain by element type without specifying exact atoms:
-
-```
-; Create list of carbonyl carbons (atoms 1 and 2)
-LIST L1 1 2
-
-; Create list of all oxygens
-ELEM L2 O
-
-; Each carbonyl must have exactly 1 oxygen neighbor
-PROP L1 1 L2
-
-; Create list of N-CH3 carbons
-LIST L3 6 7 8
-
-; Create list of all nitrogens
-ELEM L4 N
-
-; Each N-CH3 carbon must have exactly 1 nitrogen neighbor
-PROP L3 1 L4
-```
-
-**Pros:** More flexible, lets LSD find optimal assignment
-**Cons:** More verbose
-
-#### When to use each:
-
-| Scenario | Recommended |
-|----------|-------------|
-| Carbonyl C=O | BOND (usually clear which O) |
-| N-CH3 attachment | LIST/PROP (N assignment flexible) |
-| Ether oxygen | LIST/PROP (attachment flexible) |
-
-### LSD Command Format
-
-The LSD user guide for full reference is at https://nuzillard.github.io/LSD/MANUAL_ENG.html.
-
-**Atom definitions**: MULT command with hybridization and H-count
-```
-MULT 1 C 2 0    ; atom 1, carbon, sp2 hybridization, 0 hydrogens (quaternary)
-MULT 2 C 2 1    ; atom 2, carbon, sp2 hybridization, 1 hydrogen (CH)
-MULT 3 C 3 3    ; atom 3, carbon, sp3 hybridization, 3 hydrogens (CH3)
-MULT 4 N 3 0    ; atom 4, nitrogen, sp3, 0 hydrogens
-MULT 5 O 2 0    ; atom 5, oxygen, sp2, 0 hydrogens (carbonyl)
-```
-
-**HSQC correlations**: Direct C-H attachment
-```
-HSQC 2 2    ; carbon 2 has directly attached proton (defines H2)
-HSQC 3 3    ; carbon 3 has directly attached protons (defines H3)
-```
-
-**HMBC correlations**: 2-3 bond C-H correlations
-```
-HMBC 1 2    ; carbon 1 correlates to proton attached to carbon 2
-HMBC 1 3    ; carbon 1 correlates to protons attached to carbon 3
-```
-
-**ELIM command**: Allows elimination of invalid HMBC/COSY correlations (USE ONLY AS LAST RESORT)
-```
-ELIM P1 P2
-; P1 = maximum number of correlations that can be eliminated
-; P2 = maximum bond distance limit for eliminated correlations (0 = no limit)
-```
-**IMPORTANT:** Do NOT include ELIM in the first LSD run. Only add ELIM if LSD returns 0 solutions and you have verified all other constraints are correct. ELIM allows LSD to ignore correlations that may be artifacts or errors, but using it prematurely can lead to thousands of incorrect solutions instead of a unique correct one.
-
-### Converting LSD Solutions to SMILES
-
-After running LSD, convert solutions using `outlsd`:
-
-```bash
-outlsd 5 < compound.sol > solutions.smi
-```
-
-**Format options:**
-| Code | Format |
-|------|--------|
-| 1 | Bond lists |
-| 5 | SMILES |
-| 6 | 2D coordinates (.coo) |
-| 7 | SDF 2D (.mol) |
-| 8 | SDF 3D without H (.mol) |
-| 9 | SDF 3D with H (.mol) |
-
-**Complete workflow:**
-```bash
-# Run LSD
-LSD compound.lsd
-
-# Convert to SMILES
-outlsd 5 < compound.sol > solutions.smi
-
-# Rank solutions
-lucy lsd rank solutions.smi --shifts "155.08,151.58,..."
-```
-
-### Solution Ranking and MAE Interpretation
-
-When LSD produces multiple solutions, rank them using `lucy lsd rank`:
-
-**How it works:**
-1. For each solution SMILES, predict 13C shifts using HOSE codes
-2. For each prediction, find the closest experimental peak
-3. Calculate MAE (Mean Absolute Error) using **all** shifts
-4. Sort solutions by MAE (lower = better match)
-
-**New output format (v0.1.1+):**
-```
-  1. Solution 188: MAE=3.26 ppm (Good)
-     CC1CC(C)=C(C1)CC(=O)C
-     ≤3ppm: 6/10 | ≤5ppm: 9/10
-```
-
-The output shows:
-- **MAE with quality label**: "Excellent", "Good", "Moderate", or "Poor"
-- **Multi-level tolerance**: How many shifts fall within 3 ppm and 5 ppm
-
-**Interpreting MAE scores:**
-
-| MAE (ppm) | Quality Label | Interpretation |
-|-----------|---------------|----------------|
-| < 2.0 | Excellent | High confidence in structure |
-| 2.0 - 3.5 | Good | Reasonable confidence |
-| 3.5 - 5.0 | Moderate | Review carefully, check alternatives |
-| > 5.0 | Poor | Likely incorrect or unusual structure |
-
-**Understanding the tolerance summary:**
-- `≤3ppm: 6/10` means 6 of 10 predicted shifts are within 3 ppm of an experimental peak
-- `≤5ppm: 9/10` means 9 of 10 are within 5 ppm
-- This multi-level view is more informative than a single hard cutoff
-
-**Why correct structures may not rank #1:**
-1. **HOSE prediction errors**: Carbonyl carbons can vary ±5-10 ppm; conjugated systems are harder to predict
-2. **Symmetry effects**: Equivalent carbons produce one signal but multiple predictions
-3. **Unusual environments**: Strained rings, unusual substituents reduce prediction accuracy
-
-**Best practices:**
-- Always examine the **top 10-20 candidates** for chemical reasonableness
-- A structure with MAE=3.5 (Good) and sensible chemistry may be correct over one with MAE=3.2 but unusual features
-- Use the tolerance summary to understand where predictions differ
-- Cross-reference with dereplication hits if available
-
-### LSD Runner Notes
-
-- LSD writes solution count to **stderr**, not stdout
-- Success is determined by finding solutions, not just return code
-- Solution files are written as `.sol` files in the working directory
-
----
-
-## Manual LSD File Construction
-
-When `lucy lsd generate` fails (e.g., missing DEPT), construct the LSD file manually:
-
-### Template
-```
-; LSD input file for [FORMULA]
-; Atom definitions (MULT)
-MULT 1 C 2 0    ; sp2 quaternary carbon (e.g., carbonyl)
-MULT 2 C 2 1    ; sp2 CH (aromatic)
-MULT 3 C 3 3    ; sp3 CH3
-MULT 4 N 3 0    ; sp3 nitrogen (N-methyl)
-MULT 5 O 2 0    ; sp2 oxygen (carbonyl)
-...
-
-; HSQC correlations (define H positions FIRST)
-HSQC 2 2        ; H2 on C2
-HSQC 3 3        ; H3 on C3
-
-; HMBC correlations (AFTER HSQC)
-HMBC 1 2        ; C1 correlates to H2
-HMBC 1 3        ; C1 correlates to H3
-
-; Heteroatom constraints (BOND or LIST/PROP)
-BOND 1 5        ; C1 bonded to O5 (carbonyl)
-
-; NO ELIM on first run!
-```
-
-### Checklist
-1. All carbons from 13C defined with MULT
-2. Heteroatoms from formula added (N, O, S, etc.)
-3. sp2 count is EVEN
-4. HSQC correlations defined for protonated carbons
-5. HMBC correlations reference only defined H positions
-6. Heteroatom constraints added (BOND or LIST/PROP)
-7. **NO ELIM command** on first run (add only if 0 solutions found)
-
-### LSD Troubleshooting
-
-**Common errors and solutions:**
-
-| Error | Cause | Solution |
-|-------|-------|----------|
-| "Odd total sum of valences" | Hydrogen count wrong | Verify: sum of (multiplicity × count) = formula H |
-| "Cannot set HMBC correlation" | HSQC not defined first | Move all HSQC commands before HMBC |
-| "No solution found" | Over-constrained | 1) Check sp2 count is even, 2) verify HMBC correlations, 3) only then try `ELIM 1 0` |
-| Too many solutions (>100) | Under-constrained | Add more HMBC correlations, verify existing ones are correct |
-
-**Before running LSD, verify:**
-
-- [ ] **Hydrogen count**: Sum of (CH3 × 3 + CH2 × 2 + CH × 1) = formula H count
-- [ ] **sp2 count is EVEN**: Count all sp2 atoms (carbonyl C+O, aromatic, C=C)
-- [ ] **NO ELIM on first run**: Only add ELIM if you get 0 solutions after verifying constraints
-- [ ] **Correlation order**: All HSQC commands must come before any HMBC commands
-
-**If 0 solutions found**, troubleshoot in this order:
-1. Verify sp2 count is even
-2. Check hydrogen count matches formula
-3. Review HMBC correlations for errors or artifacts
-4. Only then try `ELIM 1 0` to allow eliminating 1 correlation
-5. If still no solution, try `ELIM 2 0`, etc. incrementally
-
----
-
-## Peak Picking
-
-### Scientific Rationale: Guided Peak Picking
-
-Raw 2D peak picking produces many noise peaks and artifacts. For reliable structure elucidation, we use **guided peak picking** that cross-validates peaks against reference spectra:
-
-**The Problem**: Unfiltered 2D peak picking leads to:
-- Noise peaks that don't correspond to real correlations
-- Artifacts (e.g., 1J bleeding in HMBC, t1 noise)
-- Too many false correlations → LSD produces thousands of solutions instead of a manageable set
-
-**The Solution**: Use 1D spectra as ground truth to filter 2D peaks:
-- DEPT provides ground truth for protonated carbons (CH, CH2, CH3)
-- 13C provides all carbon positions including quaternary
-- HSQC provides valid proton chemical shifts. We only use picked HSQC shifts where the C-axis matches a DEPT peak.
-- HMBC provides long-range correlations between carbons and hydrogens. Only peaks where the carbon shift matches a picked peak from the 1D carbon spectrum and the proton shift matches a proton shift from the HSQC signals are kept as being valid.
-
-### Molecular Symmetry
-
-**Important**: Equivalent carbons appear as single NMR signals due to molecular symmetry.
-
-Example - Ibuprofen (para-disubstituted benzene):
-- Molecular formula: C13H18O2 (13 carbons)
-- Observed 13C signals: ~10-11 (due to symmetry)
-- Two ortho CH carbons are equivalent → 1 signal
-- Two meta CH carbons are equivalent → 1 signal
-
-The AI agent must detect this discrepancy between molecular formula and observed signals to properly constrain structure elucidation. Symmetry affects both carbon and proton counts.
-
-### Working with APT Instead of DEPT-135
-
-APT (Attached Proton Test) provides similar multiplicity information to DEPT:
-- **Positive peaks**: CH and CH3 (odd number of attached protons)
-- **Negative peaks**: CH2 and quaternary C (even number of attached protons)
-
-When DEPT-135 is unavailable but APT is present:
-1. Use `lucy pick 1d` on APT spectrum for carbon positions
-2. Pick HSQC peaks manually with `PeakPicker2D` at threshold 0.05
-3. Cross-reference APT phase with HSQC intensities for multiplicity:
-   - High-intensity HSQC peak + positive APT = likely CH3
-   - Medium-intensity HSQC + positive APT = likely CH
-   - HSQC present + negative APT = CH2
-   - No HSQC + negative APT = quaternary C
-
-**Note**: APT cannot distinguish CH from CH3 without additional information (HSQC intensity, chemical shift patterns).
-
-### HSQC: Use DEPT-Guided Picker (Preferred)
-
-For HSQC peak picking, **always use `DEPTGuidedPicker`** instead of raw `PeakPicker2D` when DEPT-135 is available.
-
-**Why DEPT-guided?**
-- DEPT-135 shows ALL protonated carbons (ground truth)
-- Algorithm lowers HSQC threshold iteratively until all DEPT carbons are matched
-- Only HSQC peaks at valid DEPT positions are retained
-- Multiplicity (CH, CH2, CH3) extracted from DEPT-135 peak signs:
-  - Positive peaks: CH or CH3
-  - Negative peaks: CH2
-- DEPT-90 (optional) distinguishes CH from CH3 (only CH visible in DEPT-90)
-
+Python API:
 ```python
-from lucy_ng import BrukerReader
-from lucy_ng.processing import DEPTGuidedPicker
-
-hsqc = BrukerReader.read_2d("data/Ibuprofen/6")      # HSQC
-dept135 = BrukerReader.read_1d("data/Ibuprofen/3")   # DEPT-135
-dept90 = BrukerReader.read_1d("data/Ibuprofen/4")    # DEPT-90 (optional)
-
-# With DEPT-90 for full CH/CH3 disambiguation
 result = DEPTGuidedPicker.pick_hsqc_peaks_with_dept90(hsqc, dept135, dept90)
-
-# Or with DEPT-135 only (CH and CH3 remain ambiguous as "CH/CH3")
+# or
 result = DEPTGuidedPicker.pick_hsqc_peaks(hsqc, dept135)
-
-print(result.summary())
-# Access: result.peaks, result.carbon_multiplicities, result.all_carbons_found
 ```
 
-### HMBC: Use Guided Picker (Preferred)
+Override threshold manually if DEPT contains very weak signals not found by iterative lowering or if HSQC has unusual artifacts requiring a higher starting threshold.
 
-For HMBC peak picking, **use `HMBCGuidedPicker`** to filter noise.
+### HMBC Cross-Validation Strategy
 
-**Why guided HMBC picking?**
-- HMBC spectra are noisy with many artifacts
-- A real HMBC correlation requires:
-  1. The carbon exists (visible in 13C or DEPT)
-  2. The proton exists and is attached to a carbon (visible in HSQC)
-- Filtering by these criteria removes noise peaks that would create false constraints for LSD
+Use `pick_hmbc_peaks` to cross-validate against known 13C and HSQC positions. Tolerances: 13C ±1.5 ppm (carbon dimension less precise than proton), 1H ±0.1 ppm. A real HMBC correlation requires the carbon exists (visible in 13C or DEPT) and the proton exists (attached to a carbon visible in HSQC). Include quaternary carbons from 13C when checking HMBC signals.
 
-**Filtering criteria:**
-1. Carbon (F1) must match a known carbon from 13C or DEPT spectrum (±1.5 ppm). Also look for HMBC signals for the quaternary carbons.
-2. Proton (F2) must match a known proton from HSQC (±0.1 ppm)
-
+Python API:
 ```python
-from lucy_ng import BrukerReader
-from lucy_ng.processing import HMBCGuidedPicker
-
-hmbc = BrukerReader.read_2d("data/Ibuprofen/7")
-c13 = BrukerReader.read_1d("data/Ibuprofen/2")
-hsqc = BrukerReader.read_2d("data/Ibuprofen/6")
-dept135 = BrukerReader.read_1d("data/Ibuprofen/3")  # optional
-
 result = HMBCGuidedPicker.pick_hmbc_peaks_from_spectra(
     hmbc=hmbc,
     carbon_spectrum=c13,
     hsqc=hsqc,
-    dept135=dept135,  # optional, adds extra carbon positions
+    dept135=dept135  # optional, adds extra carbon positions
 )
-
-print(result.summary())
-# Access: result.peaks, result.validated_count, result.rejected_count
 ```
 
-### Other 2D Spectra (COSY, etc.)
+Adjust tolerances when: 13C dimension has poor digital resolution (increase to ±2.0 ppm) or 1H dimension shows line broadening (increase to ±0.15 ppm). Most spectra use default tolerances.
 
-For COSY and other 2D spectra, use `PeakPicker2D`:
-```python
-from lucy_ng.processing import PeakPicker2D
+### APT as DEPT Alternative
 
-cosy = BrukerReader.read_2d("data/Ibuprofen/5")
-peaks = PeakPicker2D.pick_peaks(cosy, threshold=0.05)
-```
+APT (Attached Proton Test) can replace DEPT-135 when unavailable. Positive peaks = CH and CH3 (odd number of attached H). Negative peaks = CH2 and quaternary C (even number). Use `pick_peaks_1d` on APT for carbon positions. Pick HSQC with raw threshold 0.05. Cross-reference APT phase with HSQC intensity: high-intensity HSQC + positive APT = likely CH3, medium-intensity + positive APT = likely CH, HSQC present + negative APT = CH2, no HSQC + negative APT = quaternary C. APT cannot distinguish CH from CH3 without HSQC intensity or shift patterns.
 
 ---
 
-## Decision Trees
+## 3. Symmetry Detection
 
-### When to Proceed with Full Elucidation
+### Expected vs Observed Signal Count
 
-```
-Start
-  │
-  ├─ Dereplication found match?
-  │    ├─ YES → Report match, confidence level, DONE
-  │    └─ NO → Continue
-  │
-  ├─ All necessary spectra available?
-  │    ├─ YES → Continue
-  │    └─ NO → Request missing data:
-  │           - Need at minimum: 13C, HSQC, HMBC
-  │           - DEPT highly recommended
-  │
-  ├─ Molecular formula provided?
-  │    ├─ YES → Continue
-  │    └─ NO → Request from user (essential!)
-  │
-  └─ Proceed with peak picking and LSD
-```
+Molecular formula defines expected carbon count. 13C spectrum shows observed signal count. If observed < expected, molecular symmetry is causing equivalent atoms to overlap. The difference indicates how many carbons are symmetrically equivalent. Use `analyze_symmetry` to detect and quantify discrepancies.
 
-### Handling Symmetry
+### Intensity-Based Equivalence
 
-```
-Symmetry Analysis Result
-  │
-  ├─ observed_carbons == expected_carbons?
-  │    └─ No symmetry → Proceed normally
-  │
-  ├─ observed_carbons < expected_carbons?
-  │    │
-  │    ├─ Difference = 2?
-  │    │    └─ Likely: one pair of equivalent carbons
-  │    │       (e.g., para-benzene CH, isopropyl CH3)
-  │    │
-  │    ├─ Difference = 4?
-  │    │    └─ Likely: two pairs of equivalent carbons
-  │    │       (e.g., para-benzene ring)
-  │    │
-  │    └─ Larger difference?
-  │         └─ Highly symmetric molecule
-  │            (e.g., C2 or higher symmetry)
-  │
-  └─ Check HSQC intensities for confirmation
-       - Doubled signals have ~2x intensity
-```
+Relative intensity >= 1.5x the median intensity suggests overlapping signals from equivalent carbons. A doubled signal (2 equivalent carbons) shows ~2x intensity. Check HSQC intensities to confirm carbon equivalence.
 
-### LSD Result Interpretation
+### Shift-Based Multiplicity Guessing
 
-```
-LSD Solution Count
-  │
-  ├─ 0 solutions
-  │    └─ Over-constrained. Check IN ORDER:
-  │       1. sp2 count is even?
-  │       2. Hydrogen count matches formula?
-  │       3. HMBC correlations correct?
-  │       4. Wrong molecular formula?
-  │       5. Only after all above: try ELIM 1 0
-  │
-  ├─ 1 solution
-  │    └─ IDEAL RESULT - High confidence
-  │       - Verify solution makes chemical sense
-  │       - Check for unusual features
-  │       - Verify with lucy lsd rank (MAE score)
-  │
-  ├─ 2-10 solutions
-  │    └─ Good result → USE RANKING
-  │       - lucy lsd rank to identify best match
-  │       - Examine differences between top candidates
-  │       - Often differ in stereochemistry or regiochemistry
-  │
-  ├─ 10-100 solutions
-  │    └─ **STOP - DO NOT PROCEED TO RANKING**
-  │       Under-constrained → Return to HMBC picking and ADD MORE CONSTRAINTS:
-  │       1. Review raw HMBC for additional correlations not yet included
-  │       2. Check if ELIM was used (remove it!)
-  │       3. Re-run LSD
-  │       4. Repeat until ≤10 solutions
-  │       - Only proceed to ranking after achieving ≤10 solutions
-  │
-  └─ >100 solutions
-       └─ Severely under-constrained
-          - Was ELIM used? Remove it first!
-          - Request additional NMR data
-          - Add more HMBC correlations
-          - Add heteroatom constraints (BOND or LIST/PROP)
-```
+When DEPT is unavailable, infer likely multiplicity from shift and intensity. Shifts < 30 ppm are likely CH3 (aliphatic methyl). Shifts > 100 ppm are likely aromatic CH. This is a heuristic, not definitive. Use DEPT when available.
+
+### Common Symmetric Motifs
+
+- **Para-substituted benzene**: 2 pairs of equivalent CH (4 carbons produce 2 signals)
+- **Isopropyl groups**: 2 equivalent CH3 (2 carbons produce 1 signal)
+- **Gem-dimethyl groups**: 2 equivalent CH3 (2 carbons produce 1 signal)
+- **Symmetric ethers/esters**: equivalent CH2 or O-CH2-O patterns
+
+### Handling Symmetry Decision Tree
+
+- **Observed == expected**: No symmetry, proceed normally
+- **Difference = 2**: One pair of equivalent carbons (e.g., para-benzene CH pair or isopropyl CH3 pair)
+- **Difference = 4**: Two pairs of equivalent carbons (e.g., full para-benzene ring)
+- **Larger difference**: Highly symmetric molecule (C2 or higher symmetry)
+- Check HSQC intensities to confirm: doubled signals have ~2x intensity
 
 ---
 
-## Result Reporting Templates
+## 4. Dereplication
 
-### Dereplication Results
+### When to Use Dereplication
 
-**Interpreting dereplication scores:**
+Always check databases FIRST before de novo structure elucidation. Dereplication is faster, more reliable, and avoids the combinatorial explosion of LSD. Only proceed to full CASE if dereplication fails to find a match.
+
+### CLI Syntax
+
+From Bruker spectrum (preferred):
+```bash
+lucy dereplicate c13 <bruker_experiment_path> <formula>
+```
+
+From shift list:
+```bash
+lucy dereplicate c13 --shifts "139.94,138.51,137.16" <formula> -n 10
+```
+
+### Region-Specific Tolerances and Scoring
+
+The dereplication algorithm uses region-specific tolerances: aliphatic carbons ±0.8 ppm, aromatic carbons ±1.2 ppm, carbonyl carbons ±1.5 ppm. These reflect intrinsic precision differences across chemical shift regions. Scoring uses geometric mean to balance overlap fraction and average deviation. Results rank by score (higher is better), with average deviation as tiebreaker (lower is better).
+
+### Score Interpretation
 
 | Score | Interpretation | Recommended Action |
 |-------|---------------|-------------------|
@@ -891,152 +181,238 @@ LSD Solution Count
 | 0.50 - 0.65 | Weak match | Use as starting hypothesis; full elucidation recommended |
 | < 0.50 | No match | Likely novel compound; proceed with full elucidation |
 
-**Note**: A score of 0.65-0.85 often indicates the correct compound, especially when the molecular formula matches exactly. The score reflects peak overlap, which can be affected by reference data quality and experimental conditions.
-
-**Strong match** (score > 0.85):
-```
-"The compound matches [NAME] in the database with a score of [X].
-This is a known compound: [SMILES/structure description].
-The match is based on [N] carbon shifts with an average deviation of [Y] ppm."
-```
-
-**Possible match** (score 0.50-0.85):
-```
-"There is a potential match to [NAME] with a score of [X].
-This should be verified by comparing predicted vs. observed shifts.
-Consider proceeding with structure elucidation to confirm.
-Key differences are at positions: [list any outliers]."
-```
-
-**No match** (score < 0.50 or no candidates):
-```
-"No database match found. This may be:
-1. A novel compound not in the database
-2. A known compound with different stereochemistry
-3. A compound not yet added to the reference database
-
-Proceeding with de novo structure elucidation..."
-```
-
-### LSD Results
-
-**Report solutions like this**:
-```
-"LSD found [N] candidate structure(s).
-
-Solution 1: [Description]
-- Core scaffold: [aromatic/aliphatic/mixed]
-- Key features: [functional groups, ring systems]
-- Consistent with: [which spectroscopic features]
-
-[If multiple solutions, describe key differences]
-
-The solutions differ in:
-- Position of [functional group]
-- Ring fusion pattern
-- Stereochemistry at [position]
-"
-```
-
-### Reporting Uncertainty
-
-**Always be transparent about**:
-- Missing data that would improve confidence
-- Assumptions made during analysis
-- Alternative interpretations
-- Recommended additional experiments
+A score of 0.65-0.85 often indicates the correct compound, especially when molecular formula matches exactly. The score reflects peak overlap, affected by reference data quality and experimental conditions.
 
 ---
 
-## Quick Reference Card
+## 5. LSD Reference
 
-### Essential Workflow
-1. **Dereplication FIRST** - Always check databases before full analysis
-2. **Check symmetry** - Explains "missing" signals
-3. **Use guided peak picking** - Reduces noise dramatically
-4. **Validate data** - Cross-check between experiments
-5. **Run LSD** - Generate candidate structures
-6. **Rank solutions** - Use `lucy lsd rank` if multiple candidates
-7. **Interpret results conservatively** - Report uncertainty
+### Command Format
 
-### Red Flags to Watch For
-- Fewer signals than expected atoms → Symmetry
-- More signals than expected → Impurity or wrong formula
-- Zero LSD solutions → Over-constrained (check sp2 count, HMBC correlations)
-- Thousands of LSD solutions → Under-constrained OR using ELIM when not needed
+**MULT** - Atom definitions with element, hybridization (2=sp2, 3=sp3), and hydrogen count:
+```
+MULT 1 C 2 0    ; carbon, sp2, 0 hydrogens (quaternary)
+MULT 2 C 2 1    ; carbon, sp2, 1 hydrogen (CH)
+MULT 3 C 3 3    ; carbon, sp3, 3 hydrogens (CH3)
+MULT 4 N 3 0    ; nitrogen, sp3, 0 hydrogens
+MULT 5 O 2 0    ; oxygen, sp2, 0 hydrogens (carbonyl)
+```
+
+**HSQC** - Direct C-H attachment:
+```
+HSQC 2 2    ; carbon 2 has directly attached proton (defines H2)
+HSQC 3 3    ; carbon 3 has directly attached protons (defines H3)
+```
+
+**HMBC** - 2-3 bond C-H correlations:
+```
+HMBC 1 2    ; carbon 1 correlates to proton attached to carbon 2
+HMBC 1 3    ; carbon 1 correlates to protons attached to carbon 3
+```
+
+**BOND** - Explicit bond constraint:
+```
+BOND 1 13   ; atom 1 bonded to atom 13
+```
+
+**LIST**, **ELEM**, **PROP** - Flexible heteroatom constraints:
+```
+LIST L1 1 2         ; create list of atoms 1 and 2
+ELEM L2 O           ; create list of all oxygens
+PROP L1 1 L2        ; each atom in L1 must have exactly 1 neighbor from L2
+```
+
+### Correlation Order Rule
+
+HSQC/HMQC commands MUST appear BEFORE any HMBC commands that reference those proton positions. LSD defines proton positions through HSQC correlations. Correct order: (1) MULT atom definitions, (2) HSQC correlations (defines H positions), (3) HMBC correlations (references H positions). Error if wrong order: "Cannot set an HMBC correlation between X and H-Y because H-Y is not defined by an HMQC command."
+
+### Hybridization Rules
+
+LSD requires an EVEN number of sp2 atoms. Each double bond connects two sp2 atoms, so an odd count is invalid.
+
+Common sp2 atoms: carbonyl carbons (C=O), carbonyl oxygens (C=O), aromatic carbons, aromatic nitrogens (pyridine-type).
+
+Common sp3 atoms: saturated carbons (CH3, CH2, CH), ether/hydroxyl oxygens, amine nitrogens (NR3), N-methyl nitrogens.
+
+Count all sp2 atoms before running LSD. If odd, adjust one atom's hybridization. Example (Caffeine C8H10N4O2): 5 sp2 carbons (2 carbonyl + 3 aromatic), 2 sp2 oxygens (2 carbonyl), 1 sp2 nitrogen (imidazole ring), 3 sp3 nitrogens (N-methyl) = 8 sp2 atoms (even).
+
+### Heteroatom Attachment Constraints
+
+**Approach A: Direct BOND** - Use when exact atoms are known. Simple and explicit, but less flexible. May over-constrain.
+```
+BOND 1 13   ; C1 (carbonyl) bonded to O13
+BOND 6 9    ; N-CH3 carbon bonded to nitrogen
+```
+
+**Approach B: LIST + ELEM + PROP** - Use when constraining by element type without specifying exact atoms. More flexible, lets LSD find optimal assignment, but more verbose.
+```
+LIST L1 1 2         ; carbonyl carbons
+ELEM L2 O           ; all oxygens
+PROP L1 1 L2        ; each carbonyl must have exactly 1 oxygen neighbor
+```
+
+Decision logic:
+- **Carbonyl C=O**: Use BOND (usually clear which oxygen)
+- **N-CH3 attachment**: Use LIST/PROP (nitrogen assignment flexible)
+- **Ether oxygen**: Use LIST/PROP (attachment position flexible)
+
+### ELIM Command
+
+ELIM allows elimination of invalid HMBC/COSY correlations. Use ONLY as last resort after exhausting all other diagnostics.
+
+```
+ELIM P1 P2
+; P1 = maximum number of correlations that can be eliminated
+; P2 = maximum bond distance limit (0 = no limit)
+```
+
+Do NOT include ELIM in the first LSD run. Only add if LSD returns 0 solutions AND you have verified: sp2 count is even, hydrogen count matches formula, HMBC correlations are correct, molecular formula is correct. Using ELIM prematurely can lead to thousands of incorrect solutions instead of a unique correct one. Start with `ELIM 1 0` (eliminate 1 correlation), then `ELIM 2 0`, etc. incrementally.
+
+### Solution Count Interpretation
+
+- **0 solutions**: Over-constrained. Check in order: (1) sp2 count is even, (2) hydrogen count matches formula, (3) HMBC correlations correct, (4) wrong molecular formula, (5) only after all above, try ELIM 1 0.
+- **1 solution**: IDEAL result. High confidence. Verify solution makes chemical sense. Check for unusual features. Verify with ranking (MAE score).
+- **2-10 solutions**: Good result. Use ranking to identify best match. Examine differences between top candidates (often stereochemistry or regiochemistry).
+- **10-100 solutions**: Under-constrained. Add missing HMBC correlations. Check if ELIM was used (remove it). Use ranking to narrow candidates.
+- **>100 solutions**: Severely under-constrained. Was ELIM used (remove it first). Request additional NMR data. Add more HMBC correlations. Add heteroatom constraints (BOND or LIST/PROP).
+
+### Manual File Construction Checklist
+
+1. All carbons from 13C defined with MULT
+2. Heteroatoms from formula added (N, O, S, etc.)
+3. sp2 count is EVEN
+4. HSQC correlations defined for protonated carbons
+5. HMBC correlations reference only defined H positions
+6. Heteroatom constraints added (BOND or LIST/PROP)
+7. NO ELIM command on first run (add only if 0 solutions found)
+
+### Troubleshooting Common Errors
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| "Odd total sum of valences" | Hydrogen count wrong | Verify: sum of (multiplicity × count) = formula H |
+| "Cannot set HMBC correlation" | HSQC not defined first | Move all HSQC commands before HMBC |
+| "No solution found" | Over-constrained | See Solution Count Interpretation above |
+| Too many solutions (>100) | Under-constrained | Add more HMBC correlations, verify existing ones are correct |
+
+Before running LSD: verify hydrogen count matches formula, sp2 count is even, NO ELIM on first run, all HSQC before HMBC.
+
+### Converting Solutions to SMILES
+
+After LSD generates solutions, convert to SMILES using `outlsd`:
+```bash
+outlsd 5 < compound.sol > solutions.smi
+```
+
+Format codes: 1=bond lists, 5=SMILES, 6=2D coordinates, 7=SDF 2D, 8=SDF 3D without H, 9=SDF 3D with H.
+
+---
+
+## 6. Ranking and Prediction
+
+### HOSE Prediction Strategy
+
+13C prediction uses HOSE codes with radius fallback (6->1). Radius 6 is most specific (6 bond spheres), radius 1 is most general. If no match at radius 6, fall back to 5, then 4, etc. Confidence score (0-1) reflects: radius (50% weight - higher radius = higher confidence), match count (30% weight - more matches = higher confidence), standard deviation (20% weight - lower std dev = higher confidence).
+
+### N:1 Symmetry Matching
+
+When ranking LSD solutions, the predictor generates one shift per carbon atom, but symmetry causes multiple atoms to produce one experimental signal. The ranking algorithm finds the closest experimental peak for each predicted shift. This N:1 matching (N predicted shifts, 1 experimental signal) is expected for symmetric molecules. Do not penalize solutions for this.
+
+### MAE Quality Thresholds
+
+| MAE (ppm) | Quality Label | Interpretation |
+|-----------|---------------|----------------|
+| < 2.0 | Excellent | High confidence in structure |
+| 2.0 - 3.5 | Good | Reasonable confidence |
+| 3.5 - 5.0 | Moderate | Review carefully, check alternatives |
+| > 5.0 | Poor | Likely incorrect or unusual structure |
+
+### Ranking Output Format and Interpretation
+
+Output shows MAE with quality label and multi-level tolerance:
+```
+  1. Solution 188: MAE=3.26 ppm (Good)
+     CC1CC(C)=C(C1)CC(=O)C
+     ≤3ppm: 6/10 | ≤5ppm: 9/10
+```
+
+The tolerance summary shows how many predicted shifts fall within 3 ppm and 5 ppm of experimental peaks. This multi-level view is more informative than a single hard cutoff. `≤3ppm: 6/10` means 6 of 10 predicted shifts are within 3 ppm. `≤5ppm: 9/10` means 9 of 10 are within 5 ppm.
+
+### Why Correct Structures May Not Rank #1
+
+HOSE prediction errors: carbonyl carbons can vary ±5-10 ppm, conjugated systems are harder to predict. Symmetry effects: equivalent carbons produce one signal but multiple predictions. Unusual environments: strained rings, unusual substituents reduce prediction accuracy. Always examine the top 10-20 candidates for chemical reasonableness. A structure with MAE=3.5 (Good) and sensible chemistry may be correct over one with MAE=3.2 but unusual features. Cross-reference with dereplication hits if available.
+
+---
+
+## 7. CASE Workflow
+
+### Step-by-Step Workflow
+
+0. **Documentation**: Create `analysis/` folder to document all steps and results. Document immediately after each step so the user can follow while you work.
+
+1. **Dereplication**: Check known compounds first using `dereplicate_c13`. If score > 0.85, likely identified. If score 0.65-0.85, possible match (verify carefully). If score < 0.50, proceed to full elucidation.
+
+2. **Symmetry**: Run `analyze_symmetry` to detect equivalent atoms. If observed carbons < expected carbons, account for symmetry in LSD constraints.
+
+3. **Peak Picking**:
+   - `pick_peaks_1d` for 13C carbon peaks
+   - `pick_hsqc_peaks` with DEPT-135 for direct C-H correlations (use DEPT-guided picker)
+   - `pick_hmbc_peaks` with 13C and HSQC for long-range correlations (use cross-validated picker)
+
+4. **LSD Generation**: Use `generate_lsd_input` or construct manually. Verify checklist before running: all carbons defined, heteroatoms added, sp2 count is EVEN, HSQC before HMBC, NO ELIM on first run.
+
+5. **Solve**: Run `run_lsd`. Check solution count:
+   - **0 solutions**: Over-constrained. See LSD Reference troubleshooting.
+   - **1-10 solutions**: Good. Proceed to step 6.
+   - **>10 solutions**: Under-constrained. Add more HMBC correlations, then re-run. Do NOT proceed to ranking until ≤10 solutions.
+
+6. **Rank**: Run `rank_lsd_solutions` (only after achieving ≤10 solutions). Examine top 10-20 candidates. Cross-reference with dereplication hits if available.
+
+### When to Proceed vs Request More Data
+
+**Proceed** if: dereplication found no match (or weak match < 0.65), all necessary spectra available (at minimum 13C, HSQC, HMBC; DEPT highly recommended), molecular formula provided.
+
+**Request more data** if: missing critical spectra (13C, HSQC, or HMBC), molecular formula not provided (essential), conflicting data between experiments, unusual chemical shifts outside normal ranges.
+
+### Result Reporting Templates
+
+**Strong dereplication match (score > 0.85)**:
+"The compound matches [NAME] in the database with a score of [X]. This is a known compound: [SMILES]. The match is based on [N] carbon shifts with an average deviation of [Y] ppm."
+
+**Possible match (score 0.50-0.85)**:
+"There is a potential match to [NAME] with a score of [X]. This should be verified by comparing predicted vs. observed shifts. Consider proceeding with structure elucidation to confirm. Key differences are at positions: [list outliers]."
+
+**No match (score < 0.50)**:
+"No database match found. This may be a novel compound, a known compound with different stereochemistry, or a compound not yet in the reference database. Proceeding with de novo structure elucidation."
+
+**LSD results (1-10 solutions)**:
+"LSD found [N] candidate structure(s). Solution 1: [Description]. Core scaffold: [aromatic/aliphatic/mixed]. Key features: [functional groups, ring systems]. Consistent with: [spectroscopic features]. [If multiple solutions, describe key differences: position of functional group, ring fusion pattern, stereochemistry]."
+
+**Reporting uncertainty**:
+Always be transparent about missing data that would improve confidence, assumptions made during analysis, alternative interpretations, and recommended additional experiments.
+
+---
+
+## 8. Quick Reference
 
 ### Key Tolerances
+
 - 13C chemical shift matching: ±1.5 ppm (carbonyl), ±0.8 ppm (aliphatic)
 - HSQC validation: ±1.0 ppm (13C dimension)
 - HMBC validation: ±1.5 ppm (13C), ±0.1 ppm (1H)
 - Dereplication: score > 0.85 strong, 0.65-0.85 possible, < 0.50 no match
 - Solution ranking: MAE < 2.0 = Excellent, 2-3.5 = Good, 3.5-5 = Moderate, > 5 = Poor
 
-### Ranking Output Interpretation
-The ranking now shows quality labels and multi-level tolerance:
-```
-  1. Solution 188: MAE=3.26 ppm (Good)
-     CC1CC(C)=C(C1)CC(=O)C
-     ≤3ppm: 6/10 | ≤5ppm: 9/10
-```
-- **MAE** is the primary quality metric (lower is better)
-- **Quality label** provides quick assessment
-- **Tolerance summary** shows how many predictions are close vs. outliers
-- Always review top 10-20 candidates, not just #1
+### Red Flags
+
+- Fewer signals than expected atoms: Symmetry (see Symmetry Detection section)
+- More signals than expected: Impurity or wrong formula
+- Zero LSD solutions: Over-constrained (see LSD Reference troubleshooting)
+- Thousands of LSD solutions: Under-constrained OR using ELIM when not needed
 
 ### When to Ask for Help
+
 - Conflicting data between experiments
 - Unusual chemical shifts outside normal ranges
-- Molecular formula doesn't match observed data
+- Molecular formula does not match observed data
 - User requests interpretation beyond available data
-
----
-
-## Developer Reference
-
-### Quick Reference
-
-```bash
-# Run tests
-pytest
-
-# Run tests with coverage
-pytest --cov=lucy_ng
-
-# Type checking
-mypy src/lucy_ng
-
-# Linting
-ruff check src tests
-
-# Build package
-hatch build
-```
-
-### Project Structure
-
-```
-src/lucy_ng/
-├── models/          # Pydantic v2 data models (Spectrum1D, Spectrum2D, Peak1D, etc.)
-├── readers/         # NMR file readers (BrukerReader)
-├── processing/      # Peak picking, signal processing
-├── dereplication/   # Database matching (NMRShiftDBLoader, SpectrumMatcher)
-├── solvers/         # LSD/pyLSD integration (future)
-└── __init__.py      # Public API exports
-
-tests/               # pytest tests
-data/                # Test NMR datasets (Bruker format)
-.planning/           # GSD planning files (PROJECT.md, ROADMAP.md, STATE.md)
-```
-
-### Technology Stack
-
-- **Python 3.10+** - minimum version
-- **Pydantic v2** - data models with validation
-- **nmrglue** - Bruker NMR file parsing
-- **NumPy/SciPy** - numerical processing
-- **RDKit** - SD file parsing for reference databases
-- **hatch** - build system
-- **pytest** - testing
-- **ruff** - linting
-- **mypy** - type checking (strict mode)
