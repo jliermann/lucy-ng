@@ -74,7 +74,91 @@ Oxygen and nitrogen atoms do not appear directly in standard NMR. Infer position
 
 ---
 
-## 2. Peak Picking Strategy
+## 2. Spectral Quality Assessment
+
+### When to Assess
+
+Assess quality of EVERY spectrum before peak picking. Start with 1D spectra (13C, DEPT), then 2D (HSQC, HMBC). Quality assessment comes BEFORE any peak picking or analysis. Quality findings actively modify the agent's strategy.
+
+### S/N Ratio Evaluation (QUAL-01)
+
+Compute signal-to-noise ratio relative to the spectrum's own noise floor (NOT fixed absolute values).
+
+**Noise floor calculation:** Median of absolute data values in a quiet region (e.g., -5 to -2 ppm for 13C, or any region clearly free of peaks).
+
+**SNR = tallest peak / noise floor**
+
+**Quality tiers with strategy adjustments:**
+
+| SNR Range | Quality | Strategy Adjustments |
+|-----------|---------|---------------------|
+| > 100 | Excellent | Use default threshold (0.05), trust all validated peaks |
+| 30-100 | Good | Use default threshold (0.05-0.08), standard tolerances |
+| 10-30 | Moderate | Raise threshold to 0.10, widen tolerances, trust only top 50% of HMBC correlations by intensity, use batch size 3 (not 5) for HMBC iteration |
+| < 10 | Poor | Raise threshold further, expect missed peaks, reduce trusted HMBC to top 25%, document significant quality caveats in results, consider requesting re-acquisition |
+
+These thresholds are pragmatic defaults subject to refinement based on real-world usage.
+
+### Digital Resolution Impact (QUAL-02)
+
+**Digital resolution** = number of data points per ppm in the 13C dimension. Low resolution causes peaks to merge and increases positional uncertainty.
+
+**Resolution tiers:**
+
+| Pts/ppm | Quality | Strategy Adjustments |
+|---------|---------|---------------------|
+| > 10 | Excellent | Standard ±1.5 ppm tolerance |
+| 5-10 | Good | Standard tolerance acceptable |
+| 2-5 | Moderate | Increase tolerance to ±2.0 ppm, expect aliasing, close carbons (< 2 ppm apart) may be unresolvable |
+| < 2 | Poor | Increase tolerance to ±3.0 ppm, warn user about severe limitations |
+
+**Critical for HMBC:** If 13C dimension has < 5 pts/ppm, two carbons within 2 ppm cannot be reliably distinguished. Mark all correlations involving close carbons as AMBIGUOUS.
+
+### Artifact Recognition (QUAL-03)
+
+Three artifacts most relevant for automated CASE:
+
+#### 1J Leakage (HMBC)
+
+HMBC experiments suppress but do not fully eliminate direct 1JCH couplings. Strong peaks in HMBC that appear at the same (C, H) position as an HSQC peak are likely 1J artifacts, NOT long-range correlations.
+
+**Detection:** If an HMBC peak is within ±1.5 ppm (carbon) of any HSQC correlation AND the proton shifts match within ±0.3 ppm, flag as potential 1J artifact.
+
+**Impact:** Including 1J artifacts as HMBC constraints tells LSD that "C is 2-3 bonds from H" when in fact C is directly bonded to H. This creates impossible constraints and zero solutions.
+
+**Action:** Exclude flagged peaks from HMBC constraint list; document exclusions.
+
+#### t1 Noise (2D spectra)
+
+Manifests as horizontal streaks in the F1 (indirect) dimension of 2D spectra. More common in non-gradient-selected experiments.
+
+**Impact:** Creates false peaks at correct 1H positions but incorrect 13C positions.
+
+**Action:** If > 20% of "validated" HMBC peaks cluster at identical proton positions across different carbon positions, suspect t1 noise; reduce trusted correlation count; increase validation threshold.
+
+#### Baseline Roll (1D spectra)
+
+Broad undulation in 1D 13C baseline, can shift apparent peak positions by 0.5-1 ppm.
+
+**Impact:** Shifts 13C peak positions, causing mismatches between 1D 13C and 2D carbon dimensions.
+
+**Action:** If observed 13C peaks differ by > 1.0 ppm from HSQC carbon positions for the same carbon, baseline roll is likely present; increase all carbon tolerances by 0.5 ppm.
+
+### Strategy Adjustments Summary
+
+**Compact decision table:**
+
+| Condition | Actions |
+|-----------|---------|
+| SNR < 30 AND digital resolution < 5 pts/ppm | Trust only top 50% of HMBC correlations, increase 13C tolerance to ±2.5 ppm, use batch size 3, document quality caveats |
+| SNR < 10 OR digital resolution < 2 pts/ppm | Warn user that automated elucidation may not produce reliable results, consider requesting better data |
+| 1J artifacts detected | Exclude affected peaks, note in analysis |
+
+**Quality assessment findings MUST be documented in the analysis folder before proceeding to peak picking.**
+
+---
+
+## 3. Peak Picking Strategy
 
 ### Scientific Rationale for Guided Picking
 
@@ -119,7 +203,7 @@ APT (Attached Proton Test) can replace DEPT-135 when unavailable. Positive peaks
 
 ---
 
-## 3. Symmetry Detection
+## 4. Symmetry Detection
 
 ### Expected vs Observed Signal Count
 
@@ -150,7 +234,7 @@ When DEPT is unavailable, infer likely multiplicity from shift and intensity. Sh
 
 ---
 
-## 4. Dereplication
+## 5. Dereplication
 
 ### When to Use Dereplication
 
@@ -185,7 +269,7 @@ A score of 0.65-0.85 often indicates the correct compound, especially when molec
 
 ---
 
-## 5. LSD Reference
+## 6. LSD Reference
 
 ### Command Format
 
@@ -308,7 +392,101 @@ Format codes: 1=bond lists, 5=SMILES, 6=2D coordinates, 7=SDF 2D, 8=SDF 3D witho
 
 ---
 
-## 6. Ranking and Prediction
+## 7. Incremental HMBC Constraint Strategy
+
+### Core Principle
+
+**NEVER add all HMBC correlations to an LSD file at once** -- this is the most common cause of zero-solution or thousands-of-solutions failures.
+
+Instead, add correlations in small batches (3-5 per iteration), observing how the solution count changes. This adaptive iteration approach lets you build a solid structural core from high-confidence signals before adding more constrained relationships.
+
+**Maximum ~10 LSD iterations** before stopping and presenting whatever results exist (prevents runaway loops).
+
+### High-Confidence Correlation Selection
+
+How to select the best 3-5 correlations for each batch:
+
+1. **Unique carbon assignment**: The HMBC carbon shift has no other carbon within 2x tolerance (±3.0 ppm). Isolated carbons have unambiguous assignment.
+2. **Unique proton assignment**: The HMBC proton shift has no other proton within 2x tolerance (±0.2 ppm).
+3. **Strong peak intensity**: Prefer peaks in the top quartile of validated HMBC peak intensities.
+4. **Quaternary carbon involvement**: Correlations to quaternary carbons (visible in 13C but not HSQC/DEPT) are especially valuable because they are the ONLY way to connect these atoms to the structure.
+
+**Document reasoning for each selected correlation:** "Starting with C-155.2/H-7.8 because carbon shift is isolated (nearest carbon 4.3 ppm away), proton shift is unique, and peak is strong."
+
+### The Adaptive Iteration Loop
+
+Clear algorithmic procedure:
+
+```
+1. Start with MULT definitions, HSQC correlations, and heteroatom constraints (NO HMBC yet)
+
+2. Run LSD -- this gives the unconstrained solution count (baseline)
+
+3. Select first batch of 3-5 high-confidence HMBC correlations
+
+4. Add batch to LSD file, run LSD
+
+5. Observe solution count:
+
+   IF solution_count <= 10:
+       STOP -- proceed to ranking (Section 8)
+
+   IF solution_count == 0:
+       STOP iteration -- go to Zero-Solution Recovery below
+
+   IF solution_count decreased significantly (>30% reduction):
+       CONTINUE -- these correlations are productive, select next batch
+
+   IF solution_count barely changed (<10% reduction for 2+ consecutive iterations):
+       STALLED -- go to Convergence Stall below
+
+   IF solution_count INCREASED:
+       CONFLICT -- remove last batch, diagnose why it caused more solutions
+
+6. Repeat from step 3 until:
+   - solution_count <= 10 (success -- rank)
+   - iterations >= 10 (safety cap -- rank anyway with caveats)
+   - all HMBC correlations exhausted (rank with caveats)
+```
+
+### Stopping Conditions
+
+- **Success:** solution_count <= 10 -- proceed to ranking with standard confidence
+- **Iteration cap (~10):** Safety limit, NOT a normal outcome. If hit, treat as diagnostic failure: review correlation selection, check for systematic issues (wrong formula, missing heteroatom constraints), document "structure elucidation incomplete, requires manual review"
+- **Correlations exhausted:** All HMBC correlations added, solution_count still > 10 -- rank anyway, present top results with caveat that structure is under-determined
+- **Target:** Successful cases typically converge in 3-5 iterations. If taking > 7, something is likely wrong.
+
+### Zero-Solution Recovery
+
+When LSD returns 0 solutions after adding a batch, diagnose in this order:
+
+1. **Remove last batch** and verify solutions return (confirms the batch caused the conflict)
+2. **Check sp2 atom count** -- must be EVEN (most common cause of zero solutions)
+3. **Verify hydrogen count** -- sum of all hydrogen counts from MULT must match molecular formula
+4. **Review the conflicting batch** -- are any correlations potential 1J artifacts? Are carbon assignments ambiguous (close shifts)?
+5. **Try individual correlations** from the batch one at a time to find the specific conflict
+6. **Check molecular formula** -- if all correlations seem valid, formula may be wrong
+7. **ONLY AFTER all above:** consider ELIM 1 0 to eliminate one correlation. ELIM is a LAST RESORT, not a first response.
+
+### Convergence Stall Detection
+
+If 3 consecutive iterations each show < 10% relative reduction in solution count AND solution_count > 50:
+
+- Stop adding correlations -- further constraints are not productive
+- Diagnose: Are remaining correlations low-confidence? Is the molecule under-determined by available data?
+- Rank current solutions with caveat: "Structure is under-determined; additional NMR data may be needed"
+- If solution_count is 10-50, rank and present (may still contain the correct structure)
+
+### What NOT to Do (HMBC-04)
+
+- **NEVER dump all HMBC correlations into LSD at once** -- this eliminates diagnostic feedback and either over-constrains (0 solutions) or under-constrains (thousands of solutions) without telling you why
+- **NEVER add ELIM before diagnosing** -- ELIM tells LSD to ignore correlations, which masks real problems
+- **NEVER ignore solution count trends** -- if 3 iterations show 500->450->420 (slow decline), continuing is futile; stop and diagnose
+- **NEVER treat the iteration cap as a strategy** -- hitting 10 iterations means something went wrong, not that you tried hard enough
+
+---
+
+## 8. Ranking and Prediction
 
 ### HOSE Prediction Strategy
 
@@ -344,7 +522,9 @@ HOSE prediction errors: carbonyl carbons can vary ±5-10 ppm, conjugated systems
 
 ---
 
-## 7. CASE Workflow
+## 9. CASE Workflow
+
+**Note:** This workflow assumes you have assessed spectral quality (Section 2) and will use the incremental HMBC strategy (Section 7) for constraint building.
 
 ### Step-by-Step Workflow
 
@@ -354,19 +534,22 @@ HOSE prediction errors: carbonyl carbons can vary ±5-10 ppm, conjugated systems
 
 2. **Symmetry**: Run `analyze_symmetry` to detect equivalent atoms. If observed carbons < expected carbons, account for symmetry in LSD constraints.
 
+2.5. **Quality Assessment**: Assess spectral quality (S/N, digital resolution, artifacts) for ALL spectra before peak picking. See Section 2 for quality tiers and strategy adjustments. Document quality findings in analysis folder. If quality is poor (SNR < 10 or resolution < 2 pts/ppm), warn user before proceeding.
+
 3. **Peak Picking**:
    - `pick_peaks_1d` for 13C carbon peaks
    - `pick_hsqc_peaks` with DEPT-135 for direct C-H correlations (use DEPT-guided picker)
    - `pick_hmbc_peaks` with 13C and HSQC for long-range correlations (use cross-validated picker)
+   - Apply quality-based adjustments from Section 2 (thresholds, tolerances)
 
-4. **LSD Generation**: Use `generate_lsd_input` or construct manually. Verify checklist before running: all carbons defined, heteroatoms added, sp2 count is EVEN, HSQC before HMBC, NO ELIM on first run.
+4. **LSD Generation**: Generate initial LSD file with MULT definitions, HSQC correlations, and heteroatom constraints. Do NOT add HMBC correlations yet. See Section 7 for the incremental approach. Verify checklist before running: all carbons defined, heteroatoms added, sp2 count is EVEN, HSQC before HMBC, NO ELIM on first run.
 
-5. **Solve**: Run `run_lsd`. Check solution count:
-   - **0 solutions**: Over-constrained. See LSD Reference troubleshooting.
-   - **1-10 solutions**: Good. Proceed to step 6.
-   - **>10 solutions**: Under-constrained. Add more HMBC correlations, then re-run. Do NOT proceed to ranking until ≤10 solutions.
+5. **Solve**: Follow the Incremental HMBC Constraint Strategy (Section 7). Add 3-5 high-confidence HMBC correlations per iteration. Stop when solution_count ≤ 10 or after ~10 iterations. Check solution count after each iteration:
+   - **0 solutions**: Follow Zero-Solution Recovery (Section 7).
+   - **1-10 solutions**: Success. Proceed to step 6.
+   - **>10 solutions**: Under-constrained. Continue incremental HMBC iteration (Section 7). Do NOT proceed to ranking until ≤10 solutions or all correlations/iterations exhausted.
 
-6. **Rank**: Run `rank_lsd_solutions` (only after achieving ≤10 solutions). Examine top 10-20 candidates. Cross-reference with dereplication hits if available.
+6. **Rank**: Run `rank_lsd_solutions` (only after achieving ≤10 solutions or exhausting all correlations/iterations). Examine top 10-20 candidates. Cross-reference with dereplication hits if available.
 
 ### When to Proceed vs Request More Data
 
@@ -393,7 +576,7 @@ Always be transparent about missing data that would improve confidence, assumpti
 
 ---
 
-## 8. Quick Reference
+## 10. Quick Reference
 
 ### Key Tolerances
 
@@ -402,13 +585,22 @@ Always be transparent about missing data that would improve confidence, assumpti
 - HMBC validation: ±1.5 ppm (13C), ±0.1 ppm (1H)
 - Dereplication: score > 0.85 strong, 0.65-0.85 possible, < 0.50 no match
 - Solution ranking: MAE < 2.0 = Excellent, 2-3.5 = Good, 3.5-5 = Moderate, > 5 = Poor
+- Spectral quality (SNR): > 100 excellent, 30-100 good, 10-30 moderate, < 10 poor
+- Digital resolution: > 10 pts/ppm excellent, 5-10 good, 2-5 moderate, < 2 poor
+- HMBC batch size: 3-5 correlations per iteration
+- HMBC iteration cap: ~10 iterations maximum
+- High-confidence threshold: no other carbon within ±3.0 ppm, no other proton within ±0.2 ppm
 
 ### Red Flags
 
-- Fewer signals than expected atoms: Symmetry (see Symmetry Detection section)
+- Fewer signals than expected atoms: Symmetry (see Section 4)
 - More signals than expected: Impurity or wrong formula
-- Zero LSD solutions: Over-constrained (see LSD Reference troubleshooting)
+- Zero LSD solutions: Over-constrained (see Section 6 troubleshooting)
 - Thousands of LSD solutions: Under-constrained OR using ELIM when not needed
+- Solution count stalled for 3+ iterations: Under-determined structure (see Section 7)
+- Hitting 10-iteration cap: Systematic issue, not normal convergence
+- > 200 "validated" HMBC correlations: Likely noise leakage from poor quality spectrum
+- 1J artifact peaks in HMBC: Exclude from constraints (see Section 2)
 
 ### When to Ask for Help
 
