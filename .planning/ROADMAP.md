@@ -342,7 +342,9 @@ Plans:
   3. SKILL.md explicitly prohibits the "use all correlations from peak picking" approach
   4. SKILL.md contains spectral quality assessment section covering S/N evaluation, digital resolution impact on close carbons, and artifact recognition (1J correlations, t1 noise, baseline roll)
   5. An AI agent reading SKILL.md would know to assess spectrum quality BEFORE picking peaks and to adjust expectations based on quality findings
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 22-01-PLAN.md -- Add Spectral Quality Assessment + Incremental HMBC Strategy to SKILL.md, update CASE Workflow and Quick Reference
 
 ---
 
@@ -431,7 +433,7 @@ Plans:
 | 19. CLI/MCP Integration | v1.2 | 1/1 | Complete | 2026-01-18 |
 | 20. System Audit | v2.0 | 3/3 | Complete | 2026-02-06 |
 | 21. Skill Restructure | v2.0 | 3/3 | Complete | 2026-02-06 |
-| 22. HMBC Strategy + Quality | v2.0 | TBD | Not started | - |
+| 22. HMBC Strategy + Quality | v2.0 | 0/1 | Planned | - |
 | 23. Error Tolerance + Confidence | v2.0 | TBD | Not started | - |
 | 24. Supervisor Agent | v2.0 | TBD | Not started | - |
 | 25. Diagnostic Specialist | v2.0 | TBD | Not started | - |
