@@ -324,7 +324,11 @@ Plans:
   2. SKILL.md contains the full CASE workflow (dereplication through ranking) with checkpoint markers for supervisor monitoring
   3. SUPERVISOR.md exists with loop detection patterns, intervention strategies, and escalation criteria
   4. No paragraph of domain knowledge appears in more than one document
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 21-01-PLAN.md -- Write canonical skill/SKILL.md with deduplicated CASE domain knowledge (~500 lines)
+- [ ] 21-02-PLAN.md -- Trim CLAUDE.md to project-level content (~298 lines) and create supervisor skill
+- [ ] 21-03-PLAN.md -- Update subskills to remove duplication and verify zero cross-document duplication
 
 ---
 
@@ -425,8 +429,8 @@ Plans:
 | 17. HOSE Generation | v1.2 | 1/1 | Complete | 2026-01-16 |
 | 18. Prediction API | v1.2 | 1/1 | Complete | 2026-01-18 |
 | 19. CLI/MCP Integration | v1.2 | 1/1 | Complete | 2026-01-18 |
-| 20. System Audit | v2.0 | 0/3 | Planned | - |
-| 21. Skill Restructure | v2.0 | TBD | Not started | - |
+| 20. System Audit | v2.0 | 3/3 | Complete | 2026-02-06 |
+| 21. Skill Restructure | v2.0 | 0/3 | Planned | - |
 | 22. HMBC Strategy + Quality | v2.0 | TBD | Not started | - |
 | 23. Error Tolerance + Confidence | v2.0 | TBD | Not started | - |
 | 24. Supervisor Agent | v2.0 | TBD | Not started | - |
