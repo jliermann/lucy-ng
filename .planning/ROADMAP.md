@@ -289,7 +289,7 @@
 **Phase overview:**
 
 - [x] **Phase 20: System Audit** -- COMPLETE 2026-02-06. 15 MCP tools, 9 CLI groups, 1,080-line CLAUDE.md classified
-- [ ] **Phase 21: Skill Restructure** -- Split CLAUDE.md into project-level and CASE workflow documents
+- [x] **Phase 21: Skill Restructure** -- COMPLETE 2026-02-06. CLAUDE.md 305 lines, SKILL.md 418 lines, SUPERVISOR.md 78 lines, zero duplication
 - [ ] **Phase 22: HMBC Strategy and Spectral Quality** -- Encode incremental constraint strategy and quality assessment in skill
 - [ ] **Phase 23: Error Tolerance and Confidence** -- Encode error handling patterns and confidence-annotated output in skill
 - [ ] **Phase 24: Supervisor Agent** -- Create supervisor with loop detection, intervention strategies, and escalation
@@ -430,7 +430,7 @@ Plans:
 | 18. Prediction API | v1.2 | 1/1 | Complete | 2026-01-18 |
 | 19. CLI/MCP Integration | v1.2 | 1/1 | Complete | 2026-01-18 |
 | 20. System Audit | v2.0 | 3/3 | Complete | 2026-02-06 |
-| 21. Skill Restructure | v2.0 | 0/3 | Planned | - |
+| 21. Skill Restructure | v2.0 | 3/3 | Complete | 2026-02-06 |
 | 22. HMBC Strategy + Quality | v2.0 | TBD | Not started | - |
 | 23. Error Tolerance + Confidence | v2.0 | TBD | Not started | - |
 | 24. Supervisor Agent | v2.0 | TBD | Not started | - |
@@ -438,4 +438,4 @@ Plans:
 | 26. Thin Tools | v2.0 | TBD | Not started | - |
 
 ---
-*Last updated: 2026-02-06*
+*Last updated: 2026-02-06 after Phase 21 completion*

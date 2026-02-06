@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-02-06)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with multi-agent architecture preventing loops
-**Current focus:** Phase 20 complete; ready for Phase 21 (Skill Restructure)
+**Current focus:** Phase 21 complete; ready for Phase 22 (HMBC Strategy and Spectral Quality)
 
 ## Current Position
 

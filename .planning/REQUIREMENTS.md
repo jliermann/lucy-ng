@@ -16,10 +16,10 @@ Requirements for v2.0 Robust Multi-Agent CASE. Each maps to roadmap phases.
 
 ### Skill Architecture
 
-- [ ] **SKIL-01**: Split CLAUDE.md into project-level document (setup, database, references, developer info) and CASE workflow document (SKILL.md)
-- [ ] **SKIL-02**: Create SUPERVISOR.md with loop detection patterns, intervention strategies, and escalation criteria
-- [ ] **SKIL-03**: Remove duplication between CLAUDE.md and skill documents
-- [ ] **SKIL-04**: Skill documents sized appropriately -- CLAUDE.md <800 lines, SKILL.md <1500 lines, SUPERVISOR.md <500 lines
+- [x] **SKIL-01**: Split CLAUDE.md into project-level document (setup, database, references, developer info) and CASE workflow document (SKILL.md)
+- [x] **SKIL-02**: Create SUPERVISOR.md with loop detection patterns, intervention strategies, and escalation criteria
+- [x] **SKIL-03**: Remove duplication between CLAUDE.md and skill documents
+- [x] **SKIL-04**: Skill documents sized appropriately -- CLAUDE.md <800 lines, SKILL.md <1500 lines, SUPERVISOR.md <500 lines
 
 ### Incremental HMBC Strategy
 
@@ -119,10 +119,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUDT-02 | Phase 20 | Complete |
 | AUDT-03 | Phase 20 | Complete |
 | AUDT-04 | Phase 20 | Complete |
-| SKIL-01 | Phase 21 | Pending |
-| SKIL-02 | Phase 21 | Pending |
-| SKIL-03 | Phase 21 | Pending |
-| SKIL-04 | Phase 21 | Pending |
+| SKIL-01 | Phase 21 | Complete |
+| SKIL-02 | Phase 21 | Complete |
+| SKIL-03 | Phase 21 | Complete |
+| SKIL-04 | Phase 21 | Complete |
 | HMBC-01 | Phase 22 | Pending |
 | HMBC-02 | Phase 22 | Pending |
 | HMBC-03 | Phase 22 | Pending |
