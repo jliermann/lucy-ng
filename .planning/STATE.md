@@ -10,12 +10,12 @@ See: .planning/PROJECT.md (updated 2026-02-06)
 ## Current Position
 
 **Milestone**: v2.0 Robust Multi-Agent CASE
-**Phase**: 20 of 26 (System Audit) -- COMPLETE
-**Plan**: 3 of 3 in current phase (all complete)
-**Status**: Phase complete
-**Last activity**: 2026-02-06 -- Completed 20-03-PLAN.md (Audit report compilation)
+**Phase**: 21 of 26 (Skill Restructure) -- IN PROGRESS
+**Plan**: 1 of 3 in current phase (Plan 01 complete)
+**Status**: Plan 01 complete (skill/SKILL.md created)
+**Last activity**: 2026-02-06 -- Completed 21-01-PLAN.md (Canonical CASE domain knowledge)
 
-Progress: [====================|.........] 69% (20/26 phases complete overall)
+Progress: [====================|.........] 73% (21/26 phases in progress, 20 complete)
 
 ## Completed Milestones
 
@@ -28,12 +28,13 @@ Progress: [====================|.........] 69% (20/26 phases complete overall)
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 22 (v1.0-v1.2 + 20-01, 20-02, 20-03)
+- Total plans completed: 23 (v1.0-v1.2 + 20-01, 20-02, 20-03, 21-01)
 - Average duration: ~3 hours per phase
 - Total execution time: ~60 hours
 
 **Recent Trend:**
 - Phase 20 completed in 3 plans (~15 min total execution)
+- Plan 21-01 completed in 3 min (documentation writing)
 - Trend: Accelerating (audit/writing tasks faster than code tasks)
 
 ## Accumulated Context
@@ -53,10 +54,14 @@ Recent decisions affecting current work:
 - 20-03: SKILL.md proposed at ~500 lines with 9 sections (NMR background through quick reference)
 - 20-03: SUPERVISOR.md proposed at ~40 lines for workflow selection and escalation
 - 20-03: Phase 26 dual-mode architecture: MCP thin wrappers + CLI retains smart behavior
+- 21-01: SKILL.md actual: 418 lines, 8 sections (NMR background through quick reference)
+- 21-01: Deduplication achieved: sp2 even count (1x), ELIM usage (1x), correlation order (1x), score thresholds (1x), MAE thresholds (1x)
+- 21-01: SKILL.md excludes project-level content (setup, dev reference, database stats stay in CLAUDE.md)
 
 ### Pending Todos
 
-- Phase 21 ready: AUDIT-REPORT.md provides complete migration plan with SKILL.md outline, CLAUDE.md section destinations, and deduplication targets
+- Phase 21 Plan 02 ready: SKILL.md provides canonical domain knowledge, workflow selection and escalation criteria ready to extract to SUPERVISOR.md
+- Phase 21 Plan 03 ready: Blind CASE protocol, dereplication workflow, full CASE workflow ready to extract to subskills
 - 8 intelligence hotspot modules (~2,139 lines) identified for progressive migration through Phases 22-26
 - 3 code consolidation targets (experiment auto-discovery, database finder, LSD parser) queued for Phase 26
 
@@ -67,8 +72,8 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-06
-Stopped at: Completed Phase 20 (System Audit) -- all 3 plans done
+Stopped at: Completed Phase 21 Plan 01 (skill/SKILL.md created)
 Resume file: None
 
 ---
-*Last updated: 2026-02-06 after Phase 20 completion*
+*Last updated: 2026-02-06 after Phase 21 Plan 01 completion*
