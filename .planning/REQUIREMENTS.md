@@ -9,10 +9,10 @@ Requirements for v2.0 Robust Multi-Agent CASE. Each maps to roadmap phases.
 
 ### Audit
 
-- [ ] **AUDT-01**: Audit all 16 MCP tools -- classify each as Tier 1 (pure data access, keep), Tier 2 (moderate intelligence, migrate to skill), or Tier 3 (complex logic, refactor to thin wrapper)
-- [ ] **AUDT-02**: Audit all 7 CLI command groups -- identify which intelligence should move to skill vs stay in code
-- [ ] **AUDT-03**: Audit CLAUDE.md (1080 lines) -- identify duplication, misplaced intelligence, sections that should move to separate skill documents
-- [ ] **AUDT-04**: Produce audit report with specific recommendations for each component
+- [x] **AUDT-01**: Audit all 16 MCP tools -- classify each as Tier 1 (pure data access, keep), Tier 2 (moderate intelligence, migrate to skill), or Tier 3 (complex logic, refactor to thin wrapper)
+- [x] **AUDT-02**: Audit all 7 CLI command groups -- identify which intelligence should move to skill vs stay in code
+- [x] **AUDT-03**: Audit CLAUDE.md (1080 lines) -- identify duplication, misplaced intelligence, sections that should move to separate skill documents
+- [x] **AUDT-04**: Produce audit report with specific recommendations for each component
 
 ### Skill Architecture
 
@@ -115,10 +115,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUDT-01 | Phase 20 | Pending |
-| AUDT-02 | Phase 20 | Pending |
-| AUDT-03 | Phase 20 | Pending |
-| AUDT-04 | Phase 20 | Pending |
+| AUDT-01 | Phase 20 | Complete |
+| AUDT-02 | Phase 20 | Complete |
+| AUDT-03 | Phase 20 | Complete |
+| AUDT-04 | Phase 20 | Complete |
 | SKIL-01 | Phase 21 | Pending |
 | SKIL-02 | Phase 21 | Pending |
 | SKIL-03 | Phase 21 | Pending |

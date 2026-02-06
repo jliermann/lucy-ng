@@ -288,7 +288,7 @@
 
 **Phase overview:**
 
-- [ ] **Phase 20: System Audit** -- Classify all components by intelligence level; produce actionable migration plan
+- [x] **Phase 20: System Audit** -- COMPLETE 2026-02-06. 15 MCP tools, 9 CLI groups, 1,080-line CLAUDE.md classified
 - [ ] **Phase 21: Skill Restructure** -- Split CLAUDE.md into project-level and CASE workflow documents
 - [ ] **Phase 22: HMBC Strategy and Spectral Quality** -- Encode incremental constraint strategy and quality assessment in skill
 - [ ] **Phase 23: Error Tolerance and Confidence** -- Encode error handling patterns and confidence-annotated output in skill
@@ -309,9 +309,9 @@
   4. Audit report exists with specific, actionable recommendation per component (not generic "simplify later")
 **Plans**: 3 plans
 Plans:
-- [ ] 20-01-PLAN.md -- Audit MCP tools and CLI commands (tier classification)
-- [ ] 20-02-PLAN.md -- Audit CLAUDE.md (duplication and misplacement analysis)
-- [ ] 20-03-PLAN.md -- Compile final audit report with migration roadmap
+- [x] 20-01-PLAN.md -- Audit MCP tools and CLI commands (tier classification)
+- [x] 20-02-PLAN.md -- Audit CLAUDE.md (duplication and misplacement analysis)
+- [x] 20-03-PLAN.md -- Compile final audit report with migration roadmap
 
 ---
 
