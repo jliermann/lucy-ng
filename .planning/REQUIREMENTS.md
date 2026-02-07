@@ -47,11 +47,11 @@ Requirements for v2.0 Robust Multi-Agent CASE. Each maps to roadmap phases.
 
 ### Diagnostic & LSD Expert Specialist
 
-- [ ] **DIAG-01**: Diagnostic specialist agent defined as Claude Code subagent with deep LSD manual knowledge
-- [ ] **DIAG-02**: For 0 solutions: systematically checks sp2 count (even?), hydrogen budget (matches formula?), HMBC conflicts, correlation order
-- [ ] **DIAG-03**: For 1000+ solutions: checks constraint count, quaternary carbon connectivity, heteroatom constraints, symmetry encoding
-- [ ] **DIAG-04**: Produces structured diagnostic report with root cause and recommended fixes
-- [ ] **DIAG-05**: Agent has internalized full LSD manual (MULT, HSQC, HMBC, BOND, LIST, PROP, ELEM, SYME, DEFF, ELIM, etc.) and can advise on advanced constraint strategies
+- [x] **DIAG-01**: Diagnostic specialist agent at .claude/agents/diagnostic-specialist.md (455 lines) with YAML frontmatter, 5-step workflow, tools: Read + Bash, model: sonnet
+- [x] **DIAG-02**: For 0 solutions: 5-check procedure (sp2 count even, H budget, 1J artifacts ±1.5/±0.3 ppm, correlation order, close carbons) in skill/diagnostic/SKILL.md Section 2.1
+- [x] **DIAG-03**: For 1000+ solutions: 5-check procedure (ELIM presence, constraint/atom ratio 0.5, quaternary connectivity, heteroatom constraints, symmetry encoding) in Section 2.2
+- [x] **DIAG-04**: Structured DIAGNOSTIC-REPORT.md template (8 sections: Summary, Findings, Root Cause, Recommended Fixes with LSD commands, Supporting Data, Next Steps, Methodology, Metadata)
+- [x] **DIAG-05**: Full LSD manual in skill/diagnostic/SKILL.md Section 1 (1,874 lines total): MULT, HSQC, HMBC, BOND, LIST, PROP, ELEM, SYME, DEFF, ELIM with edge cases and error patterns
 
 ### Thin Tools
 
@@ -144,11 +144,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SUPV-05 | Phase 24 | Complete |
 | SUPV-06 | Phase 24 | Complete |
 | SUPV-07 | Phase 24 | Complete |
-| DIAG-01 | Phase 25 | Pending |
-| DIAG-02 | Phase 25 | Pending |
-| DIAG-03 | Phase 25 | Pending |
-| DIAG-04 | Phase 25 | Pending |
-| DIAG-05 | Phase 25 | Pending |
+| DIAG-01 | Phase 25 | Complete |
+| DIAG-02 | Phase 25 | Complete |
+| DIAG-03 | Phase 25 | Complete |
+| DIAG-04 | Phase 25 | Complete |
+| DIAG-05 | Phase 25 | Complete |
 | TOOL-01 | Phase 26 | Pending |
 | TOOL-02 | Phase 26 | Pending |
 | TOOL-03 | Phase 26 | Pending |
@@ -161,4 +161,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-06*
-*Last updated: 2026-02-07 after Phase 24 completion*
+*Last updated: 2026-02-07 after Phase 25 completion*

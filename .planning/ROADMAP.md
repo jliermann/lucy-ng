@@ -293,7 +293,7 @@
 - [x] **Phase 22: HMBC Strategy and Spectral Quality** -- COMPLETE 2026-02-06. SKILL.md 610 lines (+192), spectral quality + incremental HMBC strategy
 - [x] **Phase 23: Error Tolerance and Confidence** -- COMPLETE 2026-02-07. SKILL.md 1,079 lines (+469), error tolerance + ambiguity detection + confidence scoring
 - [x] **Phase 24: Supervisor Agent** -- COMPLETE 2026-02-07. Supervisor agent at .claude/agents/supervisor.md (383 lines), skill/supervisor/SKILL.md (678 lines), CASE-PROGRESS.md checkpoint writing
-- [ ] **Phase 25: Diagnostic Specialist** -- Create LSD expert agent for systematic failure diagnosis
+- [x] **Phase 25: Diagnostic Specialist** -- COMPLETE 2026-02-07. skill/diagnostic/SKILL.md (1,874 lines), .claude/agents/diagnostic-specialist.md (455 lines), supervisor integration
 - [ ] **Phase 26: Thin Tools** -- Migrate embedded intelligence from MCP tools to skill; tools become data access wrappers
 
 ---
@@ -394,8 +394,8 @@ Plans:
   4. Specialist produces a structured diagnostic report (markdown) with findings, root cause, and recommended fixes that the CASE agent can act on
 **Plans**: 2 plans
 Plans:
-- [ ] 25-01-PLAN.md -- Create diagnostic specialist skill (skill/diagnostic/SKILL.md) and agent definition (.claude/agents/diagnostic-specialist.md)
-- [ ] 25-02-PLAN.md -- Update supervisor agent and skill to integrate diagnostic specialist delegation
+- [x] 25-01-PLAN.md -- Create diagnostic specialist skill (skill/diagnostic/SKILL.md) and agent definition (.claude/agents/diagnostic-specialist.md)
+- [x] 25-02-PLAN.md -- Update supervisor agent and skill to integrate diagnostic specialist delegation
 
 ---
 
@@ -445,8 +445,8 @@ Plans:
 | 22. HMBC Strategy + Quality | v2.0 | 1/1 | Complete | 2026-02-06 |
 | 23. Error Tolerance + Confidence | v2.0 | 2/2 | Complete | 2026-02-07 |
 | 24. Supervisor Agent | v2.0 | 2/2 | Complete | 2026-02-07 |
-| 25. Diagnostic Specialist | v2.0 | 0/2 | Planned | - |
+| 25. Diagnostic Specialist | v2.0 | 2/2 | Complete | 2026-02-07 |
 | 26. Thin Tools | v2.0 | TBD | Not started | - |
 
 ---
-*Last updated: 2026-02-07 after Phase 25 planning*
+*Last updated: 2026-02-07 after Phase 25 completion*
