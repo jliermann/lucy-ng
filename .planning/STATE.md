@@ -5,17 +5,17 @@
 See: .planning/PROJECT.md (updated 2026-02-06)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with multi-agent architecture preventing loops
-**Current focus:** Phase 22 complete; ready for Phase 23 (Error Tolerance and Confidence)
+**Current focus:** Phase 23 Plan 01 complete; error tolerance and ambiguity detection documented in SKILL.md
 
 ## Current Position
 
 **Milestone**: v2.0 Robust Multi-Agent CASE
-**Phase**: 22 of 26 (HMBC Strategy and Spectral Quality) -- COMPLETE
-**Plan**: 1 of 1 complete
-**Status**: Phase 22 complete (HMBC strategy and spectral quality assessment in SKILL.md)
-**Last activity**: 2026-02-06 -- Completed 22-01-PLAN.md (spectral quality + incremental HMBC)
+**Phase**: 23 of 26 (Error Tolerance and Confidence) -- IN PROGRESS
+**Plan**: 1 of 2 complete
+**Status**: Phase 23 Plan 01 complete (error tolerance and ambiguity detection in SKILL.md)
+**Last activity**: 2026-02-07 -- Completed 23-01-PLAN.md (resolution-based ambiguity detection)
 
-Progress: [=======================|......] 81% (22 phases complete, 4 remaining)
+Progress: [========================|.....] 84% (23 plans complete, 4 remaining)
 
 ## Completed Milestones
 
@@ -28,7 +28,7 @@ Progress: [=======================|......] 81% (22 phases complete, 4 remaining)
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 26 (v1.0-v1.2 + Phase 20 + Phase 21 + Phase 22 Plan 01)
+- Total plans completed: 27 (v1.0-v1.2 + Phase 20 + Phase 21 + Phase 22 Plan 01 + Phase 23 Plan 01)
 - Average duration: ~3 hours per phase
 - Total execution time: ~63 hours
 
@@ -36,6 +36,7 @@ Progress: [=======================|......] 81% (22 phases complete, 4 remaining)
 - Phase 20 completed in 3 plans (~15 min total execution)
 - Phase 21 completed in 3 plans (~11 min total: 3 min + 5 min + 3 min)
 - Phase 22 Plan 01 completed in ~3 min
+- Phase 23 Plan 01 completed in ~3 min
 - Trend: Accelerating on documentation tasks (< 5 min per plan)
 
 ## Accumulated Context
@@ -69,12 +70,16 @@ Recent decisions affecting current work:
 - 22-01: Quality assessment documented: S/N evaluation, digital resolution, artifact recognition
 - 22-01: SKILL.md grown to 610 lines, 10 sections (added quality + HMBC strategy)
 - 22-01: Iteration cap ~10 for safety (prevents loops before Phase 24 supervisor)
+- 23-01: Error tolerance documented: resolution-based close carbon detection (pts/ppm), context-dependent DEPT/HSQC conflict resolution
+- 23-01: Ambiguity handling: LSD LIST/PROP in single file (NOT separate variants), standardized Ambiguities Detected table format
+- 23-01: Quaternary carbon sparsity: shift-based constraints (modular for future atom environment database), 20% incremental threshold reduction
+- 23-01: SKILL.md grown to 864 lines, 11 sections (added error tolerance + ambiguity detection, renumbered Quick Reference)
 
 ### Pending Todos
 
-- Phase 22 complete: SKILL.md now 610 lines with 10 sections (quality assessment + incremental HMBC + updated workflow/quick reference)
-- Phase 23 ready: Error tolerance and confidence-annotated output (ETOL-01 through ETOL-04, CONF-01 through CONF-03)
-- Phase 24 foundation ready: skill/supervisor/SKILL.md + convergence detection from 22-01
+- Phase 23 Plan 01 complete: SKILL.md now 864 lines with 11 sections (error tolerance + ambiguity detection added)
+- Phase 23 Plan 02 ready: Confidence scoring (CONF-01 through CONF-03) - per-atom and per-structure confidence annotation
+- Phase 24 foundation ready: skill/supervisor/SKILL.md + convergence detection from 22-01 + ambiguity escalation from 23-01
 - 8 intelligence hotspot modules (~2,139 lines) identified for progressive migration through Phases 23-26
 - 3 code consolidation targets (experiment auto-discovery, database finder, LSD parser) queued for Phase 26
 
@@ -84,9 +89,9 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-02-06
-Stopped at: Completed Phase 22 (all plans executed, verified)
+Last session: 2026-02-07
+Stopped at: Completed Phase 23 Plan 01 (error tolerance and ambiguity detection)
 Resume file: None
 
 ---
-*Last updated: 2026-02-06 after Phase 22 completion*
+*Last updated: 2026-02-07 after Phase 23 Plan 01 completion*
