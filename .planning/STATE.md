@@ -10,12 +10,12 @@ See: .planning/PROJECT.md (updated 2026-02-06)
 ## Current Position
 
 **Milestone**: v2.0 Robust Multi-Agent CASE
-**Phase**: 23 of 26 (Error Tolerance and Confidence) -- COMPLETE
-**Plan**: 2 of 2 complete
-**Status**: Phase 23 complete (error tolerance, ambiguity detection, and confidence scoring in SKILL.md)
-**Last activity**: 2026-02-07 -- Completed 23-02-PLAN.md (confidence scoring framework)
+**Phase**: 24 of 26 (Supervisor Agent) -- IN PROGRESS
+**Plan**: 1 of 2 complete
+**Status**: Supervisor skill expanded (678 lines), CASE checkpoint writing added
+**Last activity**: 2026-02-07 -- Completed 24-01-PLAN.md (supervisor skill expansion)
 
-Progress: [=========================|....] 88% (24 plans complete, 3 remaining)
+Progress: [==========================|...] 93% (25 plans complete, 2 remaining)
 
 ## Completed Milestones
 
@@ -28,7 +28,7 @@ Progress: [=========================|....] 88% (24 plans complete, 3 remaining)
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 28 (v1.0-v1.2 + Phase 20 + Phase 21 + Phase 22 Plan 01 + Phase 23 complete)
+- Total plans completed: 29 (v1.0-v1.2 + Phase 20 + Phase 21 + Phase 22 Plan 01 + Phase 23 complete + Phase 24 Plan 01)
 - Average duration: ~3 hours per phase
 - Total execution time: ~63 hours
 
@@ -37,6 +37,7 @@ Progress: [=========================|....] 88% (24 plans complete, 3 remaining)
 - Phase 21 completed in 3 plans (~11 min total: 3 min + 5 min + 3 min)
 - Phase 22 Plan 01 completed in ~3 min
 - Phase 23 completed in 2 plans (~9 min total: 3 min + 6 min)
+- Phase 24 Plan 01 completed in ~4 min
 - Trend: Accelerating on documentation tasks (< 10 min per phase)
 
 ## Accumulated Context
@@ -79,12 +80,18 @@ Recent decisions affecting current work:
 - 23-02: Explicit downgrade rules prevent inflation (ambiguity → Medium, MAE > 3.5 → Low, 0 HMBC → Low)
 - 23-02: Specific additional experiment suggestions (WHAT, WHY, WHICH) for Medium/Low confidence atoms
 - 23-02: SKILL.md grown to 1,079 lines, 12 sections (added confidence scoring, integrated into workflow)
+- 24-01: skill/supervisor/SKILL.md expanded from 78 to 678 lines with complete supervisor domain knowledge
+- 24-01: Four loop detection patterns (SUPV-02-05): ELIM thrashing, zero-solution loop, solution explosion, constraint churning
+- 24-01: Advisory intervention model (SUPV-06): supervisor tells CASE agent WHAT to fix, not HOW
+- 24-01: Escalation after 10 failed intervention cycles per pattern (SUPV-07)
+- 24-01: CASE-PROGRESS.md format specification with append-only rule and 3-iteration example
+- 24-01: skill/CASE/SKILL.md Step 7c added for checkpoint writing after every LSD iteration
 
 ### Pending Todos
 
-- Phase 23 COMPLETE: SKILL.md now 1,079 lines with 12 sections (error tolerance + ambiguity detection + confidence scoring complete)
-- Phase 24 ready: Test case validation against complete SKILL.md (Virgiline, Caffeine, Adrenaline + 4 more)
-- Phase 24 foundation ready: skill/supervisor/SKILL.md + convergence detection from 22-01 + ambiguity escalation from 23-01 + confidence scoring from 23-02
+- Phase 24 Plan 01 COMPLETE: skill/supervisor/SKILL.md expanded to 678 lines, CASE checkpoint writing added
+- Phase 24 Plan 02 ready: Supervisor agent definition can reference complete skill/supervisor/SKILL.md
+- Phase 25 foundation ready: Diagnostic specialist can integrate with supervisor's basic diagnosis framework
 - 8 intelligence hotspot modules (~2,139 lines) identified for progressive migration through Phases 24-26
 - 3 code consolidation targets (experiment auto-discovery, database finder, LSD parser) queued for Phase 26
 
@@ -95,8 +102,8 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-07
-Stopped at: Completed Phase 23 (error tolerance, ambiguity detection, and confidence scoring)
+Stopped at: Completed Phase 24 Plan 01 (supervisor skill expansion)
 Resume file: None
 
 ---
-*Last updated: 2026-02-07 after Phase 23 completion*
+*Last updated: 2026-02-07 after Phase 24 Plan 01 completion*
