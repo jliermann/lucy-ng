@@ -13,7 +13,7 @@ See: .planning/PROJECT.md (updated 2026-02-06)
 **Phase**: 25 of 26 (Diagnostic Specialist) -- COMPLETE
 **Plan**: 2 of 2 complete
 **Status**: Multi-agent CASE operational (supervisor + CASE agent + diagnostic specialist)
-**Last activity**: 2026-02-07 -- Completed 25-02-PLAN.md (diagnostic specialist integration)
+**Last activity**: 2026-02-07 -- Completed 25-01-PLAN.md (diagnostic specialist agent and skill document)
 
 Progress: [============================|.] 97% (28 plans complete, 1 phase remaining)
 
@@ -38,8 +38,8 @@ Progress: [============================|.] 97% (28 plans complete, 1 phase remai
 - Phase 22 Plan 01 completed in ~3 min
 - Phase 23 completed in 2 plans (~9 min total: 3 min + 6 min)
 - Phase 24 completed in 2 plans (~6 min total: 4 min + 2 min)
-- Phase 25 completed in 2 plans (~8 min total: 4 min + 4 min)
-- Trend: Maintaining velocity on documentation/agent tasks (< 10 min per phase)
+- Phase 25 completed in 2 plans (~14 min total: 10 min + 4 min)
+- Trend: Maintaining velocity on documentation/agent tasks (< 15 min per phase)
 
 ## Accumulated Context
 
@@ -91,9 +91,14 @@ Recent decisions affecting current work:
 - 24-02: Tools: Task (spawn agents), Read/Write (progress monitoring), Bash (CLI), Glob/Grep (search)
 - 24-02: Model: sonnet (orchestration logic, not NMR analysis)
 - 24-02: Complete routing logic: sanitize → dereplication → CASE with default dereplication-first
-- 25-01: Diagnostic specialist agent defined at .claude/agents/diagnostic-specialist.md (371 lines)
-- 25-01: skill/diagnostic/SKILL.md created (735 lines) with LSD manual, systematic checks, report format
+- 25-01: Diagnostic specialist agent defined at .claude/agents/diagnostic-specialist.md (455 lines)
+- 25-01: skill/diagnostic/SKILL.md created (1,874 lines) with full LSD command reference, 5 zero-solution checks, 5 solution-explosion checks
 - 25-01: Diagnostic specialist tools: Read, Bash (run systematic checks, write DIAGNOSTIC-REPORT.md)
+- 25-01: Model: sonnet (diagnostic reasoning, not NMR analysis)
+- 25-01: Zero-solution checks: sp2 count (even), H budget, 1J artifacts, correlation order, close carbons
+- 25-01: Solution-explosion checks: ELIM presence, constraint ratio, quaternary connectivity, heteroatoms, symmetry
+- 25-01: Structured DIAGNOSTIC-REPORT.md template with findings/root-cause/fixes sections
+- 25-01: 3 complete example diagnostic reports (1J artifact, odd sp2, solution explosion)
 - 25-02: Supervisor skill updated with diagnostic delegation (Section 5, 149 new lines)
 - 25-02: Delegation threshold: 2 failed interventions OR basic checks pass but stuck
 - 25-02: Task tool template provided for spawning diagnostic-specialist
@@ -114,8 +119,8 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-07
-Stopped at: Completed Phase 25 Plan 02 (diagnostic specialist integration)
+Stopped at: Completed Phase 25 Plan 01 (diagnostic specialist agent and skill document)
 Resume file: None
 
 ---
-*Last updated: 2026-02-07 after Phase 25 completion*
+*Last updated: 2026-02-07 after Phase 25 Plan 01 completion*
