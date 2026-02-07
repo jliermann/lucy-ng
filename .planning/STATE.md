@@ -5,17 +5,17 @@
 See: .planning/PROJECT.md (updated 2026-02-06)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with multi-agent architecture preventing loops
-**Current focus:** Phase 23 Plan 01 complete; error tolerance and ambiguity detection documented in SKILL.md
+**Current focus:** Phase 23 complete; SKILL.md now includes confidence scoring framework
 
 ## Current Position
 
 **Milestone**: v2.0 Robust Multi-Agent CASE
-**Phase**: 23 of 26 (Error Tolerance and Confidence) -- IN PROGRESS
-**Plan**: 1 of 2 complete
-**Status**: Phase 23 Plan 01 complete (error tolerance and ambiguity detection in SKILL.md)
-**Last activity**: 2026-02-07 -- Completed 23-01-PLAN.md (resolution-based ambiguity detection)
+**Phase**: 23 of 26 (Error Tolerance and Confidence) -- COMPLETE
+**Plan**: 2 of 2 complete
+**Status**: Phase 23 complete (error tolerance, ambiguity detection, and confidence scoring in SKILL.md)
+**Last activity**: 2026-02-07 -- Completed 23-02-PLAN.md (confidence scoring framework)
 
-Progress: [========================|.....] 84% (23 plans complete, 4 remaining)
+Progress: [=========================|....] 88% (24 plans complete, 3 remaining)
 
 ## Completed Milestones
 
@@ -28,7 +28,7 @@ Progress: [========================|.....] 84% (23 plans complete, 4 remaining)
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 27 (v1.0-v1.2 + Phase 20 + Phase 21 + Phase 22 Plan 01 + Phase 23 Plan 01)
+- Total plans completed: 28 (v1.0-v1.2 + Phase 20 + Phase 21 + Phase 22 Plan 01 + Phase 23 complete)
 - Average duration: ~3 hours per phase
 - Total execution time: ~63 hours
 
@@ -36,8 +36,8 @@ Progress: [========================|.....] 84% (23 plans complete, 4 remaining)
 - Phase 20 completed in 3 plans (~15 min total execution)
 - Phase 21 completed in 3 plans (~11 min total: 3 min + 5 min + 3 min)
 - Phase 22 Plan 01 completed in ~3 min
-- Phase 23 Plan 01 completed in ~3 min
-- Trend: Accelerating on documentation tasks (< 5 min per plan)
+- Phase 23 completed in 2 plans (~9 min total: 3 min + 6 min)
+- Trend: Accelerating on documentation tasks (< 10 min per phase)
 
 ## Accumulated Context
 
@@ -74,13 +74,18 @@ Recent decisions affecting current work:
 - 23-01: Ambiguity handling: LSD LIST/PROP in single file (NOT separate variants), standardized Ambiguities Detected table format
 - 23-01: Quaternary carbon sparsity: shift-based constraints (modular for future atom environment database), 20% incremental threshold reduction
 - 23-01: SKILL.md grown to 864 lines, 11 sections (added error tolerance + ambiguity detection, renumbered Quick Reference)
+- 23-02: Confidence scoring framework: qualitative judgment (High/Medium/Low), NOT computed percentages
+- 23-02: Per-atom 3-factor model: digital resolution, HOSE MAE, supporting correlations
+- 23-02: Explicit downgrade rules prevent inflation (ambiguity → Medium, MAE > 3.5 → Low, 0 HMBC → Low)
+- 23-02: Specific additional experiment suggestions (WHAT, WHY, WHICH) for Medium/Low confidence atoms
+- 23-02: SKILL.md grown to 1,079 lines, 12 sections (added confidence scoring, integrated into workflow)
 
 ### Pending Todos
 
-- Phase 23 Plan 01 complete: SKILL.md now 864 lines with 11 sections (error tolerance + ambiguity detection added)
-- Phase 23 Plan 02 ready: Confidence scoring (CONF-01 through CONF-03) - per-atom and per-structure confidence annotation
-- Phase 24 foundation ready: skill/supervisor/SKILL.md + convergence detection from 22-01 + ambiguity escalation from 23-01
-- 8 intelligence hotspot modules (~2,139 lines) identified for progressive migration through Phases 23-26
+- Phase 23 COMPLETE: SKILL.md now 1,079 lines with 12 sections (error tolerance + ambiguity detection + confidence scoring complete)
+- Phase 24 ready: Test case validation against complete SKILL.md (Virgiline, Caffeine, Adrenaline + 4 more)
+- Phase 24 foundation ready: skill/supervisor/SKILL.md + convergence detection from 22-01 + ambiguity escalation from 23-01 + confidence scoring from 23-02
+- 8 intelligence hotspot modules (~2,139 lines) identified for progressive migration through Phases 24-26
 - 3 code consolidation targets (experiment auto-discovery, database finder, LSD parser) queued for Phase 26
 
 ### Blockers/Concerns
@@ -90,8 +95,8 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-07
-Stopped at: Completed Phase 23 Plan 01 (error tolerance and ambiguity detection)
+Stopped at: Completed Phase 23 (error tolerance, ambiguity detection, and confidence scoring)
 Resume file: None
 
 ---
-*Last updated: 2026-02-07 after Phase 23 Plan 01 completion*
+*Last updated: 2026-02-07 after Phase 23 completion*
