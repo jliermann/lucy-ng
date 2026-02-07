@@ -358,7 +358,10 @@ Plans:
   3. SKILL.md teaches ambiguous HMBC assignment -- AI generates LSD variants when carbon positions are close (<1 ppm) rather than picking one arbitrarily
   4. SKILL.md teaches quaternary carbon HMBC sparsity -- AI uses chemical shift to constrain heteroatom attachment when few HMBC correlations are visible
   5. CASE workflow produces assignments with confidence levels (High >90%, Medium 60-90%, Low <60%) and explicitly flags where additional NMR experiments might help
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 23-01-PLAN.md -- Add Error Tolerance and Ambiguity Detection section to SKILL.md (close carbons, DEPT/HSQC conflicts, quaternary HMBC sparsity)
+- [ ] 23-02-PLAN.md -- Add Confidence Scoring section and integrate into CASE Workflow and Quick Reference
 
 ---
 
@@ -434,7 +437,7 @@ Plans:
 | 20. System Audit | v2.0 | 3/3 | Complete | 2026-02-06 |
 | 21. Skill Restructure | v2.0 | 3/3 | Complete | 2026-02-06 |
 | 22. HMBC Strategy + Quality | v2.0 | 1/1 | Complete | 2026-02-06 |
-| 23. Error Tolerance + Confidence | v2.0 | TBD | Not started | - |
+| 23. Error Tolerance + Confidence | v2.0 | 0/2 | Planned | - |
 | 24. Supervisor Agent | v2.0 | TBD | Not started | - |
 | 25. Diagnostic Specialist | v2.0 | TBD | Not started | - |
 | 26. Thin Tools | v2.0 | TBD | Not started | - |
