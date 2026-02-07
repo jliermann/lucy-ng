@@ -37,7 +37,7 @@ For full CASE workflows, the supervisor:
 7. Tracks intervention count per pattern
 8. Escalates to user after 10 failed intervention cycles with the same pattern
 
-**Note:** In Phase 24, the supervisor performs its own basic diagnosis. Phase 25 will add a diagnostic specialist that the supervisor can delegate to.
+**Note:** The supervisor performs basic diagnosis for initial loop detection. For complex failures requiring deep LSD analysis, the supervisor can delegate to the diagnostic specialist (see Section 5).
 
 ### Advisory Intervention Model
 
@@ -107,7 +107,7 @@ Follow incremental HMBC strategy from skill/SKILL.md Section 7.
 Stop when solution count ≤ 10 or after ~20 iterations maximum.
 ```
 
-See Section 7 for the complete CASE-PROGRESS.md format specification.
+See Section 8 for the complete CASE-PROGRESS.md format specification.
 
 ### Monitoring Progress
 
@@ -345,7 +345,156 @@ Do NOT add/remove randomly. Be systematic.
 
 ---
 
-## 5. Convergence Criteria
+## 5. Diagnostic Specialist Delegation
+
+When basic supervisor diagnosis (Section 4 procedures) is insufficient, delegate to the diagnostic specialist for deep root cause analysis.
+
+### When to Delegate
+
+**Threshold criteria for delegation:**
+
+1. **After 2 failed supervisor interventions with the SAME loop pattern**
+   - Supervisor diagnosed, advised CASE agent, but pattern recurred twice
+   - Basic diagnosis is not resolving the issue
+
+2. **When ALL basic checks pass but CASE agent is still stuck**
+   - sp2 count is even ✓
+   - H budget correct ✓
+   - No obvious 1J artifacts ✓
+   - But still getting 0 solutions or 1000+ solutions
+
+3. **When constraint churning persists after reset to known-good state**
+   - Supervisor advised reset + incremental strategy
+   - Churning continues despite following guidance
+
+**When NOT to delegate:**
+
+- **Routine iterations** — CASE agent progressing normally
+- **First detection of a loop pattern** — supervisor basic diagnosis is sufficient
+- **When root cause is obvious** from basic checks (e.g., odd sp2 count — no specialist needed)
+
+### How to Spawn Diagnostic Specialist
+
+Use the Task tool with this template:
+
+```
+Task(
+  agent_type="diagnostic-specialist",
+  instructions="Analyze LSD failure for compound at <compound_path>.
+
+  Read:
+  - <compound_path>/CASE-PROGRESS.md (iteration history)
+  - <compound_path>/<filename>.lsd (latest LSD file)
+
+  Failure type: <0 solutions | 1000+ solutions>
+
+  Run systematic diagnostic checks per skill/diagnostic/SKILL.md.
+  Document ALL checks (PASS and FAIL).
+  Identify root cause with evidence.
+
+  Write structured report to <compound_path>/DIAGNOSTIC-REPORT.md.
+  Include: findings, root cause, recommended fixes with LSD command examples.
+  Rate all findings and recommendations as HIGH/MEDIUM/LOW confidence.
+  "
+)
+```
+
+**Inputs to provide:**
+- Compound path (working directory)
+- Latest LSD filename
+- Failure type (0 solutions, 1000+ solutions, or other)
+- CASE-PROGRESS.md path for iteration history
+
+### After Diagnostic Specialist Completes
+
+1. **Read DIAGNOSTIC-REPORT.md** from the compound directory
+
+2. **Extract root cause** from "## Root Cause" section
+   - Identifies PRIMARY cause and any contributing factors
+   - Includes mechanism explaining WHY it caused failure
+
+3. **Extract primary fix** from "## Recommended Fixes" section
+   - Look for fix marked PRIMARY
+   - Contains specific LSD command examples
+   - Includes verification steps
+
+4. **Formulate diagnostic-informed advisory** for CASE agent:
+   - Reference the diagnostic report: "See DIAGNOSTIC-REPORT.md for full analysis"
+   - Include the specific fix action with LSD command examples from report
+   - Include verification steps from report
+   - Example:
+     ```
+     Diagnostic specialist identified root cause: 1J artifact in HMBC C155.2-H2.1.
+
+     See DIAGNOSTIC-REPORT.md for full analysis.
+
+     Fix: Remove HMBC correlation C155.2-H2.1 from LSD file.
+     This correlation is within artifact tolerance (±1.5 ppm C, ±0.3 ppm H) of HSQC position.
+
+     Verification: After removal, re-run LSD. Expect solutions > 0.
+
+     Also review other iteration 3 correlations (C155.2-H4.3, C172.4-H2.1) for artifacts.
+     ```
+
+5. **Re-spawn CASE agent** with the diagnostic-informed advisory
+
+### DIAGNOSTIC-REPORT.md Retention
+
+- **Single file, latest diagnostic only:** Each diagnostic overwrites the previous DIAGNOSTIC-REPORT.md
+- **History tracking:** CASE-PROGRESS.md tracks diagnostic invocations via iteration notes:
+  ```
+  **Notes:**
+  - Diagnostic specialist invoked, see DIAGNOSTIC-REPORT.md
+  ```
+- **Accessing history:** If history is needed, supervisor references CASE-PROGRESS.md notes indicating when diagnostics were run
+
+**Rationale:** Single DIAGNOSTIC-REPORT.md keeps compound directory clean. Progress log provides timeline context.
+
+### Escalation After Diagnostic Specialist
+
+If diagnostic specialist's recommended fix is applied but problem persists:
+
+1. **Counts toward per-pattern escalation limit**
+   - Specialist-informed intervention = 1 cycle
+   - Total limit = 10 cycles (basic + specialist-informed combined)
+
+2. **Escalate after 10 total intervention cycles**
+   - Pattern same: ELIM thrashing, zero-solution loop, solution explosion, or constraint churning
+   - Escalation includes all attempted diagnostics
+
+3. **Include diagnostic report reference in escalation**:
+   ```markdown
+   ## CASE Escalation Required
+
+   **Compound:** <path>
+   **Formula:** <formula>
+   **Pattern:** <pattern name>
+   **Intervention attempts:** 10 (including 3 diagnostic specialist analyses)
+
+   ### Diagnostic Specialist Analysis
+
+   Latest diagnostic report available at: DIAGNOSTIC-REPORT.md
+
+   Recommended fixes attempted:
+   1. <Fix 1 from diagnostic>
+   2. <Fix 2 from diagnostic>
+
+   All fixes applied, but pattern persists.
+
+   ### Supervisor Recommendation
+
+   <Recommendation based on diagnostic findings>
+   ```
+
+### Cross-Reference
+
+For the diagnostic specialist's domain knowledge (LSD manual, systematic check procedures, diagnostic report format), see **skill/diagnostic/SKILL.md**.
+
+Do NOT duplicate diagnostic procedures here. The supervisor delegates; the specialist executes.
+
+---
+
+## 6. Convergence Criteria
 
 ### Solution Count Trends
 
@@ -406,7 +555,7 @@ Each batch of added constraints should **change the solution set**:
 
 ---
 
-## 6. Intervention Tracking and Escalation
+## 7. Intervention Tracking and Escalation
 
 ### Per-Pattern Tracking
 
@@ -480,7 +629,7 @@ Also escalate immediately (without iteration) for:
 
 ---
 
-## 7. CASE-PROGRESS.md Format Specification
+## 8. CASE-PROGRESS.md Format Specification
 
 ### Purpose
 
