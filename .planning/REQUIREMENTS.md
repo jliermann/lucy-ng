@@ -37,13 +37,13 @@ Requirements for v2.0 Robust Multi-Agent CASE. Each maps to roadmap phases.
 
 ### Supervisor Agent
 
-- [ ] **SUPV-01**: Supervisor agent defined as Claude Code subagent (markdown file with YAML frontmatter)
-- [ ] **SUPV-02**: Supervisor detects ELIM thrashing -- adding ELIM repeatedly without diagnosing root cause
-- [ ] **SUPV-03**: Supervisor detects zero-solution loops -- repeated 0-solution attempts without changing approach
-- [ ] **SUPV-04**: Supervisor detects solution explosion -- 1000+ solutions with minor tweaks not reducing count
-- [ ] **SUPV-05**: Supervisor detects constraint churning -- adding/removing constraints randomly without progress
-- [ ] **SUPV-06**: Supervisor interventions are specific -- require diagnosis before allowing retry (e.g., "validate sp2 count before trying ELIM")
-- [ ] **SUPV-07**: Supervisor escalates to user after 3 failed attempts with same pattern
+- [x] **SUPV-01**: Supervisor agent defined as Claude Code subagent at .claude/agents/supervisor.md (383 lines) with YAML frontmatter (name, tools, model) and complete system prompt
+- [x] **SUPV-02**: Supervisor detects ELIM thrashing -- CASE-PROGRESS.md shows ELIM added 2+ times; diagnostic checks sp2 count, H budget, 1J artifacts
+- [x] **SUPV-03**: Supervisor detects zero-solution loops -- 3+ iterations with 0 solutions; diagnostic removes last batch, tests individual correlations
+- [x] **SUPV-04**: Supervisor detects solution explosion -- 3+ iterations >100 solutions with <10% reduction; checks ELIM, heteroatom constraints, quaternary carbons
+- [x] **SUPV-05**: Supervisor detects constraint churning -- 5+ iterations with high add/remove activity; resets to last good state, follows incremental HMBC strategy
+- [x] **SUPV-06**: Supervisor interventions are advisory -- tells CASE agent WHAT to fix (specific diagnosis) not HOW; four advisory message templates with per-pattern diagnostic procedures
+- [x] **SUPV-07**: Supervisor escalates to user after 10 failed intervention cycles per pattern (per CONTEXT.md decision, overrides original 3-attempt spec)
 
 ### Diagnostic & LSD Expert Specialist
 
@@ -137,13 +137,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CONF-01 | Phase 23 | Complete |
 | CONF-02 | Phase 23 | Complete |
 | CONF-03 | Phase 23 | Complete |
-| SUPV-01 | Phase 24 | Pending |
-| SUPV-02 | Phase 24 | Pending |
-| SUPV-03 | Phase 24 | Pending |
-| SUPV-04 | Phase 24 | Pending |
-| SUPV-05 | Phase 24 | Pending |
-| SUPV-06 | Phase 24 | Pending |
-| SUPV-07 | Phase 24 | Pending |
+| SUPV-01 | Phase 24 | Complete |
+| SUPV-02 | Phase 24 | Complete |
+| SUPV-03 | Phase 24 | Complete |
+| SUPV-04 | Phase 24 | Complete |
+| SUPV-05 | Phase 24 | Complete |
+| SUPV-06 | Phase 24 | Complete |
+| SUPV-07 | Phase 24 | Complete |
 | DIAG-01 | Phase 25 | Pending |
 | DIAG-02 | Phase 25 | Pending |
 | DIAG-03 | Phase 25 | Pending |
@@ -161,4 +161,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-06*
-*Last updated: 2026-02-07 after Phase 23 completion*
+*Last updated: 2026-02-07 after Phase 24 completion*
