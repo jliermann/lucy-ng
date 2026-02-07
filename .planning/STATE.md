@@ -5,17 +5,17 @@
 See: .planning/PROJECT.md (updated 2026-02-06)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with multi-agent architecture preventing loops
-**Current focus:** Phase 23 complete; Phase 24 (Supervisor Agent) ready to start
+**Current focus:** Phase 25 (Diagnostic Specialist) complete; Phase 26 (CLI/MCP Integration) ready
 
 ## Current Position
 
 **Milestone**: v2.0 Robust Multi-Agent CASE
-**Phase**: 24 of 26 (Supervisor Agent) -- COMPLETE
+**Phase**: 25 of 26 (Diagnostic Specialist) -- COMPLETE
 **Plan**: 2 of 2 complete
-**Status**: Supervisor agent operational at .claude/agents/supervisor.md (383 lines)
-**Last activity**: 2026-02-07 -- Completed 24-02-PLAN.md (supervisor agent definition)
+**Status**: Multi-agent CASE operational (supervisor + CASE agent + diagnostic specialist)
+**Last activity**: 2026-02-07 -- Completed 25-02-PLAN.md (diagnostic specialist integration)
 
-Progress: [===========================|..] 96% (26 plans complete, 1 remaining)
+Progress: [============================|.] 97% (28 plans complete, 1 phase remaining)
 
 ## Completed Milestones
 
@@ -28,7 +28,7 @@ Progress: [===========================|..] 96% (26 plans complete, 1 remaining)
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 30 (v1.0-v1.2 + Phase 20 + Phase 21 + Phase 22 Plan 01 + Phase 23 complete + Phase 24 complete)
+- Total plans completed: 32 (v1.0-v1.2 + Phase 20-25 complete)
 - Average duration: ~3 hours per phase
 - Total execution time: ~63 hours
 
@@ -38,7 +38,8 @@ Progress: [===========================|..] 96% (26 plans complete, 1 remaining)
 - Phase 22 Plan 01 completed in ~3 min
 - Phase 23 completed in 2 plans (~9 min total: 3 min + 6 min)
 - Phase 24 completed in 2 plans (~6 min total: 4 min + 2 min)
-- Trend: Accelerating on documentation tasks (< 10 min per phase)
+- Phase 25 completed in 2 plans (~8 min total: 4 min + 4 min)
+- Trend: Maintaining velocity on documentation/agent tasks (< 10 min per phase)
 
 ## Accumulated Context
 
@@ -90,12 +91,19 @@ Recent decisions affecting current work:
 - 24-02: Tools: Task (spawn agents), Read/Write (progress monitoring), Bash (CLI), Glob/Grep (search)
 - 24-02: Model: sonnet (orchestration logic, not NMR analysis)
 - 24-02: Complete routing logic: sanitize → dereplication → CASE with default dereplication-first
+- 25-01: Diagnostic specialist agent defined at .claude/agents/diagnostic-specialist.md (371 lines)
+- 25-01: skill/diagnostic/SKILL.md created (735 lines) with LSD manual, systematic checks, report format
+- 25-01: Diagnostic specialist tools: Read, Bash (run systematic checks, write DIAGNOSTIC-REPORT.md)
+- 25-02: Supervisor skill updated with diagnostic delegation (Section 5, 149 new lines)
+- 25-02: Delegation threshold: 2 failed interventions OR basic checks pass but stuck
+- 25-02: Task tool template provided for spawning diagnostic-specialist
+- 25-02: Post-diagnostic workflow: read DIAGNOSTIC-REPORT.md, extract root cause/fixes, advise CASE agent
+- 25-02: DIAGNOSTIC-REPORT.md retention: single file, latest only (history in CASE-PROGRESS.md)
 
 ### Pending Todos
 
-- Phase 24 COMPLETE: Supervisor agent operational at .claude/agents/supervisor.md
-- Phase 25 ready: Diagnostic specialist can integrate with supervisor via Task tool delegation
-- Phase 26 foundation ready: Supervisor uses Task tool (works with any MCP tool set)
+- Phase 25 COMPLETE: Multi-agent CASE operational (supervisor + CASE agent + diagnostic specialist)
+- Phase 26 ready: CLI thin wrappers + MCP tool architecture for intelligence migration
 - 8 intelligence hotspot modules (~2,139 lines) identified for progressive migration through Phases 24-26
 - 3 code consolidation targets (experiment auto-discovery, database finder, LSD parser) queued for Phase 26
 
@@ -106,8 +114,8 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-07
-Stopped at: Completed Phase 24 Plan 02 (supervisor agent definition)
+Stopped at: Completed Phase 25 Plan 02 (diagnostic specialist integration)
 Resume file: None
 
 ---
-*Last updated: 2026-02-07 after Phase 24 completion*
+*Last updated: 2026-02-07 after Phase 25 completion*
