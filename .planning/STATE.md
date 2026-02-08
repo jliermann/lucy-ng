@@ -9,13 +9,13 @@ See: .planning/PROJECT.md (updated 2026-02-06)
 
 ## Current Position
 
-**Milestone**: v2.0 Robust Multi-Agent CASE
+**Milestone**: v2.0 Robust Multi-Agent CASE -- SHIPPED
 **Phase**: 26 of 26 (Thin Tools) -- COMPLETE
-**Plan**: 1 of 1 complete (Plans 02-03 were executed earlier out of sequence)
-**Status**: MCP infrastructure removed, single interface architecture (CLI only)
-**Last activity**: 2026-02-08 -- Completed 26-01-PLAN.md (remove MCP server)
+**Plan**: 4 of 4 complete (all wave dependencies satisfied)
+**Status**: CLI-only architecture complete, all documentation aligned
+**Last activity**: 2026-02-08 -- Completed 26-04-PLAN.md (documentation alignment)
 
-Progress: [=============================] 100% (29 unique plans complete, Phase 26 COMPLETE)
+Progress: [=============================] 100% (30 unique plans complete, v2.0 SHIPPED)
 
 ## Completed Milestones
 
@@ -28,9 +28,9 @@ Progress: [=============================] 100% (29 unique plans complete, Phase 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 30 (v1.0-v1.2 + Phase 20-26 partial)
+- Total plans completed: 30 (v1.0-v1.2 + Phase 20-26)
 - Average duration: ~3 hours per phase (v1.0-v1.2), < 15 min per phase (v2.0 docs/refactor)
-- Total execution time: ~64 hours
+- Total execution time: ~64.1 hours
 
 **Recent Trend:**
 - Phase 20 completed in 3 plans (~15 min total execution)
@@ -39,7 +39,7 @@ Progress: [=============================] 100% (29 unique plans complete, Phase 
 - Phase 23 completed in 2 plans (~9 min total: 3 min + 6 min)
 - Phase 24 completed in 2 plans (~6 min total: 4 min + 2 min)
 - Phase 25 completed in 2 plans (~14 min total: 10 min + 4 min)
-- Phase 26 completed in 3 plans (~23 min total: 5 min + 5 min + 13 min)
+- Phase 26 completed in 4 plans (~27 min total: 5 min + 5 min + 13 min + 4 min)
 - Trend: Maintaining velocity on documentation/refactor tasks (< 15 min per plan)
 
 ## Accumulated Context
@@ -116,12 +116,17 @@ Recent decisions affecting current work:
 - 26-02: analyze symmetry takes formula + 13C path, returns raw counts (no DEPT, no intensity analysis)
 - 26-02: lucy lsd generate removed entirely - AI writes LSD files using LSDInputGenerator library
 - 26-02: Library algorithms preserved (DEPTGuidedPicker, HMBCGuidedPicker, SymmetryAnalyzer) for library use
+- 26-04: CLAUDE.md CLI Output Reference replaces MCP Tool Output Reference
+- 26-04: skill/SKILL.md frontmatter lists CLI commands, not MCP tools
+- 26-04: DEPT-guided and HMBC cross-validation documented as AI reasoning procedures
+- 26-04: Zero MCP tool names in all documentation (CLAUDE.md, skill/, .claude/agents/)
 
 ### Pending Todos
 
-- Phase 26 COMPLETE: MCP removed, CLI thinned, code consolidated
-- v2.0 Robust Multi-Agent CASE milestone COMPLETE
-- All 26 phases shipped, project ready for real-world CASE workflows
+None - v2.0 Robust Multi-Agent CASE milestone COMPLETE
+- All 26 phases shipped
+- CLI-only architecture complete
+- Project ready for real-world CASE workflows
 
 ### Blockers/Concerns
 
@@ -130,8 +135,8 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-08
-Stopped at: Completed Phase 26 Plan 01 (remove MCP server) - PHASE 26 COMPLETE, v2.0 SHIPPED
+Stopped at: Completed Phase 26 Plan 04 (documentation alignment) - v2.0 SHIPPED, ALL 26 PHASES COMPLETE
 Resume file: None
 
 ---
-*Last updated: 2026-02-08 after Phase 26 Plan 01 completion*
+*Last updated: 2026-02-08 after Phase 26 Plan 04 completion*
