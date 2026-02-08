@@ -195,11 +195,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SCMD-01 | Phase 27 | Pending |
-| SCMD-04 | Phase 27 | Pending |
-| SCMD-05 | Phase 27 | Pending |
-| SCMD-06 | Phase 27 | Pending |
-| SCMD-07 | Phase 27 | Pending |
+| SCMD-01 | Phase 27 | Complete |
+| SCMD-04 | Phase 27 | Complete |
+| SCMD-05 | Phase 27 | Complete |
+| SCMD-06 | Phase 27 | Complete |
+| SCMD-07 | Phase 27 | Complete |
 | CASE-01 | Phase 28 | Pending |
 | CASE-02 | Phase 28 | Pending |
 | CASE-03 | Phase 28 | Pending |

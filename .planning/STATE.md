@@ -10,12 +10,12 @@ See: .planning/PROJECT.md (updated 2026-02-08)
 ## Current Position
 
 **Milestone**: v2.1 Working Multi-Agent CASE
-**Phase**: Phase 27 (Sub-Command Skills Foundation)
-**Plan**: 02 of 2 complete
-**Status**: Phase 27 complete
-**Last activity**: 2026-02-08 — Completed 27-02-PLAN.md (predict skill + routing page)
+**Phase**: Phase 28 (CASE Agent Definition)
+**Plan**: —
+**Status**: Ready to plan
+**Last activity**: 2026-02-08 — Phase 27 complete and verified
 
-Progress: [████░░░░░░░░░░░░░░░░░░░░░░░░░] ~14% (1/7 phases)
+Progress: [████░░░░░░░░░░░░░░░░░░░░░░░░░] 14% (1/7 phases)
 
 ## Completed Milestones
 
@@ -30,8 +30,8 @@ Progress: [████░░░░░░░░░░░░░░░░░░░
 
 **Velocity:**
 - Total plans completed: 32 (v1.0-v2.1)
-- Average duration: ~3 hours per phase (v1.0-v1.2), < 15 min per phase (v2.0 docs/refactor)
-- Total execution time: ~64.1 hours
+- Average duration: ~3 hours per phase (v1.0-v1.2), < 15 min per phase (v2.0-v2.1 docs/skills)
+- Total execution time: ~64.5 hours
 
 **v2.1 Roadmap:**
 - 7 phases defined (27-33)
@@ -58,9 +58,9 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- Verify Phase 27 sub-command skills work end-to-end
-- Phase 28 (Validation Gate) — prove Task() spawning works
-- Prove simple sub-commands work before complex orchestration
+- Plan Phase 28 (CASE Agent Definition)
+- Prove Task() spawning works with autonomous CASE agent
+- Phase 27 sub-commands validated — foundation ready for orchestration
 
 ### Blockers/Concerns
 
@@ -72,8 +72,8 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-08
-Stopped at: Completed 27-02-PLAN.md (Phase 27 complete)
-Resume file: None (Phase 27 done, ready for Phase 28)
+Stopped at: Phase 27 complete and verified, ready for Phase 28
+Resume file: .planning/ROADMAP.md (Phase 28 next)
 
 ---
-*Last updated: 2026-02-08 after 27-02 execution*
+*Last updated: 2026-02-08 after Phase 27 verification*
