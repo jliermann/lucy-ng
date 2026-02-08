@@ -55,10 +55,10 @@ Requirements for v2.0 Robust Multi-Agent CASE. Each maps to roadmap phases.
 
 ### Thin Tools
 
-- [ ] **TOOL-01**: MCP tools reduced to thin data access wrappers -- no embedded domain logic
-- [ ] **TOOL-02**: Peak picking tools return raw peaks above threshold without DEPT-guided filtering or HMBC validation
-- [ ] **TOOL-03**: Intelligence previously in Python (adaptive thresholding, conflict resolution, auto-constraint generation) migrated to skill
-- [ ] **TOOL-04**: CLI retains smart behavior for backward compatibility (dual mode: smart CLI, thin MCP)
+- [x] **TOOL-01**: MCP tools reduced to thin data access wrappers -- no embedded domain logic
+- [x] **TOOL-02**: Peak picking tools return raw peaks above threshold without DEPT-guided filtering or HMBC validation
+- [x] **TOOL-03**: Intelligence previously in Python (adaptive thresholding, conflict resolution, auto-constraint generation) migrated to skill
+- [x] **TOOL-04**: CLI retains smart behavior for backward compatibility (dual mode: smart CLI, thin MCP)
 
 ### Spectral Quality Assessment
 
@@ -195,20 +195,48 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SCMD-01..07 | — | Pending |
-| CASE-01..05 | — | Pending |
-| ORCH-01..08 | — | Pending |
-| DIAG-06..08 | — | Pending |
-| SANT-01..04 | — | Pending |
-| VALD-01..05 | — | Pending |
-| CLNP-01..03 | — | Pending |
+| SCMD-01 | Phase 27 | Pending |
+| SCMD-04 | Phase 27 | Pending |
+| SCMD-05 | Phase 27 | Pending |
+| SCMD-06 | Phase 27 | Pending |
+| SCMD-07 | Phase 27 | Pending |
+| CASE-01 | Phase 28 | Pending |
+| CASE-02 | Phase 28 | Pending |
+| CASE-03 | Phase 28 | Pending |
+| CASE-04 | Phase 28 | Pending |
+| CASE-05 | Phase 28 | Pending |
+| SCMD-02 | Phase 29 | Pending |
+| ORCH-01 | Phase 29 | Pending |
+| ORCH-02 | Phase 29 | Pending |
+| ORCH-03 | Phase 29 | Pending |
+| ORCH-04 | Phase 29 | Pending |
+| ORCH-05 | Phase 29 | Pending |
+| ORCH-06 | Phase 29 | Pending |
+| ORCH-07 | Phase 29 | Pending |
+| ORCH-08 | Phase 29 | Pending |
+| DIAG-06 | Phase 30 | Pending |
+| DIAG-07 | Phase 30 | Pending |
+| DIAG-08 | Phase 30 | Pending |
+| SCMD-03 | Phase 31 | Pending |
+| SANT-01 | Phase 31 | Pending |
+| SANT-02 | Phase 31 | Pending |
+| SANT-03 | Phase 31 | Pending |
+| SANT-04 | Phase 31 | Pending |
+| VALD-01 | Phase 32 | Pending |
+| VALD-02 | Phase 32 | Pending |
+| VALD-03 | Phase 32 | Pending |
+| VALD-04 | Phase 32 | Pending |
+| VALD-05 | Phase 32 | Pending |
+| CLNP-01 | Phase 33 | Pending |
+| CLNP-02 | Phase 33 | Pending |
+| CLNP-03 | Phase 33 | Pending |
 
 **Coverage:**
 - v2.0 requirements: 38 total (all complete)
 - v2.1 requirements: 30 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 30
+- Mapped to phases: 30/30 (100% coverage)
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-06 (v2.0), 2026-02-08 (v2.1)*
-*Last updated: 2026-02-08 after v2.1 scope confirmed*
+*Last updated: 2026-02-08 after v2.1 roadmap creation*

@@ -5,7 +5,8 @@
 - ✅ [v1.0 Core CASE Pipeline](milestones/v1.0-ROADMAP.md) - Phases 1-10 (shipped 2026-01-12)
 - ✅ [v1.1 Database-Backed Dereplication](milestones/v1.1-ROADMAP.md) - Phases 11-15 (shipped 2026-01-15)
 - ✅ [v1.2 HOSE Database Prediction](milestones/v1.2-ROADMAP.md) - Phases 16-19 (shipped 2026-01-18)
-- **v2.0 Robust Multi-Agent CASE** - Phases 20-26 (in progress)
+- ✅ **v2.0 Robust Multi-Agent CASE** - Phases 20-26 (completed 2026-02-08)
+- **v2.1 Working Multi-Agent CASE** - Phases 27-33 (in progress)
 
 ---
 
@@ -277,7 +278,8 @@
 
 ---
 
-### v2.0 Robust Multi-Agent CASE (Phases 20-26)
+<details>
+<summary>v2.0 Robust Multi-Agent CASE (Phases 20-26) -- SHIPPED 2026-02-08</summary>
 
 **Milestone Goal:** Transform lucy-ng from a tool-heavy system into an AI-first skill with thin tool wrappers and a multi-agent architecture that prevents unproductive loops during structure elucidation.
 
@@ -294,7 +296,7 @@
 - [x] **Phase 23: Error Tolerance and Confidence** -- COMPLETE 2026-02-07. SKILL.md 1,079 lines (+469), error tolerance + ambiguity detection + confidence scoring
 - [x] **Phase 24: Supervisor Agent** -- COMPLETE 2026-02-07. Supervisor agent at .claude/agents/supervisor.md (383 lines), skill/supervisor/SKILL.md (678 lines), CASE-PROGRESS.md checkpoint writing
 - [x] **Phase 25: Diagnostic Specialist** -- COMPLETE 2026-02-07. skill/diagnostic/SKILL.md (1,874 lines), .claude/agents/diagnostic-specialist.md (455 lines), supervisor integration
-- [ ] **Phase 26: Thin Tools** -- Migrate embedded intelligence from MCP tools to skill; tools become data access wrappers
+- [x] **Phase 26: Thin Tools** -- COMPLETE 2026-02-08. MCP removed, CLI thinned, intelligence in skills, Ibuprofen CASE validated
 
 ---
 
@@ -326,9 +328,9 @@ Plans:
   4. No paragraph of domain knowledge appears in more than one document
 **Plans**: 3 plans
 Plans:
-- [ ] 21-01-PLAN.md -- Write canonical skill/SKILL.md with deduplicated CASE domain knowledge (~500 lines)
-- [ ] 21-02-PLAN.md -- Trim CLAUDE.md to project-level content (~298 lines) and create supervisor skill
-- [ ] 21-03-PLAN.md -- Update subskills to remove duplication and verify zero cross-document duplication
+- [x] 21-01-PLAN.md -- Write canonical skill/SKILL.md with deduplicated CASE domain knowledge (~500 lines)
+- [x] 21-02-PLAN.md -- Trim CLAUDE.md to project-level content (~298 lines) and create supervisor skill
+- [x] 21-03-PLAN.md -- Update subskills to remove duplication and verify zero cross-document duplication
 
 ---
 
@@ -402,7 +404,7 @@ Plans:
 ### Phase 26: Thin Tools
 **Goal**: MCP removed entirely, CLI commands are thin data-access wrappers, AI agent is sole intelligence layer using skill documents for all reasoning
 **Depends on**: Phases 22, 23, 24 (skill content must encode the intelligence being removed from tools; multi-agent validated)
-**Requirements**: TOOL-01 (overridden: remove MCP entirely), TOOL-02, TOOL-03, TOOL-04 (overridden: CLI thin too)
+**Requirements**: TOOL-01, TOOL-02, TOOL-03, TOOL-04
 **Success Criteria** (what must be TRUE):
   1. MCP server removed entirely -- no src/lucy_ng/mcp/, no lucy-mcp entry point
   2. CLI commands are thin data-access wrappers -- pick hsqc/hmbc return raw peaks, analyze symmetry returns raw counts, lsd generate removed
@@ -410,11 +412,136 @@ Plans:
   4. AI agent using thin CLI + SKILL.md solves Ibuprofen de novo CASE with correct structure in top 3
 **Plans**: 5 plans
 Plans:
-- [ ] 26-01-PLAN.md -- Remove MCP server entirely and clean up pyproject.toml
-- [ ] 26-02-PLAN.md -- Thin Tier 3 CLI commands (pick hsqc/hmbc raw, remove lsd generate, thin analyze symmetry)
-- [ ] 26-03-PLAN.md -- Consolidate duplicated code (database finder, LSD parser)
-- [ ] 26-04-PLAN.md -- Update CLAUDE.md, skill files, and agent definitions for CLI-only architecture
-- [ ] 26-05-PLAN.md -- Validate Ibuprofen de novo CASE with thin CLI + skill knowledge
+- [x] 26-01-PLAN.md -- Remove MCP server entirely and clean up pyproject.toml
+- [x] 26-02-PLAN.md -- Thin Tier 3 CLI commands (pick hsqc/hmbc raw, remove lsd generate, thin analyze symmetry)
+- [x] 26-03-PLAN.md -- Consolidate duplicated code (database finder, LSD parser)
+- [x] 26-04-PLAN.md -- Update CLAUDE.md, skill files, and agent definitions for CLI-only architecture
+- [x] 26-05-PLAN.md -- Validate Ibuprofen de novo CASE with thin CLI + skill knowledge
+
+</details>
+
+---
+
+## v2.1 Working Multi-Agent CASE (Phases 27-33)
+
+**Milestone Goal:** Make multi-agent CASE orchestration actually work by implementing Claude Code's native orchestration primitives correctly, replacing v2.0's paper-only architecture with working sub-command skills that spawn agents, monitor progress, detect loops, and intervene autonomously.
+
+**Core shift:** Supervisor logic dissolves from separate agent (supervisor.md) into orchestrator sub-command skill (case.md). Skills become entry points that spawn worker agents with inlined domain knowledge. Validation-first development prevents repeating v2.0's paper architecture mistake.
+
+**Phase overview:**
+
+- [ ] **Phase 27: Sub-Command Skills Foundation** -- Establish ~/.claude/commands/lucy-ng/ with 3 simple skills (status, dereplicate, predict)
+- [ ] **Phase 28: CASE Agent Definition** -- Prove Task() spawning works with autonomous CASE agent
+- [ ] **Phase 29: CASE Orchestrator Skill** -- Core orchestration: spawn, monitor, detect loops, intervene, escalate
+- [ ] **Phase 30: Diagnostic Specialist Integration** -- Deep diagnosis after 2 failed basic interventions
+- [ ] **Phase 31: Sanitization Skill** -- AI-driven dataset sanitization (no CLI)
+- [ ] **Phase 32: End-to-End Validation** -- Minimum 10 integration tests, Ibuprofen CASE via orchestrator
+- [ ] **Phase 33: Documentation and Cleanup** -- Delete supervisor.md, update docs, release notes
+
+---
+
+### Phase 27: Sub-Command Skills Foundation
+**Goal**: Simple sub-command skills work and validate the GSD pattern before complex orchestration
+**Depends on**: Phase 26 (thin CLI validated)
+**Requirements**: SCMD-01, SCMD-04, SCMD-05, SCMD-06, SCMD-07
+**Success Criteria** (what must be TRUE):
+  1. Directory ~/.claude/commands/lucy-ng/ exists with proper permissions
+  2. /lucy-ng:status runs and reports lucy-ng version, LSD availability, database presence
+  3. /lucy-ng:dereplicate wraps `lucy dereplicate c13` and returns top matches with scores
+  4. /lucy-ng:predict wraps `lucy predict c13` and returns shift predictions with confidence
+  5. Old monolithic /lucy-ng skill replaced with routing page listing all sub-commands
+
+**Plans**: TBD
+
+---
+
+### Phase 28: CASE Agent Definition
+**Goal**: Autonomous CASE agent spawns successfully and writes structured progress before orchestrator depends on it
+**Depends on**: Phase 27 (foundation validated)
+**Requirements**: CASE-01, CASE-02, CASE-03, CASE-04, CASE-05
+**Success Criteria** (what must be TRUE):
+  1. Agent definition at ~/.claude/agents/lucy-case-agent.md with valid YAML frontmatter (name, description, tools: Read + Write + Bash + Glob + Grep)
+  2. Agent receives inlined skill content (NMR background, CASE workflow, LSD basics) approximately 500-700 lines plus file path references for detailed knowledge
+  3. Agent executes CASE workflow and writes CASE-PROGRESS.md after every LSD iteration with required fields (solution count, constraints added/removed, reasoning, confidence, sp2/H checks)
+  4. Agent never attempts dereplication (absolute workflow separation validated)
+  5. Integration test passes: spawn agent with minimal task, verify CASE-PROGRESS.md created with expected structure
+
+**Plans**: TBD
+
+---
+
+### Phase 29: CASE Orchestrator Skill
+**Goal**: Core orchestration working -- spawn agent with context, monitor progress, detect 4 loop patterns, diagnose, intervene, escalate
+**Depends on**: Phase 28 (agent proven spawn-able)
+**Requirements**: SCMD-02, ORCH-01, ORCH-02, ORCH-03, ORCH-04, ORCH-05, ORCH-06, ORCH-07, ORCH-08
+**Success Criteria** (what must be TRUE):
+  1. Skill file at ~/.claude/commands/lucy-ng/case.md spawns lucy-case-agent via Task() with hybrid context inlining (critical workflow inlined, detailed references via file paths)
+  2. Orchestrator reads CASE-PROGRESS.md after agent completes and successfully parses solution count, constraints, reasoning
+  3. Orchestrator detects ELIM thrashing (ELIM added 2+ times), zero-solution loop (3+ iterations with 0 solutions), solution explosion (3+ iterations >100 solutions <10% reduction), constraint churning (5+ iterations high add/remove activity)
+  4. Orchestrator performs basic diagnosis (sp2 count even, H budget matches formula, 1J artifacts within tolerance) before intervention
+  5. Orchestrator generates advisory interventions (WHAT to fix, not HOW) -- never prescribes specific LSD file edits
+  6. Orchestrator tracks intervention counts separately per pattern (not global counter)
+  7. Orchestrator escalates to user after 10 failed intervention cycles per pattern
+  8. Orchestrator re-spawns agent with advisory constraints and skip-completed-work instructions in handoff
+
+**Plans**: TBD
+
+---
+
+### Phase 30: Diagnostic Specialist Integration
+**Goal**: Deep LSD failure analysis delegated to specialist after basic interventions fail
+**Depends on**: Phase 29 (orchestrator working)
+**Requirements**: DIAG-06, DIAG-07, DIAG-08
+**Success Criteria** (what must be TRUE):
+  1. Agent definition renamed from ~/.claude/agents/diagnostic-specialist.md to ~/.claude/agents/lucy-diagnostic.md with updated frontmatter (agent name matches new file)
+  2. Orchestrator delegates to diagnostic specialist after 2 failed interventions with same loop pattern
+  3. Orchestrator reads DIAGNOSTIC-REPORT.md, extracts root cause and primary fix, and includes in CASE agent advisory on next spawn
+  4. Integration test passes: force repeated zero-solution failure, verify specialist spawned after 2 basic intervention failures, DIAGNOSTIC-REPORT.md created with systematic check results
+
+**Plans**: TBD
+
+---
+
+### Phase 31: Sanitization Skill
+**Goal**: AI-driven compound identifier removal for blind dataset evaluation
+**Depends on**: Phase 27 (independent from orchestration)
+**Requirements**: SCMD-03, SANT-01, SANT-02, SANT-03, SANT-04
+**Success Criteria** (what must be TRUE):
+  1. Skill file at ~/.claude/commands/lucy-ng/sanitise.md with explicit statement: "There is NO CLI command for sanitization -- this requires AI semantic reasoning"
+  2. AI detects compound identifiers: chemical names (IUPAC, common), SMILES strings, InChI/InChIKey, CAS numbers, MOL file structures, dataset naming patterns (e.g., "Ibuprofen_HSQC")
+  3. AI generates redaction manifest and applies bulk sanitization using existing helper scripts (lucy_text_extractor.py, lucy_bulk_sanitize.py)
+  4. Skill verifies completeness by re-extracting text and confirming no identifiers remain
+
+**Plans**: TBD
+
+---
+
+### Phase 32: End-to-End Validation
+**Goal**: All orchestration components validated through comprehensive integration tests before milestone ships
+**Depends on**: Phases 29, 30, 31 (all features complete)
+**Requirements**: VALD-01, VALD-02, VALD-03, VALD-04, VALD-05
+**Success Criteria** (what must be TRUE):
+  1. Integration test passes: orchestrator spawns CASE agent, agent writes CASE-PROGRESS.md, orchestrator reads and parses progress
+  2. Loop detection test passes: construct known failure patterns (force ELIM thrashing, force zero solutions, force explosion), verify orchestrator detects and intervenes
+  3. Diagnostic delegation test passes: repeated failures with same pattern trigger specialist spawn, DIAGNOSTIC-REPORT.md generated and consumed by orchestrator
+  4. Ibuprofen CASE passes via /lucy-ng:case -- reproduces Phase 26-05 success through full orchestration (spawn → monitor → detect → intervene if needed → converge to correct structure in top 3)
+  5. All simple sub-commands work: /lucy-ng:dereplicate returns matches, /lucy-ng:predict returns shifts, /lucy-ng:status reports system readiness
+
+**Plans**: TBD
+
+---
+
+### Phase 33: Documentation and Cleanup
+**Goal**: Remove deprecated components and update documentation for v2.1 architecture
+**Depends on**: Phase 32 (validation passed)
+**Requirements**: CLNP-01, CLNP-02, CLNP-03
+**Success Criteria** (what must be TRUE):
+  1. File ~/.claude/agents/supervisor.md deleted (logic now in case.md orchestrator)
+  2. CLAUDE.md updated with sub-command reference section listing all /lucy-ng:* commands with one-line descriptions
+  3. PROJECT.md decisions table updated with v2.1 architecture choices (orchestration via Task(), hybrid context inlining, per-pattern intervention counters, diagnostic delegation threshold)
+  4. v2.1 release notes written summarizing working multi-agent orchestration vs v2.0 paper architecture
+
+**Plans**: TBD
 
 ---
 
@@ -452,7 +579,14 @@ Plans:
 | 23. Error Tolerance + Confidence | v2.0 | 2/2 | Complete | 2026-02-07 |
 | 24. Supervisor Agent | v2.0 | 2/2 | Complete | 2026-02-07 |
 | 25. Diagnostic Specialist | v2.0 | 2/2 | Complete | 2026-02-07 |
-| 26. Thin Tools | v2.0 | 0/5 | In progress | - |
+| 26. Thin Tools | v2.0 | 5/5 | Complete | 2026-02-08 |
+| 27. Sub-Command Skills Foundation | v2.1 | 0/TBD | Pending | - |
+| 28. CASE Agent Definition | v2.1 | 0/TBD | Pending | - |
+| 29. CASE Orchestrator Skill | v2.1 | 0/TBD | Pending | - |
+| 30. Diagnostic Specialist Integration | v2.1 | 0/TBD | Pending | - |
+| 31. Sanitization Skill | v2.1 | 0/TBD | Pending | - |
+| 32. End-to-End Validation | v2.1 | 0/TBD | Pending | - |
+| 33. Documentation and Cleanup | v2.1 | 0/TBD | Pending | - |
 
 ---
-*Last updated: 2026-02-08 after Phase 26 planning*
+*Last updated: 2026-02-08 after v2.1 roadmap creation*

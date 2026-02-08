@@ -5,17 +5,17 @@
 See: .planning/PROJECT.md (updated 2026-02-08)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with multi-agent architecture preventing loops
-**Current focus:** v2.1 Working Multi-Agent CASE — sub-command skills, real agent orchestration
+**Current focus:** v2.1 Working Multi-Agent CASE — sub-command skills, real agent orchestration, validation-first development
 
 ## Current Position
 
 **Milestone**: v2.1 Working Multi-Agent CASE
-**Phase**: Not started (defining requirements)
+**Phase**: Phase 27 (Sub-Command Skills Foundation)
 **Plan**: —
-**Status**: Defining requirements
-**Last activity**: 2026-02-08 — Milestone v2.1 started
+**Status**: Ready to plan
+**Last activity**: 2026-02-08 — v2.1 roadmap created
 
-Progress: [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0%
+Progress: [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0% (0/7 phases)
 
 ## Completed Milestones
 
@@ -29,9 +29,14 @@ Progress: [░░░░░░░░░░░░░░░░░░░░░░░
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 30 (v1.0-v1.2 + Phase 20-26)
+- Total plans completed: 30 (v1.0-v2.0)
 - Average duration: ~3 hours per phase (v1.0-v1.2), < 15 min per phase (v2.0 docs/refactor)
 - Total execution time: ~64.1 hours
+
+**v2.1 Roadmap:**
+- 7 phases defined (27-33)
+- 30 requirements mapped
+- 100% requirement coverage validated
 
 ## Accumulated Context
 
@@ -47,22 +52,28 @@ Recent decisions affecting current work:
 - v2.1: Option A for CASE supervision — autonomous CASE agent, orchestrator handles failure
 - v2.1: Supervisor logic dissolves into case.md orchestrator skill (not a separate agent)
 - v2.1: Old monolithic /lucy-ng skill replaced by sub-commands
+- v2.1: Validation-first development — prove Task() spawning works before expanding skills
+- v2.1: Hybrid context inlining — 500-700 lines critical content inlined, detailed references via file paths
+- v2.1: Per-pattern intervention counters — track failures separately, 10-cycle escalation per pattern
 
 ### Pending Todos
 
-None yet — defining requirements for v2.1
+- Plan Phase 27 (Sub-Command Skills Foundation)
+- Establish ~/.claude/commands/lucy-ng/ directory structure
+- Prove simple sub-commands work before complex orchestration
 
 ### Blockers/Concerns
 
 - v2.0 multi-agent architecture exists only on paper — agents defined but never invoked
+- Critical risk: Repeating v2.0's paper architecture mistake (mitigation: validation gates in every phase)
 - Virgiline (CASE7) failure is the motivating case — working multi-agent should address root causes
-- /lucy-ng:sanitise failed in user testing — needs careful design
+- Task tool model parameter bug (#18873) — use `model: inherit` workaround
 
 ## Session Continuity
 
 Last session: 2026-02-08
-Stopped at: Defining v2.1 milestone requirements
-Resume file: None
+Stopped at: v2.1 roadmap created, ready to plan Phase 27
+Resume file: .planning/ROADMAP.md (v2.1 phases 27-33 defined)
 
 ---
-*Last updated: 2026-02-08 after v2.1 milestone started*
+*Last updated: 2026-02-08 after v2.1 roadmap creation*
