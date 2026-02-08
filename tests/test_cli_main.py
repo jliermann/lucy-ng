@@ -76,24 +76,20 @@ class TestCLIIntegration:
         assert result.exit_code == 0
         assert "peaks" in result.output.lower()
 
-        # 3. DEPT-guided HSQC
+        # 3. Raw HSQC peaks (DEPT-guided logic is in AI agent skill now)
         result = runner.invoke(
-            cli, ["pick", "hsqc", "data/Ibuprofen/6", "data/Ibuprofen/3"]
+            cli, ["pick", "hsqc", "data/Ibuprofen/6"]
         )
         assert result.exit_code == 0
-        assert "DEPT-Guided" in result.output
+        assert "peaks" in result.output.lower()
 
         # 4. Symmetry analysis
         result = runner.invoke(
             cli,
-            ["analyze", "symmetry", "C13H18O2", "data/Ibuprofen/6", "data/Ibuprofen/3"],
+            ["analyze", "symmetry", "C13H18O2", "data/Ibuprofen/2"],
         )
         assert result.exit_code == 0
-        assert "Symmetry Analysis" in result.output
+        assert "symmetry" in result.output.lower()
 
-        # 5. LSD generate
-        result = runner.invoke(
-            cli, ["lsd", "generate", "data/Ibuprofen", "C13H18O2"]
-        )
-        assert result.exit_code == 0
-        assert "MULT" in result.output
+        # Note: LSD generate command was removed in earlier phase
+        # (LSD file generation is now handled by AI agent through Python API)
