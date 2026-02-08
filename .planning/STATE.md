@@ -10,12 +10,12 @@ See: .planning/PROJECT.md (updated 2026-02-08)
 ## Current Position
 
 **Milestone**: v2.1 Working Multi-Agent CASE
-**Phase**: Phase 30 (Diagnostic Specialist Integration) — COMPLETE
-**Plan**: 30-01 complete, verified (7/7 must-haves)
-**Status**: Phase complete, verified
-**Last activity**: 2026-02-08 — Phase 30 verified and closed
+**Phase**: Phase 31 (Sanitization Skill) — COMPLETE
+**Plan**: 31-01 complete (7/7 must-haves)
+**Status**: Phase complete
+**Last activity**: 2026-02-08 — Completed 31-01-PLAN.md
 
-Progress: [███████████░░░░░░░░░░░░░░░░░░] 57% (4/7 phases)
+Progress: [█████████████░░░░░░░░░░░░░░░░] 71% (5/7 phases)
 
 ## Completed Milestones
 
@@ -29,9 +29,9 @@ Progress: [███████████░░░░░░░░░░░░
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 35 (v1.0-v2.1)
-- Average duration: ~3 hours per phase (v1.0-v1.2), < 15 min per phase (v2.0-v2.1 docs/skills), ~4 min per plan (v2.1 implementation)
-- Total execution time: ~64.72 hours
+- Total plans completed: 36 (v1.0-v2.1)
+- Average duration: ~3 hours per phase (v1.0-v1.2), < 15 min per phase (v2.0-v2.1 docs/skills), ~3 min per plan (v2.1 implementation)
+- Total execution time: ~64.77 hours
 
 **v2.1 Roadmap:**
 - 7 phases defined (27-33)
@@ -63,12 +63,15 @@ Recent decisions affecting current work:
 - Phase 30: Diagnostic specialist delegation after 2 failed basic interventions (threshold = 2)
 - Phase 30: Specialist-informed advisory extracts specific fix from DIAGNOSTIC-REPORT.md
 - Phase 30: Fallback to basic advisory if DIAGNOSTIC-REPORT.md missing after delegation
+- Phase 31: Pure AI sanitisation workflow (no CLI, no scripts)
+- Phase 31: [REDACTED] replacement string for all identifier redactions
+- Phase 31: Full re-scan verification (second pass confirms completeness)
 
 ### Pending Todos
 
-- Plan Phase 31 (Agent Testing)
+- Plan Phase 32 (Agent Testing)
 - Prove Task() spawning works with autonomous CASE agent (Phase 32)
-- Phase 30 diagnostic specialist integration complete — ready for agent testing
+- Phase 31 sanitisation skill complete — ready for agent testing
 
 ### Blockers/Concerns
 
@@ -80,8 +83,8 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-08
-Stopped at: Phase 30 complete and verified
-Resume file: .planning/ROADMAP.md (Phase 31 next)
+Stopped at: Phase 31 complete
+Resume file: .planning/ROADMAP.md (Phase 32 next)
 
 ---
-*Last updated: 2026-02-08 after Phase 30 execution complete*
+*Last updated: 2026-02-08 after Phase 31 execution complete*
