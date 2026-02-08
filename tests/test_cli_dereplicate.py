@@ -7,11 +7,8 @@ from unittest.mock import patch
 import pytest
 from click.testing import CliRunner
 
-from lucy_ng.cli.dereplicate import (
-    _find_database_path,
-    _is_sqlite_database,
-    dereplicate,
-)
+from lucy_ng.cli.dereplicate import dereplicate
+from lucy_ng.database import DatabaseFinder
 
 
 class TestDatabaseDetection:
@@ -19,15 +16,15 @@ class TestDatabaseDetection:
 
     def test_is_sqlite_database_with_db_extension(self) -> None:
         """Test .db files are recognized as SQLite databases."""
-        assert _is_sqlite_database("compounds.db") is True
-        assert _is_sqlite_database("/path/to/compounds.db") is True
-        assert _is_sqlite_database(Path("data/reference/compounds.db")) is True
+        assert DatabaseFinder.is_sqlite_database("compounds.db") is True
+        assert DatabaseFinder.is_sqlite_database("/path/to/compounds.db") is True
+        assert DatabaseFinder.is_sqlite_database(Path("data/reference/compounds.db")) is True
 
     def test_is_sqlite_database_with_sd_extension(self) -> None:
         """Test .sd files are not recognized as SQLite databases."""
-        assert _is_sqlite_database("nmrshiftdb.sd") is False
-        assert _is_sqlite_database("coconut.sdf") is False
-        assert _is_sqlite_database("file.sd.gz") is False
+        assert DatabaseFinder.is_sqlite_database("nmrshiftdb.sd") is False
+        assert DatabaseFinder.is_sqlite_database("coconut.sdf") is False
+        assert DatabaseFinder.is_sqlite_database("file.sd.gz") is False
 
     def test_find_database_path_with_env_var(self, tmp_path: Path) -> None:
         """Test LUCY_DATABASE environment variable is used."""
@@ -35,7 +32,7 @@ class TestDatabaseDetection:
         db_file.touch()
 
         with patch.dict(os.environ, {"LUCY_DATABASE": str(db_file)}):
-            result = _find_database_path()
+            result = DatabaseFinder.find_derep_database()
             assert result == db_file
 
     def test_find_database_path_env_var_ignores_non_db(self, tmp_path: Path) -> None:
@@ -45,7 +42,7 @@ class TestDatabaseDetection:
 
         with patch.dict(os.environ, {"LUCY_DATABASE": str(sd_file)}, clear=False):
             # Should not return the SD file even if env var is set
-            result = _find_database_path()
+            result = DatabaseFinder.find_derep_database()
             # Result depends on whether data/reference/compounds.db exists
             if result is not None:
                 assert result.suffix == ".db"
@@ -53,7 +50,7 @@ class TestDatabaseDetection:
     def test_find_database_path_nonexistent_env(self) -> None:
         """Test nonexistent LUCY_DATABASE path returns None or default."""
         with patch.dict(os.environ, {"LUCY_DATABASE": "/nonexistent/path.db"}, clear=False):
-            result = _find_database_path()
+            result = DatabaseFinder.find_derep_database()
             # Should fall through to default location
             if result is not None:
                 assert result != Path("/nonexistent/path.db")

@@ -5,43 +5,8 @@ from pathlib import Path
 
 import click
 
+from lucy_ng.database import DatabaseFinder
 from lucy_ng.prediction import C13Predictor, HOSELookupTable
-
-
-# Default lookup table location
-DEFAULT_TABLE_PATH = Path("data/reference/hose_lookup.json.gz")
-HOME_TABLE_PATH = Path.home() / ".lucy" / "hose_lookup.json.gz"
-
-# Default database locations (preferred over JSON table)
-DEFAULT_DB_PATH = Path("data/reference/lucy-ng-derep.db")
-HOME_DB_PATH = Path.home() / ".lucy" / "lucy-ng-derep.db"
-
-
-def find_database() -> Path | None:
-    """Find database with HOSE stats in default locations."""
-    candidates = [
-        DEFAULT_DB_PATH,
-        HOME_DB_PATH,
-        Path("lucy-ng-derep.db"),
-    ]
-    for p in candidates:
-        if p.exists():
-            return p
-    return None
-
-
-def find_lookup_table() -> Path | None:
-    """Find lookup table in default locations."""
-    candidates = [
-        DEFAULT_TABLE_PATH,
-        HOME_TABLE_PATH,
-        Path("hose_lookup.json.gz"),
-        Path("hose_lookup.json"),
-    ]
-    for p in candidates:
-        if p.exists():
-            return p
-    return None
 
 
 @click.group()
@@ -123,7 +88,7 @@ def predict_c13(
             raise SystemExit(1)
 
     # Priority 3: Auto-detect database
-    elif (db_path := find_database()):
+    elif (db_path := DatabaseFinder.find_hose_database()):
         try:
             predictor = C13Predictor.from_database(db_path, max_radius=max_radius)
         except Exception as e:
@@ -131,7 +96,7 @@ def predict_c13(
             raise SystemExit(1)
 
     # Priority 4: Auto-detect table
-    elif (table_path := find_lookup_table()):
+    elif (table_path := DatabaseFinder.find_hose_table()):
         try:
             predictor = C13Predictor.from_table_file(table_path, max_radius=max_radius)
         except Exception as e:
@@ -184,8 +149,8 @@ def predict_c13(
     "--output",
     "-o",
     type=click.Path(),
-    default=str(DEFAULT_TABLE_PATH),
-    help=f"Output file path (default: {DEFAULT_TABLE_PATH}).",
+    default=str(DatabaseFinder.DEFAULT_TABLE_PATH),
+    help=f"Output file path (default: {DatabaseFinder.DEFAULT_TABLE_PATH}).",
 )
 @click.option(
     "--source",

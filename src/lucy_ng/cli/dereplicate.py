@@ -11,87 +11,13 @@ from typing import TYPE_CHECKING, Any
 
 import click
 
-from lucy_ng.database import DatabaseQueryService
+from lucy_ng.database import DatabaseFinder, DatabaseQueryService
 from lucy_ng.dereplication import CoconutLoader, DereplicationService, NMRShiftDBLoader
 from lucy_ng.readers import BrukerReader
 
 if TYPE_CHECKING:
     # Loader is any object with get_by_formula method
     pass
-
-
-def _find_database_path() -> Path | None:
-    """Find SQLite database in default locations.
-
-    Search order:
-    1. LUCY_DATABASE environment variable
-    2. data/reference/lucy-ng-derep.db (project location)
-    3. Common locations (~/.lucy/, ~/lucy-ng/, etc.)
-    4. macOS Spotlight search (mdfind)
-    5. Recursive search in home directory (last resort)
-
-    Returns:
-        Path to database file if found, None otherwise
-    """
-    import subprocess
-
-    db_name = "lucy-ng-derep.db"
-
-    # 1. Check environment variable first
-    env_db = os.environ.get("LUCY_DATABASE")
-    if env_db:
-        env_path = Path(env_db)
-        if env_path.exists() and env_path.suffix == ".db":
-            return env_path
-
-    # 2. Check project location
-    default_db = Path("data/reference") / db_name
-    if default_db.exists():
-        return default_db
-
-    # 3. Check common locations
-    common_paths = [
-        Path.home() / ".lucy" / db_name,
-        Path.home() / "lucy-ng" / "data" / "reference" / db_name,
-        Path.home() / ".local" / "share" / "lucy-ng" / db_name,
-    ]
-    for p in common_paths:
-        if p.exists():
-            return p
-
-    # 4. macOS Spotlight search (fast)
-    try:
-        result = subprocess.run(
-            ["mdfind", "-name", db_name],
-            capture_output=True,
-            text=True,
-            timeout=5,
-        )
-        if result.returncode == 0 and result.stdout.strip():
-            found_path = Path(result.stdout.strip().split("\n")[0])
-            if found_path.exists():
-                return found_path
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        pass  # mdfind not available or timed out
-
-    # 5. Search in Dropbox/develop (common dev location)
-    dropbox_dev = Path.home() / "Dropbox" / "develop" / "lucy-ng" / "data" / "reference" / db_name
-    if dropbox_dev.exists():
-        return dropbox_dev
-
-    return None
-
-
-def _is_sqlite_database(path: str | Path) -> bool:
-    """Check if path refers to a SQLite database file.
-
-    Args:
-        path: Path to check
-
-    Returns:
-        True if path has .db extension
-    """
-    return Path(path).suffix == ".db"
 
 
 def _decompress_gz_if_needed(gz_path: Path) -> Path:
@@ -175,7 +101,7 @@ def dereplicate_c13(
     db_query_service: DatabaseQueryService | None = None
 
     # Determine database source
-    if database is not None and _is_sqlite_database(database):
+    if database is not None and DatabaseFinder.is_sqlite_database(database):
         # Explicit SQLite database path provided
         try:
             db_query_service = DatabaseQueryService(database)
@@ -191,7 +117,7 @@ def dereplicate_c13(
             raise SystemExit(1) from None
     elif database is None:
         # No explicit path - try SQLite database first, then SD files
-        db_path = _find_database_path()
+        db_path = DatabaseFinder.find_derep_database()
         if db_path is not None:
             try:
                 db_query_service = DatabaseQueryService(db_path)
