@@ -10,12 +10,12 @@ See: .planning/PROJECT.md (updated 2026-02-06)
 ## Current Position
 
 **Milestone**: v2.0 Robust Multi-Agent CASE
-**Phase**: 25 of 26 (Diagnostic Specialist) -- COMPLETE
-**Plan**: 2 of 2 complete
-**Status**: Multi-agent CASE operational (supervisor + CASE agent + diagnostic specialist)
-**Last activity**: 2026-02-07 -- Completed 25-01-PLAN.md (diagnostic specialist agent and skill document)
+**Phase**: 26 of 26 (Thin Tools) -- IN PROGRESS
+**Plan**: 2 of 3 complete
+**Status**: CLI Tier 3 commands thinned (26-02), MCP deleted (26-01), consolidation done (26-03)
+**Last activity**: 2026-02-08 -- Completed 26-02-PLAN.md (thin CLI commands)
 
-Progress: [============================|.] 97% (28 plans complete, 1 phase remaining)
+Progress: [============================|=] 98% (30 plans complete, final phase nearing completion)
 
 ## Completed Milestones
 
@@ -28,9 +28,9 @@ Progress: [============================|.] 97% (28 plans complete, 1 phase remai
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 32 (v1.0-v1.2 + Phase 20-25 complete)
-- Average duration: ~3 hours per phase
-- Total execution time: ~63 hours
+- Total plans completed: 30 (v1.0-v1.2 + Phase 20-26 partial)
+- Average duration: ~3 hours per phase (v1.0-v1.2), < 15 min per phase (v2.0 docs/refactor)
+- Total execution time: ~64 hours
 
 **Recent Trend:**
 - Phase 20 completed in 3 plans (~15 min total execution)
@@ -39,7 +39,8 @@ Progress: [============================|.] 97% (28 plans complete, 1 phase remai
 - Phase 23 completed in 2 plans (~9 min total: 3 min + 6 min)
 - Phase 24 completed in 2 plans (~6 min total: 4 min + 2 min)
 - Phase 25 completed in 2 plans (~14 min total: 10 min + 4 min)
-- Trend: Maintaining velocity on documentation/agent tasks (< 15 min per phase)
+- Phase 26 Plan 02 completed in ~5 min
+- Trend: Maintaining velocity on documentation/refactor tasks (< 15 min per phase)
 
 ## Accumulated Context
 
@@ -104,6 +105,10 @@ Recent decisions affecting current work:
 - 25-02: Task tool template provided for spawning diagnostic-specialist
 - 25-02: Post-diagnostic workflow: read DIAGNOSTIC-REPORT.md, extract root cause/fixes, advise CASE agent
 - 25-02: DIAGNOSTIC-REPORT.md retention: single file, latest only (history in CASE-PROGRESS.md)
+- 26-02: CLI Tier 3 commands thinned: pick hsqc/hmbc take single path, return raw peaks
+- 26-02: analyze symmetry takes formula + 13C path, returns raw counts (no DEPT, no intensity analysis)
+- 26-02: lucy lsd generate removed entirely - AI writes LSD files using LSDInputGenerator library
+- 26-02: Library algorithms preserved (DEPTGuidedPicker, HMBCGuidedPicker, SymmetryAnalyzer) for library use
 
 ### Pending Todos
 
@@ -118,9 +123,9 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-02-07
-Stopped at: Completed Phase 25 Plan 01 (diagnostic specialist agent and skill document)
+Last session: 2026-02-08
+Stopped at: Completed Phase 26 Plan 02 (thin CLI commands)
 Resume file: None
 
 ---
-*Last updated: 2026-02-07 after Phase 25 Plan 01 completion*
+*Last updated: 2026-02-08 after Phase 26 Plan 02 completion*
