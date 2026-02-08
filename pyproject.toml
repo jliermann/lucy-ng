@@ -35,7 +35,6 @@ dependencies = [
 
 [project.scripts]
 lucy = "lucy_ng.cli:cli"
-lucy-mcp = "lucy_ng.mcp:main"
 
 [project.optional-dependencies]
 dev = [
@@ -43,9 +42,6 @@ dev = [
     "pytest-cov>=4.0",
     "ruff>=0.1",
     "mypy>=1.0",
-]
-mcp = [
-    "mcp[cli]>=1.2.0",
 ]
 prediction = [
     # NOTE: hose-code-generator has broken dependencies (xmlrunner) on Python 3.12

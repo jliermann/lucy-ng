@@ -482,11 +482,3 @@ class TestRankingCLI:
         assert callable(_get_default_table_path)
 
 
-class TestRankingMCP:
-    """Tests for MCP tool integration (basic structure)."""
-
-    def test_mcp_imports(self):
-        """Test that MCP tool imports work correctly."""
-        mcp = pytest.importorskip("mcp")
-        from lucy_ng.mcp.server import rank_lsd_solutions
-        assert callable(rank_lsd_solutions)
