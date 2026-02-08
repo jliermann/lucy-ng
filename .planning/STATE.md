@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-08)
 
 **Milestone**: v2.1 Working Multi-Agent CASE
 **Phase**: Phase 27 (Sub-Command Skills Foundation)
-**Plan**: —
-**Status**: Ready to plan
-**Last activity**: 2026-02-08 — v2.1 roadmap created
+**Plan**: 01 of 2 complete
+**Status**: In progress
+**Last activity**: 2026-02-08 — Completed 27-01-PLAN.md (status + dereplicate skills)
 
-Progress: [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0% (0/7 phases)
+Progress: [██░░░░░░░░░░░░░░░░░░░░░░░░░░░] ~7% (1/14 plans est.)
 
 ## Completed Milestones
 
@@ -29,7 +29,7 @@ Progress: [░░░░░░░░░░░░░░░░░░░░░░░
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 30 (v1.0-v2.0)
+- Total plans completed: 31 (v1.0-v2.1)
 - Average duration: ~3 hours per phase (v1.0-v1.2), < 15 min per phase (v2.0 docs/refactor)
 - Total execution time: ~64.1 hours
 
@@ -58,8 +58,7 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- Plan Phase 27 (Sub-Command Skills Foundation)
-- Establish ~/.claude/commands/lucy-ng/ directory structure
+- Execute Plan 27-02 (remaining sub-command skills)
 - Prove simple sub-commands work before complex orchestration
 
 ### Blockers/Concerns
@@ -72,8 +71,8 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-08
-Stopped at: v2.1 roadmap created, ready to plan Phase 27
-Resume file: .planning/ROADMAP.md (v2.1 phases 27-33 defined)
+Stopped at: Completed 27-01-PLAN.md (status + dereplicate sub-command skills)
+Resume file: .planning/phases/27-sub-command-skills-foundation/27-02-PLAN.md
 
 ---
-*Last updated: 2026-02-08 after v2.1 roadmap creation*
+*Last updated: 2026-02-08 after 27-01 execution*
