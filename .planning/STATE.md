@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-08)
 
 **Milestone**: v2.1 Working Multi-Agent CASE
 **Phase**: Phase 27 (Sub-Command Skills Foundation)
-**Plan**: 01 of 2 complete
-**Status**: In progress
-**Last activity**: 2026-02-08 — Completed 27-01-PLAN.md (status + dereplicate skills)
+**Plan**: 02 of 2 complete
+**Status**: Phase 27 complete
+**Last activity**: 2026-02-08 — Completed 27-02-PLAN.md (predict skill + routing page)
 
-Progress: [██░░░░░░░░░░░░░░░░░░░░░░░░░░░] ~7% (1/14 plans est.)
+Progress: [████░░░░░░░░░░░░░░░░░░░░░░░░░] ~14% (1/7 phases)
 
 ## Completed Milestones
 
@@ -29,7 +29,7 @@ Progress: [██░░░░░░░░░░░░░░░░░░░░░
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 31 (v1.0-v2.1)
+- Total plans completed: 32 (v1.0-v2.1)
 - Average duration: ~3 hours per phase (v1.0-v1.2), < 15 min per phase (v2.0 docs/refactor)
 - Total execution time: ~64.1 hours
 
@@ -58,7 +58,8 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- Execute Plan 27-02 (remaining sub-command skills)
+- Verify Phase 27 sub-command skills work end-to-end
+- Phase 28 (Validation Gate) — prove Task() spawning works
 - Prove simple sub-commands work before complex orchestration
 
 ### Blockers/Concerns
@@ -71,8 +72,8 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-08
-Stopped at: Completed 27-01-PLAN.md (status + dereplicate sub-command skills)
-Resume file: .planning/phases/27-sub-command-skills-foundation/27-02-PLAN.md
+Stopped at: Completed 27-02-PLAN.md (Phase 27 complete)
+Resume file: None (Phase 27 done, ready for Phase 28)
 
 ---
-*Last updated: 2026-02-08 after 27-01 execution*
+*Last updated: 2026-02-08 after 27-02 execution*
