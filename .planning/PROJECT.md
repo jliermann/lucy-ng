@@ -10,14 +10,15 @@ Lucy-ng is an AI-agent skill for Computer-Assisted Structure Elucidation (CASE) 
 
 An AI agent can autonomously determine the structure of an unknown organic compound from its NMR spectra, with a multi-agent architecture that prevents unproductive loops and keeps the elucidation on track.
 
-## Current Milestone: v2.0 Robust Multi-Agent CASE
+## Current Milestone: v2.1 Working Multi-Agent CASE
 
-**Goal:** Transform lucy-ng from a tool-heavy system into an AI-first skill with thin tool wrappers and a multi-agent architecture that keeps structure elucidation on track.
+**Goal:** Make the multi-agent architecture actually work — sub-command skills following the GSD pattern, real agent spawning and result collection, working AI-driven sanitisation.
 
-**Three pillars:**
-1. **Audit & Simplify** -- Examine every component, strip intelligence from CLI/Python code, push domain knowledge into the skill
-2. **Skill Rewrite** -- Rewrite the CASE skill with clearer strategy (incremental HMBC, error tolerance as AI knowledge, not Python code)
-3. **Multi-Agent CASE Architecture** -- Orchestrator/supervisor + specialist agents; supervisor detects loops and redirects the CASE agent
+**Target features:**
+- Sub-command skills: `/lucy-ng:case`, `/lucy-ng:sanitise`, `/lucy-ng:dereplicate`, `/lucy-ng:predict`, `/lucy-ng:status`
+- CASE orchestrator that spawns autonomous CASE agent, monitors progress, detects loops, spawns diagnostic specialist
+- AI-driven dataset sanitisation (no CLI — AI reasoning required to identify compound identifiers)
+- Old monolithic skill and paper-only agent definitions replaced by working GSD-pattern orchestration
 
 ## Architecture
 
@@ -47,11 +48,11 @@ An AI agent can autonomously determine the structure of an unknown organic compo
 
 ### Active
 
-- [ ] Audit all CLI/Python components -- identify what to simplify, remove, or keep
-- [ ] Rewrite CASE skill with incremental HMBC strategy and error tolerance knowledge
-- [ ] Multi-agent CASE architecture (CASE agent + supervisor + specialists)
-- [ ] Supervisor agent rules for detecting and breaking unproductive loops
-- [ ] Bake error tolerance into skill (close-shift detection, ambiguity handling, DEPT phase checks)
+- [ ] Sub-command skills following GSD pattern (sanitise, dereplicate, case, predict, status)
+- [ ] CASE orchestrator with real agent spawning, progress monitoring, loop detection, diagnostic delegation
+- [ ] Autonomous CASE agent definition with full skill knowledge and CASE-PROGRESS.md writing
+- [ ] AI-driven dataset sanitisation (compound identity removal, no CLI)
+- [ ] Diagnostic specialist agent reworked for orchestrator integration
 
 ### Deferred
 
@@ -110,22 +111,31 @@ Minimum viable spectral data for v1:
 | N:1 shift matching for ranking | Handles molecular symmetry correctly | Good |
 | SQLite for dereplication DB | Portable, no server, formula-indexed for fast lookup | Good |
 | HOSE codes for prediction | Pure Python, no external services, reasonable accuracy | Good |
-| AI as intelligence layer | v2.0: Domain knowledge belongs in skill, not Python code | — Pending |
-| Multi-agent CASE | v2.0: Supervisor prevents loops, specialists handle subtasks | — Pending |
-| Error tolerance as skill knowledge | v2.0: Teach AI to detect close shifts, ambiguity -- not Python machinery | — Pending |
+| AI as intelligence layer | v2.0: Domain knowledge belongs in skill, not Python code | Good |
+| Multi-agent CASE | v2.0: Supervisor prevents loops, specialists handle subtasks | Revisit — v2.0 defined on paper only, v2.1 delivers working orchestration |
+| Error tolerance as skill knowledge | v2.0: Teach AI to detect close shifts, ambiguity -- not Python machinery | Good |
+| MCP removed, CLI-only | v2.0: Single interface, AI uses thin CLI via Bash | Good |
+| GSD-pattern sub-commands | v2.1: Skills as ~/.claude/commands/lucy-ng/*.md with Task() agent spawning | — Pending |
+| /lucy-ng:case NEVER dereplicates | v2.1: Absolute separation — dereplication is a separate sub-command | — Pending |
+| Sanitisation is AI-only | v2.1: No CLI for sanitise — requires AI reasoning to identify compound identifiers | — Pending |
 
 ## Current State
 
-**Version:** v1.2 (shipped 2026-01-18)
+**Version:** v2.0 (shipped 2026-02-08)
 **Codebase:** ~17,500 lines Python, 642 tests
-**Tech stack:** Python 3.10+, Pydantic v2, nmrglue, RDKit, SQLite, Click, FastMCP
+**Tech stack:** Python 3.10+, Pydantic v2, nmrglue, RDKit, SQLite, Click
 
 **Capabilities:**
-- 16 MCP tools for AI agent integration (including get_hose_stats_info)
-- 7 CLI command groups (read, pick, analyze, dereplicate, predict, lsd, fetch)
+- 9 CLI command groups, 22 commands (thin data-access wrappers)
 - SQLite database with 928K compounds (COCONUT + NMRShiftDB)
 - 7.9M HOSE statistics for database-backed 13C prediction
 - Full CASE pipeline: peak picking → LSD generation → solving → ranking
+- Skill documents: SKILL.md (1,079 lines), supervisor SKILL.md (827 lines), diagnostic SKILL.md (1,874 lines)
+- Agent definitions: supervisor.md, diagnostic-specialist.md (paper-only, not wired up)
+
+**What v2.0 delivered vs what's missing:**
+- Delivered: Skill restructure, thin CLI, MCP removal, domain knowledge in skills
+- Missing: Actual multi-agent orchestration — agents defined on paper but never invoked
 
 ---
-*Last updated: 2026-02-06 after v2.0 milestone started*
+*Last updated: 2026-02-08 after v2.1 milestone started*

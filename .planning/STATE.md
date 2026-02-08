@@ -2,20 +2,20 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-06)
+See: .planning/PROJECT.md (updated 2026-02-08)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with multi-agent architecture preventing loops
-**Current focus:** Phase 25 (Diagnostic Specialist) complete; Phase 26 (CLI/MCP Integration) ready
+**Current focus:** v2.1 Working Multi-Agent CASE — sub-command skills, real agent orchestration
 
 ## Current Position
 
-**Milestone**: v2.0 Robust Multi-Agent CASE -- SHIPPED
-**Phase**: 26 of 26 (Thin Tools) -- COMPLETE
-**Plan**: 4 of 4 complete (all wave dependencies satisfied)
-**Status**: CLI-only architecture complete, all documentation aligned
-**Last activity**: 2026-02-08 -- Completed 26-04-PLAN.md (documentation alignment)
+**Milestone**: v2.1 Working Multi-Agent CASE
+**Phase**: Not started (defining requirements)
+**Plan**: —
+**Status**: Defining requirements
+**Last activity**: 2026-02-08 — Milestone v2.1 started
 
-Progress: [=============================] 100% (30 unique plans complete, v2.0 SHIPPED)
+Progress: [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0%
 
 ## Completed Milestones
 
@@ -24,6 +24,7 @@ Progress: [=============================] 100% (30 unique plans complete, v2.0 S
 | v1.0 Core CASE Pipeline | 1-10 | 2026-01-12 |
 | v1.1 Database-Backed Dereplication | 11-15 | 2026-01-15 |
 | v1.2 HOSE Database Prediction | 16-19 | 2026-01-18 |
+| v2.0 Robust Multi-Agent CASE | 20-26 | 2026-02-08 |
 
 ## Performance Metrics
 
@@ -32,16 +33,6 @@ Progress: [=============================] 100% (30 unique plans complete, v2.0 S
 - Average duration: ~3 hours per phase (v1.0-v1.2), < 15 min per phase (v2.0 docs/refactor)
 - Total execution time: ~64.1 hours
 
-**Recent Trend:**
-- Phase 20 completed in 3 plans (~15 min total execution)
-- Phase 21 completed in 3 plans (~11 min total: 3 min + 5 min + 3 min)
-- Phase 22 Plan 01 completed in ~3 min
-- Phase 23 completed in 2 plans (~9 min total: 3 min + 6 min)
-- Phase 24 completed in 2 plans (~6 min total: 4 min + 2 min)
-- Phase 25 completed in 2 plans (~14 min total: 10 min + 4 min)
-- Phase 26 completed in 4 plans (~27 min total: 5 min + 5 min + 13 min + 4 min)
-- Trend: Maintaining velocity on documentation/refactor tasks (< 15 min per plan)
-
 ## Accumulated Context
 
 ### Decisions
@@ -49,94 +40,29 @@ Progress: [=============================] 100% (30 unique plans complete, v2.0 S
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- v2.0: AI as intelligence layer -- domain knowledge in skill, not Python code
-- v2.0: Multi-agent CASE -- supervisor prevents loops, specialists handle subtasks
-- v2.0: Error tolerance as skill knowledge -- teach AI to detect issues, not build Python machinery
-- v2.0: Skip COSY -- notoriously difficult to analyze, defer
-- 20-01: MCP tools: 7 Tier 1, 4 Tier 2, 4 Tier 3 (of 15 total)
-- 20-01: CLI groups: 4 Tier 1, 3 Tier 2, 2 Tier 3 (of 9 groups, 22 commands)
-- 20-01: generate_correlation_diagram = Tier 1 despite 1151 lines (pure visualization, no NMR inference)
-- 20-03: SKILL.md proposed at ~500 lines with 9 sections (NMR background through quick reference)
-- 20-03: SUPERVISOR.md proposed at ~40 lines for workflow selection and escalation
-- 20-03: Phase 26 dual-mode architecture: MCP thin wrappers + CLI retains smart behavior
-- 21-01: SKILL.md actual: 418 lines, 8 sections (NMR background through quick reference)
-- 21-01: Deduplication achieved: sp2 even count (1x), ELIM usage (1x), correlation order (1x), score thresholds (1x), MAE thresholds (1x)
-- 21-01: SKILL.md excludes project-level content (setup, dev reference, database stats stay in CLAUDE.md)
-- 21-02: CLAUDE.md reduced from 1,080 to 305 lines (72% reduction), keeping only project-level content
-- 21-02: skill/supervisor/SKILL.md created (78 lines) with workflow selection, loop detection, escalation criteria
-- 21-02: Zero domain knowledge remains in CLAUDE.md -- all workflow/reasoning now in skill/SKILL.md
-- 21-03: All subskills deduplicated with cross-references to skill/SKILL.md
-- 21-03: Blind CASE Protocol properly homed in skill/sanitize/SKILL.md
-- 21-03: SKIL-03 (zero cross-document duplication) verified across all 5 audit clusters
-- 21-03: Final line counts: CLAUDE.md (305), SKILL.md (418), CASE (666), sanitize (407), dereplicate (182), supervisor (78)
-- 22-01: HMBC strategy documented: adaptive iteration (3-5 batch), NOT fixed 3-phase recipe
-- 22-01: Quality assessment documented: S/N evaluation, digital resolution, artifact recognition
-- 22-01: SKILL.md grown to 610 lines, 10 sections (added quality + HMBC strategy)
-- 22-01: Iteration cap ~10 for safety (prevents loops before Phase 24 supervisor)
-- 23-01: Error tolerance documented: resolution-based close carbon detection (pts/ppm), context-dependent DEPT/HSQC conflict resolution
-- 23-01: Ambiguity handling: LSD LIST/PROP in single file (NOT separate variants), standardized Ambiguities Detected table format
-- 23-01: Quaternary carbon sparsity: shift-based constraints (modular for future atom environment database), 20% incremental threshold reduction
-- 23-01: SKILL.md grown to 864 lines, 11 sections (added error tolerance + ambiguity detection, renumbered Quick Reference)
-- 23-02: Confidence scoring framework: qualitative judgment (High/Medium/Low), NOT computed percentages
-- 23-02: Per-atom 3-factor model: digital resolution, HOSE MAE, supporting correlations
-- 23-02: Explicit downgrade rules prevent inflation (ambiguity → Medium, MAE > 3.5 → Low, 0 HMBC → Low)
-- 23-02: Specific additional experiment suggestions (WHAT, WHY, WHICH) for Medium/Low confidence atoms
-- 23-02: SKILL.md grown to 1,079 lines, 12 sections (added confidence scoring, integrated into workflow)
-- 24-01: skill/supervisor/SKILL.md expanded from 78 to 678 lines with complete supervisor domain knowledge
-- 24-01: Four loop detection patterns (SUPV-02-05): ELIM thrashing, zero-solution loop, solution explosion, constraint churning
-- 24-01: Advisory intervention model (SUPV-06): supervisor tells CASE agent WHAT to fix, not HOW
-- 24-01: Escalation after 10 failed intervention cycles per pattern (SUPV-07)
-- 24-01: CASE-PROGRESS.md format specification with append-only rule and 3-iteration example
-- 24-01: skill/CASE/SKILL.md Step 7c added for checkpoint writing after every LSD iteration
-- 24-02: Supervisor agent defined as Claude Code subagent at .claude/agents/supervisor.md (383 lines)
-- 24-02: Tools: Task (spawn agents), Read/Write (progress monitoring), Bash (CLI), Glob/Grep (search)
-- 24-02: Model: sonnet (orchestration logic, not NMR analysis)
-- 24-02: Complete routing logic: sanitize → dereplication → CASE with default dereplication-first
-- 25-01: Diagnostic specialist agent defined at .claude/agents/diagnostic-specialist.md (455 lines)
-- 25-01: skill/diagnostic/SKILL.md created (1,874 lines) with full LSD command reference, 5 zero-solution checks, 5 solution-explosion checks
-- 25-01: Diagnostic specialist tools: Read, Bash (run systematic checks, write DIAGNOSTIC-REPORT.md)
-- 25-01: Model: sonnet (diagnostic reasoning, not NMR analysis)
-- 25-01: Zero-solution checks: sp2 count (even), H budget, 1J artifacts, correlation order, close carbons
-- 25-01: Solution-explosion checks: ELIM presence, constraint ratio, quaternary connectivity, heteroatoms, symmetry
-- 25-01: Structured DIAGNOSTIC-REPORT.md template with findings/root-cause/fixes sections
-- 25-01: 3 complete example diagnostic reports (1J artifact, odd sp2, solution explosion)
-- 25-02: Supervisor skill updated with diagnostic delegation (Section 5, 149 new lines)
-- 25-02: Delegation threshold: 2 failed interventions OR basic checks pass but stuck
-- 25-02: Task tool template provided for spawning diagnostic-specialist
-- 25-02: Post-diagnostic workflow: read DIAGNOSTIC-REPORT.md, extract root cause/fixes, advise CASE agent
-- 25-02: DIAGNOSTIC-REPORT.md retention: single file, latest only (history in CASE-PROGRESS.md)
-- 26-01: MCP infrastructure removed (1,764 lines deleted: server.py, __init__.py, tests)
-- 26-01: Single interface architecture - AI agent uses CLI via Bash tool exclusively
-- 26-01: lucy-mcp entry point and mcp optional dependency removed from pyproject.toml
-- 26-01: Test suite updated after MCP removal (DatabaseFinder methods, current CLI API)
-- 26-03: DatabaseFinder.find_hose_database() reuses find_derep_database() (same file, comprehensive search)
-- 26-03: Database/table finding consolidated in database.finder (4 functions, 3 CLI modules → 1 utility)
-- 26-03: LSD input parsing moved to lsd.parser alongside output parsing (symmetry with LSDOutputParser)
-- 26-02: CLI Tier 3 commands thinned: pick hsqc/hmbc take single path, return raw peaks
-- 26-02: analyze symmetry takes formula + 13C path, returns raw counts (no DEPT, no intensity analysis)
-- 26-02: lucy lsd generate removed entirely - AI writes LSD files using LSDInputGenerator library
-- 26-02: Library algorithms preserved (DEPTGuidedPicker, HMBCGuidedPicker, SymmetryAnalyzer) for library use
-- 26-04: CLAUDE.md CLI Output Reference replaces MCP Tool Output Reference
-- 26-04: skill/SKILL.md frontmatter lists CLI commands, not MCP tools
-- 26-04: DEPT-guided and HMBC cross-validation documented as AI reasoning procedures
-- 26-04: Zero MCP tool names in all documentation (CLAUDE.md, skill/, .claude/agents/)
+- v2.1: GSD-pattern sub-commands — skills as ~/.claude/commands/lucy-ng/*.md
+- v2.1: /lucy-ng:case NEVER attempts dereplication — absolute separation
+- v2.1: Sanitisation is AI-only — no CLI, requires AI reasoning to identify compound identifiers
+- v2.1: Sanitise skill must explicitly state there is no CLI for this purpose
+- v2.1: Option A for CASE supervision — autonomous CASE agent, orchestrator handles failure
+- v2.1: Supervisor logic dissolves into case.md orchestrator skill (not a separate agent)
+- v2.1: Old monolithic /lucy-ng skill replaced by sub-commands
 
 ### Pending Todos
 
-None - v2.0 Robust Multi-Agent CASE milestone COMPLETE
-- All 26 phases shipped
-- CLI-only architecture complete
-- Project ready for real-world CASE workflows
+None yet — defining requirements for v2.1
 
 ### Blockers/Concerns
 
-- Virgiline (CASE7) failure is the motivating case for v2.0 -- supervisor and incremental HMBC should address root causes
+- v2.0 multi-agent architecture exists only on paper — agents defined but never invoked
+- Virgiline (CASE7) failure is the motivating case — working multi-agent should address root causes
+- /lucy-ng:sanitise failed in user testing — needs careful design
 
 ## Session Continuity
 
 Last session: 2026-02-08
-Stopped at: Completed Phase 26 Plan 04 (documentation alignment) - v2.0 SHIPPED, ALL 26 PHASES COMPLETE
+Stopped at: Defining v2.1 milestone requirements
 Resume file: None
 
 ---
-*Last updated: 2026-02-08 after Phase 26 Plan 04 completion*
+*Last updated: 2026-02-08 after v2.1 milestone started*
