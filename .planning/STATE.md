@@ -10,12 +10,12 @@ See: .planning/PROJECT.md (updated 2026-02-08)
 ## Current Position
 
 **Milestone**: v2.1 Working Multi-Agent CASE
-**Phase**: Phase 29 (CASE Orchestrator Skill) — COMPLETE
-**Plan**: 29-01 complete, verified (9/9 must-haves)
-**Status**: Phase complete, verified
-**Last activity**: 2026-02-08 — Phase 29 verified and closed
+**Phase**: Phase 30 (Diagnostic Specialist Integration) — COMPLETE
+**Plan**: 30-01 complete (2/2 tasks)
+**Status**: Phase complete
+**Last activity**: 2026-02-08 — Completed 30-01-PLAN.md
 
-Progress: [████████░░░░░░░░░░░░░░░░░░░░░] 43% (3/7 phases)
+Progress: [███████████░░░░░░░░░░░░░░░░░░] 57% (4/7 phases)
 
 ## Completed Milestones
 
@@ -29,9 +29,9 @@ Progress: [████████░░░░░░░░░░░░░░░
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 34 (v1.0-v2.1)
+- Total plans completed: 35 (v1.0-v2.1)
 - Average duration: ~3 hours per phase (v1.0-v1.2), < 15 min per phase (v2.0-v2.1 docs/skills), ~4 min per plan (v2.1 implementation)
-- Total execution time: ~64.65 hours
+- Total execution time: ~64.72 hours
 
 **v2.1 Roadmap:**
 - 7 phases defined (27-33)
@@ -60,12 +60,15 @@ Recent decisions affecting current work:
 - Phase 28: Agent files live in ~/.claude/agents/ (user-global, not project-specific)
 - Phase 28: CASE-PROGRESS.md append-only format for supervisor monitoring
 - Phase 29: Orchestrator skill dissolves v2.0 supervisor.md logic into case.md sub-command
+- Phase 30: Diagnostic specialist delegation after 2 failed basic interventions (threshold = 2)
+- Phase 30: Specialist-informed advisory extracts specific fix from DIAGNOSTIC-REPORT.md
+- Phase 30: Fallback to basic advisory if DIAGNOSTIC-REPORT.md missing after delegation
 
 ### Pending Todos
 
-- Plan Phase 30 (Diagnostic Specialist Agent)
+- Plan Phase 31 (Agent Testing)
 - Prove Task() spawning works with autonomous CASE agent (Phase 32)
-- Phase 29 orchestrator skill complete — ready for diagnostic specialist integration
+- Phase 30 diagnostic specialist integration complete — ready for agent testing
 
 ### Blockers/Concerns
 
@@ -76,9 +79,9 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-02-08
-Stopped at: Phase 29 complete and verified
-Resume file: .planning/ROADMAP.md (Phase 30 next)
+Last session: 2026-02-08 14:50
+Stopped at: Completed 30-01-PLAN.md
+Resume file: .planning/ROADMAP.md (Phase 31 next)
 
 ---
-*Last updated: 2026-02-08 after Phase 29 execution complete*
+*Last updated: 2026-02-08 after Phase 30 plan 01 execution complete*
