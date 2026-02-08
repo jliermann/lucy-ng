@@ -470,7 +470,10 @@ Plans:
   4. Agent never attempts dereplication (absolute workflow separation validated)
   5. Integration test passes: spawn agent with minimal task, verify CASE-PROGRESS.md created with expected structure
 
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+- [ ] 28-01-PLAN.md -- Create lucy-case-agent.md with YAML frontmatter, inlined skill knowledge, workflow, and progress format; validate against all 5 CASE requirements
 
 ---
 
@@ -585,7 +588,7 @@ Plans:
 | 25. Diagnostic Specialist | v2.0 | 2/2 | Complete | 2026-02-07 |
 | 26. Thin Tools | v2.0 | 5/5 | Complete | 2026-02-08 |
 | 27. Sub-Command Skills Foundation | v2.1 | 2/2 | Complete | 2026-02-08 |
-| 28. CASE Agent Definition | v2.1 | 0/TBD | Pending | - |
+| 28. CASE Agent Definition | v2.1 | 0/1 | Planned | - |
 | 29. CASE Orchestrator Skill | v2.1 | 0/TBD | Pending | - |
 | 30. Diagnostic Specialist Integration | v2.1 | 0/TBD | Pending | - |
 | 31. Sanitization Skill | v2.1 | 0/TBD | Pending | - |
@@ -593,4 +596,4 @@ Plans:
 | 33. Documentation and Cleanup | v2.1 | 0/TBD | Pending | - |
 
 ---
-*Last updated: 2026-02-08 after Phase 27 completion*
+*Last updated: 2026-02-08 after Phase 28 planning*
