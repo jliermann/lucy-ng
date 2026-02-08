@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-08)
 
 **Milestone**: v2.1 Working Multi-Agent CASE
 **Phase**: Phase 28 (CASE Agent Definition)
-**Plan**: —
-**Status**: Ready to plan
-**Last activity**: 2026-02-08 — Phase 27 complete and verified
+**Plan**: 28-01 complete
+**Status**: Phase complete
+**Last activity**: 2026-02-08 — Completed 28-01-PLAN.md (CASE agent definition)
 
-Progress: [████░░░░░░░░░░░░░░░░░░░░░░░░░] 14% (1/7 phases)
+Progress: [██████░░░░░░░░░░░░░░░░░░░░░░░] 29% (2/7 phases)
 
 ## Completed Milestones
 
@@ -29,9 +29,9 @@ Progress: [████░░░░░░░░░░░░░░░░░░░
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 32 (v1.0-v2.1)
-- Average duration: ~3 hours per phase (v1.0-v1.2), < 15 min per phase (v2.0-v2.1 docs/skills)
-- Total execution time: ~64.5 hours
+- Total plans completed: 33 (v1.0-v2.1)
+- Average duration: ~3 hours per phase (v1.0-v1.2), < 15 min per phase (v2.0-v2.1 docs/skills), ~6 min per plan (v2.1 implementation)
+- Total execution time: ~64.6 hours
 
 **v2.1 Roadmap:**
 - 7 phases defined (27-33)
@@ -55,12 +55,14 @@ Recent decisions affecting current work:
 - v2.1: Validation-first development — prove Task() spawning works before expanding skills
 - v2.1: Hybrid context inlining — 500-700 lines critical content inlined, detailed references via file paths
 - v2.1: Per-pattern intervention counters — track failures separately, 10-cycle escalation per pattern
+- Phase 28: Agent files live in ~/.claude/agents/ (user-global, not project-specific)
+- Phase 28: CASE-PROGRESS.md append-only format for supervisor monitoring
 
 ### Pending Todos
 
-- Plan Phase 28 (CASE Agent Definition)
-- Prove Task() spawning works with autonomous CASE agent
-- Phase 27 sub-commands validated — foundation ready for orchestration
+- Plan Phase 29 (CASE Orchestrator Skill)
+- Prove Task() spawning works with autonomous CASE agent (Phase 32)
+- Phase 28 agent definition complete — ready for orchestrator integration
 
 ### Blockers/Concerns
 
@@ -72,8 +74,8 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-08
-Stopped at: Phase 27 complete and verified, ready for Phase 28
-Resume file: .planning/ROADMAP.md (Phase 28 next)
+Stopped at: Completed Phase 28 Plan 01 (CASE agent definition)
+Resume file: .planning/ROADMAP.md (Phase 29 next)
 
 ---
-*Last updated: 2026-02-08 after Phase 27 verification*
+*Last updated: 2026-02-08 after Phase 28-01 completion*
