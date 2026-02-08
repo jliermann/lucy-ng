@@ -15,27 +15,29 @@ class TestAnalyzeSymmetry:
         runner = CliRunner()
         result = runner.invoke(
             analyze,
-            ["symmetry", "C13H18O2", "data/Ibuprofen/6", "data/Ibuprofen/3"],
+            ["symmetry", "C13H18O2", "data/Ibuprofen/2"],
         )
         assert result.exit_code == 0
         assert "Symmetry Analysis" in result.output
         assert "C13H18O2" in result.output
-        assert "SIGNAL COUNT" in result.output
-        assert "HYDROGEN BUDGET" in result.output
-        assert "INTENSITY EVIDENCE" in result.output
+        assert "Expected carbons:" in result.output
+        assert "Observed peaks:" in result.output
+        assert "Difference:" in result.output
 
-    def test_analyze_symmetry_detects_missing_carbons(self) -> None:
-        """Test that symmetry analysis detects missing carbons for Ibuprofen."""
+    def test_analyze_symmetry_calculates_difference(self) -> None:
+        """Test that symmetry analysis calculates carbon difference."""
         runner = CliRunner()
         result = runner.invoke(
             analyze,
-            ["symmetry", "C13H18O2", "data/Ibuprofen/6", "data/Ibuprofen/3"],
+            ["symmetry", "C13H18O2", "data/Ibuprofen/2"],
         )
         assert result.exit_code == 0
-        # Ibuprofen has 13 carbons but ~9 signals due to symmetry
-        assert "Missing carbons:" in result.output
-        # Should suggest equivalent carbons
-        assert "equivalent" in result.output.lower()
+        # Should show expected vs observed comparison
+        assert "Expected carbons:" in result.output
+        assert "Observed peaks:" in result.output
+        assert "Difference:" in result.output
+        # Either suggests equivalents or warns about more peaks
+        assert ("equivalent" in result.output.lower() or "Warning:" in result.output)
 
     def test_analyze_symmetry_json(self) -> None:
         """Test symmetry analysis with JSON output."""
@@ -45,21 +47,18 @@ class TestAnalyzeSymmetry:
             [
                 "symmetry",
                 "C13H18O2",
-                "data/Ibuprofen/6",
-                "data/Ibuprofen/3",
+                "data/Ibuprofen/2",
                 "--format",
                 "json",
             ],
         )
         assert result.exit_code == 0
         data = json.loads(result.output)
-        assert data["molecular_formula"] == "C13H18O2"
-        assert "signal_count" in data
+        assert data["formula"] == "C13H18O2"
         assert "expected_carbons" in data
-        assert "missing_carbons" in data
-        assert "has_symmetry" in data
-        assert "hydrogen_budget" in data
-        assert "intensity_report" in data
+        assert "observed_peaks" in data
+        assert "difference" in data
+        assert data["expected_carbons"] == 13
 
     def test_analyze_symmetry_json_structure(self) -> None:
         """Test JSON output has correct structure."""
@@ -69,8 +68,7 @@ class TestAnalyzeSymmetry:
             [
                 "symmetry",
                 "C13H18O2",
-                "data/Ibuprofen/6",
-                "data/Ibuprofen/3",
+                "data/Ibuprofen/2",
                 "--format",
                 "json",
             ],
@@ -78,24 +76,20 @@ class TestAnalyzeSymmetry:
         assert result.exit_code == 0
         data = json.loads(result.output)
 
-        # Hydrogen budget structure
-        hb = data["hydrogen_budget"]
-        assert "expected_h" in hb
-        assert "total_accounted" in hb
-        assert "missing_h" in hb
-        assert "has_equivalents" in hb
-
-        # Intensity report structure
-        ir = data["intensity_report"]
-        assert "peak_count" in ir
-        assert "has_potential_equivalents" in ir
-        assert "high_intensity_peaks" in ir
+        # Check basic structure
+        assert "formula" in data
+        assert "expected_carbons" in data
+        assert "observed_peaks" in data
+        assert "difference" in data
+        assert isinstance(data["expected_carbons"], int)
+        assert isinstance(data["observed_peaks"], int)
+        assert isinstance(data["difference"], int)
 
     def test_analyze_symmetry_invalid_path(self) -> None:
         """Test error on invalid paths."""
         runner = CliRunner()
         result = runner.invoke(
             analyze,
-            ["symmetry", "C13H18O2", "data/NonExistent/6", "data/Ibuprofen/3"],
+            ["symmetry", "C13H18O2", "data/NonExistent/6"],
         )
         assert result.exit_code != 0

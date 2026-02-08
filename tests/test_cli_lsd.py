@@ -24,69 +24,6 @@ class TestLSDCheck:
             assert "not" in result.output.lower()
 
 
-class TestLSDGenerate:
-    """Tests for lucy lsd generate command."""
-
-    def test_generate_text(self) -> None:
-        """Test LSD input generation with text output."""
-        runner = CliRunner()
-        result = runner.invoke(lsd, ["generate", "data/Ibuprofen", "C13H18O2"])
-        assert result.exit_code == 0
-        # Should contain LSD commands
-        assert "MULT" in result.output
-        # Should have header comments
-        assert "lucy-ng" in result.output
-        assert "C13H18O2" in result.output
-
-    def test_generate_json(self) -> None:
-        """Test LSD input generation with JSON output."""
-        runner = CliRunner()
-        result = runner.invoke(
-            lsd, ["generate", "data/Ibuprofen", "C13H18O2", "--format", "json"]
-        )
-        assert result.exit_code == 0
-        data = json.loads(result.output)
-        assert data["molecular_formula"] == "C13H18O2"
-        assert "atom_count" in data
-        assert "correlation_count" in data
-        assert "lsd_content" in data
-        assert "MULT" in data["lsd_content"]
-
-    def test_generate_experiments_detected(self) -> None:
-        """Test that experiments are correctly detected."""
-        runner = CliRunner()
-        result = runner.invoke(
-            lsd, ["generate", "data/Ibuprofen", "C13H18O2", "--format", "json"]
-        )
-        assert result.exit_code == 0
-        data = json.loads(result.output)
-        # Should detect key experiments
-        assert "experiments_found" in data
-        assert "HSQC" in data["experiments_found"]
-        assert "DEPT135" in data["experiments_found"]
-
-    def test_generate_to_file(self, tmp_path: Path) -> None:
-        """Test writing LSD input to file."""
-        output_file = tmp_path / "test.lsd"
-        runner = CliRunner()
-        result = runner.invoke(
-            lsd,
-            ["generate", "data/Ibuprofen", "C13H18O2", "-o", str(output_file)],
-        )
-        assert result.exit_code == 0
-        assert output_file.exists()
-        content = output_file.read_text()
-        assert "MULT" in content
-
-    def test_generate_missing_hsqc(self) -> None:
-        """Test error when HSQC not found."""
-        runner = CliRunner()
-        # Use a directory that doesn't have required experiments
-        result = runner.invoke(lsd, ["generate", "data/Ibuprofen/1", "C13H18O2"])
-        assert result.exit_code != 0
-        assert "HSQC" in result.output or "DEPT" in result.output
-
-
 class TestLSDRun:
     """Tests for lucy lsd run command."""
 

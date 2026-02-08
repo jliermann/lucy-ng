@@ -1,11 +1,11 @@
 """CLI commands for analysis tools."""
 
 import json
+import re
 
 import click
 
-from lucy_ng.analysis import SymmetryAnalyzer
-from lucy_ng.processing import DEPTGuidedPicker
+from lucy_ng.processing import AdaptivePeakPicker
 from lucy_ng.readers import BrukerReader
 
 
@@ -17,8 +17,14 @@ def analyze() -> None:
 
 @analyze.command("symmetry")
 @click.argument("formula")
-@click.argument("hsqc_path", type=click.Path(exists=True))
-@click.argument("dept135_path", type=click.Path(exists=True))
+@click.argument("c13_path", type=click.Path(exists=True))
+@click.option(
+    "--threshold",
+    "-t",
+    type=float,
+    default=None,
+    help="Peak threshold (auto if not set).",
+)
 @click.option(
     "--format",
     "output_format",
@@ -27,51 +33,50 @@ def analyze() -> None:
     help="Output format.",
 )
 def analyze_symmetry(
-    formula: str, hsqc_path: str, dept135_path: str, output_format: str
+    formula: str, c13_path: str, threshold: float | None, output_format: str
 ) -> None:
-    """Analyze molecular symmetry from spectroscopic data.
+    """Compare observed 13C peaks with expected carbon count from formula.
 
     FORMULA is the molecular formula (e.g., C13H18O2).
-    HSQC_PATH is the path to the HSQC experiment.
-    DEPT135_PATH is the path to the DEPT-135 experiment.
+    C13_PATH is the path to the 13C Bruker experiment.
 
-    This tool compares the expected atom count from the molecular formula
-    with observed NMR signals to detect equivalent atoms due to symmetry.
+    Returns raw comparison of observed signal count vs expected carbon count.
+    The AI agent interprets the difference using symmetry detection knowledge.
     """
-    hsqc = BrukerReader.read_2d(hsqc_path)
-    dept135 = BrukerReader.read_1d(dept135_path)
-    dept_result = DEPTGuidedPicker.pick_hsqc_peaks(hsqc, dept135)
+    # Read 1D spectrum
+    spectrum = BrukerReader.read_1d(c13_path)
 
-    result = SymmetryAnalyzer.analyze(formula, dept_result, hsqc)
+    # Pick peaks
+    picker = AdaptivePeakPicker()
+    if threshold is not None:
+        peaks = picker.pick_peaks(spectrum, threshold=threshold)
+    else:
+        peaks = picker.pick_peaks(spectrum)
+
+    # Parse carbon count from formula
+    match = re.search(r'C(\d+)', formula)
+    if not match:
+        click.echo("Error: Could not parse carbon count from formula", err=True)
+        raise SystemExit(1)
+
+    expected_carbons = int(match.group(1))
+    observed_peaks = len(peaks.peaks)
+    difference = expected_carbons - observed_peaks
 
     if output_format == "json":
         data = {
-            "molecular_formula": result.molecular_formula,
-            "signal_count": result.signal_count,
-            "expected_carbons": result.expected_carbons,
-            "missing_carbons": result.missing_carbons,
-            "has_symmetry": result.has_symmetry,
-            "hydrogen_budget": {
-                "expected_h": result.hydrogen_budget.expected_h,
-                "total_accounted": result.hydrogen_budget.total_accounted,
-                "missing_h": result.hydrogen_budget.missing_h,
-                "has_equivalents": result.hydrogen_budget.has_equivalents,
-            },
-            "intensity_report": {
-                "peak_count": len(result.intensity_report.peaks),
-                "has_potential_equivalents": result.intensity_report.has_potential_equivalents,
-                "high_intensity_peaks": [
-                    {
-                        "carbon_shift": p.carbon_shift,
-                        "proton_shift": p.proton_shift,
-                        "multiplicity": p.multiplicity,
-                        "relative_intensity": p.relative_intensity,
-                    }
-                    for p in result.intensity_report.peaks
-                    if p.is_potential_equivalent
-                ],
-            },
+            "formula": formula,
+            "expected_carbons": expected_carbons,
+            "observed_peaks": observed_peaks,
+            "difference": difference,
         }
         click.echo(json.dumps(data, indent=2))
     else:
-        click.echo(result.summary())
+        click.echo(f"Symmetry Analysis for {formula}")
+        click.echo(f"  Expected carbons: {expected_carbons}")
+        click.echo(f"  Observed peaks: {observed_peaks}")
+        click.echo(f"  Difference: {difference}")
+        if difference > 0:
+            click.echo(f"  → {difference} carbons may be equivalent due to symmetry")
+        elif difference < 0:
+            click.echo(f"  → Warning: More peaks than expected carbons")
