@@ -217,11 +217,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DIAG-06 | Phase 30 | Complete |
 | DIAG-07 | Phase 30 | Complete |
 | DIAG-08 | Phase 30 | Complete |
-| SCMD-03 | Phase 31 | Pending |
-| SANT-01 | Phase 31 | Pending |
-| SANT-02 | Phase 31 | Pending |
-| SANT-03 | Phase 31 | Pending |
-| SANT-04 | Phase 31 | Pending |
+| SCMD-03 | Phase 31 | Complete |
+| SANT-01 | Phase 31 | Complete |
+| SANT-02 | Phase 31 | Complete |
+| SANT-03 | Phase 31 | Complete |
+| SANT-04 | Phase 31 | Complete |
 | VALD-01 | Phase 32 | Pending |
 | VALD-02 | Phase 32 | Pending |
 | VALD-03 | Phase 32 | Pending |

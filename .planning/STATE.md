@@ -11,9 +11,9 @@ See: .planning/PROJECT.md (updated 2026-02-08)
 
 **Milestone**: v2.1 Working Multi-Agent CASE
 **Phase**: Phase 31 (Sanitization Skill) — COMPLETE
-**Plan**: 31-01 complete (7/7 must-haves)
-**Status**: Phase complete
-**Last activity**: 2026-02-08 — Completed 31-01-PLAN.md
+**Plan**: 31-01 complete, verified (7/7 must-haves)
+**Status**: Phase complete, verified
+**Last activity**: 2026-02-08 — Phase 31 verified and closed
 
 Progress: [█████████████░░░░░░░░░░░░░░░░] 71% (5/7 phases)
 
