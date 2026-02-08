@@ -10,12 +10,12 @@ See: .planning/PROJECT.md (updated 2026-02-06)
 ## Current Position
 
 **Milestone**: v2.0 Robust Multi-Agent CASE
-**Phase**: 26 of 26 (Thin Tools) -- IN PROGRESS
-**Plan**: 3 of 3 complete
-**Status**: Code consolidation complete (database finder, LSD input parser)
-**Last activity**: 2026-02-08 -- Completed 26-03-PLAN.md (code consolidation)
+**Phase**: 26 of 26 (Thin Tools) -- COMPLETE
+**Plan**: 1 of 1 complete (Plans 02-03 were executed earlier out of sequence)
+**Status**: MCP infrastructure removed, single interface architecture (CLI only)
+**Last activity**: 2026-02-08 -- Completed 26-01-PLAN.md (remove MCP server)
 
-Progress: [=============================] 100% (31 plans complete, Phase 26 COMPLETE)
+Progress: [=============================] 100% (29 unique plans complete, Phase 26 COMPLETE)
 
 ## Completed Milestones
 
@@ -105,6 +105,10 @@ Recent decisions affecting current work:
 - 25-02: Task tool template provided for spawning diagnostic-specialist
 - 25-02: Post-diagnostic workflow: read DIAGNOSTIC-REPORT.md, extract root cause/fixes, advise CASE agent
 - 25-02: DIAGNOSTIC-REPORT.md retention: single file, latest only (history in CASE-PROGRESS.md)
+- 26-01: MCP infrastructure removed (1,764 lines deleted: server.py, __init__.py, tests)
+- 26-01: Single interface architecture - AI agent uses CLI via Bash tool exclusively
+- 26-01: lucy-mcp entry point and mcp optional dependency removed from pyproject.toml
+- 26-01: Test suite updated after MCP removal (DatabaseFinder methods, current CLI API)
 - 26-03: DatabaseFinder.find_hose_database() reuses find_derep_database() (same file, comprehensive search)
 - 26-03: Database/table finding consolidated in database.finder (4 functions, 3 CLI modules → 1 utility)
 - 26-03: LSD input parsing moved to lsd.parser alongside output parsing (symmetry with LSDOutputParser)
@@ -126,8 +130,8 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-08
-Stopped at: Completed Phase 26 Plan 03 (code consolidation) - PHASE 26 COMPLETE
+Stopped at: Completed Phase 26 Plan 01 (remove MCP server) - PHASE 26 COMPLETE, v2.0 SHIPPED
 Resume file: None
 
 ---
-*Last updated: 2026-02-08 after Phase 26 Plan 03 completion*
+*Last updated: 2026-02-08 after Phase 26 Plan 01 completion*
