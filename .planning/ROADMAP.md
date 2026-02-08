@@ -545,7 +545,10 @@ Plans:
   4. Ibuprofen CASE passes via /lucy-ng:case -- reproduces Phase 26-05 success through full orchestration (spawn → monitor → detect → intervene if needed → converge to correct structure in top 3)
   5. All simple sub-commands work: /lucy-ng:dereplicate returns matches, /lucy-ng:predict returns shifts, /lucy-ng:status reports system readiness
 
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+- [ ] 32-01-PLAN.md -- Run pre-flight checks, create validation guide with test instructions and expected outcomes
 
 ---
 
@@ -603,7 +606,7 @@ Plans:
 | 29. CASE Orchestrator Skill | v2.1 | 1/1 | Complete | 2026-02-08 |
 | 30. Diagnostic Specialist Integration | v2.1 | 1/1 | Complete | 2026-02-08 |
 | 31. Sanitization Skill | v2.1 | 1/1 | Complete | 2026-02-08 |
-| 32. End-to-End Validation | v2.1 | 0/TBD | Pending | - |
+| 32. End-to-End Validation | v2.1 | 0/1 | Pending | - |
 | 33. Documentation and Cleanup | v2.1 | 0/TBD | Pending | - |
 
 ---
