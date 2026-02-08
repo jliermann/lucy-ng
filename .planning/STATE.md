@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-06)
 
 **Milestone**: v2.0 Robust Multi-Agent CASE
 **Phase**: 26 of 26 (Thin Tools) -- IN PROGRESS
-**Plan**: 2 of 3 complete
-**Status**: CLI Tier 3 commands thinned (26-02), MCP deleted (26-01), consolidation done (26-03)
-**Last activity**: 2026-02-08 -- Completed 26-02-PLAN.md (thin CLI commands)
+**Plan**: 3 of 3 complete
+**Status**: Code consolidation complete (database finder, LSD input parser)
+**Last activity**: 2026-02-08 -- Completed 26-03-PLAN.md (code consolidation)
 
-Progress: [============================|=] 98% (30 plans complete, final phase nearing completion)
+Progress: [=============================] 100% (31 plans complete, Phase 26 COMPLETE)
 
 ## Completed Milestones
 
@@ -39,8 +39,8 @@ Progress: [============================|=] 98% (30 plans complete, final phase n
 - Phase 23 completed in 2 plans (~9 min total: 3 min + 6 min)
 - Phase 24 completed in 2 plans (~6 min total: 4 min + 2 min)
 - Phase 25 completed in 2 plans (~14 min total: 10 min + 4 min)
-- Phase 26 Plan 02 completed in ~5 min
-- Trend: Maintaining velocity on documentation/refactor tasks (< 15 min per phase)
+- Phase 26 completed in 3 plans (~23 min total: 5 min + 5 min + 13 min)
+- Trend: Maintaining velocity on documentation/refactor tasks (< 15 min per plan)
 
 ## Accumulated Context
 
@@ -105,6 +105,9 @@ Recent decisions affecting current work:
 - 25-02: Task tool template provided for spawning diagnostic-specialist
 - 25-02: Post-diagnostic workflow: read DIAGNOSTIC-REPORT.md, extract root cause/fixes, advise CASE agent
 - 25-02: DIAGNOSTIC-REPORT.md retention: single file, latest only (history in CASE-PROGRESS.md)
+- 26-03: DatabaseFinder.find_hose_database() reuses find_derep_database() (same file, comprehensive search)
+- 26-03: Database/table finding consolidated in database.finder (4 functions, 3 CLI modules → 1 utility)
+- 26-03: LSD input parsing moved to lsd.parser alongside output parsing (symmetry with LSDOutputParser)
 - 26-02: CLI Tier 3 commands thinned: pick hsqc/hmbc take single path, return raw peaks
 - 26-02: analyze symmetry takes formula + 13C path, returns raw counts (no DEPT, no intensity analysis)
 - 26-02: lucy lsd generate removed entirely - AI writes LSD files using LSDInputGenerator library
@@ -112,10 +115,9 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- Phase 25 COMPLETE: Multi-agent CASE operational (supervisor + CASE agent + diagnostic specialist)
-- Phase 26 ready: CLI thin wrappers + MCP tool architecture for intelligence migration
-- 8 intelligence hotspot modules (~2,139 lines) identified for progressive migration through Phases 24-26
-- 3 code consolidation targets (experiment auto-discovery, database finder, LSD parser) queued for Phase 26
+- Phase 26 COMPLETE: MCP removed, CLI thinned, code consolidated
+- v2.0 Robust Multi-Agent CASE milestone COMPLETE
+- All 26 phases shipped, project ready for real-world CASE workflows
 
 ### Blockers/Concerns
 
@@ -124,8 +126,8 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-08
-Stopped at: Completed Phase 26 Plan 02 (thin CLI commands)
+Stopped at: Completed Phase 26 Plan 03 (code consolidation) - PHASE 26 COMPLETE
 Resume file: None
 
 ---
-*Last updated: 2026-02-08 after Phase 26 Plan 02 completion*
+*Last updated: 2026-02-08 after Phase 26 Plan 03 completion*
