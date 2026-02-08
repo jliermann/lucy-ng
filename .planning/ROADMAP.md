@@ -431,7 +431,7 @@ Plans:
 **Phase overview:**
 
 - [x] **Phase 27: Sub-Command Skills Foundation** -- COMPLETE 2026-02-08. ~/.claude/commands/lucy-ng/ with 4 files (status, dereplicate, predict, routing page)
-- [ ] **Phase 28: CASE Agent Definition** -- Prove Task() spawning works with autonomous CASE agent
+- [x] **Phase 28: CASE Agent Definition** -- COMPLETE 2026-02-08. ~/.claude/agents/lucy-case-agent.md (613 lines, 528 inlined knowledge, all 5 CASE reqs validated)
 - [ ] **Phase 29: CASE Orchestrator Skill** -- Core orchestration: spawn, monitor, detect loops, intervene, escalate
 - [ ] **Phase 30: Diagnostic Specialist Integration** -- Deep diagnosis after 2 failed basic interventions
 - [ ] **Phase 31: Sanitization Skill** -- AI-driven dataset sanitization (no CLI)
@@ -473,7 +473,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 28-01-PLAN.md -- Create lucy-case-agent.md with YAML frontmatter, inlined skill knowledge, workflow, and progress format; validate against all 5 CASE requirements
+- [x] 28-01-PLAN.md -- Create lucy-case-agent.md with YAML frontmatter, inlined skill knowledge, workflow, and progress format; validate against all 5 CASE requirements
 
 ---
 
@@ -588,7 +588,7 @@ Plans:
 | 25. Diagnostic Specialist | v2.0 | 2/2 | Complete | 2026-02-07 |
 | 26. Thin Tools | v2.0 | 5/5 | Complete | 2026-02-08 |
 | 27. Sub-Command Skills Foundation | v2.1 | 2/2 | Complete | 2026-02-08 |
-| 28. CASE Agent Definition | v2.1 | 0/1 | Planned | - |
+| 28. CASE Agent Definition | v2.1 | 1/1 | Complete | 2026-02-08 |
 | 29. CASE Orchestrator Skill | v2.1 | 0/TBD | Pending | - |
 | 30. Diagnostic Specialist Integration | v2.1 | 0/TBD | Pending | - |
 | 31. Sanitization Skill | v2.1 | 0/TBD | Pending | - |
@@ -596,4 +596,4 @@ Plans:
 | 33. Documentation and Cleanup | v2.1 | 0/TBD | Pending | - |
 
 ---
-*Last updated: 2026-02-08 after Phase 28 planning*
+*Last updated: 2026-02-08 after Phase 28 execution complete*

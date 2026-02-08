@@ -88,11 +88,11 @@ Requirements for v2.1 Working Multi-Agent CASE. Sub-command skills, real agent o
 
 ### Autonomous CASE Agent
 
-- [ ] **CASE-01**: CASE agent definition at `~/.claude/agents/lucy-case-agent.md` with YAML frontmatter (name, description, tools: Read + Write + Bash + Glob + Grep)
-- [ ] **CASE-02**: CASE agent receives inlined skill content (NMR background, CASE workflow, LSD basics, CASE-PROGRESS.md format) plus file path references for detailed domain knowledge
-- [ ] **CASE-03**: CASE agent writes CASE-PROGRESS.md after EVERY LSD iteration with required fields (solution count, constraints added/removed, reasoning, confidence, sp2/H checks)
-- [ ] **CASE-04**: CASE agent follows skill/CASE/SKILL.md workflow — NEVER attempts dereplication (absolute separation)
-- [ ] **CASE-05**: CASE agent implements advisory constraints from supervisor (understands WHAT to fix, decides HOW autonomously)
+- [x] **CASE-01**: CASE agent definition at `~/.claude/agents/lucy-case-agent.md` with YAML frontmatter (name, description, tools: Read + Write + Bash + Glob + Grep)
+- [x] **CASE-02**: CASE agent receives inlined skill content (NMR background, CASE workflow, LSD basics, CASE-PROGRESS.md format) plus file path references for detailed domain knowledge
+- [x] **CASE-03**: CASE agent writes CASE-PROGRESS.md after EVERY LSD iteration with required fields (solution count, constraints added/removed, reasoning, confidence, sp2/H checks)
+- [x] **CASE-04**: CASE agent follows skill/CASE/SKILL.md workflow — NEVER attempts dereplication (absolute separation)
+- [x] **CASE-05**: CASE agent implements advisory constraints from supervisor (understands WHAT to fix, decides HOW autonomously)
 
 ### CASE Orchestration
 
@@ -200,11 +200,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SCMD-05 | Phase 27 | Complete |
 | SCMD-06 | Phase 27 | Complete |
 | SCMD-07 | Phase 27 | Complete |
-| CASE-01 | Phase 28 | Pending |
-| CASE-02 | Phase 28 | Pending |
-| CASE-03 | Phase 28 | Pending |
-| CASE-04 | Phase 28 | Pending |
-| CASE-05 | Phase 28 | Pending |
+| CASE-01 | Phase 28 | Complete |
+| CASE-02 | Phase 28 | Complete |
+| CASE-03 | Phase 28 | Complete |
+| CASE-04 | Phase 28 | Complete |
+| CASE-05 | Phase 28 | Complete |
 | SCMD-02 | Phase 29 | Pending |
 | ORCH-01 | Phase 29 | Pending |
 | ORCH-02 | Phase 29 | Pending |
