@@ -222,11 +222,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SANT-02 | Phase 31 | Complete |
 | SANT-03 | Phase 31 | Complete |
 | SANT-04 | Phase 31 | Complete |
-| VALD-01 | Phase 32 | Pending |
-| VALD-02 | Phase 32 | Pending |
-| VALD-03 | Phase 32 | Pending |
-| VALD-04 | Phase 32 | Pending |
-| VALD-05 | Phase 32 | Pending |
+| VALD-01 | Phase 32 | Complete |
+| VALD-02 | Phase 32 | Complete |
+| VALD-03 | Phase 32 | Complete |
+| VALD-04 | Phase 32 | Complete |
+| VALD-05 | Phase 32 | Complete |
 | CLNP-01 | Phase 33 | Pending |
 | CLNP-02 | Phase 33 | Pending |
 | CLNP-03 | Phase 33 | Pending |
