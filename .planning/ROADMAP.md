@@ -508,7 +508,10 @@ Plans:
   3. Orchestrator reads DIAGNOSTIC-REPORT.md, extracts root cause and primary fix, and includes in CASE agent advisory on next spawn
   4. Integration test passes: force repeated zero-solution failure, verify specialist spawned after 2 basic intervention failures, DIAGNOSTIC-REPORT.md created with systematic check results
 
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+- [ ] 30-01-PLAN.md -- Rename diagnostic agent to lucy-diagnostic.md, wire delegation trigger + specialist spawning + report parsing into case.md orchestrator
 
 ---
 
@@ -593,10 +596,10 @@ Plans:
 | 27. Sub-Command Skills Foundation | v2.1 | 2/2 | Complete | 2026-02-08 |
 | 28. CASE Agent Definition | v2.1 | 1/1 | Complete | 2026-02-08 |
 | 29. CASE Orchestrator Skill | v2.1 | 1/1 | Complete | 2026-02-08 |
-| 30. Diagnostic Specialist Integration | v2.1 | 0/TBD | Pending | - |
+| 30. Diagnostic Specialist Integration | v2.1 | 0/1 | Pending | - |
 | 31. Sanitization Skill | v2.1 | 0/TBD | Pending | - |
 | 32. End-to-End Validation | v2.1 | 0/TBD | Pending | - |
 | 33. Documentation and Cleanup | v2.1 | 0/TBD | Pending | - |
 
 ---
-*Last updated: 2026-02-08 after Phase 29 execution complete*
+*Last updated: 2026-02-08 after Phase 30 planning complete*
