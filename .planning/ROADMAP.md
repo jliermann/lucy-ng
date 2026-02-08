@@ -491,7 +491,10 @@ Plans:
   7. Orchestrator escalates to user after 10 failed intervention cycles per pattern
   8. Orchestrator re-spawns agent with advisory constraints and skip-completed-work instructions in handoff
 
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+- [ ] 29-01-PLAN.md -- Create case.md orchestrator skill with spawning, monitoring, loop detection, diagnosis, advisory, escalation, re-spawning; update routing page
 
 ---
 
