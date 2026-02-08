@@ -10,12 +10,12 @@ See: .planning/PROJECT.md (updated 2026-02-08)
 ## Current Position
 
 **Milestone**: v2.1 Working Multi-Agent CASE
-**Phase**: Phase 31 (Sanitization Skill) — COMPLETE
-**Plan**: 31-01 complete, verified (7/7 must-haves)
-**Status**: Phase complete, verified
-**Last activity**: 2026-02-08 — Phase 31 verified and closed
+**Phase**: Phase 32 (End-to-End Validation) — IN PROGRESS
+**Plan**: 32-01 complete (validation guide and pre-flight checks)
+**Status**: Validation ready — awaiting user test execution
+**Last activity**: 2026-02-08 — Completed 32-01-PLAN.md (validation guide created)
 
-Progress: [█████████████░░░░░░░░░░░░░░░░] 71% (5/7 phases)
+Progress: [██████████████░░░░░░░░░░░░░░░] 86% (6/7 phases)
 
 ## Completed Milestones
 
@@ -66,12 +66,15 @@ Recent decisions affecting current work:
 - Phase 31: Pure AI sanitisation workflow (no CLI, no scripts)
 - Phase 31: [REDACTED] replacement string for all identifier redactions
 - Phase 31: Full re-scan verification (second pass confirms completeness)
+- Phase 32: Pre-flight checks before validation guide creation (document actual readiness)
+- Phase 32: Exact paths in test instructions (no placeholders for copy-paste ease)
+- Phase 32: 7 known failure modes documented with symptoms, causes, fixes
 
 ### Pending Todos
 
-- Plan Phase 32 (Agent Testing)
-- Prove Task() spawning works with autonomous CASE agent (Phase 32)
-- Phase 31 sanitisation skill complete — ready for agent testing
+- Execute validation tests per 32-VALIDATION-GUIDE.md (user action)
+- Prove Task() spawning works with autonomous CASE agent (Phase 32 user test)
+- Complete Phase 33 (cleanup) after validation passes
 
 ### Blockers/Concerns
 
@@ -83,8 +86,9 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-08
-Stopped at: Phase 31 complete
-Resume file: .planning/ROADMAP.md (Phase 32 next)
+Stopped at: Phase 32-01 complete (validation guide ready)
+Resume file: .planning/phases/32-end-to-end-validation/32-VALIDATION-GUIDE.md
+Next action: User executes validation tests per guide
 
 ---
-*Last updated: 2026-02-08 after Phase 31 execution complete*
+*Last updated: 2026-02-08 after Phase 32-01 execution complete*
