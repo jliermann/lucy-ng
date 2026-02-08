@@ -525,7 +525,12 @@ Plans:
   3. AI generates redaction manifest and applies bulk sanitization using existing helper scripts (lucy_text_extractor.py, lucy_bulk_sanitize.py)
   4. Skill verifies completeness by re-extracting text and confirming no identifiers remain
 
-**Plans**: TBD
+NOTE: Success criterion #3 mentions helper scripts but CONTEXT.md OVERRIDES this -- pure AI approach, no scripts.
+
+**Plans**: 1 plan
+
+Plans:
+- [ ] 31-01-PLAN.md -- Create sanitise.md skill, delete old skill/sanitize/ directory, update routing page
 
 ---
 
@@ -597,9 +602,9 @@ Plans:
 | 28. CASE Agent Definition | v2.1 | 1/1 | Complete | 2026-02-08 |
 | 29. CASE Orchestrator Skill | v2.1 | 1/1 | Complete | 2026-02-08 |
 | 30. Diagnostic Specialist Integration | v2.1 | 1/1 | Complete | 2026-02-08 |
-| 31. Sanitization Skill | v2.1 | 0/TBD | Pending | - |
+| 31. Sanitization Skill | v2.1 | 0/1 | Planned | - |
 | 32. End-to-End Validation | v2.1 | 0/TBD | Pending | - |
 | 33. Documentation and Cleanup | v2.1 | 0/TBD | Pending | - |
 
 ---
-*Last updated: 2026-02-08 after Phase 30 execution complete*
+*Last updated: 2026-02-08 after Phase 31 planning complete*
