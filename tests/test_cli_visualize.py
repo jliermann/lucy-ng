@@ -10,10 +10,10 @@ from click.testing import CliRunner
 
 from lucy_ng.cli.visualize import (
     parse_correlation_string,
-    parse_lsd_input_file,
     parse_shifts,
     visualize,
 )
+from lucy_ng.lsd.parser import LSDInputParser
 from lucy_ng.visualization import CorrelationType
 
 
@@ -93,7 +93,7 @@ MULT 3 O 2 0
             f.flush()
             path = Path(f.name)
 
-        problem = parse_lsd_input_file(path)
+        problem = LSDInputParser.parse_file(path)
         path.unlink()
 
         assert len(problem.atoms) == 3
@@ -116,7 +116,7 @@ HMBC 2 1
             f.flush()
             path = Path(f.name)
 
-        problem = parse_lsd_input_file(path)
+        problem = LSDInputParser.parse_file(path)
         path.unlink()
 
         assert len(problem.correlations) == 4

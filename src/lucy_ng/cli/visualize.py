@@ -9,6 +9,7 @@ from pathlib import Path
 import click
 
 from lucy_ng.lsd.models import Hybridization, LSDAtom, LSDCorrelation, LSDProblem
+from lucy_ng.lsd.parser import LSDInputParser
 from lucy_ng.visualization import (
     Correlation,
     CorrelationDiagramGenerator,
@@ -183,7 +184,7 @@ def visualize_correlations(
         # Parse LSD file if provided
         lsd_problem = None
         if lsd_file:
-            lsd_problem = parse_lsd_input_file(Path(lsd_file))
+            lsd_problem = LSDInputParser.parse_file(Path(lsd_file))
 
         # Parse correlations from command line
         parsed_correlations: list[Correlation] = []
@@ -297,100 +298,3 @@ def parse_shifts(shifts_str: str) -> dict[int, float]:
         return {}
 
 
-def parse_lsd_input_file(lsd_path: Path) -> LSDProblem:
-    """Parse an LSD input file into an LSDProblem.
-
-    This is a simple parser for LSD input format that extracts:
-    - MULT commands (atom definitions)
-    - HSQC correlations
-    - HMBC correlations
-    - COSY correlations
-
-    Args:
-        lsd_path: Path to .lsd input file
-
-    Returns:
-        LSDProblem object
-    """
-    content = lsd_path.read_text()
-    problem = LSDProblem(name=lsd_path.stem)
-
-    for line in content.split("\n"):
-        line = line.strip()
-
-        # Skip comments and empty lines
-        if not line or line.startswith(";"):
-            continue
-
-        parts = line.split()
-        if not parts:
-            continue
-
-        cmd = parts[0].upper()
-
-        if cmd == "MULT" and len(parts) >= 5:
-            # MULT atom_num element hybridization h_count [charge]
-            try:
-                index = int(parts[1])
-                element = parts[2]
-                hyb_val = int(parts[3])
-                h_count = int(parts[4])
-                charge = int(parts[5]) if len(parts) > 5 else 0
-
-                hyb_map = {1: Hybridization.SP, 2: Hybridization.SP2, 3: Hybridization.SP3}
-                hybridization = hyb_map.get(hyb_val, Hybridization.SP3)
-
-                atom = LSDAtom(
-                    index=index,
-                    element=element,
-                    hybridization=hybridization,
-                    hydrogen_count=h_count,
-                    charge=charge,
-                )
-                problem.add_atom(atom)
-            except (ValueError, IndexError):
-                pass
-
-        elif cmd in ("HSQC", "HMQC") and len(parts) >= 3:
-            # HSQC carbon_idx proton_idx
-            try:
-                atom1 = int(parts[1])
-                atom2 = int(parts[2])
-                corr = LSDCorrelation(
-                    atom1_index=atom1,
-                    atom2_index=atom2,
-                    correlation_type="HSQC",
-                )
-                problem.add_correlation(corr)
-            except ValueError:
-                pass
-
-        elif cmd == "HMBC" and len(parts) >= 3:
-            # HMBC carbon_idx proton_idx
-            try:
-                atom1 = int(parts[1])
-                atom2 = int(parts[2])
-                corr = LSDCorrelation(
-                    atom1_index=atom1,
-                    atom2_index=atom2,
-                    correlation_type="HMBC",
-                )
-                problem.add_correlation(corr)
-            except ValueError:
-                pass
-
-        elif cmd == "COSY" and len(parts) >= 3:
-            # COSY h_idx1 h_idx2
-            try:
-                atom1 = int(parts[1])
-                atom2 = int(parts[2])
-                corr = LSDCorrelation(
-                    atom1_index=atom1,
-                    atom2_index=atom2,
-                    correlation_type="COSY",
-                )
-                problem.add_correlation(corr)
-            except ValueError:
-                pass
-
-    return problem
