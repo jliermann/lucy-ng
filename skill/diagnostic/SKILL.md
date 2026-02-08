@@ -1140,18 +1140,20 @@ Correlations to check:
 
 ### Fix 3: Re-run Guided HMBC Picker with Artifact Exclusion (SECONDARY)
 
-**Action:** If multiple artifacts found, regenerate HMBC correlation list using guided HMBC picker with stricter artifact exclusion.
+**Action:** If multiple artifacts found, regenerate HMBC correlation list using guided HMBC cross-validation (see skill/SKILL.md Section 3) with stricter artifact exclusion.
 
 ```bash
-# Assuming lucy-ng CLI or MCP tools available
-pick_hmbc_peaks --exclude-1j-artifacts --tolerance-C 1.5 --tolerance-H 0.3
+# Get raw HMBC peaks, then apply cross-validation filtering
+lucy pick hmbc <hmbc_path> --format json
+# Apply tolerances: ±1.5 ppm (C), ±0.3 ppm (H) during filtering
+# Exclude any peaks within ±1.5 ppm carbon / ±0.3 ppm proton of HSQC correlations (1J artifacts)
 ```
 
 **Verification:**
-1. Check that guided picker excluded all flagged correlations from iteration 3
+1. Check that filtered list excluded all flagged correlations from iteration 3
 2. Verify new correlation list has no overlaps with HSQC positions
 
-**Confidence:** MEDIUM — depends on guided picker implementation having artifact detection logic. If not implemented, this fix may not be feasible in current version.
+**Confidence:** MEDIUM — depends on careful application of cross-validation logic with artifact detection.
 
 ---
 

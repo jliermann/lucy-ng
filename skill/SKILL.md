@@ -1,22 +1,17 @@
 ---
 name: lucy-ng
-description: Computer-Assisted Structure Elucidation (CASE) for organic natural products using NMR spectroscopy. Use when the user asks to identify an unknown compound from NMR data, perform structure elucidation, analyze HSQC/HMBC/DEPT/COSY spectra, run dereplication against natural product databases (COCONUT, NMRShiftDB), generate LSD solver input, rank candidate structures by 13C prediction, or determine molecular structure from Bruker NMR data. Requires molecular formula and Bruker-format NMR spectra.
-tools:
-  - read_spectrum_1d
-  - read_spectrum_2d
-  - pick_peaks_1d
-  - pick_hsqc_peaks
-  - pick_hmbc_peaks
-  - analyze_symmetry
-  - dereplicate_c13
-  - check_lsd_availability
-  - generate_lsd_input
-  - run_lsd
-  - rank_lsd_solutions
-  - predict_c13_shifts
-  - get_hose_stats_info
-  - fetch_nmrxiv_dataset
-  - generate_correlation_diagram
+description: Computer-Assisted Structure Elucidation (CASE) for organic natural products using NMR spectroscopy. Use when the user asks to identify an unknown compound from NMR data, perform structure elucidation, analyze HSQC/HMBC/DEPT/COSY spectra, run dereplication against natural product databases (COCONUT, NMRShiftDB), rank candidate structures by 13C prediction, or determine molecular structure from Bruker NMR data. Requires molecular formula and Bruker-format NMR spectra. The AI agent applies domain intelligence via thin CLI commands through the Bash tool.
+interface: CLI via Bash tool
+commands:
+  - lucy read 1d/2d
+  - lucy pick 1d/2d/hsqc/hmbc
+  - lucy analyze symmetry
+  - lucy dereplicate c13
+  - lucy predict c13
+  - lucy lsd check/run/rank/analyze
+  - lucy visualize correlations
+  - lucy database info/download
+  - lucy fetch nmrxiv
 ---
 
 # lucy-ng CASE Domain Knowledge
@@ -170,38 +165,52 @@ Use threshold 0.05 as default. The picker uses a two-pass algorithm with FWHM fa
 
 ### HSQC DEPT-Guided Strategy
 
-Use `pick_hsqc_peaks` with DEPT-135 as ground truth. Algorithm iteratively lowers HSQC threshold (starting 0.10, down to 0.005) until all DEPT carbons are matched. Only HSQC peaks at valid DEPT positions are retained. Multiplicity extraction from DEPT-135 peak sign: positive peaks = CH or CH3, negative peaks = CH2. With DEPT-90, distinguish CH (visible) from CH3 (invisible in DEPT-90).
+Use `lucy pick hsqc <path>` to get raw HSQC peaks above threshold (default 0.05). Then apply DEPT-guided filtering yourself using domain knowledge:
 
-Python API:
-```python
-result = DEPTGuidedPicker.pick_hsqc_peaks_with_dept90(hsqc, dept135, dept90)
-# or
-result = DEPTGuidedPicker.pick_hsqc_peaks(hsqc, dept135)
-```
+**DEPT-guided filtering procedure:**
 
-Override threshold manually if DEPT contains very weak signals not found by iterative lowering or if HSQC has unusual artifacts requiring a higher starting threshold.
+1. Pick DEPT-135 peaks: `lucy pick 1d <dept135_path> --format json`
+2. Extract DEPT carbon positions and signs (positive = CH/CH3, negative = CH2)
+3. Pick raw HSQC peaks: `lucy pick hsqc <hsqc_path> --format json`
+4. For each HSQC peak, match carbon position to DEPT carbons within ±1.5 ppm tolerance
+5. Retain only HSQC peaks at valid DEPT positions
+6. Extract multiplicity from DEPT sign:
+   - Positive DEPT peak → CH or CH3
+   - Negative DEPT peak → CH2
+7. If DEPT-90 available, disambiguate CH vs CH3:
+   - Peak visible in DEPT-90 → CH
+   - Peak absent in DEPT-90 but positive in DEPT-135 → CH3
+
+**Tolerance:** ±1.5 ppm for carbon matching between HSQC and DEPT.
+
+Adjust threshold if needed: increase to 0.08-0.10 for noisy spectra, decrease to 0.03 for weak signals.
 
 ### HMBC Cross-Validation Strategy
 
-Use `pick_hmbc_peaks` to cross-validate against known 13C and HSQC positions. Tolerances: 13C ±1.5 ppm (carbon dimension less precise than proton), 1H ±0.1 ppm. A real HMBC correlation requires the carbon exists (visible in 13C or DEPT) and the proton exists (attached to a carbon visible in HSQC). Include quaternary carbons from 13C when checking HMBC signals.
+Use `lucy pick hmbc <path>` to get raw HMBC peaks above threshold (default 0.05). Then apply cross-validation yourself using domain knowledge:
 
-Python API:
-```python
-result = HMBCGuidedPicker.pick_hmbc_peaks_from_spectra(
-    hmbc=hmbc,
-    carbon_spectrum=c13,
-    hsqc=hsqc,
-    dept135=dept135  # optional, adds extra carbon positions
-)
-```
+**HMBC cross-validation procedure:**
+
+1. Pick 13C peaks: `lucy pick 1d <c13_path> --format json` (all carbons including quaternary)
+2. Pick DEPT-135 peaks if available: `lucy pick 1d <dept135_path> --format json` (protonated carbons only)
+3. Get HSQC peak list from previous DEPT-guided filtering (provides valid proton positions)
+4. Pick raw HMBC peaks: `lucy pick hmbc <hmbc_path> --format json`
+5. For each HMBC peak, validate:
+   - Carbon position exists in 13C or DEPT-135 within ±1.5 ppm tolerance
+   - Proton position exists in HSQC peak list within ±0.1 ppm tolerance
+6. Retain only validated HMBC peaks
+
+**Tolerances:**
+- ±1.5 ppm for carbon dimension (13C less precise than proton)
+- ±0.1 ppm for proton dimension
 
 Adjust tolerances when: 13C dimension has poor digital resolution (increase to ±2.0 ppm) or 1H dimension shows line broadening (increase to ±0.15 ppm). Most spectra use default tolerances.
 
-After HMBC guided picking, check quaternary carbons with 0-1 correlations. If found, attempt targeted threshold reduction per Section 10.3 before proceeding to LSD generation.
+After HMBC cross-validation, check quaternary carbons with 0-1 correlations. If found, attempt targeted threshold reduction per Section 10.3 before proceeding to LSD generation.
 
 ### APT as DEPT Alternative
 
-APT (Attached Proton Test) can replace DEPT-135 when unavailable. Positive peaks = CH and CH3 (odd number of attached H). Negative peaks = CH2 and quaternary C (even number). Use `pick_peaks_1d` on APT for carbon positions. Pick HSQC with raw threshold 0.05. Cross-reference APT phase with HSQC intensity: high-intensity HSQC + positive APT = likely CH3, medium-intensity + positive APT = likely CH, HSQC present + negative APT = CH2, no HSQC + negative APT = quaternary C. APT cannot distinguish CH from CH3 without HSQC intensity or shift patterns.
+APT (Attached Proton Test) can replace DEPT-135 when unavailable. Positive peaks = CH and CH3 (odd number of attached H). Negative peaks = CH2 and quaternary C (even number). Use `lucy pick 1d <apt_path>` for carbon positions. Pick HSQC with raw threshold 0.05. Cross-reference APT phase with HSQC intensity: high-intensity HSQC + positive APT = likely CH3, medium-intensity + positive APT = likely CH, HSQC present + negative APT = CH2, no HSQC + negative APT = quaternary C. APT cannot distinguish CH from CH3 without HSQC intensity or shift patterns.
 
 ---
 
@@ -209,7 +218,16 @@ APT (Attached Proton Test) can replace DEPT-135 when unavailable. Positive peaks
 
 ### Expected vs Observed Signal Count
 
-Molecular formula defines expected carbon count. 13C spectrum shows observed signal count. If observed < expected, molecular symmetry is causing equivalent atoms to overlap. The difference indicates how many carbons are symmetrically equivalent. Use `analyze_symmetry` to detect and quantify discrepancies.
+Molecular formula defines expected carbon count. 13C spectrum shows observed signal count. If observed < expected, molecular symmetry is causing equivalent atoms to overlap. The difference indicates how many carbons are symmetrically equivalent. Use `lucy analyze symmetry <formula> <c13_path>` to get raw observed vs expected carbon counts. Then reason about symmetry yourself:
+
+**Symmetry detection procedure:**
+
+1. Run `lucy analyze symmetry <formula> <c13_path> --format json`
+2. Extract `expected_carbons` and `observed_peaks` from output
+3. Calculate difference: expected - observed
+4. If difference > 0, molecular symmetry is present
+5. Examine HSQC intensities for doubled signals (~2x intensity indicates equivalent carbons)
+6. Identify common symmetric motifs (see below)
 
 ### Intensity-Based Equivalence
 
@@ -532,28 +550,29 @@ HOSE prediction errors: carbonyl carbons can vary ±5-10 ppm, conjugated systems
 
 0. **Documentation**: Create `analysis/` folder to document all steps and results. Document immediately after each step so the user can follow while you work.
 
-1. **Dereplication**: Check known compounds first using `dereplicate_c13`. If score > 0.85, likely identified. If score 0.65-0.85, possible match (verify carefully). If score < 0.50, proceed to full elucidation.
+1. **Dereplication**: Check known compounds first using `lucy dereplicate c13 <path> <formula>`. If score > 0.85, likely identified. If score 0.65-0.85, possible match (verify carefully). If score < 0.50, proceed to full elucidation.
 
-2. **Symmetry**: Run `analyze_symmetry` to detect equivalent atoms. If observed carbons < expected carbons, account for symmetry in LSD constraints.
+2. **Symmetry**: Run `lucy analyze symmetry <formula> <c13_path>` to get raw observed vs expected carbon counts. Reason about symmetry as described in Section 4. If observed < expected carbons, account for symmetry in LSD constraints.
 
 2.5. **Quality Assessment**: Assess spectral quality (S/N, digital resolution, artifacts) for ALL spectra before peak picking. See Section 2 for quality tiers and strategy adjustments. Document quality findings in analysis folder. If quality is poor (SNR < 10 or resolution < 2 pts/ppm), warn user before proceeding.
 
 3. **Peak Picking**:
-   - `pick_peaks_1d` for 13C carbon peaks
-   - `pick_hsqc_peaks` with DEPT-135 for direct C-H correlations (use DEPT-guided picker)
-   - `pick_hmbc_peaks` with 13C and HSQC for long-range correlations (use cross-validated picker)
+   - `lucy pick 1d <c13_path>` for 13C carbon peaks
+   - `lucy pick 1d <dept135_path>` for DEPT-135 peaks
+   - `lucy pick hsqc <hsqc_path>` for raw HSQC peaks, then apply DEPT-guided filtering (Section 3)
+   - `lucy pick hmbc <hmbc_path>` for raw HMBC peaks, then apply cross-validation filtering (Section 3)
    - Apply quality-based adjustments from Section 2 (thresholds, tolerances)
    - **After peak picking**, scan all carbon pairs for close carbons using resolution-based detection (Section 10.1). Document any unresolvable pairs in the Ambiguities Detected section before proceeding to LSD generation.
    - **During HSQC guided picking**, if DEPT and HSQC disagree on multiplicity for any carbon, resolve using the priority tree (Section 10.2) and document in Ambiguities Detected section.
 
-4. **LSD Generation**: Generate initial LSD file with MULT definitions, HSQC correlations, and heteroatom constraints. Do NOT add HMBC correlations yet. See Section 7 for the incremental approach. Verify checklist before running: all carbons defined, heteroatoms added, sp2 count is EVEN, HSQC before HMBC, NO ELIM on first run. **When close carbons are detected** (Section 10.1), use LIST/PROP to encode ambiguity rather than picking one assignment arbitrarily. **For quaternary carbons with 0 HMBC correlations**, apply shift-based constraints (Section 10.3) and attempt targeted threshold reduction before LSD generation.
+4. **LSD Generation**: Write the LSD file directly using the LSD reference in Section 6 and the diagnostic specialist's LSD command reference in skill/diagnostic/SKILL.md Section 1. Generate initial LSD file with MULT definitions, HSQC correlations, and heteroatom constraints. Do NOT add HMBC correlations yet. See Section 7 for the incremental approach. Verify checklist before running: all carbons defined, heteroatoms added, sp2 count is EVEN, HSQC before HMBC, NO ELIM on first run. **When close carbons are detected** (Section 10.1), use LIST/PROP to encode ambiguity rather than picking one assignment arbitrarily. **For quaternary carbons with 0 HMBC correlations**, apply shift-based constraints (Section 10.3) and attempt targeted threshold reduction before LSD generation.
 
 5. **Solve**: Follow the Incremental HMBC Constraint Strategy (Section 7). Add 3-5 high-confidence HMBC correlations per iteration. Stop when solution_count ≤ 10 or after ~10 iterations. Check solution count after each iteration:
    - **0 solutions**: Follow Zero-Solution Recovery (Section 7).
    - **1-10 solutions**: Success. Proceed to step 6.
    - **>10 solutions**: Under-constrained. Continue incremental HMBC iteration (Section 7). Do NOT proceed to ranking until ≤10 solutions or all correlations/iterations exhausted.
 
-6. **Rank**: Run `rank_lsd_solutions` (only after achieving ≤10 solutions or exhausting all correlations/iterations). Examine top 10-20 candidates. Cross-reference with dereplication hits if available.
+6. **Rank**: Run `lucy lsd rank <solutions.smi> --shifts "<shift_list>"` (only after achieving ≤10 solutions or exhausting all correlations/iterations). Examine top 10-20 candidates. Cross-reference with dereplication hits if available.
 
 7. **Confidence Assessment**: After ranking, assess confidence for each carbon atom using the three-factor model (Section 11). Derive overall structure confidence. Document ambiguous assignments with reasoning in the Ambiguities Detected section (Section 10.4). If confidence is Medium or Low for specific atoms, suggest additional NMR experiments that would resolve the uncertainty (Section 11.5). Include "Ambiguities Detected" and "Assignment Confidence" sections in the analysis output.
 

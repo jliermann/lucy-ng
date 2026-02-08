@@ -140,39 +140,41 @@ Or from peaklist.xml if binary data is poor:
 
 ### Step 5: Pick HSQC Peaks
 
-**With DEPT (preferred):**
+**Get raw HSQC peaks:**
 ```bash
-lucy pick hsqc <hsqc_exp> --dept135 <dept_exp>
+lucy pick hsqc <hsqc_exp> --format json
 ```
 
-**Without DEPT:**
-```python
-from lucy_ng import BrukerReader
-from lucy_ng.processing import PeakPicker2D
+**Apply DEPT-guided filtering** (see skill/SKILL.md Section 3):
 
-hsqc = BrukerReader.read_2d("<hsqc_path>")
-result = PeakPicker2D.pick_peaks(hsqc, threshold=0.1)
-
-for p in result.peaks:
-    print(f"C: {p.f1_position:.2f}, H: {p.f2_position:.2f}")
+1. Pick DEPT-135 peaks:
+```bash
+lucy pick 1d <dept135_exp> --format json
 ```
+
+2. Match HSQC carbon positions to DEPT carbons within ±1.5 ppm
+3. Extract multiplicities from DEPT sign (positive = CH/CH3, negative = CH2)
+4. If DEPT-90 available, disambiguate CH vs CH3
 
 **Document:**
 - Which carbons are protonated (have HSQC signals)
 - Which are quaternary (no HSQC signal)
-- Multiplicities if DEPT available (CH, CH2, CH3)
+- Multiplicities (CH, CH2, CH3)
 
 ### Step 6: Pick HMBC Peaks
 
-**Use guided picking** to filter noise:
+**Get raw HMBC peaks:**
 
 ```bash
-lucy pick hmbc <hmbc_exp> --c13 <13c_exp> --hsqc <hsqc_exp>
+lucy pick hmbc <hmbc_exp> --format json
 ```
 
-Or manually with validation:
-- Carbon position must match a 13C peak (±1.5 ppm)
-- Proton position must match an HSQC proton (±0.1 ppm)
+**Apply cross-validation filtering** (see skill/SKILL.md Section 3):
+
+1. Validate each HMBC peak:
+   - Carbon position exists in 13C peaks (±1.5 ppm)
+   - Proton position exists in HSQC peaks (±0.1 ppm)
+2. Retain only validated correlations
 
 **Document all HMBC correlations:**
 
@@ -183,12 +185,11 @@ Or manually with validation:
 
 ### Step 7: Generate LSD Input
 
-**Option A: Automatic generation**
-```bash
-lucy lsd generate <data_dir> <formula> -o compound.lsd
-```
+**Write the LSD file directly** using skill knowledge:
 
-**Option B: Manual construction (if auto fails)**
+Reference:
+- skill/SKILL.md Section 6 (LSD Reference)
+- skill/diagnostic/SKILL.md Section 1 (LSD Command Reference)
 
 Build the LSD file manually:
 
