@@ -562,7 +562,11 @@ Plans:
   3. PROJECT.md decisions table updated with v2.1 architecture choices (orchestration via Task(), hybrid context inlining, per-pattern intervention counters, diagnostic delegation threshold)
   4. v2.1 release notes written summarizing working multi-agent orchestration vs v2.0 paper architecture
 
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 33-01-PLAN.md -- Update CLAUDE.md with sub-command reference and corrected architecture; write v2.1 release notes
+- [ ] 33-02-PLAN.md -- Refresh PROJECT.md to v2.1 reality; inline LSD knowledge into diagnostic agent; confirm supervisor.md deletion
 
 ---
 
