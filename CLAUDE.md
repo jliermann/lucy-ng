@@ -2,7 +2,25 @@
 
 AI-agent powered Computer-Assisted Structure Elucidation for organic natural products.
 
-**For CASE domain knowledge and workflow guidance, see skill/SKILL.md**
+**For CASE workflow, run /lucy-ng:case. For all commands, run /lucy-ng (routing page).**
+
+---
+
+## Sub-Command Reference
+
+Lucy-ng uses Claude Code sub-command skills for all workflows. Run `/lucy-ng` for the routing page.
+
+| Command | Description |
+|---------|-------------|
+| `/lucy-ng:status` | Check environment readiness (lucy-ng version, LSD solver, database) |
+| `/lucy-ng:dereplicate` | Match 13C NMR spectrum against compound database by molecular formula |
+| `/lucy-ng:predict` | Predict 13C chemical shifts for a SMILES structure using HOSE-code database |
+| `/lucy-ng:sanitise` | Remove compound identifiers from NMR dataset for blind CASE evaluation |
+| `/lucy-ng:case` | Full autonomous CASE workflow — spawns agent, monitors progress, detects loops, intervenes |
+
+**Agent files** (spawned by /lucy-ng:case orchestrator):
+- `~/.claude/agents/lucy-case-agent.md` — Autonomous CASE agent with inlined NMR/LSD knowledge
+- `~/.claude/agents/lucy-diagnostic.md` — LSD failure diagnostic specialist (spawned after 2 failed interventions)
 
 ---
 
@@ -52,7 +70,7 @@ lucy database info data/reference/lucy-ng-derep.db
 
 ## CLI Output Reference
 
-All lucy-ng commands support `--format json` for programmatic use. The AI agent uses thin CLI commands via Bash, applying domain intelligence from skill/SKILL.md.
+All lucy-ng commands support `--format json` for programmatic use. The AI agent uses thin CLI commands via Bash. Domain intelligence is encoded in sub-command skills and agent definitions.
 
 | Command | Key Output Fields (JSON) |
 |---------|--------------------------|
@@ -106,7 +124,7 @@ lucy lsd rank solutions.smi --shifts "155.08,151.58,..."
 
 **LSD file structure:**
 
-The AI agent writes LSD files directly using skill knowledge (see skill/CASE/SKILL.md and skill/diagnostic/SKILL.md for LSD command reference).
+The AI agent writes LSD files directly using skill knowledge (see skill/SKILL.md and skill/diagnostic/SKILL.md for LSD command reference).
 
 Example structure:
 ```
@@ -151,7 +169,7 @@ print(result.summary())
 
 ## Peak Picking API Reference
 
-**Note:** These Python APIs are available for library use. The AI agent uses thin CLI commands via Bash instead — see skill/SKILL.md for the recommended workflow where the AI applies domain intelligence (DEPT-guided filtering, HMBC cross-validation) on raw CLI peak lists.
+**Note:** These Python APIs are available for library use. The AI agent uses thin CLI commands via Bash instead — see /lucy-ng:case sub-command for the recommended CASE workflow.
 
 ### HSQC: DEPT-Guided Picker
 
