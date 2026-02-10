@@ -10,15 +10,20 @@ Lucy-ng is an AI-agent skill for Computer-Assisted Structure Elucidation (CASE) 
 
 An AI agent can autonomously determine the structure of an unknown organic compound from its NMR spectra, with a multi-agent architecture that prevents unproductive loops and keeps the elucidation on track.
 
-## Current Milestone: v2.1 Working Multi-Agent CASE (Complete)
+## Current Milestone: v3.0 Statistical Detection (Active)
 
-**Goal:** Make the multi-agent architecture actually work — sub-command skills following the GSD pattern, real agent spawning and result collection, working AI-driven sanitisation.
+**Goal:** Add data-driven statistical detection to replace agent guesswork — hybridisation detection, neighbourhood constraints, hetero-hetero bond allowance, improved ranking, and badlist filters. Inspired by Sherlock CASE system analysis (Wenk PhD thesis).
 
-**Delivered features:**
-- Sub-command skills: `/lucy-ng:case`, `/lucy-ng:sanitise`, `/lucy-ng:dereplicate`, `/lucy-ng:predict`, `/lucy-ng:status`
-- CASE orchestrator that spawns autonomous CASE agent, monitors progress, detects loops, spawns diagnostic specialist
-- AI-driven dataset sanitisation (no CLI — AI reasoning required to identify compound identifiers)
-- Old monolithic skill and paper-only agent definitions replaced by working GSD-pattern orchestration
+**Target features:**
+- CLI commands for statistical hybridisation detection from HOSE database (sp1/sp2/sp3 frequencies per shift)
+- CLI commands for forbidden/mandatory neighbour detection from bond partner distributions
+- CLI command for hetero-hetero bond allowance detection from bond pair statistics
+- Two-tier ranking: signal match count first, then average deviation
+- Badlist filters for 3/4-membered ring exclusion in LSD
+- Agent integration: CASE agent uses statistical detection CLI to write better-constrained LSD files
+- Signal grouping detection (identify close shifts within 0.25 ppm tolerance)
+
+**Motivation:** Live testing revealed that lucy-ng's ibuprofen CASE produced 8 wrong cyclohexadiene solutions (not ibuprofen). Sherlock solves the same problem trivially because statistical constraints reduce search space by 5 orders of magnitude (Caripyrin: 8.5M -> 10 structures from hybridisation + neighbours alone). Without data-driven constraints, the AI agent is guessing.
 
 ## Architecture
 
@@ -53,7 +58,13 @@ An AI agent can autonomously determine the structure of an unknown organic compo
 
 ### Active
 
-(All v2.1 requirements completed and moved to Validated)
+- [ ] Statistical hybridisation detection from HOSE database
+- [ ] Statistical neighbourhood detection (forbidden/mandatory)
+- [ ] Hetero-hetero bond allowance detection
+- [ ] Signal grouping detection (close shifts within tolerance)
+- [ ] Two-tier ranking (match count + deviation)
+- [ ] Badlist filters (3/4-membered ring exclusion)
+- [ ] CASE agent integration with statistical detection CLI
 
 ### Deferred
 
@@ -126,7 +137,7 @@ Minimum viable spectral data for v1:
 
 ## Current State
 
-**Version:** v2.1 (shipped 2026-02-09)
+**Version:** v3.0-dev (milestone started 2026-02-10, building on v2.1 shipped 2026-02-09)
 **Codebase:** ~17,500 lines Python, 642 tests
 **Tech stack:** Python 3.10+, Pydantic v2, nmrglue, RDKit, SQLite, Click
 
@@ -148,4 +159,4 @@ Minimum viable spectral data for v1:
 - v2.0's paper-only agent architecture replaced with working GSD-pattern orchestration
 
 ---
-*Last updated: 2026-02-08 after v2.1 milestone started*
+*Last updated: 2026-02-10 after v3.0 milestone started*

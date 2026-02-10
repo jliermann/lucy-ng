@@ -1,5 +1,47 @@
 # Project Milestones: lucy-ng
 
+## v2.1 Working Multi-Agent CASE (Shipped: 2026-02-09)
+
+**Delivered:** Working multi-agent orchestration replacing v2.0's paper-only architecture — sub-command skills, real agent spawning, progress monitoring, loop detection, advisory intervention, diagnostic specialist delegation, AI-driven sanitisation.
+
+**Phases completed:** 27-33 (9 plans total)
+
+**Key accomplishments:**
+- Sub-command skills: /lucy-ng:case, /lucy-ng:sanitise, /lucy-ng:dereplicate, /lucy-ng:predict, /lucy-ng:status
+- CASE orchestrator that spawns autonomous CASE agent via Task(), monitors CASE-PROGRESS.md, detects 4 loop patterns
+- Autonomous CASE agent with 613 lines of inlined NMR/LSD knowledge
+- Diagnostic specialist delegation after 2 failed basic interventions
+- AI-driven dataset sanitisation (no CLI — requires AI semantic reasoning)
+- First live CASE test: Ibuprofen identified (rank #1) but with wrong topology (cyclohexadiene, not aromatic)
+
+**Stats:**
+- 7 phases, 9 plans
+- 1 day from start to shipped (2026-02-08 → 2026-02-09)
+
+**What's next:** v3.0 Statistical Detection — data-driven constraints to replace agent guesswork
+
+---
+
+## v2.0 Robust Multi-Agent CASE (Shipped: 2026-02-08)
+
+**Delivered:** AI-first skill architecture with thin tool wrappers, supervisor/diagnostic specialist agents (paper definitions), comprehensive CASE workflow knowledge (3,780 lines)
+
+**Phases completed:** 20-26 (16 plans total)
+
+**Key accomplishments:**
+- System audit: all 16 MCP tools + 7 CLI groups classified
+- CLAUDE.md split into project-level + SKILL.md (1,079 lines) + supervisor SKILL.md + diagnostic SKILL.md (1,874 lines)
+- MCP server removed entirely — CLI-only architecture
+- Incremental HMBC strategy, error tolerance, confidence scoring encoded in skills
+- Supervisor and diagnostic specialist agent definitions (paper architecture)
+- Thin CLI tools validated with Ibuprofen de novo CASE
+
+**Stats:**
+- 7 phases, 16 plans
+- 3 weeks (2026-01-18 → 2026-02-08)
+
+---
+
 ## v1.2 HOSE Database Prediction (Shipped: 2026-01-18)
 
 **Delivered:** Database-backed 13C shift prediction using 7.9M HOSE statistics from 895K compounds, enabling accurate solution ranking with O(1) lookups

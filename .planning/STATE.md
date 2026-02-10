@@ -2,20 +2,20 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-09)
+See: .planning/PROJECT.md (updated 2026-02-10)
 
-**Core value:** AI agent autonomously determines compound structures from NMR, with multi-agent architecture preventing loops
-**Current focus:** v2.1 Working Multi-Agent CASE — sub-command skills, real agent orchestration, validation-first development
+**Core value:** AI agent autonomously determines compound structures from NMR, with data-driven statistical constraints replacing guesswork
+**Current focus:** v3.0 Statistical Detection — hybridisation, neighbours, HHB, ranking, badlist filters
 
 ## Current Position
 
-**Milestone**: v2.1 Working Multi-Agent CASE
-**Phase**: Phase 33 (Documentation and Cleanup) — COMPLETE
-**Plan**: 33-02 complete (PROJECT.md refresh, diagnostic agent inlining)
-**Status**: Phase complete — all v2.1 phases shipped
-**Last activity**: 2026-02-09 — Completed 33-02-PLAN.md
+**Milestone**: v3.0 Statistical Detection
+**Phase**: Not started (defining requirements)
+**Plan**: —
+**Status**: Defining requirements
+**Last activity**: 2026-02-10 — Milestone v3.0 started
 
-Progress: [███████████████████████████████] 100% (7/7 phases complete)
+Progress: [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0%
 
 ## Completed Milestones
 
@@ -34,11 +34,6 @@ Progress: [███████████████████████
 - Average duration: ~3 hours per phase (v1.0-v1.2), < 15 min per phase (v2.0-v2.1 docs/skills), ~4 min per plan (v2.1 implementation)
 - Total execution time: ~64.92 hours
 
-**v2.1 Roadmap:**
-- 7 phases defined (27-33)
-- 30 requirements mapped
-- 100% requirement coverage validated
-
 ## Accumulated Context
 
 ### Decisions
@@ -46,50 +41,31 @@ Progress: [███████████████████████
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- v2.1: GSD-pattern sub-commands — skills as ~/.claude/commands/lucy-ng/*.md
-- v2.1: /lucy-ng:case NEVER attempts dereplication — absolute separation
-- v2.1: Sanitisation is AI-only — no CLI, requires AI reasoning to identify compound identifiers
-- v2.1: Sanitise skill must explicitly state there is no CLI for this purpose
-- v2.1: Option A for CASE supervision — autonomous CASE agent, orchestrator handles failure
-- v2.1: Supervisor logic dissolves into case.md orchestrator skill (not a separate agent)
-- v2.1: Old monolithic /lucy-ng skill replaced by sub-commands
-- v2.1: Validation-first development — prove Task() spawning works before expanding skills
-- v2.1: Hybrid context inlining — 500-700 lines critical content inlined, detailed references via file paths
-- v2.1: Per-pattern intervention counters — track failures separately, 10-cycle escalation per pattern
-- v2.1: Advisory interventions say WHAT not HOW — preserves agent autonomy
-- v2.1: Batch monitoring over synchronous — spawn once for ~10 iterations, read progress after batch
-- Phase 28: Agent files live in ~/.claude/agents/ (user-global, not project-specific)
-- Phase 28: CASE-PROGRESS.md append-only format for supervisor monitoring
-- Phase 29: Orchestrator skill dissolves v2.0 supervisor.md logic into case.md sub-command
-- Phase 30: Diagnostic specialist delegation after 2 failed basic interventions (threshold = 2)
-- Phase 30: Specialist-informed advisory extracts specific fix from DIAGNOSTIC-REPORT.md
-- Phase 30: Fallback to basic advisory if DIAGNOSTIC-REPORT.md missing after delegation
-- Phase 31: Pure AI sanitisation workflow (no CLI, no scripts)
-- Phase 31: [REDACTED] replacement string for all identifier redactions
-- Phase 31: Full re-scan verification (second pass confirms completeness)
-- Phase 32: Pre-flight checks before validation guide creation (document actual readiness)
-- Phase 32: Exact paths in test instructions (no placeholders for copy-paste ease)
-- Phase 32: 7 known failure modes documented with symptoms, causes, fixes
-- Phase 33: CLAUDE.md points to sub-commands as entry points, not skill/SKILL.md
-- Phase 33: Document actual agent filenames (lucy-case-agent.md, lucy-diagnostic.md) not vague language
-- Phase 33: v2.1 release notes capture working orchestration vs v2.0 paper architecture
+- v3.0: Major version bump — statistical detection is a fundamental capability addition, not incremental
+- v3.0: Motivated by Sherlock CASE system analysis (Wenk PhD thesis) — identified 5 critical gaps
+- v3.0: Gap 1 (statistical detection) selected as first milestone — universal benefit, builds on existing HOSE DB
+- v3.0: Gaps 4+5 (ranking + badlist) bundled into v3.0 — too small for standalone milestones
+- v3.0: Signal grouping detection included — identifies close shifts but combinatorial exchange deferred to v3.1
+- v3.1 planned: Signal grouping + combinatorial atom exchange (full implementation)
+- v3.2 planned: Fragment library and search (24.5M SSCs)
 
 ### Pending Todos
 
-- Execute validation tests per 32-VALIDATION-GUIDE.md (user action)
-- Prove Task() spawning works with autonomous CASE agent (Phase 32 user test)
+- Implement statistical detection CLI commands
+- Update CASE agent to use new CLI commands for constraint generation
+- Validate on ibuprofen (CASE1) — must find correct aromatic structure
 
 ### Blockers/Concerns
 
-- v2.1 multi-agent architecture complete but UNVALIDATED — awaiting user test per 32-VALIDATION-GUIDE.md
-- Virgiline (CASE7) failure is the motivating test case — working multi-agent should address root causes
-- Task tool model parameter bug (#18873) — mitigated with `model: inherit` workaround in all agents
+- HOSE database schema may need extension for hybridisation/neighbourhood statistics
+- Need to verify existing HOSE stats table contains sufficient data for detection queries
+- Ibuprofen failure root cause: 4-bond HMBC + rigid assignment + no statistical constraints → cyclohexadiene solutions
 
 ## Session Continuity
 
-Last session: 2026-02-09
-Stopped at: Phase 33 complete — v2.1 milestone SHIPPED
-Resume file: None (all planned phases complete, ready for user validation per 32-VALIDATION-GUIDE.md)
+Last session: 2026-02-10
+Stopped at: Defining v3.0 requirements
+Resume file: None (defining requirements)
 
 ---
-*Last updated: 2026-02-09 after Phase 33 complete (v2.1 shipped)*
+*Last updated: 2026-02-10 after v3.0 milestone started*
