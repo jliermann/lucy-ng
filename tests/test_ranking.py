@@ -472,6 +472,185 @@ class TestSolutionRankerFromFile:
         assert result.solutions[0].mae < 5.0  # Should have reasonably good match
 
 
+class TestTwoTierRanking:
+    """Tests for two-tier ranking (match count primary, MAE secondary)."""
+
+    @pytest.fixture
+    def mock_predictor(self):
+        """Create a mock predictor with configurable predictions."""
+        predictor = MagicMock(spec=C13Predictor)
+        return predictor
+
+    def test_two_tier_ranking_match_count_primary(self, mock_predictor):
+        """Test that solutions with more matched signals rank higher even with higher MAE.
+
+        This tests the core two-tier ranking: match count first, MAE second.
+        A solution with more matches but slightly higher MAE should rank above
+        one with fewer matches but lower MAE.
+        """
+        # Configure predictor for two solutions
+        def predict_side_effect(smiles: str):
+            if smiles == "HIGH_MATCH":
+                # 3 predictions close to experimental (all will match)
+                return make_prediction_result(smiles, [45.0, 128.0, 180.0])
+            else:  # "LOW_MATCH"
+                # 3 predictions, but one far from any experimental (only 2 match)
+                return make_prediction_result(smiles, [45.0, 128.0, 999.0])
+
+        mock_predictor.predict_from_smiles.side_effect = predict_side_effect
+
+        ranker = SolutionRanker(mock_predictor, tolerance=3.0)
+
+        solutions = [
+            LSDSolution(index=1, smiles="LOW_MATCH"),   # Will have 2/3 matched
+            LSDSolution(index=2, smiles="HIGH_MATCH"),  # Will have 3/3 matched
+        ]
+        experimental = [45.5, 128.5, 180.5]  # All within 3 ppm of HIGH_MATCH predictions
+
+        result = ranker.rank(solutions, experimental)
+
+        # HIGH_MATCH should rank #1 due to more matches (3/3 vs 2/3)
+        assert result.solutions[0].smiles == "HIGH_MATCH"
+        assert result.solutions[0].matched_count == 3
+        assert result.solutions[1].smiles == "LOW_MATCH"
+        assert result.solutions[1].matched_count == 2
+
+    def test_hallucination_prevention_ibuprofen_style(self, mock_predictor):
+        """Test ranking with ibuprofen-style hallucination scenario.
+
+        Simulates the exact issue from the Sherlock analysis:
+        - WRONG solution: 11/13 matched, MAE=1.93 (lower MAE!)
+        - CORRECT solution: 13/13 matched, MAE=2.13 (higher MAE)
+
+        The correct solution MUST rank #1 despite higher MAE, because it has
+        more matched signals. The key is that WRONG has fewer matches but its
+        unmatched predictions are close to experimental peaks (just outside
+        tolerance), so its overall MAE is actually lower.
+        """
+        # Configure predictor to simulate the hallucination scenario
+        def predict_side_effect(smiles: str):
+            if smiles == "WRONG":
+                # 13 predictions: 11 matched (within 3 ppm), 2 unmatched (ghost carbons >3 ppm from all experimental)
+                # MAE stays low because the 11 matched have very small errors (~0.2 ppm)
+                # and the 2 unmatched are only ~3.5 ppm away (not 100+ ppm)
+                return make_prediction_result(
+                    smiles,
+                    # These 11 match experimental peaks with very small errors (0.1-0.3 ppm)
+                    [180.2, 140.5, 136.9, 129.2, 126.9, 44.9, 40.2, 30.1, 50.1, 25.1, 14.9,
+                     # These 2 are "ghost carbons" - hallucinated CH2 groups in wrong positions
+                     # They're in gaps between real signals, >3 ppm from closest experimental
+                     # 33.5 is between 30.2 and 40.4 (closest is 40.4 at 6.9 ppm away)
+                     # 11.0 is below 15.0 (closest is 15.0 at 4.0 ppm away)
+                     33.5, 11.0]
+                )
+            else:  # "CORRECT"
+                # All 13 predictions match (within 3 ppm), but with larger errors (2.0-2.5 ppm each)
+                # This gives higher MAE but complete signal coverage
+                return make_prediction_result(
+                    smiles,
+                    # All 13 match experimental with 2.0-2.5 ppm errors
+                    [182.5, 143.0, 139.5, 131.5, 129.0, 47.0, 42.5, 32.5, 24.5, 20.5, 52.5, 27.5, 17.5]
+                )
+
+        mock_predictor.predict_from_smiles.side_effect = predict_side_effect
+
+        ranker = SolutionRanker(mock_predictor, tolerance=3.0)
+
+        solutions = [
+            LSDSolution(index=1, smiles="WRONG"),
+            LSDSolution(index=2, smiles="CORRECT"),
+        ]
+        # 13 experimental peaks
+        experimental = [180.5, 140.8, 137.2, 129.4, 127.1, 45.1, 40.4, 30.2, 22.4, 18.2, 50.2, 25.0, 15.0]
+
+        result = ranker.rank(solutions, experimental)
+
+        # Check that WRONG has lower MAE but fewer matches (this is the hallucination scenario)
+        wrong_sol = next(s for s in result.solutions if s.smiles == "WRONG")
+        correct_sol = next(s for s in result.solutions if s.smiles == "CORRECT")
+
+        assert wrong_sol.matched_count == 11, f"WRONG should have 11 matches, got {wrong_sol.matched_count}"
+        assert correct_sol.matched_count == 13, f"CORRECT should have 13 matches, got {correct_sol.matched_count}"
+        assert wrong_sol.mae < correct_sol.mae, \
+            f"WRONG should have lower MAE (hallucination scenario), got WRONG={wrong_sol.mae:.2f} vs CORRECT={correct_sol.mae:.2f}"
+
+        # CORRECT should rank #1 despite higher MAE (more matches is primary sort key)
+        assert result.solutions[0].smiles == "CORRECT", \
+            f"Expected CORRECT to rank #1 (matched={correct_sol.matched_count}, MAE={correct_sol.mae:.2f}), " \
+            f"but got {result.solutions[0].smiles} (matched={result.solutions[0].matched_count}, MAE={result.solutions[0].mae:.2f})"
+
+    def test_equal_match_count_fallback_to_mae(self, mock_predictor):
+        """Test that when match counts are equal, MAE acts as tiebreaker.
+
+        Both solutions match the same number of signals, so ranking should
+        fall back to MAE (lower is better).
+        """
+        # Configure predictor for two solutions with equal match counts
+        def predict_side_effect(smiles: str):
+            if smiles == "BETTER_MAE":
+                # Predictions very close to experimental (low MAE)
+                return make_prediction_result(smiles, [45.0, 128.0, 180.0, 30.0, 22.0])
+            else:  # "WORSE_MAE"
+                # Predictions within tolerance but with more error (higher MAE)
+                return make_prediction_result(smiles, [46.5, 129.5, 182.0, 31.5, 23.5])
+
+        mock_predictor.predict_from_smiles.side_effect = predict_side_effect
+
+        ranker = SolutionRanker(mock_predictor, tolerance=3.0)
+
+        solutions = [
+            LSDSolution(index=1, smiles="WORSE_MAE"),
+            LSDSolution(index=2, smiles="BETTER_MAE"),
+        ]
+        experimental = [45.0, 128.0, 180.0, 30.0, 22.0]
+
+        result = ranker.rank(solutions, experimental)
+
+        # Both should have 5/5 matched (all within 3 ppm tolerance)
+        assert result.solutions[0].matched_count == result.solutions[1].matched_count
+        # BETTER_MAE should rank #1 (lower MAE as tiebreaker)
+        assert result.solutions[0].smiles == "BETTER_MAE"
+        assert result.solutions[0].mae < result.solutions[1].mae
+
+    def test_backward_compat_all_matched(self, mock_predictor):
+        """Test backward compatibility when all solutions have 100% match rate.
+
+        When all solutions match all their signals, ranking should reduce to
+        MAE-only ordering (same as old behavior).
+        """
+        # Configure predictor for three solutions all with 100% match
+        def predict_side_effect(smiles: str):
+            if smiles == "MAE_1":
+                return make_prediction_result(smiles, [45.0, 128.0, 180.0])
+            elif smiles == "MAE_2":
+                return make_prediction_result(smiles, [46.0, 129.0, 181.0])
+            else:  # "MAE_3"
+                return make_prediction_result(smiles, [47.0, 130.0, 182.0])
+
+        mock_predictor.predict_from_smiles.side_effect = predict_side_effect
+
+        ranker = SolutionRanker(mock_predictor, tolerance=3.0)
+
+        solutions = [
+            LSDSolution(index=3, smiles="MAE_3"),  # Worst MAE
+            LSDSolution(index=1, smiles="MAE_1"),  # Best MAE
+            LSDSolution(index=2, smiles="MAE_2"),  # Middle MAE
+        ]
+        experimental = [45.0, 128.0, 180.0]
+
+        result = ranker.rank(solutions, experimental)
+
+        # All should have 3/3 matched
+        for sol in result.solutions:
+            assert sol.matched_count == 3
+
+        # Should be ordered by MAE (ascending)
+        assert result.solutions[0].smiles == "MAE_1"
+        assert result.solutions[1].smiles == "MAE_2"
+        assert result.solutions[2].smiles == "MAE_3"
+        assert result.solutions[0].mae < result.solutions[1].mae < result.solutions[2].mae
+
+
 class TestRankingCLI:
     """Tests for CLI integration (basic structure)."""
 
