@@ -6,12 +6,13 @@ import sqlite3
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from lucy_ng.database.models import CompoundRecord, HOSEStatsRecord, ShiftRecord
+from lucy_ng.database.models import BondPairStatsRecord, CompoundRecord, HOSEStatsRecord, ShiftRecord
 from lucy_ng.database.schema import (
     SCHEMA_STATEMENTS,
     SCHEMA_VERSION,
     migrate_v3_to_v4,
     migrate_v4_to_v5,
+    migrate_v5_to_v6,
 )
 
 if TYPE_CHECKING:
@@ -138,6 +139,23 @@ class DatabaseManager:
             if current_version is None or current_version < 4:
                 self.migrate_to_v4()
             migrate_v4_to_v5(self.connection)
+            return True
+        return False
+
+    def migrate_to_v6(self) -> bool:
+        """Migrate database to schema version 6.
+
+        Adds bond_pair_stats table and ring membership columns.
+
+        Returns:
+            True if migration was performed, False if already at v6+
+        """
+        current_version = self.get_schema_version()
+        if current_version is None or current_version < 6:
+            # Ensure at v5 first
+            if current_version is None or current_version < 5:
+                self.migrate_to_v5()
+            migrate_v5_to_v6(self.connection)
             return True
         return False
 
@@ -442,8 +460,9 @@ class DatabaseManager:
                         (hose_code, radius, mean, std, count,
                          sp3_count, sp2_count, sp1_count,
                          has_carbon_neighbor, has_oxygen_neighbor, has_nitrogen_neighbor,
-                         has_sulfur_neighbor, has_halogen_neighbor)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                         has_sulfur_neighbor, has_halogen_neighbor,
+                         in_3ring, in_4ring, in_aromatic)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         stat.hose_code,
@@ -459,6 +478,9 @@ class DatabaseManager:
                         stat.has_nitrogen_neighbor,
                         stat.has_sulfur_neighbor,
                         stat.has_halogen_neighbor,
+                        stat.in_3ring,
+                        stat.in_4ring,
+                        stat.in_aromatic,
                     ),
                 )
             except sqlite3.OperationalError:
@@ -502,7 +524,8 @@ class DatabaseManager:
                 SELECT hose_code, radius, mean, std, count,
                        sp3_count, sp2_count, sp1_count,
                        has_carbon_neighbor, has_oxygen_neighbor, has_nitrogen_neighbor,
-                       has_sulfur_neighbor, has_halogen_neighbor
+                       has_sulfur_neighbor, has_halogen_neighbor,
+                       in_3ring, in_4ring, in_aromatic
                 FROM hose_stats
                 WHERE hose_code = ? AND radius = ?
                 """,
@@ -527,6 +550,9 @@ class DatabaseManager:
                 has_nitrogen_neighbor=row["has_nitrogen_neighbor"],
                 has_sulfur_neighbor=row["has_sulfur_neighbor"],
                 has_halogen_neighbor=row["has_halogen_neighbor"],
+                in_3ring=row["in_3ring"],
+                in_4ring=row["in_4ring"],
+                in_aromatic=row["in_aromatic"],
             )
         except sqlite3.OperationalError:
             # Backward compatibility: v3 database without hybridisation columns
@@ -572,7 +598,8 @@ class DatabaseManager:
                 SELECT hose_code, radius, mean, std, count,
                        sp3_count, sp2_count, sp1_count,
                        has_carbon_neighbor, has_oxygen_neighbor, has_nitrogen_neighbor,
-                       has_sulfur_neighbor, has_halogen_neighbor
+                       has_sulfur_neighbor, has_halogen_neighbor,
+                       in_3ring, in_4ring, in_aromatic
                 FROM hose_stats
                 WHERE hose_code = ?
                 ORDER BY radius DESC
@@ -595,6 +622,9 @@ class DatabaseManager:
                     has_nitrogen_neighbor=row["has_nitrogen_neighbor"],
                     has_sulfur_neighbor=row["has_sulfur_neighbor"],
                     has_halogen_neighbor=row["has_halogen_neighbor"],
+                    in_3ring=row["in_3ring"],
+                    in_4ring=row["in_4ring"],
+                    in_aromatic=row["in_aromatic"],
                 )
                 for row in cursor.fetchall()
             ]
@@ -657,7 +687,8 @@ class DatabaseManager:
                 SELECT hose_code, radius, mean, std, count,
                        sp3_count, sp2_count, sp1_count,
                        has_carbon_neighbor, has_oxygen_neighbor, has_nitrogen_neighbor,
-                       has_sulfur_neighbor, has_halogen_neighbor
+                       has_sulfur_neighbor, has_halogen_neighbor,
+                       in_3ring, in_4ring, in_aromatic
                 FROM hose_stats
                 WHERE radius = ?
                   AND mean BETWEEN ? AND ?
@@ -681,6 +712,9 @@ class DatabaseManager:
                     has_nitrogen_neighbor=row["has_nitrogen_neighbor"],
                     has_sulfur_neighbor=row["has_sulfur_neighbor"],
                     has_halogen_neighbor=row["has_halogen_neighbor"],
+                    in_3ring=row["in_3ring"],
+                    in_4ring=row["in_4ring"],
+                    in_aromatic=row["in_aromatic"],
                 )
                 for row in cursor.fetchall()
             ]
@@ -741,6 +775,7 @@ class DatabaseManager:
             tuple[str, int, int, float, float]
             | tuple[str, int, int, float, float, int, int, int]
             | tuple[str, int, int, float, float, int, int, int, int, int, int, int, int]
+            | tuple[str, int, int, float, float, int, int, int, int, int, int, int, int, int, int, int]
         ],
     ) -> int:
         """Incrementally upsert HOSE statistics using Welford's parallel merge algorithm.
@@ -758,6 +793,10 @@ class DatabaseManager:
                 - (hose_code, radius, count, mean, m2, sp3_count, sp2_count, sp1_count,
                    has_carbon_neighbor, has_oxygen_neighbor, has_nitrogen_neighbor,
                    has_sulfur_neighbor, has_halogen_neighbor) - v5
+                - (hose_code, radius, count, mean, m2, sp3_count, sp2_count, sp1_count,
+                   has_carbon_neighbor, has_oxygen_neighbor, has_nitrogen_neighbor,
+                   has_sulfur_neighbor, has_halogen_neighbor,
+                   in_3ring, in_4ring, in_aromatic) - v6
 
         Returns:
             Number of records upserted
@@ -774,6 +813,7 @@ class DatabaseManager:
                 hose_code, radius, new_count, new_mean, new_m2 = stat_tuple
                 new_sp3, new_sp2, new_sp1 = 0, 0, 0
                 new_has_c, new_has_o, new_has_n, new_has_s, new_has_hal = 0, 0, 0, 0, 0
+                new_in_3ring, new_in_4ring, new_in_aromatic = 0, 0, 0
             elif len(stat_tuple) == 8:
                 (
                     hose_code,
@@ -786,6 +826,7 @@ class DatabaseManager:
                     new_sp1,
                 ) = stat_tuple
                 new_has_c, new_has_o, new_has_n, new_has_s, new_has_hal = 0, 0, 0, 0, 0
+                new_in_3ring, new_in_4ring, new_in_aromatic = 0, 0, 0
             elif len(stat_tuple) == 13:
                 (
                     hose_code,
@@ -802,6 +843,26 @@ class DatabaseManager:
                     new_has_s,
                     new_has_hal,
                 ) = stat_tuple
+                new_in_3ring, new_in_4ring, new_in_aromatic = 0, 0, 0
+            elif len(stat_tuple) == 16:
+                (
+                    hose_code,
+                    radius,
+                    new_count,
+                    new_mean,
+                    new_m2,
+                    new_sp3,
+                    new_sp2,
+                    new_sp1,
+                    new_has_c,
+                    new_has_o,
+                    new_has_n,
+                    new_has_s,
+                    new_has_hal,
+                    new_in_3ring,
+                    new_in_4ring,
+                    new_in_aromatic,
+                ) = stat_tuple
             else:
                 raise ValueError(f"Invalid stats tuple length: {len(stat_tuple)}")
 
@@ -811,7 +872,8 @@ class DatabaseManager:
                     """
                     SELECT count, mean, m2, sp3_count, sp2_count, sp1_count,
                            has_carbon_neighbor, has_oxygen_neighbor, has_nitrogen_neighbor,
-                           has_sulfur_neighbor, has_halogen_neighbor
+                           has_sulfur_neighbor, has_halogen_neighbor,
+                           in_3ring, in_4ring, in_aromatic
                     FROM hose_stats
                     WHERE hose_code = ? AND radius = ?
                     """,
@@ -839,8 +901,9 @@ class DatabaseManager:
                                                 sp3_count, sp2_count, sp1_count,
                                                 has_carbon_neighbor, has_oxygen_neighbor,
                                                 has_nitrogen_neighbor, has_sulfur_neighbor,
-                                                has_halogen_neighbor)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                                has_halogen_neighbor,
+                                                in_3ring, in_4ring, in_aromatic)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         """,
                         (
                             hose_code,
@@ -857,6 +920,9 @@ class DatabaseManager:
                             new_has_n,
                             new_has_s,
                             new_has_hal,
+                            new_in_3ring,
+                            new_in_4ring,
+                            new_in_aromatic,
                         ),
                     )
                 except sqlite3.OperationalError:
@@ -891,7 +957,7 @@ class DatabaseManager:
                     math.sqrt(combined_m2 / combined_count) if combined_count > 1 else 0.0
                 )
 
-                # Merge hybridisation and neighbour counts (simple addition)
+                # Merge hybridisation, neighbour, and ring counts (simple addition)
                 try:
                     old_sp3 = row["sp3_count"]
                     old_sp2 = row["sp2_count"]
@@ -901,6 +967,9 @@ class DatabaseManager:
                     old_has_n = row["has_nitrogen_neighbor"]
                     old_has_s = row["has_sulfur_neighbor"]
                     old_has_hal = row["has_halogen_neighbor"]
+                    old_in_3ring = row["in_3ring"]
+                    old_in_4ring = row["in_4ring"]
+                    old_in_aromatic = row["in_aromatic"]
 
                     combined_sp3 = old_sp3 + new_sp3
                     combined_sp2 = old_sp2 + new_sp2
@@ -910,6 +979,9 @@ class DatabaseManager:
                     combined_has_n = old_has_n + new_has_n
                     combined_has_s = old_has_s + new_has_s
                     combined_has_hal = old_has_hal + new_has_hal
+                    combined_in_3ring = old_in_3ring + new_in_3ring
+                    combined_in_4ring = old_in_4ring + new_in_4ring
+                    combined_in_aromatic = old_in_aromatic + new_in_aromatic
 
                     cursor.execute(
                         """
@@ -918,7 +990,8 @@ class DatabaseManager:
                             sp3_count = ?, sp2_count = ?, sp1_count = ?,
                             has_carbon_neighbor = ?, has_oxygen_neighbor = ?,
                             has_nitrogen_neighbor = ?, has_sulfur_neighbor = ?,
-                            has_halogen_neighbor = ?
+                            has_halogen_neighbor = ?,
+                            in_3ring = ?, in_4ring = ?, in_aromatic = ?
                         WHERE hose_code = ? AND radius = ?
                         """,
                         (
@@ -934,6 +1007,9 @@ class DatabaseManager:
                             combined_has_n,
                             combined_has_s,
                             combined_has_hal,
+                            combined_in_3ring,
+                            combined_in_4ring,
+                            combined_in_aromatic,
                             hose_code,
                             radius,
                         ),
@@ -1083,3 +1159,98 @@ class DatabaseManager:
         cursor.execute("SELECT MAX(id) FROM compounds")
         row = cursor.fetchone()
         return row[0] if row and row[0] is not None else 0
+
+    # =========================================================================
+    # Bond Pair Statistics Methods (v6+)
+    # =========================================================================
+
+    def insert_bond_pair_stats_batch(
+        self,
+        records: list[BondPairStatsRecord],
+        batch_size: int = 10000,
+    ) -> int:
+        """Batch insert bond pair statistics.
+
+        Uses INSERT OR REPLACE for idempotent reruns.
+
+        Args:
+            records: List of BondPairStatsRecord to insert
+            batch_size: Records per transaction commit
+
+        Returns:
+            Number of records inserted/updated
+        """
+        conn = self.connection
+        cursor = conn.cursor()
+        count = 0
+
+        for i, record in enumerate(records):
+            cursor.execute(
+                """
+                INSERT OR REPLACE INTO bond_pair_stats
+                    (formula_normalized, element1, element2, compound_count,
+                     total_compounds, frequency)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    record.formula_normalized,
+                    record.element1,
+                    record.element2,
+                    record.compound_count,
+                    record.total_compounds,
+                    record.frequency,
+                ),
+            )
+            count += 1
+
+            # Commit every batch_size records
+            if (i + 1) % batch_size == 0:
+                conn.commit()
+
+        # Final commit for remaining
+        conn.commit()
+        return count
+
+    def get_bond_pair_stats_by_formula(
+        self, formula: str
+    ) -> list[BondPairStatsRecord]:
+        """Get bond pair statistics for a molecular formula.
+
+        Args:
+            formula: Molecular formula (normalized automatically)
+
+        Returns:
+            List of BondPairStatsRecord ordered by frequency descending
+        """
+        # Normalize formula
+        normalized = CompoundRecord._normalize_formula(formula)
+
+        conn = self.connection
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                SELECT formula_normalized, element1, element2, compound_count,
+                       total_compounds, frequency
+                FROM bond_pair_stats
+                WHERE formula_normalized = ?
+                ORDER BY frequency DESC
+                """,
+                (normalized,),
+            )
+
+            return [
+                BondPairStatsRecord(
+                    formula_normalized=row["formula_normalized"],
+                    element1=row["element1"],
+                    element2=row["element2"],
+                    compound_count=row["compound_count"],
+                    total_compounds=row["total_compounds"],
+                    frequency=row["frequency"],
+                )
+                for row in cursor.fetchall()
+            ]
+        except sqlite3.OperationalError:
+            # Backward compatibility: v5 database without bond_pair_stats table
+            return []
