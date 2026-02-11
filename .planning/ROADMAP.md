@@ -584,7 +584,7 @@ Plans:
 
 - [x] **Phase 34: Hybridisation Detection** - Database schema extension, statistics generation, CLI command for sp1/sp2/sp3 detection from shift queries
 - [x] **Phase 35: Neighbourhood Detection** - Bond partner statistics, CLI commands for forbidden/mandatory neighbour detection from HOSE sphere 1
-- [ ] **Phase 36: HHB and Ring Detection** - Hetero-hetero bond statistics, ring statistics for badlist foundation
+- [x] **Phase 36: HHB and Ring Detection** - Hetero-hetero bond statistics, ring statistics for badlist foundation
 - [ ] **Phase 37: Signal Grouping** - Multiplicity-aware close shift detection, LSD parenthesized atom list generation
 - [ ] **Phase 38: Two-Tier Ranking and Badlist** - Match-count-first ranking, hardcoded 3/4-membered ring filters in agent
 - [ ] **Phase 39: Agent Integration** - CASE agent learns statistical detection protocol, chemistry-first hierarchy, threshold overrides
@@ -631,7 +631,7 @@ Plans:
 
 ---
 
-### Phase 36: HHB and Ring Detection
+### Phase 36: HHB and Ring Detection ✅ (2026-02-11)
 **Goal**: Agent can query hetero-hetero bond allowance and access ring statistics for badlist filtering
 **Depends on**: Phase 34 (schema established)
 **Requirements**: DETECT-04, DETECT-06, DETECT-07
@@ -642,11 +642,12 @@ Plans:
   4. Detection uses 1% threshold for HHB allowance (returns "allowed" if >1% of compounds with formula contain bond pair)
   5. Ring statistics accessible for Phase 38 badlist implementation (no dedicated CLI, queried internally)
 **Plans**: 3 plans
+**Verified**: 18/18 must-haves passed
 
 Plans:
-- [ ] 36-01-PLAN.md — Extend schema to v6 with bond_pair_stats table and ring columns
-- [ ] 36-02-PLAN.md — Update stats generators with ring tracking and create BondPairStatsGenerator
-- [ ] 36-03-PLAN.md — Add HHB detection module and `lucy detect hhb` CLI subcommand
+- [x] 36-01-PLAN.md — Extend schema to v6 with bond_pair_stats table and ring columns
+- [x] 36-02-PLAN.md — Update stats generators with ring tracking and create BondPairStatsGenerator
+- [x] 36-03-PLAN.md — Add HHB detection module and `lucy detect hhb` CLI subcommand
 
 ---
 
