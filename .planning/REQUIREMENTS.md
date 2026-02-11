@@ -9,13 +9,13 @@ Requirements for v3.0 milestone. Each maps to roadmap phases.
 
 ### Statistical Detection
 
-- [ ] **DETECT-01**: CLI command detects hybridisation (sp1/sp2/sp3) for a given 13C shift from HOSE database frequency distributions
+- [x] **DETECT-01**: CLI command detects hybridisation (sp1/sp2/sp3) for a given 13C shift from HOSE database frequency distributions
 - [ ] **DETECT-02**: CLI command detects forbidden neighbour atoms (<1% frequency) for a given 13C shift and multiplicity
 - [ ] **DETECT-03**: CLI command detects mandatory neighbour atoms (>95% frequency) for a given 13C shift and multiplicity
 - [ ] **DETECT-04**: CLI command detects hetero-hetero bond allowance from bond pair statistics (1% threshold)
 - [ ] **DETECT-05**: CLI command detects signal grouping (shifts within 0.25 ppm tolerance with matching multiplicities)
-- [ ] **DETECT-06**: Database schema extended with hybridisation and neighbour statistics in hose_stats table
-- [ ] **DETECT-07**: Statistics generator computes detection statistics during HOSE stats generation
+- [x] **DETECT-06**: Database schema extended with hybridisation and neighbour statistics in hose_stats table
+- [x] **DETECT-07**: Statistics generator computes detection statistics during HOSE stats generation
 
 ### Ranking & Filtering
 
@@ -89,9 +89,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DETECT-01 | Phase 34 | Pending |
-| DETECT-06 | Phase 34 | Pending |
-| DETECT-07 | Phase 34 | Pending |
+| DETECT-01 | Phase 34 | Complete |
+| DETECT-06 | Phase 34 | Complete |
+| DETECT-07 | Phase 34 | Complete |
 | DETECT-02 | Phase 35 | Pending |
 | DETECT-03 | Phase 35 | Pending |
 | DETECT-04 | Phase 36 | Pending |

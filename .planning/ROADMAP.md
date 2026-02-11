@@ -582,7 +582,7 @@ Plans:
 
 **Phase overview:**
 
-- [ ] **Phase 34: Hybridisation Detection** - Database schema extension, statistics generation, CLI command for sp1/sp2/sp3 detection from shift queries
+- [x] **Phase 34: Hybridisation Detection** - Database schema extension, statistics generation, CLI command for sp1/sp2/sp3 detection from shift queries
 - [ ] **Phase 35: Neighbourhood Detection** - Bond partner statistics, CLI commands for forbidden/mandatory neighbour detection from HOSE sphere 1
 - [ ] **Phase 36: HHB and Ring Detection** - Hetero-hetero bond statistics, ring statistics for badlist foundation
 - [ ] **Phase 37: Signal Grouping** - Multiplicity-aware close shift detection, LSD parenthesized atom list generation
@@ -605,9 +605,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 34-01-PLAN.md -- Extend database schema (v3->v4), migration script, shift-window query method
-- [ ] 34-02-PLAN.md -- Update stats_generator.py to extract and store hybridisation during HOSE processing
-- [ ] 34-03-PLAN.md -- Create detection module and `lucy detect hybridisation` CLI command
+- [x] 34-01-PLAN.md -- Extend database schema (v3->v4), migration script, shift-window query method
+- [x] 34-02-PLAN.md -- Update stats_generator.py to extract and store hybridisation during HOSE processing
+- [x] 34-03-PLAN.md -- Create detection module and `lucy detect hybridisation` CLI command
 
 ---
 
@@ -769,7 +769,7 @@ Plans:
 | 31. Sanitization Skill | v2.1 | 1/1 | Complete | 2026-02-08 |
 | 32. End-to-End Validation | v2.1 | 1/1 | Complete | 2026-02-08 |
 | 33. Documentation and Cleanup | v2.1 | 2/2 | Complete | 2026-02-09 |
-| 34. Hybridisation Detection | v3.0 | 0/3 | Planned | - |
+| 34. Hybridisation Detection | v3.0 | 3/3 | Complete | 2026-02-10 |
 | 35. Neighbourhood Detection | v3.0 | 0/4 | Not started | - |
 | 36. HHB and Ring Detection | v3.0 | 0/3 | Not started | - |
 | 37. Signal Grouping | v3.0 | 0/3 | Not started | - |
@@ -778,4 +778,4 @@ Plans:
 | 40. Validation | v3.0 | 0/3 | Not started | - |
 
 ---
-*Last updated: 2026-02-10 after Phase 34 planning*
+*Last updated: 2026-02-10 after Phase 34 execution*
