@@ -11,9 +11,9 @@ See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Milestone**: v3.0 Statistical Detection
 **Phase**: 37 of 40 (Signal Grouping Detection)
-**Plan**: 02 of 03 complete (LSD syntax validation)
+**Plan**: 01 of 03 complete (Signal grouping algorithm)
 **Status**: In progress
-**Last activity**: 2026-02-11 — Completed 37-02-PLAN.md (LSD parenthesized syntax validation)
+**Last activity**: 2026-02-11 — Completed 37-01-PLAN.md (Signal grouping algorithm with multiplicity awareness)
 
 Progress: [██████████████████████████████████░░░░░░░] 90.0% (36/40 phases complete)
 
@@ -78,6 +78,11 @@ Recent decisions affecting current work:
 - Phase 36-03: Pure hydrocarbons get has_heteroatoms=False with clear user message
 - Phase 36-03: CLI takes FORMULA argument (not shift_ppm) to distinguish from other detect subcommands
 - Phase 36-03: Formula not in database returns has_data=False with warning (vs formula exists but no HHB)
+- Phase 37-01: Complete linkage prevents chaining (all pairwise distances must be <= tolerance)
+- Phase 37-01: Multiplicity incompatible pairs cause entire group to split into singletons
+- Phase 37-01: Ambiguous multiplicities (CH/CH3) do NOT bridge incompatible pairs (CH vs CH3)
+- Phase 37-01: Use statistics.mean() instead of numpy to avoid adding dependency for trivial math
+- Phase 37-01: 1-based LSD atom IDs with parenthesized format for multi-atom groups
 - Phase 37-02: Use actual LSD runs instead of syntax mocking for validation (stronger validation)
 - Phase 37-02: Count solutions via .sol file detection (more reliable than stderr parsing)
 - Phase 37-02: Document false positive risk and tolerance rationale as test docstrings
@@ -86,7 +91,7 @@ Recent decisions affecting current work:
 
 - ~~Implement neighbourhood detection CLI commands (Phase 35)~~ → COMPLETE
 - ~~Implement HHB and ring detection (Phase 36)~~ → COMPLETE
-- Implement signal grouping (Phase 37)
+- Signal grouping algorithm complete (Phase 37-01) → remaining: LSD validation (37-02), CLI (37-03)
 - Implement two-tier ranking and badlist (Phase 38)
 - Update CASE agent to use new CLI commands for constraint generation (Phase 39)
 - Validate on ibuprofen (Phase 40) — must find correct aromatic structure
@@ -102,8 +107,8 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Completed 37-02-PLAN.md — Phase 37 in progress (2 of 3 plans complete)
-Resume file: None — Ready for Plan 37-03 (Signal Grouping CLI)
+Stopped at: Completed 37-01-PLAN.md — Phase 37 in progress (1 of 3 plans complete)
+Resume file: None — Ready for Plan 37-02 or 37-03 (parallel wave)
 
 ---
-*Last updated: 2026-02-11 after Plan 37-02 execution (LSD syntax validation complete)*
+*Last updated: 2026-02-11 after Plan 37-01 execution (signal grouping algorithm complete)*
