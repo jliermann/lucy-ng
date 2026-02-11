@@ -13,7 +13,7 @@ See: .planning/PROJECT.md (updated 2026-02-10)
 **Phase**: 34 of 40 (Hybridisation Detection)
 **Plan**: 2 of 3 complete
 **Status**: In progress
-**Last activity**: 2026-02-11 — Completed 34-03 (detection module and CLI command)
+**Last activity**: 2026-02-11 — Completed 34-02 (hybridisation extraction in stats generator)
 
 Progress: [████████████████████████████████░░░░░░░░] 85% (35 plans complete: 33 phases + 2 plans)
 
@@ -30,9 +30,9 @@ Progress: [███████████████████████
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 41 (v1.0-v2.1: 39, v3.0: 2)
-- Average duration: ~3 hours per phase (v1.0-v1.2), < 15 min per phase (v2.0-v2.1 docs/skills), ~12 min per plan (v3.0 implementation)
-- Total execution time: ~65.32 hours
+- Total plans completed: 35 (v1.0-v2.1: 33 phases, v3.0: 2 plans)
+- Average duration: ~3 hours per phase (v1.0-v1.2), < 15 min per phase (v2.0-v2.1 docs/skills), ~11 min per plan (v3.0 implementation)
+- Total execution time: ~65.50 hours
 
 ## Accumulated Context
 
@@ -49,9 +49,10 @@ Recent decisions affecting current work:
 - Phase 34-01: Use ALTER TABLE ADD COLUMN for v3→v4 migration (safe, fast, in-place)
 - Phase 34-01: Composite index (radius, mean) for O(log N) BETWEEN queries in detection
 - Phase 34-01: All query methods backward compatible with v3 databases (try/except fallback)
-- Phase 34-03: Default 1% frequency threshold for state filtering (excludes noise)
-- Phase 34-03: Normalize remaining frequencies after threshold filter (ensures sum=1.0)
-- Phase 34-03: Return has_data=False with warning when all hybridisation counts are 0 (distinguishes no-data from needs-regeneration)
+- Phase 34-02: extract_hybridisation() at module level for reusability across generator classes
+- Phase 34-02: update_with_hybridisation() instead of modifying update() for backward compatibility
+- Phase 34-02: generate_all() returns tuple (aggregates, hybridisations) - minimal breaking change
+- Phase 34-02: Treat S and UNSPECIFIED hybridisations as sp3 (conservative default)
 
 ### Pending Todos
 
@@ -70,8 +71,8 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Completed 34-03-PLAN.md (detection module and CLI command)
+Stopped at: Completed 34-02-PLAN.md (hybridisation extraction in stats generator)
 Resume file: None
 
 ---
-*Last updated: 2026-02-11 after Phase 34 Plan 03 execution*
+*Last updated: 2026-02-11 after Phase 34 Plan 02 execution*
