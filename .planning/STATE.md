@@ -5,17 +5,17 @@
 See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with data-driven statistical constraints replacing guesswork
-**Current focus:** v3.0 Statistical Detection — Phase 37 (Signal Grouping Detection)
+**Current focus:** v3.0 Statistical Detection — Phase 38 (Two-Tier Ranking and Badlist)
 
 ## Current Position
 
 **Milestone**: v3.0 Statistical Detection
 **Phase**: 38 of 40 (Two-Tier Ranking and Badlist)
-**Plan**: 01 of 02 complete (Two-tier ranking implementation)
-**Status**: Phase in progress (1/2 plans complete)
-**Last activity**: 2026-02-11 — Completed 38-01-PLAN.md
+**Plan**: 02 of 02 complete (Badlist documentation and ranking guidance)
+**Status**: Phase complete, verified (11/11 must-haves)
+**Last activity**: 2026-02-11 — Phase 38 complete, all 2 plans executed and verified
 
-Progress: [██████████████████████████████████░░░░░░░] 92.5% (37/40 phases complete)
+Progress: [████████████████████████████████████░░░░░] 95.0% (38/40 phases complete)
 
 ## Completed Milestones
 
@@ -30,9 +30,9 @@ Progress: [███████████████████████
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 58 (v1.0-v2.1: 39, v3.0: 19)
+- Total plans completed: 59 (v1.0-v2.1: 39, v3.0: 20)
 - Average duration: ~3 hours per phase (v1.0-v1.2), < 15 min per phase (v2.0-v2.1 docs/skills), ~5.3 min per plan (v3.0 implementation)
-- Total execution time: ~68.5 hours
+- Total execution time: ~69.0 hours
 
 ## Accumulated Context
 
@@ -102,8 +102,7 @@ Recent decisions affecting current work:
 - ~~Implement neighbourhood detection CLI commands (Phase 35)~~ → COMPLETE
 - ~~Implement HHB and ring detection (Phase 36)~~ → COMPLETE
 - ~~Signal grouping detection (Phase 37)~~ → COMPLETE
-- ~~Two-tier ranking implementation (Phase 38-01)~~ → COMPLETE
-- ~~Badlist documentation and ranking guidance (Phase 38-02)~~ → COMPLETE
+- ~~Implement two-tier ranking and badlist (Phase 38)~~ → COMPLETE
 - Update CASE agent to use new CLI commands for constraint generation (Phase 39)
 - Validate on ibuprofen (Phase 40) — must find correct aromatic structure
 
@@ -118,8 +117,8 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Completed 38-01-PLAN.md — Phase 38 plan 1/2 complete (two-tier ranking)
-Resume file: None — Ready for Phase 38-02 (badlist documentation) or Phase 39
+Stopped at: Completed Phase 38 — all 2 plans executed and verified (11/11 must-haves)
+Resume file: None — Ready for Phase 39 (Agent Integration)
 
 ---
-*Last updated: 2026-02-11 after Plan 38-01 execution (Two-tier ranking complete)*
+*Last updated: 2026-02-11 after Phase 38 execution (Two-Tier Ranking and Badlist complete)*

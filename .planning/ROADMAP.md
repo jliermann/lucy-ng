@@ -586,7 +586,7 @@ Plans:
 - [x] **Phase 35: Neighbourhood Detection** - Bond partner statistics, CLI commands for forbidden/mandatory neighbour detection from HOSE sphere 1
 - [x] **Phase 36: HHB and Ring Detection** - Hetero-hetero bond statistics, ring statistics for badlist foundation
 - [x] **Phase 37: Signal Grouping** - Multiplicity-aware close shift detection, LSD parenthesized atom list generation
-- [ ] **Phase 38: Two-Tier Ranking and Badlist** - Match-count-first ranking, hardcoded 3/4-membered ring filters in agent
+- [x] **Phase 38: Two-Tier Ranking and Badlist** - Match-count-first ranking, hardcoded 3/4-membered ring filters in agent
 - [ ] **Phase 39: Agent Integration** - CASE agent learns statistical detection protocol, chemistry-first hierarchy, threshold overrides
 - [ ] **Phase 40: Validation** - Test suite with Sherlock's 45 cases, metrics (accuracy, search space reduction, rank improvement)
 
@@ -672,7 +672,7 @@ Plans:
 
 ---
 
-### Phase 38: Two-Tier Ranking and Badlist
+### Phase 38: Two-Tier Ranking and Badlist ✅ (2026-02-11)
 **Goal**: Solution ranking prevents MAE hallucinations and badlist excludes strained rings
 **Depends on**: Phase 36 (ring statistics available)
 **Requirements**: RANK-01, RANK-02, RANK-03, RANK-04
@@ -683,10 +683,11 @@ Plans:
   4. Agent can optionally exclude strained rings by adding badlist filters to LSD input
   5. Ranking reports HOSE prediction radius used per carbon (transparency for low-confidence predictions)
 **Plans**: 2 plans
+**Verified**: 11/11 must-haves passed
 
 Plans:
-- [ ] 38-01-PLAN.md — Two-tier ranking sort order + tests + CLI output (TDD)
-- [ ] 38-02-PLAN.md — Badlist patterns in CASE agent knowledge + CLAUDE.md docs
+- [x] 38-01-PLAN.md — Two-tier ranking sort order + tests + CLI output (TDD)
+- [x] 38-02-PLAN.md — Badlist patterns in CASE agent knowledge + CLAUDE.md docs
 
 ---
 
@@ -775,9 +776,9 @@ Plans:
 | 35. Neighbourhood Detection | v3.0 | 4/4 | Complete | 2026-02-11 |
 | 36. HHB and Ring Detection | v3.0 | 3/3 | Complete | 2026-02-11 |
 | 37. Signal Grouping | v3.0 | 3/3 | Complete | 2026-02-11 |
-| 38. Two-Tier Ranking and Badlist | v3.0 | 0/3 | Not started | - |
+| 38. Two-Tier Ranking and Badlist | v3.0 | 2/2 | Complete | 2026-02-11 |
 | 39. Agent Integration | v3.0 | 0/3 | Not started | - |
 | 40. Validation | v3.0 | 0/3 | Not started | - |
 
 ---
-*Last updated: 2026-02-11 after Phase 37 execution*
+*Last updated: 2026-02-11 after Phase 38 execution*

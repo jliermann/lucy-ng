@@ -19,10 +19,10 @@ Requirements for v3.0 milestone. Each maps to roadmap phases.
 
 ### Ranking & Filtering
 
-- [ ] **RANK-01**: Two-tier ranking scores solutions by signal match count first, then average deviation
-- [ ] **RANK-02**: Solutions with fewer matched signals rank lower regardless of MAE
-- [ ] **RANK-03**: Badlist filter excludes solutions containing 3-membered rings
-- [ ] **RANK-04**: Badlist filter excludes solutions containing 4-membered rings
+- [x] **RANK-01**: Two-tier ranking scores solutions by signal match count first, then average deviation
+- [x] **RANK-02**: Solutions with fewer matched signals rank lower regardless of MAE
+- [x] **RANK-03**: Badlist filter excludes solutions containing 3-membered rings
+- [x] **RANK-04**: Badlist filter excludes solutions containing 4-membered rings
 
 ### Agent Integration
 
@@ -96,10 +96,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DETECT-03 | Phase 35 | Complete |
 | DETECT-04 | Phase 36 | Complete |
 | DETECT-05 | Phase 37 | Complete |
-| RANK-01 | Phase 38 | Pending |
-| RANK-02 | Phase 38 | Pending |
-| RANK-03 | Phase 38 | Pending |
-| RANK-04 | Phase 38 | Pending |
+| RANK-01 | Phase 38 | Complete |
+| RANK-02 | Phase 38 | Complete |
+| RANK-03 | Phase 38 | Complete |
+| RANK-04 | Phase 38 | Complete |
 | AGENT-01 | Phase 39 | Pending |
 | AGENT-02 | Phase 39 | Pending |
 | AGENT-03 | Phase 39 | Pending |
@@ -126,4 +126,4 @@ All 68 requirements (38 v2.0 + 30 v2.1) mapped and complete. See git history for
 
 ---
 *Requirements defined: 2026-02-10*
-*Last updated: 2026-02-11 after Phase 37 execution*
+*Last updated: 2026-02-11 after Phase 38 execution*
