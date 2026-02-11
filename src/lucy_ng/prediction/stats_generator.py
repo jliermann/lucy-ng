@@ -78,6 +78,10 @@ class WelfordAccumulator:
     has_nitrogen_neighbor: int = 0
     has_sulfur_neighbor: int = 0
     has_halogen_neighbor: int = 0
+    # Ring membership counts (Phase 36)
+    in_3ring: int = 0  # Observations where atom is in 3-membered ring
+    in_4ring: int = 0  # Observations where atom is in 4-membered ring
+    in_aromatic: int = 0  # Observations where atom is aromatic
 
     def update(self, value: float) -> None:
         """Add a single observation using Welford's algorithm.
@@ -133,6 +137,38 @@ class WelfordAccumulator:
         if any(neighbors.get(hal, 0) > 0 for hal in ("F", "Cl", "Br", "I")):
             self.has_halogen_neighbor += 1
 
+    def update_with_rings(
+        self,
+        value: float,
+        hybridisation: str,
+        neighbors: dict[str, int],
+        atom_idx: int,
+        mol,  # rdkit.Chem.Mol
+    ) -> None:
+        """Add observation with ring membership data.
+
+        Calls update_with_neighbors() internally for hybridisation and
+        neighbour tracking, then checks ring membership.
+
+        Args:
+            value: Chemical shift in ppm
+            hybridisation: "sp3", "sp2", or "sp1"
+            neighbors: Dict from parse_sphere_1()
+            atom_idx: Atom index in RDKit molecule
+            mol: RDKit molecule object
+        """
+        self.update_with_neighbors(value, hybridisation, neighbors)
+
+        ring_info = mol.GetRingInfo()
+        atom = mol.GetAtomWithIdx(atom_idx)
+
+        if ring_info.IsAtomInRingOfSize(atom_idx, 3):
+            self.in_3ring += 1
+        if ring_info.IsAtomInRingOfSize(atom_idx, 4):
+            self.in_4ring += 1
+        if atom.GetIsAromatic():
+            self.in_aromatic += 1
+
     @property
     def variance(self) -> float:
         """Population variance of observations."""
@@ -170,6 +206,9 @@ class WelfordAccumulator:
                 has_nitrogen_neighbor=self.has_nitrogen_neighbor,
                 has_sulfur_neighbor=self.has_sulfur_neighbor,
                 has_halogen_neighbor=self.has_halogen_neighbor,
+                in_3ring=self.in_3ring,
+                in_4ring=self.in_4ring,
+                in_aromatic=self.in_aromatic,
             )
         if self.count == 0:
             return WelfordAccumulator(
@@ -184,6 +223,9 @@ class WelfordAccumulator:
                 has_nitrogen_neighbor=other.has_nitrogen_neighbor,
                 has_sulfur_neighbor=other.has_sulfur_neighbor,
                 has_halogen_neighbor=other.has_halogen_neighbor,
+                in_3ring=other.in_3ring,
+                in_4ring=other.in_4ring,
+                in_aromatic=other.in_aromatic,
             )
 
         combined_count = self.count + other.count
@@ -208,16 +250,22 @@ class WelfordAccumulator:
         merged.has_nitrogen_neighbor = self.has_nitrogen_neighbor + other.has_nitrogen_neighbor
         merged.has_sulfur_neighbor = self.has_sulfur_neighbor + other.has_sulfur_neighbor
         merged.has_halogen_neighbor = self.has_halogen_neighbor + other.has_halogen_neighbor
+        merged.in_3ring = self.in_3ring + other.in_3ring
+        merged.in_4ring = self.in_4ring + other.in_4ring
+        merged.in_aromatic = self.in_aromatic + other.in_aromatic
 
         return merged
 
-    def to_tuple(self) -> tuple[int, float, float, int, int, int, int, int, int, int, int]:
-        """Export as 11-element tuple for database storage.
+    def to_tuple(
+        self,
+    ) -> tuple[int, float, float, int, int, int, int, int, int, int, int, int, int, int]:
+        """Export as 14-element tuple for database storage.
 
         Returns:
             Tuple of (count, mean, m2, sp3_count, sp2_count, sp1_count,
                       has_carbon_neighbor, has_oxygen_neighbor, has_nitrogen_neighbor,
-                      has_sulfur_neighbor, has_halogen_neighbor)
+                      has_sulfur_neighbor, has_halogen_neighbor,
+                      in_3ring, in_4ring, in_aromatic)
         """
         return (
             self.count,
@@ -231,6 +279,9 @@ class WelfordAccumulator:
             self.has_nitrogen_neighbor,
             self.has_sulfur_neighbor,
             self.has_halogen_neighbor,
+            self.in_3ring,
+            self.in_4ring,
+            self.in_aromatic,
         )
 
 
@@ -275,6 +326,7 @@ class HOSEStatsGenerator:
         dict[tuple[str, int], list[float]],
         dict[tuple[str, int], dict[str, int]],
         dict[tuple[str, int], dict[str, int]],
+        dict[tuple[str, int], dict[str, int]],
     ]:
         """Generate HOSE code shift aggregates from all compounds.
 
@@ -290,6 +342,7 @@ class HOSEStatsGenerator:
             - Dict mapping (hose_code, radius) to list of observed shifts
             - Dict mapping (hose_code, radius) to hybridisation counts
             - Dict mapping (hose_code, radius) to neighbour element counts
+            - Dict mapping (hose_code, radius) to ring membership counts
         """
         # Reset statistics
         self._compounds_processed = 0
@@ -307,6 +360,11 @@ class HOSEStatsGenerator:
         # Neighbour element counts: {(hose_code, radius): {"C": N, "O": M, ...}}
         neighbour_counts: dict[tuple[str, int], dict[str, int]] = defaultdict(
             lambda: {"C": 0, "O": 0, "N": 0, "S": 0, "halogen": 0}
+        )
+
+        # Ring membership counts: {(hose_code, radius): {"3ring": N, "4ring": M, "aromatic": K}}
+        ring_counts: dict[tuple[str, int], dict[str, int]] = defaultdict(
+            lambda: {"3ring": 0, "4ring": 0, "aromatic": 0}
         )
 
         # Get total count for progress bar
@@ -368,18 +426,28 @@ class HOSEStatsGenerator:
                             if any(neighbors.get(hal, 0) > 0 for hal in ("F", "Cl", "Br", "I")):
                                 neighbour_counts[(hose_code, radius)]["halogen"] += 1
 
+                            # Ring membership detection (requires mol and atom_idx)
+                            ring_info = mol.GetRingInfo()
+                            if ring_info.IsAtomInRingOfSize(atom_idx, 3):
+                                ring_counts[(hose_code, radius)]["3ring"] += 1
+                            if ring_info.IsAtomInRingOfSize(atom_idx, 4):
+                                ring_counts[(hose_code, radius)]["4ring"] += 1
+                            if atom.GetIsAromatic():
+                                ring_counts[(hose_code, radius)]["aromatic"] += 1
+
                             self._shifts_processed += 1
                     except Exception:
                         # Skip atoms that fail HOSE generation
                         continue
 
-        return dict(aggregates), dict(hybridisations), dict(neighbour_counts)
+        return dict(aggregates), dict(hybridisations), dict(neighbour_counts), dict(ring_counts)
 
     def compute_stats(
         self,
         aggregates: dict[tuple[str, int], list[float]],
         hybridisations: dict[tuple[str, int], dict[str, int]] | None = None,
         neighbour_counts: dict[tuple[str, int], dict[str, int]] | None = None,
+        ring_counts: dict[tuple[str, int], dict[str, int]] | None = None,
     ) -> list[HOSEStatsRecord]:
         """Compute statistics from aggregated shifts.
 
@@ -387,6 +455,7 @@ class HOSEStatsGenerator:
             aggregates: Dict mapping (hose_code, radius) to list of shifts
             hybridisations: Dict mapping (hose_code, radius) to hybridisation counts
             neighbour_counts: Dict mapping (hose_code, radius) to neighbour element counts
+            ring_counts: Dict mapping (hose_code, radius) to ring membership counts
 
         Returns:
             List of HOSEStatsRecord with mean, std, count
@@ -427,6 +496,17 @@ class HOSEStatsGenerator:
                 has_sulfur_neighbor = 0
                 has_halogen_neighbor = 0
 
+            # Get ring counts if provided
+            if ring_counts and (hose_code, radius) in ring_counts:
+                rc = ring_counts[(hose_code, radius)]
+                in_3ring = rc.get("3ring", 0)
+                in_4ring = rc.get("4ring", 0)
+                in_aromatic = rc.get("aromatic", 0)
+            else:
+                in_3ring = 0
+                in_4ring = 0
+                in_aromatic = 0
+
             stats.append(
                 HOSEStatsRecord(
                     hose_code=hose_code,
@@ -442,6 +522,9 @@ class HOSEStatsGenerator:
                     has_nitrogen_neighbor=has_nitrogen_neighbor,
                     has_sulfur_neighbor=has_sulfur_neighbor,
                     has_halogen_neighbor=has_halogen_neighbor,
+                    in_3ring=in_3ring,
+                    in_4ring=in_4ring,
+                    in_aromatic=in_aromatic,
                 )
             )
 
@@ -465,11 +548,13 @@ class HOSEStatsGenerator:
         Returns:
             Number of statistics entries inserted
         """
-        # Generate aggregates, hybridisation counts, and neighbour counts
-        aggregates, hybridisations, neighbour_counts = self.generate_all(progress=progress)
+        # Generate aggregates, hybridisation counts, neighbour counts, and ring counts
+        aggregates, hybridisations, neighbour_counts, ring_counts = self.generate_all(
+            progress=progress
+        )
 
         # Compute statistics
-        stats = self.compute_stats(aggregates, hybridisations, neighbour_counts)
+        stats = self.compute_stats(aggregates, hybridisations, neighbour_counts, ring_counts)
 
         # Insert into database
         count = self.db_manager.insert_hose_stats_batch(stats, batch_size=batch_size)
@@ -681,8 +766,8 @@ class ResumableHOSEStatsGenerator:
                         if hose_code:
                             # Parse sphere 1 for neighbour elements
                             neighbors = parse_sphere_1(hose_code)
-                            accumulators[(hose_code, radius)].update_with_neighbors(
-                                shift_ppm, hybridisation, neighbors
+                            accumulators[(hose_code, radius)].update_with_rings(
+                                shift_ppm, hybridisation, neighbors, atom_idx, mol
                             )
                             shifts_processed += 1
                     except Exception:
@@ -706,8 +791,8 @@ class ResumableHOSEStatsGenerator:
             return 0
 
         # Convert to tuple format for upsert
-        # Prepend hose_code and radius to the 11-element to_tuple() result
-        # Result: 13-element tuple for v5 schema
+        # Prepend hose_code and radius to the 14-element to_tuple() result
+        # Result: 16-element tuple for v6 schema
         stats = [
             (hose_code, radius) + acc.to_tuple()
             for (hose_code, radius), acc in accumulators.items()
@@ -1068,8 +1153,8 @@ class SDFHOSEStatsGenerator:
                         if hose_code:
                             # Parse sphere 1 for neighbour elements
                             neighbors = parse_sphere_1(hose_code)
-                            accumulators[(hose_code, radius)].update_with_neighbors(
-                                shift_ppm, hybridisation, neighbors
+                            accumulators[(hose_code, radius)].update_with_rings(
+                                shift_ppm, hybridisation, neighbors, atom_idx, mol
                             )
                             shifts_processed += 1
                     except Exception:
@@ -1085,8 +1170,8 @@ class SDFHOSEStatsGenerator:
         if not accumulators:
             return 0
 
-        # Prepend hose_code and radius to the 11-element to_tuple() result
-        # Result: 13-element tuple for v5 schema
+        # Prepend hose_code and radius to the 14-element to_tuple() result
+        # Result: 16-element tuple for v6 schema
         stats = [
             (hose_code, radius) + acc.to_tuple()
             for (hose_code, radius), acc in accumulators.items()
