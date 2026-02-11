@@ -702,12 +702,12 @@ Plans:
   4. Agent uses HHB detection to decide whether to add hetero-hetero BOND constraints
   5. Agent applies chemistry-first hierarchy (NMR knowledge trumps statistics, stats augment but don't override)
   6. Agent uses signal grouping detection to identify ambiguous assignments and document in CASE-PROGRESS.md
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 39-01-PLAN.md: Update lucy-case-agent.md with statistical detection workflow section
-- [ ] 39-02-PLAN.md: Add chemistry-first hierarchy rules and threshold override examples
-- [ ] 39-03-PLAN.md: Create integration test with ibuprofen (verify correct aromatic structure found)
+- [ ] 39-01-PLAN.md — Add statistical detection protocol and LSD constraint translation to agent knowledge
+- [ ] 39-02-PLAN.md — Add chemistry-first hierarchy rules, conflict resolution, and threshold overrides
+- [ ] 39-03-PLAN.md — Validate agent structure, update CLAUDE.md, human verification checkpoint
 
 ---
 
