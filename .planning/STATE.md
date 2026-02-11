@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Milestone**: v3.0 Statistical Detection
 **Phase**: 39 of 40 (Agent Integration)
-**Plan**: 01 of 02 complete (Detection protocol integration)
-**Status**: In progress (1/2 plans complete)
-**Last activity**: 2026-02-11 — Completed 39-01-PLAN.md (agent detection protocol integration)
+**Plan**: 02 of 02 complete (Chemistry-first hierarchy integration)
+**Status**: Phase complete (2/2 plans complete)
+**Last activity**: 2026-02-11 — Completed 39-02-PLAN.md (chemistry-first hierarchy)
 
-Progress: [████████████████████████████████████░░░░░] 95.0% (38/40 phases complete, 39 in progress)
+Progress: [████████████████████████████████████░░░░░] 97.5% (39/40 phases complete, phase 39 complete)
 
 ## Completed Milestones
 
@@ -30,9 +30,9 @@ Progress: [███████████████████████
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 60 (v1.0-v2.1: 39, v3.0: 21)
-- Average duration: ~3 hours per phase (v1.0-v1.2), < 15 min per phase (v2.0-v2.1 docs/skills), ~5.2 min per plan (v3.0 implementation)
-- Total execution time: ~69.1 hours
+- Total plans completed: 62 (v1.0-v2.1: 39, v3.0: 23)
+- Average duration: ~3 hours per phase (v1.0-v1.2), < 15 min per phase (v2.0-v2.1 docs/skills), ~4.5 min per plan (v3.0 implementation)
+- Total execution time: ~69.3 hours
 
 ## Accumulated Context
 
@@ -98,8 +98,13 @@ Recent decisions affecting current work:
 - Phase 38-02: Two-tier ranking prioritizes signal match count over MAE to prevent wrong structures with coincidentally low errors
 - Phase 39-01: Inline detection knowledge in agent file (240 lines) for immediate access during CASE workflow
 - Phase 39-01: Selective detection by shift range (120-160, 160-220, 50-90 ppm) instead of querying every shift
-- Phase 39-01: Chemistry-First Hierarchy (6 levels) resolves conflicts when detection contradicts NMR data
 - Phase 39-01: Detection runs once per compound (before first LSD) - results constant across iterations
+- Phase 39-02: Chemistry-First Hierarchy with 5 explicit priority levels (DEPT 100% > HSQC 95% > HMBC 80% > shifts 70% > detection 60%)
+- Phase 39-02: Conflict resolution decision tree for 5 patterns (DEPT, formula, HSQC, no data, ambiguous)
+- Phase 39-02: 3 worked conflict examples (allylic CH2, formula mismatch, peroxide override)
+- Phase 39-02: Threshold override guidelines with mandatory documentation for every override
+- Phase 39-02: Detection failure handling with shift-based fallback heuristics when database has no entries
+- Phase 39-02: Principle: statistics augment NMR evidence, never override
 
 ### Pending Todos
 
@@ -107,9 +112,8 @@ Recent decisions affecting current work:
 - ~~Implement HHB and ring detection (Phase 36)~~ → COMPLETE
 - ~~Signal grouping detection (Phase 37)~~ → COMPLETE
 - ~~Implement two-tier ranking and badlist (Phase 38)~~ → COMPLETE
-- ~~Add detection protocol knowledge to CASE agent (Phase 39-01)~~ → COMPLETE
-- Test detection workflow on simple compound (Phase 39-02)
-- Validate on ibuprofen (Phase 40) — must find correct aromatic structure
+- ~~Add detection protocol and chemistry-first hierarchy to CASE agent (Phase 39)~~ → COMPLETE
+- Validate detection workflow on ibuprofen (Phase 40) — must find correct aromatic structure with v3.0 detection
 
 ### Blockers/Concerns
 
@@ -122,8 +126,8 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Completed Phase 39-01 — detection protocol integration (8/8 must-haves)
-Resume file: None — Ready for Phase 39-02 (Detection workflow testing)
+Stopped at: Completed Phase 39-02 — chemistry-first hierarchy integration (7/7 must-haves)
+Resume file: None — Phase 39 complete, ready for Phase 40 (Ibuprofen validation with v3.0 detection)
 
 ---
-*Last updated: 2026-02-11 after Phase 39-01 execution (Agent detection protocol integration complete)*
+*Last updated: 2026-02-11 after Phase 39-02 execution (Chemistry-first hierarchy integration complete, Phase 39 complete)*
