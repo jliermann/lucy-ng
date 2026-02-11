@@ -10,12 +10,12 @@ See: .planning/PROJECT.md (updated 2026-02-10)
 ## Current Position
 
 **Milestone**: v3.0 Statistical Detection
-**Phase**: 38 of 40 (Two-Tier Ranking and Badlist)
-**Plan**: 02 of 02 complete (Badlist documentation and ranking guidance)
-**Status**: Phase complete, verified (11/11 must-haves)
-**Last activity**: 2026-02-11 — Phase 38 complete, all 2 plans executed and verified
+**Phase**: 39 of 40 (Agent Integration)
+**Plan**: 01 of 02 complete (Detection protocol integration)
+**Status**: In progress (1/2 plans complete)
+**Last activity**: 2026-02-11 — Completed 39-01-PLAN.md (agent detection protocol integration)
 
-Progress: [████████████████████████████████████░░░░░] 95.0% (38/40 phases complete)
+Progress: [████████████████████████████████████░░░░░] 95.0% (38/40 phases complete, 39 in progress)
 
 ## Completed Milestones
 
@@ -30,9 +30,9 @@ Progress: [███████████████████████
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 59 (v1.0-v2.1: 39, v3.0: 20)
-- Average duration: ~3 hours per phase (v1.0-v1.2), < 15 min per phase (v2.0-v2.1 docs/skills), ~5.3 min per plan (v3.0 implementation)
-- Total execution time: ~69.0 hours
+- Total plans completed: 60 (v1.0-v2.1: 39, v3.0: 21)
+- Average duration: ~3 hours per phase (v1.0-v1.2), < 15 min per phase (v2.0-v2.1 docs/skills), ~5.2 min per plan (v3.0 implementation)
+- Total execution time: ~69.1 hours
 
 ## Accumulated Context
 
@@ -96,6 +96,10 @@ Recent decisions affecting current work:
 - Phase 38-02: 8 DEFF NOT patterns exclude all common strained ring motifs (3- and 4-membered)
 - Phase 38-02: Epoxide exception documented with specific shift range (45-55 ppm) and formula requirements
 - Phase 38-02: Two-tier ranking prioritizes signal match count over MAE to prevent wrong structures with coincidentally low errors
+- Phase 39-01: Inline detection knowledge in agent file (240 lines) for immediate access during CASE workflow
+- Phase 39-01: Selective detection by shift range (120-160, 160-220, 50-90 ppm) instead of querying every shift
+- Phase 39-01: Chemistry-First Hierarchy (6 levels) resolves conflicts when detection contradicts NMR data
+- Phase 39-01: Detection runs once per compound (before first LSD) - results constant across iterations
 
 ### Pending Todos
 
@@ -103,7 +107,8 @@ Recent decisions affecting current work:
 - ~~Implement HHB and ring detection (Phase 36)~~ → COMPLETE
 - ~~Signal grouping detection (Phase 37)~~ → COMPLETE
 - ~~Implement two-tier ranking and badlist (Phase 38)~~ → COMPLETE
-- Update CASE agent to use new CLI commands for constraint generation (Phase 39)
+- ~~Add detection protocol knowledge to CASE agent (Phase 39-01)~~ → COMPLETE
+- Test detection workflow on simple compound (Phase 39-02)
 - Validate on ibuprofen (Phase 40) — must find correct aromatic structure
 
 ### Blockers/Concerns
@@ -117,8 +122,8 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Completed Phase 38 — all 2 plans executed and verified (11/11 must-haves)
-Resume file: None — Ready for Phase 39 (Agent Integration)
+Stopped at: Completed Phase 39-01 — detection protocol integration (8/8 must-haves)
+Resume file: None — Ready for Phase 39-02 (Detection workflow testing)
 
 ---
-*Last updated: 2026-02-11 after Phase 38 execution (Two-Tier Ranking and Badlist complete)*
+*Last updated: 2026-02-11 after Phase 39-01 execution (Agent detection protocol integration complete)*
