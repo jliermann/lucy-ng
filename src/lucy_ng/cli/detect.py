@@ -195,3 +195,74 @@ def neighbours_command(
     # Warn if no data
     if result.warning:
         click.echo(f"\nWarning: {result.warning}", err=True)
+
+
+@detect.command("hhb")
+@click.argument("formula", type=str)
+@click.option(
+    "--db", "-d", type=click.Path(exists=True), default=None,
+    help="Path to SQLite database with bond pair stats.",
+)
+@click.option(
+    "--threshold", "-t", type=float, default=0.01,
+    help="Minimum frequency for allowed bond (default: 0.01 = 1%).",
+)
+@click.option(
+    "--format", "output_format",
+    type=click.Choice(["text", "json"]), default="text",
+    help="Output format.",
+)
+def hhb_command(
+    formula: str,
+    db: str | None,
+    threshold: float,
+    output_format: str,
+) -> None:
+    """Detect allowed hetero-hetero bonds for a molecular formula.
+
+    Queries the database for which heteroatom-heteroatom bonds (O-O, O-N,
+    N-N, etc.) occur in compounds with the given formula. Bonds below the
+    threshold are considered forbidden.
+
+    The argument is a molecular formula (e.g., C10H14O2), NOT a shift value.
+
+    Examples:
+
+        lucy detect hhb C10H14O2
+
+        lucy detect hhb C10H14O2 --threshold 0.05
+
+        lucy detect hhb C10H14O2 --format json
+    """
+    from lucy_ng.detection import StatisticalDetector
+
+    # Find database
+    db_path = Path(db) if db else DatabaseFinder.find_hose_database()
+    if not db_path:
+        click.echo(
+            "Error: No HOSE database found.\n\n"
+            "Options:\n"
+            "  1. Download database: lucy database download\n"
+            "  2. Specify path: lucy detect hhb C10H14O2 --db /path/to/db",
+            err=True,
+        )
+        raise SystemExit(1)
+
+    # Run detection
+    try:
+        detector = StatisticalDetector(db_path)
+        result = detector.detect_hhb(formula, threshold=threshold)
+        detector.close()
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        raise SystemExit(1) from e
+
+    # Output
+    if output_format == "json":
+        click.echo(result.model_dump_json(indent=2))
+    else:
+        click.echo(result.summary())
+
+    # Warn if no data
+    if result.warning:
+        click.echo(f"\nWarning: {result.warning}", err=True)
