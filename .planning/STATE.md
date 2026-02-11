@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Milestone**: v3.0 Statistical Detection
 **Phase**: 35 of 40 (Neighbourhood Detection)
-**Plan**: 02 of 04 complete (stats generator extension) [Re-executed to verify tests]
-**Status**: In progress
-**Last activity**: 2026-02-11 — Re-executed 35-02-PLAN.md to verify neighbour tracking tests exist
+**Plan**: 04 of 04 complete (CLI subcommand) — PHASE COMPLETE
+**Status**: Phase 35 complete, ready for Phase 36
+**Last activity**: 2026-02-11 — Completed 35-04-PLAN.md (neighbours CLI subcommand)
 
-Progress: [█████████████████████████████████░░░░░░░] 85% (34/40 phases complete, 35 in progress)
+Progress: [█████████████████████████████████░░░░░░░░] 87.5% (35/40 phases complete)
 
 ## Completed Milestones
 
@@ -30,9 +30,9 @@ Progress: [███████████████████████
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 45 (v1.0-v2.1: 39, v3.0: 6)
-- Average duration: ~3 hours per phase (v1.0-v1.2), < 15 min per phase (v2.0-v2.1 docs/skills), ~8 min per plan (v3.0 implementation)
-- Total execution time: ~66.3 hours
+- Total plans completed: 46 (v1.0-v2.1: 39, v3.0: 7)
+- Average duration: ~3 hours per phase (v1.0-v1.2), < 15 min per phase (v2.0-v2.1 docs/skills), ~7 min per plan (v3.0 implementation)
+- Total execution time: ~66.4 hours
 
 ## Accumulated Context
 
@@ -64,10 +64,12 @@ Recent decisions affecting current work:
 - Phase 35-03: mandatory_elements/forbidden_elements properties use hardcoded 0.95/0.01 thresholds for convenience
 - Phase 35-03: Constraints use custom thresholds passed to detect_neighbours() for flexibility
 - Phase 35-03: Warn on unpopulated neighbour columns (v4 databases) rather than fail
+- Phase 35-04: --mode flag overrides --min-frequency/--max-frequency when both provided
+- Phase 35-04: No multiplicity argument for neighbours detection (research recommends ignoring it)
 
 ### Pending Todos
 
-- Implement neighbourhood detection CLI commands (Phase 35)
+- ~~Implement neighbourhood detection CLI commands (Phase 35)~~ → COMPLETE
 - Implement HHB and ring detection (Phase 36)
 - Implement signal grouping (Phase 37)
 - Implement two-tier ranking and badlist (Phase 38)
@@ -85,8 +87,8 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Re-executed 35-02-PLAN.md (Stats generator extension with neighbour tracking)
-Resume file: None (Note: 35-03 already complete from prior session, ready for 35-04 CLI)
+Stopped at: Completed 35-04-PLAN.md — Phase 35 (Neighbourhood Detection) complete
+Resume file: None — Ready to begin Phase 36 (HHB and Ring Detection)
 
 ---
-*Last updated: 2026-02-11 after Plan 35-03 execution*
+*Last updated: 2026-02-11 after Plan 35-04 execution (Phase 35 complete)*
