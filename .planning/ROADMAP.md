@@ -616,18 +616,18 @@ Plans:
 **Depends on**: Phase 34 (schema and stats pipeline established)
 **Requirements**: DETECT-02, DETECT-03, DETECT-06, DETECT-07
 **Success Criteria** (what must be TRUE):
-  1. Database schema extended with bond partner columns (has_carbon_neighbor, has_oxygen_neighbor, has_nitrogen_neighbor boolean flags)
+  1. Database schema extended with bond partner columns (has_carbon_neighbor, has_oxygen_neighbor, has_nitrogen_neighbor, has_sulfur_neighbor, has_halogen_neighbor integer counts)
   2. Statistics generator extracts sphere 1 neighbours from HOSE codes and computes element frequencies
-  3. CLI command `lucy detect neighbours <db> <shift> <multiplicity>` returns forbidden elements (<1% frequency) and mandatory elements (>95% frequency)
-  4. Detection supports override flags (--min-frequency for NN threshold, --mode relaxed for rare cases)
+  3. CLI command `lucy detect neighbours <shift>` returns forbidden elements (<1% frequency) and mandatory elements (>95% frequency)
+  4. Detection supports override flags (--min-frequency, --max-frequency, --mode relaxed for rare cases)
   5. Command correctly identifies forbidden O-O bonds in non-peroxides and mandatory C=O bonds in carbonyl regions
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] 35-01-PLAN.md: Extend schema with neighbour columns, validate HOSE sphere 1 parsing
-- [ ] 35-02-PLAN.md: Update stats_generator.py to extract bond partners and compute frequencies
-- [ ] 35-03-PLAN.md: Extend StatisticalDetector with neighbourhood detection methods
-- [ ] 35-04-PLAN.md: Add neighbours CLI subcommand with threshold override flags
+- [ ] 35-01-PLAN.md -- Extend schema (v4->v5) with 5 neighbour columns, create HOSE sphere 1 parser, update DatabaseManager
+- [ ] 35-02-PLAN.md -- Update stats_generator.py WelfordAccumulator and generators to extract and track neighbours
+- [ ] 35-03-PLAN.md -- Extend StatisticalDetector with detect_neighbours() and add Pydantic result models
+- [ ] 35-04-PLAN.md -- Add `lucy detect neighbours` CLI subcommand with threshold override flags
 
 ---
 
@@ -770,7 +770,7 @@ Plans:
 | 32. End-to-End Validation | v2.1 | 1/1 | Complete | 2026-02-08 |
 | 33. Documentation and Cleanup | v2.1 | 2/2 | Complete | 2026-02-09 |
 | 34. Hybridisation Detection | v3.0 | 3/3 | Complete | 2026-02-10 |
-| 35. Neighbourhood Detection | v3.0 | 0/4 | Not started | - |
+| 35. Neighbourhood Detection | v3.0 | 0/4 | Planned | - |
 | 36. HHB and Ring Detection | v3.0 | 0/3 | Not started | - |
 | 37. Signal Grouping | v3.0 | 0/3 | Not started | - |
 | 38. Two-Tier Ranking and Badlist | v3.0 | 0/3 | Not started | - |
@@ -778,4 +778,4 @@ Plans:
 | 40. Validation | v3.0 | 0/3 | Not started | - |
 
 ---
-*Last updated: 2026-02-10 after Phase 34 execution*
+*Last updated: 2026-02-11 after Phase 35 planning*
