@@ -1,4 +1,4 @@
-"""Tests for database schema migration from v3 to v4."""
+"""Tests for database schema migration from v3 to v4 to v5."""
 
 import sqlite3
 from pathlib import Path
@@ -319,3 +319,143 @@ def test_v3_database_compatibility(tmp_path: Path) -> None:
             window_ppm=2.0,
         )
         assert len(results) == 1
+
+
+def test_migrate_v4_to_v5(tmp_path: Path) -> None:
+    """Test migration from v4 to v5 schema."""
+    db_path = tmp_path / "test_migration_v5.db"
+
+    # Create a v4 database
+    with DatabaseManager(db_path) as db:
+        conn = db.connection
+        cursor = conn.cursor()
+
+        # Create v4 schema (with hybridisation but without neighbour columns)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS hose_stats (
+                hose_code TEXT NOT NULL,
+                radius INTEGER NOT NULL,
+                mean REAL NOT NULL,
+                std REAL NOT NULL,
+                count INTEGER NOT NULL,
+                m2 REAL NOT NULL DEFAULT 0.0,
+                sp3_count INTEGER NOT NULL DEFAULT 0,
+                sp2_count INTEGER NOT NULL DEFAULT 0,
+                sp1_count INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY (hose_code, radius)
+            )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS schema_meta (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            )
+        """)
+
+        cursor.execute(
+            "INSERT INTO schema_meta (key, value) VALUES (?, ?)",
+            ("schema_version", "4"),
+        )
+
+        # Insert some test data
+        cursor.execute(
+            """
+            INSERT INTO hose_stats (hose_code, radius, mean, std, count, m2,
+                                    sp3_count, sp2_count, sp1_count)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            ("C-4;C(//)", 3, 25.0, 2.0, 100, 400.0, 95, 5, 0),
+        )
+        cursor.execute(
+            """
+            INSERT INTO hose_stats (hose_code, radius, mean, std, count, m2,
+                                    sp3_count, sp2_count, sp1_count)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            ("C-3;=O(//)", 3, 170.0, 3.0, 80, 720.0, 0, 75, 5),
+        )
+        conn.commit()
+
+    # Verify v4 schema
+    with DatabaseManager(db_path) as db:
+        assert db.get_schema_version() == 4
+
+        # Run migration
+        migrated = db.migrate_to_v5()
+        assert migrated is True
+
+        # Verify v5 schema
+        assert db.get_schema_version() == 5
+
+        # Check that new columns exist with default 0 values
+        conn = db.connection
+        cursor = conn.cursor()
+        cursor.execute(
+            """SELECT hose_code, has_carbon_neighbor, has_oxygen_neighbor,
+                      has_nitrogen_neighbor, has_sulfur_neighbor, has_halogen_neighbor
+               FROM hose_stats"""
+        )
+        rows = cursor.fetchall()
+        assert len(rows) == 2
+        for row in rows:
+            assert row["has_carbon_neighbor"] == 0
+            assert row["has_oxygen_neighbor"] == 0
+            assert row["has_nitrogen_neighbor"] == 0
+            assert row["has_sulfur_neighbor"] == 0
+            assert row["has_halogen_neighbor"] == 0
+
+    # Re-open and verify no double migration
+    with DatabaseManager(db_path) as db:
+        migrated = db.migrate_to_v5()
+        assert migrated is False  # Already at v5
+
+
+def test_upsert_with_neighbours(tmp_path: Path) -> None:
+    """Test upsert with neighbour counts (13-tuple format)."""
+    db_path = tmp_path / "test_upsert_neighbours.db"
+
+    with DatabaseManager(db_path) as db:
+        db.create_tables()
+
+        # Insert with neighbour counts (13-tuple format)
+        stats = [
+            ("C-3;=OCO(//)", 3, 100, 170.0, 900.0, 0, 95, 5, 25, 98, 2, 0, 0),
+        ]
+        db.upsert_hose_stats_incremental(stats)
+
+        # Retrieve and verify
+        record = db.get_hose_stats("C-3;=OCO(//)", 3)
+        assert record is not None
+        assert record.sp3_count == 0
+        assert record.sp2_count == 95
+        assert record.sp1_count == 5
+        assert record.has_carbon_neighbor == 25
+        assert record.has_oxygen_neighbor == 98
+        assert record.has_nitrogen_neighbor == 2
+        assert record.has_sulfur_neighbor == 0
+        assert record.has_halogen_neighbor == 0
+
+        # Query by shift window
+        results = db.get_hose_stats_by_shift_window(
+            shift_ppm=170.0,
+            radius=3,
+            window_ppm=2.0,
+        )
+        assert len(results) == 1
+        assert results[0].has_oxygen_neighbor == 98
+
+        # Upsert again with new counts (should add)
+        stats = [
+            ("C-3;=OCO(//)", 3, 50, 169.5, 225.0, 0, 48, 2, 10, 49, 1, 0, 0),
+        ]
+        db.upsert_hose_stats_incremental(stats)
+
+        # Verify merged counts
+        record = db.get_hose_stats("C-3;=OCO(//)", 3)
+        assert record is not None
+        assert record.count == 150  # 100 + 50
+        assert record.sp2_count == 143  # 95 + 48
+        assert record.has_carbon_neighbor == 35  # 25 + 10
+        assert record.has_oxygen_neighbor == 147  # 98 + 49
+        assert record.has_nitrogen_neighbor == 3  # 2 + 1

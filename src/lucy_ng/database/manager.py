@@ -7,7 +7,12 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from lucy_ng.database.models import CompoundRecord, HOSEStatsRecord, ShiftRecord
-from lucy_ng.database.schema import SCHEMA_STATEMENTS, SCHEMA_VERSION, migrate_v3_to_v4
+from lucy_ng.database.schema import (
+    SCHEMA_STATEMENTS,
+    SCHEMA_VERSION,
+    migrate_v3_to_v4,
+    migrate_v4_to_v5,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -116,6 +121,23 @@ class DatabaseManager:
         current_version = self.get_schema_version()
         if current_version is None or current_version < 4:
             migrate_v3_to_v4(self.connection)
+            return True
+        return False
+
+    def migrate_to_v5(self) -> bool:
+        """Migrate database to schema version 5.
+
+        Adds neighbour element count columns for neighbourhood detection.
+
+        Returns:
+            True if migration was performed, False if already at v5+
+        """
+        current_version = self.get_schema_version()
+        if current_version is None or current_version < 5:
+            # Ensure at v4 first
+            if current_version is None or current_version < 4:
+                self.migrate_to_v4()
+            migrate_v4_to_v5(self.connection)
             return True
         return False
 
@@ -418,11 +440,26 @@ class DatabaseManager:
                     """
                     INSERT OR REPLACE INTO hose_stats
                         (hose_code, radius, mean, std, count,
-                         sp3_count, sp2_count, sp1_count)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                         sp3_count, sp2_count, sp1_count,
+                         has_carbon_neighbor, has_oxygen_neighbor, has_nitrogen_neighbor,
+                         has_sulfur_neighbor, has_halogen_neighbor)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
-                    (stat.hose_code, stat.radius, stat.mean, stat.std, stat.count,
-                     stat.sp3_count, stat.sp2_count, stat.sp1_count),
+                    (
+                        stat.hose_code,
+                        stat.radius,
+                        stat.mean,
+                        stat.std,
+                        stat.count,
+                        stat.sp3_count,
+                        stat.sp2_count,
+                        stat.sp1_count,
+                        stat.has_carbon_neighbor,
+                        stat.has_oxygen_neighbor,
+                        stat.has_nitrogen_neighbor,
+                        stat.has_sulfur_neighbor,
+                        stat.has_halogen_neighbor,
+                    ),
                 )
             except sqlite3.OperationalError:
                 # Backward compatibility: v3 database without hybridisation columns
@@ -463,7 +500,9 @@ class DatabaseManager:
             cursor.execute(
                 """
                 SELECT hose_code, radius, mean, std, count,
-                       sp3_count, sp2_count, sp1_count
+                       sp3_count, sp2_count, sp1_count,
+                       has_carbon_neighbor, has_oxygen_neighbor, has_nitrogen_neighbor,
+                       has_sulfur_neighbor, has_halogen_neighbor
                 FROM hose_stats
                 WHERE hose_code = ? AND radius = ?
                 """,
@@ -483,6 +522,11 @@ class DatabaseManager:
                 sp3_count=row["sp3_count"],
                 sp2_count=row["sp2_count"],
                 sp1_count=row["sp1_count"],
+                has_carbon_neighbor=row["has_carbon_neighbor"],
+                has_oxygen_neighbor=row["has_oxygen_neighbor"],
+                has_nitrogen_neighbor=row["has_nitrogen_neighbor"],
+                has_sulfur_neighbor=row["has_sulfur_neighbor"],
+                has_halogen_neighbor=row["has_halogen_neighbor"],
             )
         except sqlite3.OperationalError:
             # Backward compatibility: v3 database without hybridisation columns
@@ -526,7 +570,9 @@ class DatabaseManager:
             cursor.execute(
                 """
                 SELECT hose_code, radius, mean, std, count,
-                       sp3_count, sp2_count, sp1_count
+                       sp3_count, sp2_count, sp1_count,
+                       has_carbon_neighbor, has_oxygen_neighbor, has_nitrogen_neighbor,
+                       has_sulfur_neighbor, has_halogen_neighbor
                 FROM hose_stats
                 WHERE hose_code = ?
                 ORDER BY radius DESC
@@ -544,6 +590,11 @@ class DatabaseManager:
                     sp3_count=row["sp3_count"],
                     sp2_count=row["sp2_count"],
                     sp1_count=row["sp1_count"],
+                    has_carbon_neighbor=row["has_carbon_neighbor"],
+                    has_oxygen_neighbor=row["has_oxygen_neighbor"],
+                    has_nitrogen_neighbor=row["has_nitrogen_neighbor"],
+                    has_sulfur_neighbor=row["has_sulfur_neighbor"],
+                    has_halogen_neighbor=row["has_halogen_neighbor"],
                 )
                 for row in cursor.fetchall()
             ]
@@ -604,7 +655,9 @@ class DatabaseManager:
             cursor.execute(
                 """
                 SELECT hose_code, radius, mean, std, count,
-                       sp3_count, sp2_count, sp1_count
+                       sp3_count, sp2_count, sp1_count,
+                       has_carbon_neighbor, has_oxygen_neighbor, has_nitrogen_neighbor,
+                       has_sulfur_neighbor, has_halogen_neighbor
                 FROM hose_stats
                 WHERE radius = ?
                   AND mean BETWEEN ? AND ?
@@ -623,6 +676,11 @@ class DatabaseManager:
                     sp3_count=row["sp3_count"],
                     sp2_count=row["sp2_count"],
                     sp1_count=row["sp1_count"],
+                    has_carbon_neighbor=row["has_carbon_neighbor"],
+                    has_oxygen_neighbor=row["has_oxygen_neighbor"],
+                    has_nitrogen_neighbor=row["has_nitrogen_neighbor"],
+                    has_sulfur_neighbor=row["has_sulfur_neighbor"],
+                    has_halogen_neighbor=row["has_halogen_neighbor"],
                 )
                 for row in cursor.fetchall()
             ]
@@ -682,6 +740,7 @@ class DatabaseManager:
         stats: list[
             tuple[str, int, int, float, float]
             | tuple[str, int, int, float, float, int, int, int]
+            | tuple[str, int, int, float, float, int, int, int, int, int, int, int, int]
         ],
     ) -> int:
         """Incrementally upsert HOSE statistics using Welford's parallel merge algorithm.
@@ -694,8 +753,11 @@ class DatabaseManager:
 
         Args:
             stats: List of tuples, either:
-                - (hose_code, radius, count, mean, m2) - backward compatible
-                - (hose_code, radius, count, mean, m2, sp3_count, sp2_count, sp1_count) - v4+
+                - (hose_code, radius, count, mean, m2) - backward compatible (v3)
+                - (hose_code, radius, count, mean, m2, sp3_count, sp2_count, sp1_count) - v4
+                - (hose_code, radius, count, mean, m2, sp3_count, sp2_count, sp1_count,
+                   has_carbon_neighbor, has_oxygen_neighbor, has_nitrogen_neighbor,
+                   has_sulfur_neighbor, has_halogen_neighbor) - v5
 
         Returns:
             Number of records upserted
@@ -711,6 +773,7 @@ class DatabaseManager:
             if len(stat_tuple) == 5:
                 hose_code, radius, new_count, new_mean, new_m2 = stat_tuple
                 new_sp3, new_sp2, new_sp1 = 0, 0, 0
+                new_has_c, new_has_o, new_has_n, new_has_s, new_has_hal = 0, 0, 0, 0, 0
             elif len(stat_tuple) == 8:
                 (
                     hose_code,
@@ -722,6 +785,23 @@ class DatabaseManager:
                     new_sp2,
                     new_sp1,
                 ) = stat_tuple
+                new_has_c, new_has_o, new_has_n, new_has_s, new_has_hal = 0, 0, 0, 0, 0
+            elif len(stat_tuple) == 13:
+                (
+                    hose_code,
+                    radius,
+                    new_count,
+                    new_mean,
+                    new_m2,
+                    new_sp3,
+                    new_sp2,
+                    new_sp1,
+                    new_has_c,
+                    new_has_o,
+                    new_has_n,
+                    new_has_s,
+                    new_has_hal,
+                ) = stat_tuple
             else:
                 raise ValueError(f"Invalid stats tuple length: {len(stat_tuple)}")
 
@@ -729,7 +809,9 @@ class DatabaseManager:
             try:
                 cursor.execute(
                     """
-                    SELECT count, mean, m2, sp3_count, sp2_count, sp1_count
+                    SELECT count, mean, m2, sp3_count, sp2_count, sp1_count,
+                           has_carbon_neighbor, has_oxygen_neighbor, has_nitrogen_neighbor,
+                           has_sulfur_neighbor, has_halogen_neighbor
                     FROM hose_stats
                     WHERE hose_code = ? AND radius = ?
                     """,
@@ -754,11 +836,28 @@ class DatabaseManager:
                     cursor.execute(
                         """
                         INSERT INTO hose_stats (hose_code, radius, mean, std, count, m2,
-                                                sp3_count, sp2_count, sp1_count)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                                sp3_count, sp2_count, sp1_count,
+                                                has_carbon_neighbor, has_oxygen_neighbor,
+                                                has_nitrogen_neighbor, has_sulfur_neighbor,
+                                                has_halogen_neighbor)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         """,
-                        (hose_code, radius, new_mean, std, new_count, new_m2,
-                         new_sp3, new_sp2, new_sp1),
+                        (
+                            hose_code,
+                            radius,
+                            new_mean,
+                            std,
+                            new_count,
+                            new_m2,
+                            new_sp3,
+                            new_sp2,
+                            new_sp1,
+                            new_has_c,
+                            new_has_o,
+                            new_has_n,
+                            new_has_s,
+                            new_has_hal,
+                        ),
                     )
                 except sqlite3.OperationalError:
                     # Backward compatibility: v3 database
@@ -792,25 +891,52 @@ class DatabaseManager:
                     math.sqrt(combined_m2 / combined_count) if combined_count > 1 else 0.0
                 )
 
-                # Merge hybridisation counts (simple addition)
+                # Merge hybridisation and neighbour counts (simple addition)
                 try:
                     old_sp3 = row["sp3_count"]
                     old_sp2 = row["sp2_count"]
                     old_sp1 = row["sp1_count"]
+                    old_has_c = row["has_carbon_neighbor"]
+                    old_has_o = row["has_oxygen_neighbor"]
+                    old_has_n = row["has_nitrogen_neighbor"]
+                    old_has_s = row["has_sulfur_neighbor"]
+                    old_has_hal = row["has_halogen_neighbor"]
+
                     combined_sp3 = old_sp3 + new_sp3
                     combined_sp2 = old_sp2 + new_sp2
                     combined_sp1 = old_sp1 + new_sp1
+                    combined_has_c = old_has_c + new_has_c
+                    combined_has_o = old_has_o + new_has_o
+                    combined_has_n = old_has_n + new_has_n
+                    combined_has_s = old_has_s + new_has_s
+                    combined_has_hal = old_has_hal + new_has_hal
 
                     cursor.execute(
                         """
                         UPDATE hose_stats
                         SET mean = ?, std = ?, count = ?, m2 = ?,
-                            sp3_count = ?, sp2_count = ?, sp1_count = ?
+                            sp3_count = ?, sp2_count = ?, sp1_count = ?,
+                            has_carbon_neighbor = ?, has_oxygen_neighbor = ?,
+                            has_nitrogen_neighbor = ?, has_sulfur_neighbor = ?,
+                            has_halogen_neighbor = ?
                         WHERE hose_code = ? AND radius = ?
                         """,
-                        (combined_mean, std, combined_count, combined_m2,
-                         combined_sp3, combined_sp2, combined_sp1,
-                         hose_code, radius),
+                        (
+                            combined_mean,
+                            std,
+                            combined_count,
+                            combined_m2,
+                            combined_sp3,
+                            combined_sp2,
+                            combined_sp1,
+                            combined_has_c,
+                            combined_has_o,
+                            combined_has_n,
+                            combined_has_s,
+                            combined_has_hal,
+                            hose_code,
+                            radius,
+                        ),
                     )
                 except (sqlite3.OperationalError, KeyError):
                     # Backward compatibility: v3 database without hybridisation columns
