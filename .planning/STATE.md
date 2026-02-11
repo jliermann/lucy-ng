@@ -5,15 +5,15 @@
 See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with data-driven statistical constraints replacing guesswork
-**Current focus:** v3.0 Statistical Detection — Phase 36 (HHB and Ring Detection)
+**Current focus:** v3.0 Statistical Detection — Phase 37 (Signal Grouping Detection)
 
 ## Current Position
 
 **Milestone**: v3.0 Statistical Detection
-**Phase**: 36 of 40 (HHB and Ring Detection)
-**Plan**: 03 of 03 complete (HHB detection CLI)
-**Status**: Phase complete, verified (18/18 must-haves)
-**Last activity**: 2026-02-11 — Phase 36 complete, all 3 plans executed and verified
+**Phase**: 37 of 40 (Signal Grouping Detection)
+**Plan**: 02 of 03 complete (LSD syntax validation)
+**Status**: In progress
+**Last activity**: 2026-02-11 — Completed 37-02-PLAN.md (LSD parenthesized syntax validation)
 
 Progress: [██████████████████████████████████░░░░░░░] 90.0% (36/40 phases complete)
 
@@ -30,9 +30,9 @@ Progress: [███████████████████████
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 51 (v1.0-v2.1: 39, v3.0: 12)
-- Average duration: ~3 hours per phase (v1.0-v1.2), < 15 min per phase (v2.0-v2.1 docs/skills), ~7.2 min per plan (v3.0 implementation)
-- Total execution time: ~66.8 hours
+- Total plans completed: 53 (v1.0-v2.1: 39, v3.0: 14)
+- Average duration: ~3 hours per phase (v1.0-v1.2), < 15 min per phase (v2.0-v2.1 docs/skills), ~6.5 min per plan (v3.0 implementation)
+- Total execution time: ~67.9 hours
 
 ## Accumulated Context
 
@@ -78,6 +78,9 @@ Recent decisions affecting current work:
 - Phase 36-03: Pure hydrocarbons get has_heteroatoms=False with clear user message
 - Phase 36-03: CLI takes FORMULA argument (not shift_ppm) to distinguish from other detect subcommands
 - Phase 36-03: Formula not in database returns has_data=False with warning (vs formula exists but no HHB)
+- Phase 37-02: Use actual LSD runs instead of syntax mocking for validation (stronger validation)
+- Phase 37-02: Count solutions via .sol file detection (more reliable than stderr parsing)
+- Phase 37-02: Document false positive risk and tolerance rationale as test docstrings
 
 ### Pending Todos
 
@@ -99,8 +102,8 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Completed 36-03-PLAN.md — Phase 36 complete (HHB and Ring Detection)
-Resume file: None — Ready for Phase 37 (Signal Grouping Detection)
+Stopped at: Completed 37-02-PLAN.md — Phase 37 in progress (2 of 3 plans complete)
+Resume file: None — Ready for Plan 37-03 (Signal Grouping CLI)
 
 ---
-*Last updated: 2026-02-11 after Plan 36-03 execution (Phase 36 complete)*
+*Last updated: 2026-02-11 after Plan 37-02 execution (LSD syntax validation complete)*
