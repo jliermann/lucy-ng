@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Milestone**: v3.0 Statistical Detection
 **Phase**: 36 of 40 (HHB and Ring Detection)
-**Plan**: 02 of 03 complete (Stats generators with ring tracking and HHB)
-**Status**: In progress
-**Last activity**: 2026-02-11 — Completed 36-02-PLAN.md (ring and HHB generators)
+**Plan**: 03 of 03 complete (HHB detection CLI)
+**Status**: Phase complete
+**Last activity**: 2026-02-11 — Completed 36-03-PLAN.md (HHB detection CLI)
 
-Progress: [█████████████████████████████████░░░░░░░░] 88.3% (35/40 phases complete, 2/3 plans in phase 36)
+Progress: [██████████████████████████████████░░░░░░░] 90.0% (36/40 phases complete)
 
 ## Completed Milestones
 
@@ -30,9 +30,9 @@ Progress: [███████████████████████
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 48 (v1.0-v2.1: 39, v3.0: 9)
-- Average duration: ~3 hours per phase (v1.0-v1.2), < 15 min per phase (v2.0-v2.1 docs/skills), ~7.5 min per plan (v3.0 implementation)
-- Total execution time: ~66.7 hours
+- Total plans completed: 49 (v1.0-v2.1: 39, v3.0: 10)
+- Average duration: ~3 hours per phase (v1.0-v1.2), < 15 min per phase (v2.0-v2.1 docs/skills), ~7.2 min per plan (v3.0 implementation)
+- Total execution time: ~66.8 hours
 
 ## Accumulated Context
 
@@ -74,11 +74,15 @@ Recent decisions affecting current work:
 - Phase 36-02: WelfordAccumulator.to_tuple() extended from 11 to 14 elements for v6 schema
 - Phase 36-02: extract_hetero_hetero_bonds() returns canonicalized pairs (alphabetically sorted)
 - Phase 36-02: HOSEStatsGenerator.generate_all() returns 4-tuple adding ring_counts dict
+- Phase 36-03: Heteroatom detection via simple regex pattern (no RDKit needed for formula parsing)
+- Phase 36-03: Pure hydrocarbons get has_heteroatoms=False with clear user message
+- Phase 36-03: CLI takes FORMULA argument (not shift_ppm) to distinguish from other detect subcommands
+- Phase 36-03: Formula not in database returns has_data=False with warning (vs formula exists but no HHB)
 
 ### Pending Todos
 
 - ~~Implement neighbourhood detection CLI commands (Phase 35)~~ → COMPLETE
-- Implement HHB and ring detection (Phase 36)
+- ~~Implement HHB and ring detection (Phase 36)~~ → COMPLETE
 - Implement signal grouping (Phase 37)
 - Implement two-tier ranking and badlist (Phase 38)
 - Update CASE agent to use new CLI commands for constraint generation (Phase 39)
@@ -95,8 +99,8 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Completed 36-02-PLAN.md — Phase 36 Plan 2 (ring and HHB generators) complete
-Resume file: None — Ready for Phase 36 Plan 3 (HHB detection CLI)
+Stopped at: Completed 36-03-PLAN.md — Phase 36 complete (HHB and Ring Detection)
+Resume file: None — Ready for Phase 37 (Signal Grouping Detection)
 
 ---
-*Last updated: 2026-02-11 after Plan 36-02 execution (Phase 36 Plan 2 complete)*
+*Last updated: 2026-02-11 after Plan 36-03 execution (Phase 36 complete)*
