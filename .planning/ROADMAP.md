@@ -682,12 +682,11 @@ Plans:
   3. Badlist patterns for 3/4-membered rings documented in CASE agent knowledge (DEFF/FEXP NOT commands)
   4. Agent can optionally exclude strained rings by adding badlist filters to LSD input
   5. Ranking reports HOSE prediction radius used per carbon (transparency for low-confidence predictions)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 38-01-PLAN.md: Modify existing SolutionRanker to implement two-tier scoring
-- [ ] 38-02-PLAN.md: Add signal match counting logic with 10 ppm tolerance
-- [ ] 38-03-PLAN.md: Document badlist SMARTS patterns for 3/4-membered rings
+- [ ] 38-01-PLAN.md — Two-tier ranking sort order + tests + CLI output (TDD)
+- [ ] 38-02-PLAN.md — Badlist patterns in CASE agent knowledge + CLAUDE.md docs
 
 ---
 
