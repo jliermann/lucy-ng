@@ -106,7 +106,9 @@ class WelfordAccumulator:
         elif hybridisation == "sp1":
             self.sp1_count += 1
 
-    def update_with_neighbors(self, value: float, hybridisation: str, neighbors: dict[str, int]) -> None:
+    def update_with_neighbors(
+        self, value: float, hybridisation: str, neighbors: dict[str, int]
+    ) -> None:
         """Add a single observation with hybridisation and neighbour element tracking.
 
         Args:

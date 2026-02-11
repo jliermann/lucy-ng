@@ -111,7 +111,7 @@ def test_welford_accumulator_merge_hybridisation():
 
 
 def test_welford_accumulator_to_tuple_extended():
-    """Verify to_tuple returns 6-element tuple with hybridisation counts."""
+    """Verify to_tuple returns 11-element tuple with hybridisation and neighbour counts."""
     acc = WelfordAccumulator()
     acc.update_with_hybridisation(25.0, "sp3")
     acc.update_with_hybridisation(130.0, "sp2")
@@ -119,14 +119,20 @@ def test_welford_accumulator_to_tuple_extended():
 
     t = acc.to_tuple()
 
-    # Should be (count, mean, m2, sp3_count, sp2_count, sp1_count)
-    assert len(t) == 6, f"Expected 6-element tuple, got {len(t)}"
+    # Should be 11 elements: (count, mean, m2, sp3, sp2, sp1, has_C, has_O, has_N, has_S, has_hal)
+    assert len(t) == 11, f"Expected 11-element tuple, got {len(t)}"
     assert t[0] == 3  # count
     assert isinstance(t[1], float)  # mean
     assert isinstance(t[2], float)  # m2
     assert t[3] == 1  # sp3_count
     assert t[4] == 2  # sp2_count
     assert t[5] == 0  # sp1_count
+    # Neighbour counts should be 0 (used update_with_hybridisation, not update_with_neighbors)
+    assert t[6] == 0  # has_carbon_neighbor
+    assert t[7] == 0  # has_oxygen_neighbor
+    assert t[8] == 0  # has_nitrogen_neighbor
+    assert t[9] == 0  # has_sulfur_neighbor
+    assert t[10] == 0  # has_halogen_neighbor
 
 
 def test_welford_accumulator_backward_compat():

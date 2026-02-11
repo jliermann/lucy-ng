@@ -11,9 +11,9 @@ See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Milestone**: v3.0 Statistical Detection
 **Phase**: 35 of 40 (Neighbourhood Detection)
-**Plan**: 01 of 04 complete (schema extension)
+**Plan**: 03 of 04 complete (neighbourhood detection API)
 **Status**: In progress
-**Last activity**: 2026-02-11 — Completed 35-01-PLAN.md (schema v5, migration, HOSE parser)
+**Last activity**: 2026-02-11 — Completed 35-03-PLAN.md (neighbourhood detection models and detector)
 
 Progress: [█████████████████████████████████░░░░░░░] 85% (34/40 phases complete, 35 in progress)
 
@@ -30,9 +30,9 @@ Progress: [███████████████████████
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 43 (v1.0-v2.1: 39, v3.0: 4)
-- Average duration: ~3 hours per phase (v1.0-v1.2), < 15 min per phase (v2.0-v2.1 docs/skills), ~11 min per plan (v3.0 implementation)
-- Total execution time: ~66.1 hours
+- Total plans completed: 45 (v1.0-v2.1: 39, v3.0: 6)
+- Average duration: ~3 hours per phase (v1.0-v1.2), < 15 min per phase (v2.0-v2.1 docs/skills), ~8 min per plan (v3.0 implementation)
+- Total execution time: ~66.3 hours
 
 ## Accumulated Context
 
@@ -58,6 +58,9 @@ Recent decisions affecting current work:
 - Phase 35-01: Halogen aggregation in single has_halogen_neighbor column (F/Cl/Br/I combined)
 - Phase 35-01: parse_sphere_1() uses regex [A-Z][a-z]? to extract elements, ignoring bond prefixes
 - Phase 35-01: Upsert accepts 5, 8, or 13-element tuples for v3/v4/v5 backward compatibility
+- Phase 35-03: mandatory_elements/forbidden_elements properties use hardcoded 0.95/0.01 thresholds for convenience
+- Phase 35-03: Constraints use custom thresholds passed to detect_neighbours() for flexibility
+- Phase 35-03: Warn on unpopulated neighbour columns (v4 databases) rather than fail
 
 ### Pending Todos
 
@@ -79,8 +82,8 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Completed 35-01-PLAN.md (Schema v5 extension with neighbour columns)
-Resume file: None (ready for Plan 35-02: stats generator extension)
+Stopped at: Completed 35-03-PLAN.md (Neighbourhood detection Python API)
+Resume file: None (ready for Plan 35-04: CLI integration)
 
 ---
-*Last updated: 2026-02-11 after Plan 35-01 execution*
+*Last updated: 2026-02-11 after Plan 35-03 execution*
