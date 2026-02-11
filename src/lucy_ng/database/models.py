@@ -113,6 +113,8 @@ class HOSEStatsRecord(BaseModel):
     Used for database-backed 13C shift prediction. Each record stores
     aggregated statistics (mean, std, count) for a HOSE code at a given
     radius, enabling O(1) lookup at prediction time.
+
+    Schema v4+ includes hybridisation detection fields.
     """
 
     hose_code: str
@@ -120,3 +122,7 @@ class HOSEStatsRecord(BaseModel):
     mean: float  # Mean shift in ppm
     std: float  # Standard deviation
     count: int  # Number of observations (for confidence scoring)
+    # Hybridisation counts (v4+)
+    sp3_count: int = 0
+    sp2_count: int = 0
+    sp1_count: int = 0

@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from lucy_ng.database.models import CompoundRecord, HOSEStatsRecord, ShiftRecord
-from lucy_ng.database.schema import SCHEMA_STATEMENTS, SCHEMA_VERSION
+from lucy_ng.database.schema import SCHEMA_STATEMENTS, SCHEMA_VERSION, migrate_v3_to_v4
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -104,6 +104,20 @@ class DatabaseManager:
             pass
 
         return None
+
+    def migrate_to_v4(self) -> bool:
+        """Migrate database to schema version 4.
+
+        Adds hybridisation count columns and shift-window detection index.
+
+        Returns:
+            True if migration was performed, False if already at v4+
+        """
+        current_version = self.get_schema_version()
+        if current_version is None or current_version < 4:
+            migrate_v3_to_v4(self.connection)
+            return True
+        return False
 
     def insert_compound(
         self,
@@ -399,14 +413,27 @@ class DatabaseManager:
         count = 0
 
         for i, stat in enumerate(stats):
-            cursor.execute(
-                """
-                INSERT OR REPLACE INTO hose_stats
-                    (hose_code, radius, mean, std, count)
-                VALUES (?, ?, ?, ?, ?)
-                """,
-                (stat.hose_code, stat.radius, stat.mean, stat.std, stat.count),
-            )
+            try:
+                cursor.execute(
+                    """
+                    INSERT OR REPLACE INTO hose_stats
+                        (hose_code, radius, mean, std, count,
+                         sp3_count, sp2_count, sp1_count)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (stat.hose_code, stat.radius, stat.mean, stat.std, stat.count,
+                     stat.sp3_count, stat.sp2_count, stat.sp1_count),
+                )
+            except sqlite3.OperationalError:
+                # Backward compatibility: v3 database without hybridisation columns
+                cursor.execute(
+                    """
+                    INSERT OR REPLACE INTO hose_stats
+                        (hose_code, radius, mean, std, count)
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    (stat.hose_code, stat.radius, stat.mean, stat.std, stat.count),
+                )
             count += 1
 
             # Commit every batch_size records
@@ -432,26 +459,53 @@ class DatabaseManager:
         conn = self.connection
         cursor = conn.cursor()
 
-        cursor.execute(
-            """
-            SELECT hose_code, radius, mean, std, count
-            FROM hose_stats
-            WHERE hose_code = ? AND radius = ?
-            """,
-            (hose_code, radius),
-        )
+        try:
+            cursor.execute(
+                """
+                SELECT hose_code, radius, mean, std, count,
+                       sp3_count, sp2_count, sp1_count
+                FROM hose_stats
+                WHERE hose_code = ? AND radius = ?
+                """,
+                (hose_code, radius),
+            )
 
-        row = cursor.fetchone()
-        if row is None:
-            return None
+            row = cursor.fetchone()
+            if row is None:
+                return None
 
-        return HOSEStatsRecord(
-            hose_code=row["hose_code"],
-            radius=row["radius"],
-            mean=row["mean"],
-            std=row["std"],
-            count=row["count"],
-        )
+            return HOSEStatsRecord(
+                hose_code=row["hose_code"],
+                radius=row["radius"],
+                mean=row["mean"],
+                std=row["std"],
+                count=row["count"],
+                sp3_count=row["sp3_count"],
+                sp2_count=row["sp2_count"],
+                sp1_count=row["sp1_count"],
+            )
+        except sqlite3.OperationalError:
+            # Backward compatibility: v3 database without hybridisation columns
+            cursor.execute(
+                """
+                SELECT hose_code, radius, mean, std, count
+                FROM hose_stats
+                WHERE hose_code = ? AND radius = ?
+                """,
+                (hose_code, radius),
+            )
+
+            row = cursor.fetchone()
+            if row is None:
+                return None
+
+            return HOSEStatsRecord(
+                hose_code=row["hose_code"],
+                radius=row["radius"],
+                mean=row["mean"],
+                std=row["std"],
+                count=row["count"],
+            )
 
     def get_hose_stats_all_radii(self, hose_code: str) -> list[HOSEStatsRecord]:
         """Get statistics at all available radii for a HOSE code.
@@ -468,26 +522,133 @@ class DatabaseManager:
         conn = self.connection
         cursor = conn.cursor()
 
-        cursor.execute(
-            """
-            SELECT hose_code, radius, mean, std, count
-            FROM hose_stats
-            WHERE hose_code = ?
-            ORDER BY radius DESC
-            """,
-            (hose_code,),
-        )
-
-        return [
-            HOSEStatsRecord(
-                hose_code=row["hose_code"],
-                radius=row["radius"],
-                mean=row["mean"],
-                std=row["std"],
-                count=row["count"],
+        try:
+            cursor.execute(
+                """
+                SELECT hose_code, radius, mean, std, count,
+                       sp3_count, sp2_count, sp1_count
+                FROM hose_stats
+                WHERE hose_code = ?
+                ORDER BY radius DESC
+                """,
+                (hose_code,),
             )
-            for row in cursor.fetchall()
-        ]
+
+            return [
+                HOSEStatsRecord(
+                    hose_code=row["hose_code"],
+                    radius=row["radius"],
+                    mean=row["mean"],
+                    std=row["std"],
+                    count=row["count"],
+                    sp3_count=row["sp3_count"],
+                    sp2_count=row["sp2_count"],
+                    sp1_count=row["sp1_count"],
+                )
+                for row in cursor.fetchall()
+            ]
+        except sqlite3.OperationalError:
+            # Backward compatibility: v3 database without hybridisation columns
+            cursor.execute(
+                """
+                SELECT hose_code, radius, mean, std, count
+                FROM hose_stats
+                WHERE hose_code = ?
+                ORDER BY radius DESC
+                """,
+                (hose_code,),
+            )
+
+            return [
+                HOSEStatsRecord(
+                    hose_code=row["hose_code"],
+                    radius=row["radius"],
+                    mean=row["mean"],
+                    std=row["std"],
+                    count=row["count"],
+                )
+                for row in cursor.fetchall()
+            ]
+
+    def get_hose_stats_by_shift_window(
+        self,
+        shift_ppm: float,
+        radius: int,
+        window_ppm: float = 2.0,
+        min_count: int = 5,
+    ) -> list[HOSEStatsRecord]:
+        """Query HOSE statistics within a shift window for detection.
+
+        Finds all HOSE codes at a given radius whose mean shift falls within
+        [shift_ppm - window_ppm, shift_ppm + window_ppm].
+
+        Used for statistical detection queries (e.g., "what hybridisation
+        states are typical for carbons at 130 ppm?").
+
+        Args:
+            shift_ppm: Target chemical shift in ppm
+            radius: HOSE code radius (1-6)
+            window_ppm: Window size in ppm (default: 2.0)
+            min_count: Minimum observation count (default: 5)
+
+        Returns:
+            List of HOSEStatsRecord matching the criteria
+        """
+        conn = self.connection
+        cursor = conn.cursor()
+
+        min_shift = shift_ppm - window_ppm
+        max_shift = shift_ppm + window_ppm
+
+        try:
+            cursor.execute(
+                """
+                SELECT hose_code, radius, mean, std, count,
+                       sp3_count, sp2_count, sp1_count
+                FROM hose_stats
+                WHERE radius = ?
+                  AND mean BETWEEN ? AND ?
+                  AND count >= ?
+                """,
+                (radius, min_shift, max_shift, min_count),
+            )
+
+            return [
+                HOSEStatsRecord(
+                    hose_code=row["hose_code"],
+                    radius=row["radius"],
+                    mean=row["mean"],
+                    std=row["std"],
+                    count=row["count"],
+                    sp3_count=row["sp3_count"],
+                    sp2_count=row["sp2_count"],
+                    sp1_count=row["sp1_count"],
+                )
+                for row in cursor.fetchall()
+            ]
+        except sqlite3.OperationalError:
+            # Backward compatibility: v3 database without hybridisation columns
+            cursor.execute(
+                """
+                SELECT hose_code, radius, mean, std, count
+                FROM hose_stats
+                WHERE radius = ?
+                  AND mean BETWEEN ? AND ?
+                  AND count >= ?
+                """,
+                (radius, min_shift, max_shift, min_count),
+            )
+
+            return [
+                HOSEStatsRecord(
+                    hose_code=row["hose_code"],
+                    radius=row["radius"],
+                    mean=row["mean"],
+                    std=row["std"],
+                    count=row["count"],
+                )
+                for row in cursor.fetchall()
+            ]
 
     def get_hose_stats_count(self) -> int:
         """Return total number of HOSE statistics entries.
@@ -518,7 +679,10 @@ class DatabaseManager:
 
     def upsert_hose_stats_incremental(
         self,
-        stats: list[tuple[str, int, int, float, float]],
+        stats: list[
+            tuple[str, int, int, float, float]
+            | tuple[str, int, int, float, float, int, int, int]
+        ],
     ) -> int:
         """Incrementally upsert HOSE statistics using Welford's parallel merge algorithm.
 
@@ -529,7 +693,9 @@ class DatabaseManager:
         merged into the database incrementally.
 
         Args:
-            stats: List of (hose_code, radius, count, mean, m2) tuples
+            stats: List of tuples, either:
+                - (hose_code, radius, count, mean, m2) - backward compatible
+                - (hose_code, radius, count, mean, m2, sp3_count, sp2_count, sp1_count) - v4+
 
         Returns:
             Number of records upserted
@@ -540,27 +706,69 @@ class DatabaseManager:
         cursor = conn.cursor()
         count = 0
 
-        for hose_code, radius, new_count, new_mean, new_m2 in stats:
+        for stat_tuple in stats:
+            # Parse tuple (backward compatible)
+            if len(stat_tuple) == 5:
+                hose_code, radius, new_count, new_mean, new_m2 = stat_tuple
+                new_sp3, new_sp2, new_sp1 = 0, 0, 0
+            elif len(stat_tuple) == 8:
+                (
+                    hose_code,
+                    radius,
+                    new_count,
+                    new_mean,
+                    new_m2,
+                    new_sp3,
+                    new_sp2,
+                    new_sp1,
+                ) = stat_tuple
+            else:
+                raise ValueError(f"Invalid stats tuple length: {len(stat_tuple)}")
+
             # Check if entry exists
-            cursor.execute(
-                """
-                SELECT count, mean, m2 FROM hose_stats
-                WHERE hose_code = ? AND radius = ?
-                """,
-                (hose_code, radius),
-            )
+            try:
+                cursor.execute(
+                    """
+                    SELECT count, mean, m2, sp3_count, sp2_count, sp1_count
+                    FROM hose_stats
+                    WHERE hose_code = ? AND radius = ?
+                    """,
+                    (hose_code, radius),
+                )
+            except sqlite3.OperationalError:
+                # Backward compatibility: v3 database without hybridisation columns
+                cursor.execute(
+                    """
+                    SELECT count, mean, m2 FROM hose_stats
+                    WHERE hose_code = ? AND radius = ?
+                    """,
+                    (hose_code, radius),
+                )
+
             row = cursor.fetchone()
 
             if row is None:
                 # New entry - compute std from m2
                 std = math.sqrt(new_m2 / new_count) if new_count > 1 else 0.0
-                cursor.execute(
-                    """
-                    INSERT INTO hose_stats (hose_code, radius, mean, std, count, m2)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                    """,
-                    (hose_code, radius, new_mean, std, new_count, new_m2),
-                )
+                try:
+                    cursor.execute(
+                        """
+                        INSERT INTO hose_stats (hose_code, radius, mean, std, count, m2,
+                                                sp3_count, sp2_count, sp1_count)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (hose_code, radius, new_mean, std, new_count, new_m2,
+                         new_sp3, new_sp2, new_sp1),
+                    )
+                except sqlite3.OperationalError:
+                    # Backward compatibility: v3 database
+                    cursor.execute(
+                        """
+                        INSERT INTO hose_stats (hose_code, radius, mean, std, count, m2)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                        """,
+                        (hose_code, radius, new_mean, std, new_count, new_m2),
+                    )
             else:
                 # Merge using Welford's parallel algorithm
                 old_count, old_mean, old_m2 = row["count"], row["mean"], row["m2"]
@@ -584,14 +792,36 @@ class DatabaseManager:
                     math.sqrt(combined_m2 / combined_count) if combined_count > 1 else 0.0
                 )
 
-                cursor.execute(
-                    """
-                    UPDATE hose_stats
-                    SET mean = ?, std = ?, count = ?, m2 = ?
-                    WHERE hose_code = ? AND radius = ?
-                    """,
-                    (combined_mean, std, combined_count, combined_m2, hose_code, radius),
-                )
+                # Merge hybridisation counts (simple addition)
+                try:
+                    old_sp3 = row["sp3_count"]
+                    old_sp2 = row["sp2_count"]
+                    old_sp1 = row["sp1_count"]
+                    combined_sp3 = old_sp3 + new_sp3
+                    combined_sp2 = old_sp2 + new_sp2
+                    combined_sp1 = old_sp1 + new_sp1
+
+                    cursor.execute(
+                        """
+                        UPDATE hose_stats
+                        SET mean = ?, std = ?, count = ?, m2 = ?,
+                            sp3_count = ?, sp2_count = ?, sp1_count = ?
+                        WHERE hose_code = ? AND radius = ?
+                        """,
+                        (combined_mean, std, combined_count, combined_m2,
+                         combined_sp3, combined_sp2, combined_sp1,
+                         hose_code, radius),
+                    )
+                except (sqlite3.OperationalError, KeyError):
+                    # Backward compatibility: v3 database without hybridisation columns
+                    cursor.execute(
+                        """
+                        UPDATE hose_stats
+                        SET mean = ?, std = ?, count = ?, m2 = ?
+                        WHERE hose_code = ? AND radius = ?
+                        """,
+                        (combined_mean, std, combined_count, combined_m2, hose_code, radius),
+                    )
 
             count += 1
 
