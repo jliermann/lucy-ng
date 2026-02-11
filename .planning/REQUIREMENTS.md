@@ -13,7 +13,7 @@ Requirements for v3.0 milestone. Each maps to roadmap phases.
 - [x] **DETECT-02**: CLI command detects forbidden neighbour atoms (<1% frequency) for a given 13C shift and multiplicity
 - [x] **DETECT-03**: CLI command detects mandatory neighbour atoms (>95% frequency) for a given 13C shift and multiplicity
 - [x] **DETECT-04**: CLI command detects hetero-hetero bond allowance from bond pair statistics (1% threshold)
-- [ ] **DETECT-05**: CLI command detects signal grouping (shifts within 0.25 ppm tolerance with matching multiplicities)
+- [x] **DETECT-05**: CLI command detects signal grouping (shifts within 0.25 ppm tolerance with matching multiplicities)
 - [x] **DETECT-06**: Database schema extended with hybridisation and neighbour statistics in hose_stats table
 - [x] **DETECT-07**: Statistics generator computes detection statistics during HOSE stats generation
 
@@ -95,7 +95,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DETECT-02 | Phase 35 | Complete |
 | DETECT-03 | Phase 35 | Complete |
 | DETECT-04 | Phase 36 | Complete |
-| DETECT-05 | Phase 37 | Pending |
+| DETECT-05 | Phase 37 | Complete |
 | RANK-01 | Phase 38 | Pending |
 | RANK-02 | Phase 38 | Pending |
 | RANK-03 | Phase 38 | Pending |
@@ -126,4 +126,4 @@ All 68 requirements (38 v2.0 + 30 v2.1) mapped and complete. See git history for
 
 ---
 *Requirements defined: 2026-02-10*
-*Last updated: 2026-02-11 after Phase 36 execution*
+*Last updated: 2026-02-11 after Phase 37 execution*

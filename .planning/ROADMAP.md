@@ -585,7 +585,7 @@ Plans:
 - [x] **Phase 34: Hybridisation Detection** - Database schema extension, statistics generation, CLI command for sp1/sp2/sp3 detection from shift queries
 - [x] **Phase 35: Neighbourhood Detection** - Bond partner statistics, CLI commands for forbidden/mandatory neighbour detection from HOSE sphere 1
 - [x] **Phase 36: HHB and Ring Detection** - Hetero-hetero bond statistics, ring statistics for badlist foundation
-- [ ] **Phase 37: Signal Grouping** - Multiplicity-aware close shift detection, LSD parenthesized atom list generation
+- [x] **Phase 37: Signal Grouping** - Multiplicity-aware close shift detection, LSD parenthesized atom list generation
 - [ ] **Phase 38: Two-Tier Ranking and Badlist** - Match-count-first ranking, hardcoded 3/4-membered ring filters in agent
 - [ ] **Phase 39: Agent Integration** - CASE agent learns statistical detection protocol, chemistry-first hierarchy, threshold overrides
 - [ ] **Phase 40: Validation** - Test suite with Sherlock's 45 cases, metrics (accuracy, search space reduction, rank improvement)
@@ -651,7 +651,7 @@ Plans:
 
 ---
 
-### Phase 37: Signal Grouping
+### Phase 37: Signal Grouping ✅ (2026-02-11)
 **Goal**: Agent can identify close carbon shifts for combinatorial LSD atom exchange
 **Depends on**: Phase 34 (independent of database, but follows detection pattern)
 **Requirements**: DETECT-05
@@ -663,10 +663,12 @@ Plans:
   5. Documentation warns about false positive risk (close shifts that are truly different carbons)
 **Plans**: 3 plans
 
+**Verified**: 5/5 must-haves passed
+
 Plans:
-- [ ] 37-01-PLAN.md — Signal grouping algorithm with Pydantic models and TDD tests
-- [ ] 37-02-PLAN.md — Validate LSD parenthesized syntax with actual solver runs
-- [ ] 37-03-PLAN.md — Add `lucy analyze grouping` CLI subcommand
+- [x] 37-01-PLAN.md — Signal grouping algorithm with Pydantic models and TDD tests
+- [x] 37-02-PLAN.md — Validate LSD parenthesized syntax with actual solver runs
+- [x] 37-03-PLAN.md — Add `lucy analyze grouping` CLI subcommand
 
 ---
 
@@ -772,11 +774,11 @@ Plans:
 | 33. Documentation and Cleanup | v2.1 | 2/2 | Complete | 2026-02-09 |
 | 34. Hybridisation Detection | v3.0 | 3/3 | Complete | 2026-02-10 |
 | 35. Neighbourhood Detection | v3.0 | 4/4 | Complete | 2026-02-11 |
-| 36. HHB and Ring Detection | v3.0 | 0/3 | Planned | - |
-| 37. Signal Grouping | v3.0 | 0/3 | Not started | - |
+| 36. HHB and Ring Detection | v3.0 | 3/3 | Complete | 2026-02-11 |
+| 37. Signal Grouping | v3.0 | 3/3 | Complete | 2026-02-11 |
 | 38. Two-Tier Ranking and Badlist | v3.0 | 0/3 | Not started | - |
 | 39. Agent Integration | v3.0 | 0/3 | Not started | - |
 | 40. Validation | v3.0 | 0/3 | Not started | - |
 
 ---
-*Last updated: 2026-02-11 after Phase 35 execution*
+*Last updated: 2026-02-11 after Phase 37 execution*
