@@ -114,8 +114,8 @@ def test_to_tuple_eleven_elements():
 
     t = acc.to_tuple()
 
-    # Should be 11 elements
-    assert len(t) == 11, f"Expected 11 elements, got {len(t)}"
+    # Should be 14 elements (11 + 3 ring columns added in Phase 36)
+    assert len(t) == 14, f"Expected 14 elements, got {len(t)}"
 
     # Verify positions
     assert t[0] == 2  # count

@@ -212,7 +212,11 @@ class SolutionGraph:
 
         opts = drawer.drawOptions()
         opts.bondLineWidth = 2
-        opts.atomLabelFontSize = font_size
+        try:
+            opts.atomLabelFontSize = font_size
+        except AttributeError:
+            opts.maxFontSize = font_size
+            opts.minFontSize = font_size
 
         # Set atom labels to element + LSD number
         # For protonated carbons, also show H index (e.g., "C7/H7")

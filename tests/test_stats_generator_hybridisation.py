@@ -119,8 +119,8 @@ def test_welford_accumulator_to_tuple_extended():
 
     t = acc.to_tuple()
 
-    # Should be 11 elements: (count, mean, m2, sp3, sp2, sp1, has_C, has_O, has_N, has_S, has_hal)
-    assert len(t) == 11, f"Expected 11-element tuple, got {len(t)}"
+    # Should be 14 elements: (count, mean, m2, sp3, sp2, sp1, has_C, has_O, has_N, has_S, has_hal, in_3ring, in_4ring, in_aromatic)
+    assert len(t) == 14, f"Expected 14-element tuple, got {len(t)}"
     assert t[0] == 3  # count
     assert isinstance(t[1], float)  # mean
     assert isinstance(t[2], float)  # m2

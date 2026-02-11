@@ -89,7 +89,7 @@ class TestHOSEStatsGenerator:
     def test_generate_all(self, db_manager):
         """Test generating HOSE aggregates from all compounds."""
         generator = HOSEStatsGenerator(db_manager, max_radius=3)
-        aggregates, hybridisations, _neighbours = generator.generate_all(progress=False)
+        aggregates, hybridisations, _neighbours, _rings = generator.generate_all(progress=False)
 
         # Should have generated some aggregates
         assert len(aggregates) > 0
@@ -249,7 +249,7 @@ class TestHOSEStatsGeneratorEdgeCases:
 
         with DatabaseManager(db_path) as db:
             generator = HOSEStatsGenerator(db, max_radius=2)
-            aggregates, _, _ = generator.generate_all(progress=False)
+            aggregates, _, _, _ = generator.generate_all(progress=False)
 
             # Should still have processed the valid compound
             assert generator.compounds_processed == 2  # Both attempted
@@ -279,7 +279,7 @@ class TestHOSEStatsGeneratorEdgeCases:
         with DatabaseManager(db_path) as db:
             generator = HOSEStatsGenerator(db, max_radius=2)
             # Should not raise exception
-            aggregates, _, _ = generator.generate_all(progress=False)
+            aggregates, _, _, _ = generator.generate_all(progress=False)
 
             # Should have processed valid shift only
             assert len(aggregates) > 0
@@ -305,7 +305,7 @@ class TestHOSEStatsGeneratorEdgeCases:
 
         with DatabaseManager(db_path) as db:
             generator = HOSEStatsGenerator(db, max_radius=2)
-            aggregates, _, _ = generator.generate_all(progress=False)
+            aggregates, _, _, _ = generator.generate_all(progress=False)
 
             # Should process compound but skip the shift with None index
             assert generator.compounds_processed == 1
@@ -434,7 +434,7 @@ class TestWelfordAccumulator:
         acc.update(20.0)
 
         t = acc.to_tuple()
-        assert len(t) == 11
+        assert len(t) == 14
         count, mean, m2, sp3_count, sp2_count, sp1_count = t[:6]
         assert count == 2
         assert mean == 15.0
