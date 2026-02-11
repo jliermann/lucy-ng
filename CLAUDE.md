@@ -84,6 +84,10 @@ All lucy-ng commands support `--format json` for programmatic use. The AI agent 
 | `lucy dereplicate c13` | is_match, top_matches (name, smiles, score) |
 | `lucy predict c13` | predictions (atom_index, shift, confidence), success |
 | `lucy lsd rank` | ranked_solutions (smiles, matched_count, mae, quality, deviations) |
+| `lucy detect hybridisation` | shift_ppm, distributions (state, frequency, count) |
+| `lucy detect neighbours` | shift_ppm, constraints (element, type, frequency) |
+| `lucy detect hhb` | formula, bond_pairs (pair, frequency, status) |
+| `lucy analyze grouping` | groups (shifts, lsd_atom_list), ungrouped |
 
 **Ranking algorithm:** Solutions are ranked by signal match count (descending), then MAE (ascending). This prevents wrong solutions with coincidentally low MAE from outranking correct solutions with better spectral coverage.
 
@@ -122,6 +126,14 @@ outlsd 5 < compound.sol > solutions.smi
 **Rank solutions**
 ```bash
 lucy lsd rank solutions.smi --shifts "155.08,151.58,..."
+```
+
+**Statistical detection (run before writing LSD file)**
+```bash
+lucy detect hybridisation 132.5 --format json
+lucy detect neighbours 170.5 --format json
+lucy detect hhb C13H18O2 --format json
+lucy analyze grouping "130.2,130.4" --format json
 ```
 
 **LSD file structure:**
@@ -165,6 +177,32 @@ from lucy_ng.prediction import C13Predictor
 predictor = C13Predictor.from_database("data/reference/lucy-ng-derep.db")
 result = predictor.predict_from_smiles("CCO")  # Ethanol
 print(result.summary())
+```
+
+### Statistical Detection
+
+**Hybridisation**
+```bash
+lucy detect hybridisation 132.5
+lucy detect hybridisation 132.5 --format json
+```
+
+**Neighbours**
+```bash
+lucy detect neighbours 170.5
+lucy detect neighbours 170.5 --mode relaxed --format json
+```
+
+**Hetero-Hetero Bonds**
+```bash
+lucy detect hhb C13H18O2
+lucy detect hhb C13H18O2 --format json
+```
+
+**Signal Grouping**
+```bash
+lucy analyze grouping "130.2,130.4,155.1"
+lucy analyze grouping "130.2,130.4,155.1" --format json
 ```
 
 ---
