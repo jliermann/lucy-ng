@@ -721,12 +721,12 @@ Plans:
   3. Search space reduction measured (solution count with vs without statistical constraints)
   4. Rank improvement measured (does correct structure rank higher with constraints?)
   5. Ibuprofen CASE produces correct isobutylphenylpropanoic acid structure in top 3 (fixes v2.1 cyclohexadiene failure)
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 40-01-PLAN.md: Download and sanitize Sherlock's 45 test cases from nmrXiv
-- [ ] 40-02-PLAN.md: Create validation script to run CASE with/without statistical constraints
-- [ ] 40-03-PLAN.md: Compute metrics and write validation report
+- [ ] 40-01-PLAN.md — Regenerate HOSE database with populated detection columns (v6 schema)
+- [ ] 40-02-PLAN.md — Tier 1 validation tests: detection accuracy + ranking correctness on synthetic data
+- [ ] 40-03-PLAN.md — Tier 2 database validation + v3.0 validation report with ship recommendation
 
 ---
 
@@ -778,7 +778,7 @@ Plans:
 | 37. Signal Grouping | v3.0 | 3/3 | Complete | 2026-02-11 |
 | 38. Two-Tier Ranking and Badlist | v3.0 | 2/2 | Complete | 2026-02-11 |
 | 39. Agent Integration | v3.0 | 3/3 | Complete | 2026-02-11 |
-| 40. Validation | v3.0 | 0/3 | Not started | - |
+| 40. Validation | v3.0 | 0/3 | Planned | - |
 
 ---
 *Last updated: 2026-02-11 after Phase 39 execution*
