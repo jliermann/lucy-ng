@@ -89,7 +89,7 @@ class TestHOSEStatsGenerator:
     def test_generate_all(self, db_manager):
         """Test generating HOSE aggregates from all compounds."""
         generator = HOSEStatsGenerator(db_manager, max_radius=3)
-        aggregates, hybridisations = generator.generate_all(progress=False)
+        aggregates, hybridisations, _neighbours = generator.generate_all(progress=False)
 
         # Should have generated some aggregates
         assert len(aggregates) > 0
@@ -249,7 +249,7 @@ class TestHOSEStatsGeneratorEdgeCases:
 
         with DatabaseManager(db_path) as db:
             generator = HOSEStatsGenerator(db, max_radius=2)
-            aggregates, _ = generator.generate_all(progress=False)
+            aggregates, _, _ = generator.generate_all(progress=False)
 
             # Should still have processed the valid compound
             assert generator.compounds_processed == 2  # Both attempted
@@ -279,7 +279,7 @@ class TestHOSEStatsGeneratorEdgeCases:
         with DatabaseManager(db_path) as db:
             generator = HOSEStatsGenerator(db, max_radius=2)
             # Should not raise exception
-            aggregates, _ = generator.generate_all(progress=False)
+            aggregates, _, _ = generator.generate_all(progress=False)
 
             # Should have processed valid shift only
             assert len(aggregates) > 0
@@ -305,7 +305,7 @@ class TestHOSEStatsGeneratorEdgeCases:
 
         with DatabaseManager(db_path) as db:
             generator = HOSEStatsGenerator(db, max_radius=2)
-            aggregates, _ = generator.generate_all(progress=False)
+            aggregates, _, _ = generator.generate_all(progress=False)
 
             # Should process compound but skip the shift with None index
             assert generator.compounds_processed == 1
@@ -433,13 +433,17 @@ class TestWelfordAccumulator:
         acc.update(10.0)
         acc.update(20.0)
 
-        count, mean, m2, sp3_count, sp2_count, sp1_count = acc.to_tuple()
+        t = acc.to_tuple()
+        assert len(t) == 11
+        count, mean, m2, sp3_count, sp2_count, sp1_count = t[:6]
         assert count == 2
         assert mean == 15.0
         assert m2 > 0  # Should have some m2 value
         assert sp3_count == 0  # No hybridisation tracking with plain update
         assert sp2_count == 0
         assert sp1_count == 0
+        # Neighbour counts should all be 0 with plain update
+        assert all(t[i] == 0 for i in range(6, 11))
 
 
 @pytest.mark.skipif(not HOSEGEN_AVAILABLE, reason="hosegen not available")
