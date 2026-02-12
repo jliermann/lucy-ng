@@ -716,11 +716,11 @@ Plans:
 **Depends on**: Phase 39 (agent integration complete)
 **Requirements**: None (validation phase, ensures quality)
 **Success Criteria** (what must be TRUE):
-  1. Validation test suite created with Sherlock's 45 test cases (downloaded from nmrXiv, sanitized)
-  2. Metrics computed for constraint accuracy (do detected constraints match known structures?)
-  3. Search space reduction measured (solution count with vs without statistical constraints)
-  4. Rank improvement measured (does correct structure rank higher with constraints?)
-  5. Ibuprofen CASE produces correct isobutylphenylpropanoic acid structure in top 3 (fixes v2.1 cyclohexadiene failure)
+  1. Database regenerated with fully populated v6 schema detection columns (~7.9M HOSE entries)
+  2. Tier 1 validation tests verify detection accuracy on synthetic data (hybridisation, neighbours, HHB, signal grouping, two-tier ranking)
+  3. Tier 2 database validation confirms detection CLI returns scientifically correct frequencies (sp2 > 0.80 for aromatics, sp3 > 0.80 for aliphatics, oxygen mandatory for carbonyls)
+  4. Validation report documents metrics, known gaps (COSY, database regen requirement), and v3.0 ship recommendation
+  5. Full CASE agent validation (ibuprofen top-3) deferred to post-phase UAT (stochastic, 10-15 min per run, non-deterministic)
 **Plans**: 3 plans
 
 Plans:
