@@ -1,5 +1,34 @@
 # Project Milestones: lucy-ng
 
+## v3.0 Statistical Detection (Shipped: 2026-02-16)
+
+**Delivered:** Data-driven statistical detection replacing agent guesswork in structure elucidation — hybridisation, neighbourhood, HHB detection from 7.9M HOSE statistics, two-tier ranking preventing MAE hallucinations, badlist strained ring exclusion, and full CASE agent integration with chemistry-first hierarchy.
+
+**Phases completed:** 34-40 (21 plans total)
+
+**Key accomplishments:**
+- Hybridisation detection: sp1/sp2/sp3 state from HOSE database frequency distributions per 13C shift
+- Neighbourhood detection: forbidden (<1%) and mandatory (>95%) bond partners from HOSE sphere 1
+- Hetero-hetero bond detection: formula-level bond pair frequencies from bond_pair_stats table
+- Signal grouping: complete linkage clustering identifies close 13C shifts for combinatorial LSD atom exchange
+- Two-tier ranking: match count priority prevents MAE hallucination; badlist excludes 3/4-membered strained rings
+- Agent integration: CASE agent uses statistical detection CLI with chemistry-first hierarchy (DEPT > HSQC > HMBC > shifts > detection)
+- Database regenerated with v6 schema (7.89M HOSE stats, 8h39m), 762 tests passing, live UAT: ibuprofen rank #1 (MAE=2.23)
+
+**Stats:**
+- 7 phases, 21 plans, 51 commits
+- 88 files changed, +19,700 / -214 lines
+- 18,855 lines Python, 762 tests
+- 2 days (2026-02-11 → 2026-02-12)
+
+**Git range:** `feat(34-01)` → `docs(40-03)`
+
+**Tech debt:** Agent behavior gaps (DEFF NOT dropped across iterations, signal grouping detected but not applied as SYME, grouped notation lost) — prompting issues, not code bugs. Deferred to next milestone.
+
+**What's next:** Agent workflow refinement, COSY integration, fragment library
+
+---
+
 ## v2.1 Working Multi-Agent CASE (Shipped: 2026-02-09)
 
 **Delivered:** Working multi-agent orchestration replacing v2.0's paper-only architecture — sub-command skills, real agent spawning, progress monitoring, loop detection, advisory intervention, diagnostic specialist delegation, AI-driven sanitisation.
@@ -66,8 +95,6 @@
 
 **Git range:** `feat(16-01)` → `feat(19-01)`
 
-**What's next:** Planning next milestone
-
 ---
 
 ## v1.1 Database-Backed Dereplication (Shipped: 2026-01-15)
@@ -91,8 +118,6 @@
 - 7 days from v1.0 to v1.1 (2026-01-08 → 2026-01-15)
 
 **Git range:** `feat(11-01)` → `feat(15-01)`
-
-**What's next:** Planning next milestone
 
 ---
 
@@ -120,7 +145,5 @@
 - 5 days from start to v1.0 (2026-01-08 → 2026-01-12)
 
 **Git range:** `feat(01-01)` → `feat(10-01)`
-
-**What's next:** Database-backed dereplication for v1.1
 
 ---

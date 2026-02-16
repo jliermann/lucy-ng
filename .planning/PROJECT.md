@@ -10,20 +10,19 @@ Lucy-ng is an AI-agent skill for Computer-Assisted Structure Elucidation (CASE) 
 
 An AI agent can autonomously determine the structure of an unknown organic compound from its NMR spectra, with a multi-agent architecture that prevents unproductive loops and keeps the elucidation on track.
 
-## Current Milestone: v3.0 Statistical Detection (Active)
+## Current State
 
-**Goal:** Add data-driven statistical detection to replace agent guesswork — hybridisation detection, neighbourhood constraints, hetero-hetero bond allowance, improved ranking, and badlist filters. Inspired by Sherlock CASE system analysis (Wenk PhD thesis).
+**Version:** v3.0 shipped 2026-02-16
+**Codebase:** ~18,855 lines Python, 762 tests, 10 CLI command groups
+**Database:** SQLite v6 schema with 928K compounds and 7.89M HOSE statistics
+**Live UAT:** Ibuprofen (C13H18O2) solved rank #1, MAE=2.23, 4 iterations, 13 solutions
 
-**Target features:**
-- CLI commands for statistical hybridisation detection from HOSE database (sp1/sp2/sp3 frequencies per shift)
-- CLI commands for forbidden/mandatory neighbour detection from bond partner distributions
-- CLI command for hetero-hetero bond allowance detection from bond pair statistics
-- Two-tier ranking: signal match count first, then average deviation
-- Badlist filters for 3/4-membered ring exclusion in LSD
-- Agent integration: CASE agent uses statistical detection CLI to write better-constrained LSD files
-- Signal grouping detection (identify close shifts within 0.25 ppm tolerance)
-
-**Motivation:** Live testing revealed that lucy-ng's ibuprofen CASE produced 8 wrong cyclohexadiene solutions (not ibuprofen). Sherlock solves the same problem trivially because statistical constraints reduce search space by 5 orders of magnitude (Caripyrin: 8.5M -> 10 structures from hybridisation + neighbours alone). Without data-driven constraints, the AI agent is guessing.
+**What v3.0 delivered:**
+- 4 statistical detection CLI commands (hybridisation, neighbours, hhb, grouping)
+- Two-tier ranking preventing MAE hallucination (match count primary, MAE secondary)
+- Badlist filters excluding 3/4-membered strained rings (DEFF NOT patterns)
+- CASE agent integration with chemistry-first hierarchy
+- Database regenerated with v6 schema (7.89M fully populated HOSE stats)
 
 ## Architecture
 
@@ -55,20 +54,23 @@ An AI agent can autonomously determine the structure of an unknown organic compo
 - Autonomous CASE agent definition with full skill knowledge and CASE-PROGRESS.md writing — v2.1
 - AI-driven dataset sanitisation (compound identity removal, no CLI) — v2.1
 - Diagnostic specialist agent reworked for orchestrator integration — v2.1
+- Statistical hybridisation detection from HOSE database (sp1/sp2/sp3) — v3.0
+- Statistical neighbourhood detection (forbidden/mandatory bond partners) — v3.0
+- Hetero-hetero bond allowance detection from bond pair statistics — v3.0
+- Signal grouping detection (close shifts within 0.25 ppm tolerance) — v3.0
+- Two-tier ranking (match count priority prevents MAE hallucination) — v3.0
+- Badlist filters (3/4-membered strained ring exclusion via DEFF NOT) — v3.0
+- CASE agent integration with statistical detection and chemistry-first hierarchy — v3.0
 
 ### Active
 
-- [ ] Statistical hybridisation detection from HOSE database
-- [ ] Statistical neighbourhood detection (forbidden/mandatory)
-- [ ] Hetero-hetero bond allowance detection
-- [ ] Signal grouping detection (close shifts within tolerance)
-- [ ] Two-tier ranking (match count + deviation)
-- [ ] Badlist filters (3/4-membered ring exclusion)
-- [ ] CASE agent integration with statistical detection CLI
+(No active milestone — next milestone to be defined via `/gsd:new-milestone`)
 
 ### Deferred
 
-- [ ] Support for COSY correlations in LSD constraints -- notoriously difficult to analyze
+- [ ] Support for COSY correlations in LSD constraints
+- [ ] Agent workflow refinement (DEFF NOT persistence, signal grouping application, grouped notation)
+- [ ] Fragment library for substructure suggestion
 - [ ] Stereochemistry handling (E/Z, R/S)
 - [ ] Interactive CASE mode with user feedback loop
 
@@ -134,29 +136,35 @@ Minimum viable spectral data for v1:
 | Hybrid context inlining | v2.1: ~500-700 lines critical knowledge inlined in agents, detailed references via file paths | Good |
 | Per-pattern intervention counters | v2.1: Track failures separately per loop pattern, 10-cycle escalation | Good |
 | Diagnostic delegation threshold | v2.1: Specialist spawned after 2 failed basic interventions with same pattern | Good |
+| Data-driven statistical detection | v3.0: Replace agent guesswork with HOSE database statistics (inspired by Sherlock CASE) | Good |
+| Chemistry-first hierarchy | v3.0: NMR evidence (DEPT/HSQC/HMBC) always overrides statistical detection | Good |
+| Two-tier ranking | v3.0: Match count primary, MAE secondary — prevents hallucination from wrong structures with coincidentally low MAE | Good |
+| Badlist via DEFF NOT | v3.0: Hardcoded strained ring exclusion in agent knowledge rather than automated filtering | Good — but agent drops across iterations |
+| Schema migration chain | v3.0: ALTER TABLE v3→v4→v5→v6 with backward-compatible queries | Good |
 
-## Current State
+## Technical State
 
-**Version:** v3.0-dev (milestone started 2026-02-10, building on v2.1 shipped 2026-02-09)
-**Codebase:** ~17,500 lines Python, 642 tests
+**Version:** v3.0 (shipped 2026-02-16)
+**Codebase:** ~18,855 lines Python, 762 tests
 **Tech stack:** Python 3.10+, Pydantic v2, nmrglue, RDKit, SQLite, Click
+**Database:** v6 schema with 928K compounds, 7.89M HOSE statistics
 
 **Capabilities:**
-- 9 CLI command groups, 22 commands (thin data-access wrappers)
+- 10 CLI command groups, 26+ commands (thin data-access wrappers)
+- 4 statistical detection commands: hybridisation, neighbours, hhb, grouping
+- Two-tier ranking with badlist strained ring exclusion
 - SQLite database with 928K compounds (COCONUT + NMRShiftDB)
-- 7.9M HOSE statistics for database-backed 13C prediction
-- Full CASE pipeline: peak picking → LSD generation → solving → ranking
-- Skill documents: SKILL.md (1,079 lines), diagnostic SKILL.md (1,874 lines)
+- 7.89M HOSE statistics for 13C prediction and statistical detection
+- Full CASE pipeline: peak picking → statistical detection → LSD generation → solving → ranking
 - Sub-command skills: status, dereplicate, predict, sanitise, case (in ~/.claude/commands/lucy-ng/)
-- Agent definitions: lucy-case-agent.md (613 lines, hybrid inlined), lucy-diagnostic.md (hybrid inlined)
+- Agent definitions: lucy-case-agent.md (666+ lines, hybrid inlined), lucy-diagnostic.md (hybrid inlined)
 - CASE orchestrator: spawns autonomous agent, monitors CASE-PROGRESS.md, detects 4 loop patterns, intervenes with advisory constraints, delegates to diagnostic specialist
 
-**What v2.1 delivered:**
-- Working multi-agent orchestration: CASE agent spawned via Task(), progress monitored, loops detected and intervened
-- Sub-command skills replacing monolithic /lucy-ng skill
-- AI-driven sanitisation without CLI dependency
-- Diagnostic specialist integration with delegation threshold
-- v2.0's paper-only agent architecture replaced with working GSD-pattern orchestration
+**Known tech debt (from v3.0 UAT):**
+- Agent drops DEFF NOT patterns when rebuilding LSD files across iterations
+- Signal grouping detected but never applied as SYME constraint in LSD
+- Grouped atom notation lost after iteration 1
+- PROP/ELIM/LIST constraints never written despite neighbourhood detection results
 
 ---
-*Last updated: 2026-02-10 after v3.0 milestone started*
+*Last updated: 2026-02-16 after v3.0 milestone completion*
