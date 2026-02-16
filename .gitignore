@@ -55,3 +55,5 @@ data/reference/*.sdf
 data/reference/*.db
 # Keep compressed database for distribution
 !data/reference/*.db.gz
+# Ignore zipped databases (deposited on Zenodo/Figshare, not in git)
+data/reference/*.db.zip
