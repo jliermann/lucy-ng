@@ -32,7 +32,7 @@
 - [x] **Phase 43: Constraint Inventory System** - JSON-based constraint tracking in LSD file headers (completed 2026-02-17)
 - [x] **Phase 44: CASE-PROGRESS.md Format** - Multi-agent journal with per-agent sections (completed 2026-02-17)
 - [x] **Phase 45: Team Coordination Protocol** - Iteration loop, task assignment, stopping conditions (completed 2026-02-17)
-- [ ] **Phase 46: Diagnostic Integration** - Specialist integration with team context
+- [x] **Phase 46: Diagnostic Integration** - Specialist integration with team context (completed 2026-02-17)
 - [ ] **Phase 47: UAT with Live Compounds** - Validation against v3.0 baseline
 
 ---
@@ -156,7 +156,7 @@ Plans:
   4. Delegation trigger unchanged from v3.0 (2 failed basic interventions with same pattern)
 
 **Research**: Complete (46-RESEARCH.md)
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
 - [ ] 46-01-PLAN.md — Update specialist instructions and knowledge for constraint inventory awareness and analysis/ path
@@ -187,7 +187,7 @@ Plans:
 | 43. Constraint Inventory System | v4.0 | Complete    | 2026-02-17 | -- |
 | 44. CASE-PROGRESS.md Format | v4.0 | Complete    | 2026-02-17 | -- |
 | 45. Team Coordination Protocol | v4.0 | Complete    | 2026-02-17 | -- |
-| 46. Diagnostic Integration | v4.0 | 1 plan    | Planned | -- |
+| 46. Diagnostic Integration | v4.0 | Complete    | 2026-02-17 | -- |
 | 47. UAT with Live Compounds | v4.0 | -- | Planned | -- |
 
 ---
