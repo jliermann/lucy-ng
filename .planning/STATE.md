@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 ## Current Position
 
 **Milestone**: v4.0 Team-Based CASE — Phases 41-47
-**Phase**: 41 — Orchestrator Skill Modification (executing, Wave 1 complete: plans 01+02, Wave 2 plan 03 pending)
-**Status**: Plans 41-01 and 41-02 complete, Plan 41-03 (API validation smoke test) pending
-**Last activity**: 2026-02-17 — Wave 1 executed (stub agents + case.md rewrite)
+**Phase**: 41 — Orchestrator Skill Modification (all 3 plans complete, pending verification)
+**Status**: All plans executed, awaiting phase verification
+**Last activity**: 2026-02-17 — Phase 41 plans 01-03 complete
 
 Progress: [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0/7 phases
 
@@ -53,7 +53,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 ## Session Continuity
 
 Last session: 2026-02-17
-Stopped at: Phase 41 Wave 1 complete, Wave 2 (plan 03 smoke test) pending
+Stopped at: Phase 41 all plans complete, pending verification
 Resume file: None
 
 ---
