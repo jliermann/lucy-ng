@@ -28,7 +28,7 @@
 **Phase overview:**
 
 - [x] **Phase 41: Orchestrator Skill Modification** - Update case.md to spawn team via TeamCreate instead of single Task() (completed 2026-02-17)
-- [ ] **Phase 42: Agent Definitions** - Create 5 specialized agent files with distributed domain knowledge
+- [x] **Phase 42: Agent Definitions** - Create 5 specialized agent files with distributed domain knowledge (completed 2026-02-17)
 - [ ] **Phase 43: Constraint Inventory System** - JSON-based constraint tracking in LSD file headers
 - [ ] **Phase 44: CASE-PROGRESS.md Format** - Multi-agent journal with per-agent sections
 - [ ] **Phase 45: Team Coordination Protocol** - Iteration loop, task assignment, stopping conditions
@@ -72,7 +72,7 @@ Plans:
   6. Old lucy-case-agent.md preserved as reference until v4.0 ships
 
 **Research**: Complete (42-RESEARCH.md)
-**Plans:** 5 plans in 2 waves
+**Plans:** 5/5 plans complete
 
 Plans:
 - [ ] 42-01-PLAN.md -- NMR-Chemist full agent definition
@@ -164,7 +164,7 @@ Plans:
 | Phase | Milestone | Plans | Status | Completed |
 |-------|-----------|-------|--------|-----------|
 | 41. Orchestrator Skill Modification | v4.0 | Complete    | 2026-02-17 | -- |
-| 42. Agent Definitions | v4.0 | 5 plans    | Planned | -- |
+| 42. Agent Definitions | v4.0 | Complete    | 2026-02-17 | -- |
 | 43. Constraint Inventory System | v4.0 | -- | Planned | -- |
 | 44. CASE-PROGRESS.md Format | v4.0 | -- | Planned | -- |
 | 45. Team Coordination Protocol | v4.0 | -- | Planned | -- |
