@@ -95,7 +95,12 @@ Plans:
   5. Grouped notation (HMBC (5 6) 10) preserved in inventory across iterations
   6. Detection results (hybridisation, neighbours, HHB, grouping) tracked in inventory with source annotation
 
-**Research**: Likely needs detailed design of JSON schema and diff protocol
+**Research**: Complete (43-RESEARCH.md)
+**Plans:** 2 plans
+
+Plans:
+- [ ] 43-01-PLAN.md -- LSD-Engineer inventory schema and procedures
+- [ ] 43-02-PLAN.md -- Devils-Advocate inventory validation protocol
 
 ---
 
