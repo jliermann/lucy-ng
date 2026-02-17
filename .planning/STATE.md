@@ -53,6 +53,10 @@ Decisions are logged in PROJECT.md Key Decisions table.
 
 ## Accumulated Decisions (Phase 44)
 
+- **44-01:** Coordinator-as-sole-writer enforced at agent instruction level with explicit negation ("You do NOT write CASE-PROGRESS.md") — not just by omission
+- **44-01:** All labeled fields in message templates match orchestrator detect_loops field names (Solution count, sp2 count, H budget, HMBC correlations used) — backward-compatible by design
+- **44-01:** Terminal message rule: [ITERATION-COMPLETE], [VALIDATION-PASSED], [VALIDATION-BLOCKED] are terminal — one per agent per iteration; revised messages use "(revised)" suffix
+- **44-01:** devils-advocate retains no Write tool (read-only); solution-analyst retains Write for final_results.md (not CASE-PROGRESS.md)
 - **44-02:** write_progress is a REFERENCE step (not sequential) — coordinator writes throughout workflow as messages arrive
 - **44-02:** 9 writing triggers defined covering all agent message types: file header, [SETUP-COMPLETE], iteration header, [ITERATION-COMPLETE], [VALIDATION-PASSED]/[VALIDATION-BLOCKED], coordinator solution count, [RANKING-COMPLETE], diagnostic intervention, intra-iteration revision
 - **44-02:** devils-advocate prompt changed from monitoring CASE-PROGRESS.md to receiving validation requests via SendMessage — aligns with its read-only tool access
@@ -70,8 +74,8 @@ Decisions are logged in PROJECT.md Key Decisions table.
 ## Session Continuity
 
 Last session: 2026-02-17
-Stopped at: 44-02 complete (write_progress step added to case.md, coordinator-as-sole-writer protocol)
+Stopped at: 44-01 re-executed (4 specialist agent definitions updated with structured SendMessage templates, coordinator-as-sole-writer protocol enforced)
 Resume file: None
 
 ---
-*Last updated: 2026-02-17 after 44-02 execution*
+*Last updated: 2026-02-17 after 44-01 execution*
