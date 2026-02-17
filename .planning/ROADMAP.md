@@ -136,7 +136,12 @@ Plans:
   5. Coordinator synthesizes results from all agents into final report
   6. Time to solution measured and compared against v3.0 baseline (target: < 2x)
 
-**Research**: Likely needs iterative tuning — coordination efficiency unknown until tested with real compounds
+**Research**: Complete (45-RESEARCH.md)
+**Plans:** 2 plans
+
+Plans:
+- [ ] 45-01-PLAN.md — Close 4 coordination gaps (iteration tasks, shift list, parallel tasks, time measurement)
+- [ ] 45-02-PLAN.md — Dry-run coordination verification (trace full message flow, verify all 6 SCs)
 
 ---
 
@@ -177,7 +182,7 @@ Plans:
 | 42. Agent Definitions | v4.0 | Complete    | 2026-02-17 | -- |
 | 43. Constraint Inventory System | v4.0 | Complete    | 2026-02-17 | -- |
 | 44. CASE-PROGRESS.md Format | v4.0 | Complete    | 2026-02-17 | -- |
-| 45. Team Coordination Protocol | v4.0 | -- | Planned | -- |
+| 45. Team Coordination Protocol | v4.0 | 2 plans | Planning | -- |
 | 46. Diagnostic Integration | v4.0 | -- | Planned | -- |
 | 47. UAT with Live Compounds | v4.0 | -- | Planned | -- |
 
