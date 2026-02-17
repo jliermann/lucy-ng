@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a collaborative team architecture that self-corrects through peer review
-**Current focus:** v4.0 Team-Based CASE — defining requirements
+**Current focus:** v4.0 Team-Based CASE — executing Phase 41
 
 ## Current Position
 
-**Milestone**: v4.0 Team-Based CASE — STARTED 2026-02-16
-**Phase**: Not started (defining requirements)
-**Status**: Defining requirements
-**Last activity**: 2026-02-16 — Milestone v4.0 started
+**Milestone**: v4.0 Team-Based CASE — Phases 41-47
+**Phase**: 41 — Orchestrator Skill Modification (executing, Wave 1 complete: plans 01+02, Wave 2 plan 03 pending)
+**Status**: Plans 41-01 and 41-02 complete, Plan 41-03 (API validation smoke test) pending
+**Last activity**: 2026-02-17 — Wave 1 executed (stub agents + case.md rewrite)
 
-Progress: [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0%
+Progress: [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0/7 phases
 
 ## Completed Milestones
 
@@ -52,9 +52,9 @@ Decisions are logged in PROJECT.md Key Decisions table.
 
 ## Session Continuity
 
-Last session: 2026-02-16
-Stopped at: v4.0 milestone started, defining requirements
+Last session: 2026-02-17
+Stopped at: Phase 41 Wave 1 complete, Wave 2 (plan 03 smoke test) pending
 Resume file: None
 
 ---
-*Last updated: 2026-02-16 after v4.0 milestone start*
+*Last updated: 2026-02-17 after Phase 41 Wave 1 execution*
