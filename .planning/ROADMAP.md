@@ -115,7 +115,12 @@ Plans:
   4. Format is backward-compatible with v3.0 orchestrator parsing (solution count, iteration count)
   5. Each agent's contribution clearly attributed (who detected what, who validated what)
 
-**Research**: Unlikely needed — format is well-defined, standard patterns apply
+**Research**: Complete (44-RESEARCH.md)
+**Plans:** 2 plans
+
+Plans:
+- [ ] 44-01-PLAN.md — Update 4 specialist agents with structured SendMessage templates (coordinator-as-sole-writer)
+- [ ] 44-02-PLAN.md — Add write_progress step to orchestrator with full multi-agent format spec
 
 ---
 
@@ -171,7 +176,7 @@ Plans:
 | 41. Orchestrator Skill Modification | v4.0 | Complete    | 2026-02-17 | -- |
 | 42. Agent Definitions | v4.0 | Complete    | 2026-02-17 | -- |
 | 43. Constraint Inventory System | v4.0 | Complete    | 2026-02-17 | -- |
-| 44. CASE-PROGRESS.md Format | v4.0 | -- | Planned | -- |
+| 44. CASE-PROGRESS.md Format | v4.0 | 2 plans    | Planned | -- |
 | 45. Team Coordination Protocol | v4.0 | -- | Planned | -- |
 | 46. Diagnostic Integration | v4.0 | -- | Planned | -- |
 | 47. UAT with Live Compounds | v4.0 | -- | Planned | -- |
