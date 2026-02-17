@@ -110,5 +110,16 @@ Agent files live at `~/.claude/agents/` which is outside the lucy-ng git reposit
 - All 4 agent definitions are self-consistent: no agent instructs direct CASE-PROGRESS.md writing
 
 ---
+## Self-Check: PASSED
+
+- FOUND: ~/.claude/agents/lucy-lsd-engineer.md (ITERATION-COMPLETE x8, Contribution Protocol section)
+- FOUND: ~/.claude/agents/lucy-nmr-chemist.md (SETUP-COMPLETE x6, DETECTION-COMPLETE x4)
+- FOUND: ~/.claude/agents/lucy-solution-analyst.md (RANKING-COMPLETE x4)
+- FOUND: ~/.claude/agents/lucy-devils-advocate.md (VALIDATION-PASSED x7, VALIDATION-BLOCKED x7, no Write tool)
+- FOUND: .planning/phases/44-case-progress-format/44-01-SUMMARY.md
+- Zero forbidden write/append/create CASE-PROGRESS.md patterns in all 4 target files
+- Commit eee133b: docs(44-01)
+
+---
 *Phase: 44-case-progress-format*
 *Completed: 2026-02-17*
