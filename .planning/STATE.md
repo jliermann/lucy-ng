@@ -5,14 +5,15 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a collaborative team architecture that self-corrects through peer review
-**Current focus:** v4.0 Team-Based CASE — ready to discuss Phase 43
+**Current focus:** v4.0 Team-Based CASE — Phase 43 in progress
 
 ## Current Position
 
 **Milestone**: v4.0 Team-Based CASE — Phases 41-47
-**Phase**: 43 — Constraint Inventory System (not yet planned)
-**Status**: Phase 42 complete, ready to discuss Phase 43
-**Last activity**: 2026-02-17 — Phase 42 complete (5/5 plans, 4 specialist agents)
+**Phase**: 43 — Constraint Inventory System (in progress)
+**Plan**: 43-02 complete (Devils-Advocate inventory validation)
+**Status**: Phase 43 executing — 43-02 done, 43-01 pending (LSD-Engineer inventory)
+**Last activity**: 2026-02-17 — 43-02 complete (Devils-Advocate Section 5 added, 12-step workflow)
 
 Progress: [############░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 2/7 phases
 
@@ -50,11 +51,17 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - COSY agent usage: deferred beyond v4.0
 - Database regeneration: End users with pre-v3.0 databases must regenerate
 
+## Accumulated Decisions (Phase 43)
+
+- **43-02:** Three-check inventory reconciliation (accuracy, regression, content) is the primary validation protocol for Devils-Advocate
+- **43-02:** Legacy fallback for files without inventory block -- backwards compatible with pre-Phase-43 LSD files
+- **43-02:** Detection coverage check at 3+ iterations triggers WARNING for pending_from_detection items
+
 ## Session Continuity
 
 Last session: 2026-02-17
-Stopped at: Phase 42 complete, ready to discuss Phase 43
+Stopped at: 43-02 complete (Devils-Advocate inventory validation added)
 Resume file: None
 
 ---
-*Last updated: 2026-02-17 after Phase 42 completion and transition*
+*Last updated: 2026-02-17 after 43-02 execution*
