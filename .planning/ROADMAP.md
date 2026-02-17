@@ -30,7 +30,7 @@
 - [x] **Phase 41: Orchestrator Skill Modification** - Update case.md to spawn team via TeamCreate instead of single Task() (completed 2026-02-17)
 - [x] **Phase 42: Agent Definitions** - Create 5 specialized agent files with distributed domain knowledge (completed 2026-02-17)
 - [x] **Phase 43: Constraint Inventory System** - JSON-based constraint tracking in LSD file headers (completed 2026-02-17)
-- [ ] **Phase 44: CASE-PROGRESS.md Format** - Multi-agent journal with per-agent sections
+- [x] **Phase 44: CASE-PROGRESS.md Format** - Multi-agent journal with per-agent sections (completed 2026-02-17)
 - [ ] **Phase 45: Team Coordination Protocol** - Iteration loop, task assignment, stopping conditions
 - [ ] **Phase 46: Diagnostic Integration** - Specialist integration with team context
 - [ ] **Phase 47: UAT with Live Compounds** - Validation against v3.0 baseline
@@ -116,7 +116,7 @@ Plans:
   5. Each agent's contribution clearly attributed (who detected what, who validated what)
 
 **Research**: Complete (44-RESEARCH.md)
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 44-01-PLAN.md — Update 4 specialist agents with structured SendMessage templates (coordinator-as-sole-writer)
@@ -176,7 +176,7 @@ Plans:
 | 41. Orchestrator Skill Modification | v4.0 | Complete    | 2026-02-17 | -- |
 | 42. Agent Definitions | v4.0 | Complete    | 2026-02-17 | -- |
 | 43. Constraint Inventory System | v4.0 | Complete    | 2026-02-17 | -- |
-| 44. CASE-PROGRESS.md Format | v4.0 | 2 plans    | Planned | -- |
+| 44. CASE-PROGRESS.md Format | v4.0 | Complete    | 2026-02-17 | -- |
 | 45. Team Coordination Protocol | v4.0 | -- | Planned | -- |
 | 46. Diagnostic Integration | v4.0 | -- | Planned | -- |
 | 47. UAT with Live Compounds | v4.0 | -- | Planned | -- |
