@@ -174,7 +174,12 @@ Plans:
   4. Additional test compounds (Pulegone, Virgiline) if time permits
   5. Performance comparison report: v3.0 monolithic vs v4.0 team (solution quality, constraint coverage, iteration count)
 
-**Research**: Unlikely needed — standard UAT, test cases defined
+**Research**: Complete (47-RESEARCH.md)
+**Plans:** 2 plans
+
+Plans:
+- [ ] 47-01-PLAN.md -- Live UAT run on Ibuprofen with v3.0 bug evaluation
+- [ ] 47-02-PLAN.md -- Performance comparison report (v3.0 vs v4.0)
 
 ---
 
