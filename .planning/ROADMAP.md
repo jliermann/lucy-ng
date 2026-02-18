@@ -163,6 +163,29 @@ Plans:
 
 ---
 
+### Phase 46.1: Agent Aromatic Ring Awareness (INSERTED)
+
+**Goal:** Update CASE team agent instructions so they detect and act on aromatic ring mismatches between NMR evidence and LSD solutions
+**Depends on:** Phase 46 + aromatic sanity check in ranking code (commit 2d4ce88)
+**Motivation:** v4.0 UAT on ibuprofen: NMR-chemist correctly identified 5 sp2 carbons at 127-141 ppm (classic aromatic), but when all 7 solutions lacked aromatic rings, no agent flagged it. Solution-analyst hallucinated rank #1 as ibuprofen (actually a 7-membered ring). The ranking code now emits a `warnings` field with an aromatic mismatch message, but no agent reads or acts on it.
+
+**Success Criteria** (what must be TRUE):
+  1. solution-analyst checks `warnings` field from `lucy lsd rank --format json` output; if aromatic warning present, reports it as a critical finding to coordinator (not silently ignored)
+  2. nmr-chemist explicitly flags "aromatic ring expected" in [SETUP-COMPLETE] message when it detects a cluster (>= 4) of sp2 carbons in 110-160 ppm region
+  3. solution-analyst chemical plausibility assessment includes aromatic ring verification: if NMR-chemist flagged aromaticity expected, checks `has_aromatic_ring` field on top-ranked solutions
+  4. When aromatic mismatch detected, solution-analyst recommends specific remediation (remove suspect HMBC correlations between aromatic positions and benzylic/alpha substituents)
+
+**Agents to modify:**
+- `~/.claude/agents/lucy-solution-analyst.md` — primary: read warnings, verify aromatic rings, report mismatch
+- `~/.claude/agents/lucy-nmr-chemist.md` — flag aromatic expectation in setup message
+- `~/.claude/agents/lucy-devils-advocate.md` — optional: post-ranking aromatic sanity check
+
+**Plans:** 2 plans
+
+Plans:
+- [ ] 46.1-01-PLAN.md — Solution-analyst: Check 6 aromatic ring verification + [RANKING-COMPLETE] template + workflow --format json
+- [ ] 46.1-02-PLAN.md — NMR-chemist: Aromatic expectation field + Devils-advocate: Aromatic Ring Expectation check
+
 ### Phase 47: UAT with Live Compounds
 **Goal**: Team-based CASE validated against v3.0 baseline with diverse compounds
 **Depends on**: Phase 46 (all components integrated)
