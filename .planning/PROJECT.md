@@ -10,31 +10,23 @@ Lucy-ng is an AI-agent skill for Computer-Assisted Structure Elucidation (CASE) 
 
 An AI agent can autonomously determine the structure of an unknown organic compound from its NMR spectra, with a multi-agent architecture that prevents unproductive loops and keeps the elucidation on track.
 
-## Current Milestone: v4.0 Team-Based CASE
-
-**Goal:** Replace the single autonomous CASE agent with a 5-agent collaborative team that self-corrects through real-time peer review, fixing all v3.0 constraint-loss bugs.
-
-**Target features:**
-- 5-agent CASE team: coordinator, nmr-chemist, lsd-engineer, solution-analyst, devils-advocate
-- Real-time peer feedback: every agent monitors others' work and flags issues
-- Constraint persistence: lsd-engineer builds from previous file, never from memory
-- Pre-run validation: devils-advocate diffs every LSD file before solver runs
-- Post-run quality: solution-analyst checks chemical plausibility, not just counts
-- Self-correcting loop: dropped DEFF NOT, lost SYME, unused detection results caught and fixed before they affect results
-
 ## Current State
 
-**Version:** v3.0 shipped 2026-02-16
-**Codebase:** ~18,855 lines Python, 762 tests, 10 CLI command groups
+**Version:** v4.0 shipped 2026-02-18
+**Codebase:** ~18,963 lines Python, 768 tests, 10 CLI command groups
 **Database:** SQLite v6 schema with 928K compounds and 7.89M HOSE statistics
-**Live UAT:** Ibuprofen (C13H18O2) solved rank #1, MAE=2.23, 4 iterations, 13 solutions
+**Agent definitions:** 3,460 lines across 5 agent files + orchestrator skill
+**Live UAT:** Ibuprofen team-based CASE — all v3.0 constraint-loss bugs fixed, aromatic ring awareness added
 
-**What v3.0 delivered:**
-- 4 statistical detection CLI commands (hybridisation, neighbours, hhb, grouping)
-- Two-tier ranking preventing MAE hallucination (match count primary, MAE secondary)
-- Badlist filters excluding 3/4-membered strained rings (DEFF NOT patterns)
-- CASE agent integration with chemistry-first hierarchy
-- Database regenerated with v6 schema (7.89M fully populated HOSE stats)
+**What v4.0 delivered:**
+- 5-agent collaborative CASE team via TeamCreate (coordinator, nmr-chemist, lsd-engineer, solution-analyst, devils-advocate)
+- Constraint inventory system preventing constraint loss across iterations
+- Devils-advocate pre-run validation gate with three-check reconciliation
+- Aromatic ring awareness (nmr-chemist flags expectation, solution-analyst verifies, remediation guidance)
+- Coordinator-as-sole-writer pattern for CASE-PROGRESS.md
+- Diagnostic specialist integration with team context and constraint inventory
+
+**Known limitation:** 4J HMBC couplings through aromatic rings silently exclude correct structures. Ibuprofen correct structure not found due to 3 W-pathway 4J correlations enforced as 2-3 bond. Needs statistical 4J detection in next milestone.
 
 ## Architecture
 
@@ -74,15 +66,17 @@ An AI agent can autonomously determine the structure of an unknown organic compo
 - Badlist filters (3/4-membered strained ring exclusion via DEFF NOT) — v3.0
 - CASE agent integration with statistical detection and chemistry-first hierarchy — v3.0
 
-### Active
+### Validated (v4.0)
 
-- [ ] 5-agent CASE team architecture (coordinator, nmr-chemist, lsd-engineer, solution-analyst, devils-advocate)
-- [ ] Team-based orchestrator skill replacing single-agent Task() spawning
-- [ ] Constraint inventory managed by lsd-engineer (read previous file, never reconstruct from memory)
-- [ ] Pre-run LSD validation by devils-advocate (diff vs previous, sp2, H budget, DEFF NOT, SYME)
-- [ ] Post-run solution quality review by solution-analyst (chemical plausibility, strained ring detection)
-- [ ] Real-time peer feedback protocol (any agent can flag issues in any other agent's work)
-- [ ] CASE-PROGRESS.md updated for team workflow (multi-agent contributions per iteration)
+- 5-agent CASE team architecture (coordinator, nmr-chemist, lsd-engineer, solution-analyst, devils-advocate) — v4.0
+- Team-based orchestrator skill replacing single-agent Task() spawning — v4.0
+- Constraint inventory managed by lsd-engineer (read previous file, never reconstruct from memory) — v4.0
+- Pre-run LSD validation by devils-advocate (diff vs previous, sp2, H budget, DEFF NOT, SYME) — v4.0
+- Post-run solution quality review by solution-analyst (chemical plausibility, aromatic ring verification) — v4.0
+- Real-time peer feedback protocol (any agent can flag issues in any other agent's work) — v4.0
+- CASE-PROGRESS.md updated for team workflow (multi-agent contributions per iteration) — v4.0
+- Aromatic ring awareness: nmr-chemist flags expectation, solution-analyst verifies, remediation guidance for 4J — v4.0
+- Diagnostic specialist integration with team context (constraint inventory, analysis/ paths) — v4.0
 
 ### Deferred
 
@@ -158,31 +152,36 @@ Minimum viable spectral data for v1:
 | Two-tier ranking | v3.0: Match count primary, MAE secondary — prevents hallucination from wrong structures with coincidentally low MAE | Good |
 | Badlist via DEFF NOT | v3.0: Hardcoded strained ring exclusion in agent knowledge rather than automated filtering | Good — but agent drops across iterations |
 | Schema migration chain | v3.0: ALTER TABLE v3→v4→v5→v6 with backward-compatible queries | Good |
-| Team-based CASE | v4.0: 5-agent team (coordinator, nmr-chemist, lsd-engineer, solution-analyst, devils-advocate) replacing single autonomous agent. Peer feedback eliminates constraint loss. | — Pending |
+| Team-based CASE | v4.0: 5-agent team (coordinator, nmr-chemist, lsd-engineer, solution-analyst, devils-advocate) replacing single autonomous agent. Peer feedback eliminates constraint loss. | Good — all v3.0 bugs fixed |
+| Constraint inventory in LSD headers | v4.0: JSON block tracking all constraint types, read-previous-never-reconstruct rule, DA reconciliation | Good |
+| Coordinator-as-sole-writer | v4.0: Agents post via SendMessage, coordinator writes CASE-PROGRESS.md — prevents corruption | Good |
+| Aromatic ring awareness | v4.0: Post-ranking sanity check when NMR evidence shows aromatic pattern but solutions lack rings | Good — caught in UAT |
 
 ## Technical State
 
-**Version:** v3.0 (shipped 2026-02-16)
-**Codebase:** ~18,855 lines Python, 762 tests
+**Version:** v4.0 (shipped 2026-02-18)
+**Codebase:** ~18,963 lines Python, 768 tests
 **Tech stack:** Python 3.10+, Pydantic v2, nmrglue, RDKit, SQLite, Click
 **Database:** v6 schema with 928K compounds, 7.89M HOSE statistics
+**Agent definitions:** 3,460 lines across 6 files (5 agents + orchestrator skill)
 
 **Capabilities:**
 - 10 CLI command groups, 26+ commands (thin data-access wrappers)
 - 4 statistical detection commands: hybridisation, neighbours, hhb, grouping
-- Two-tier ranking with badlist strained ring exclusion
+- Two-tier ranking with badlist strained ring exclusion + aromatic ring sanity check
 - SQLite database with 928K compounds (COCONUT + NMRShiftDB)
 - 7.89M HOSE statistics for 13C prediction and statistical detection
 - Full CASE pipeline: peak picking → statistical detection → LSD generation → solving → ranking
 - Sub-command skills: status, dereplicate, predict, sanitise, case (in ~/.claude/commands/lucy-ng/)
-- Agent definitions: lucy-case-agent.md (666+ lines, hybrid inlined), lucy-diagnostic.md (hybrid inlined)
-- CASE orchestrator: spawns autonomous agent, monitors CASE-PROGRESS.md, detects 4 loop patterns, intervenes with advisory constraints, delegates to diagnostic specialist
+- 5-agent CASE team: lucy-nmr-chemist.md, lucy-lsd-engineer.md, lucy-solution-analyst.md, lucy-devils-advocate.md + case.md orchestrator
+- Diagnostic specialist: lucy-diagnostic.md (constraint inventory-aware, team context)
+- CASE orchestrator: spawns 5-agent team via TeamCreate, monitors CASE-PROGRESS.md, detects 4 loop patterns, intervenes with advisory constraints, delegates to diagnostic specialist
+- Constraint inventory: JSON tracking in LSD file headers, DA reconciliation gate
 
-**Known tech debt (from v3.0 UAT):**
-- Agent drops DEFF NOT patterns when rebuilding LSD files across iterations
-- Signal grouping detected but never applied as SYME constraint in LSD
-- Grouped atom notation lost after iteration 1
-- PROP/ELIM/LIST constraints never written despite neighbourhood detection results
+**Known tech debt (from v4.0 UAT):**
+- 4J HMBC couplings through aromatic rings not detected — silently excludes correct structures
+- 3 WARNING-level write_progress template gaps (aromatic field propagation)
+- Multi-compound UAT not yet performed (only ibuprofen tested)
 
 ---
-*Last updated: 2026-02-16 after v4.0 milestone start*
+*Last updated: 2026-02-18 after v4.0 milestone complete*

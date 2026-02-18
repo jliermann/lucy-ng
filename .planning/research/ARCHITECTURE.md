@@ -1,823 +1,1310 @@
-# Architecture Integration: Statistical Detection Features
+# Architecture Research: 5-Agent CASE Team Integration
 
-**Domain:** NMR structure elucidation with statistical detection
-**Researched:** 2026-02-10
-**Overall confidence:** HIGH
+**Domain:** Multi-agent CASE workflow for NMR structure elucidation
+**Researched:** 2026-02-16
+**Confidence:** HIGH (based on Claude Opus 4.6 Team documentation and multi-agent architecture patterns)
 
 ## Executive Summary
 
-Statistical detection features integrate cleanly into the existing lucy-ng architecture through three layers:
+The v4.0 architecture replaces the single autonomous CASE agent with a 5-agent collaborative team using Claude Opus 4.6's TeamCreate API. The orchestrator skill transitions from Task()-based spawning to TeamCreate-based coordination, with agents communicating in real-time through a shared task list and direct messaging.
 
-1. **Database layer**: Extend existing HOSE statistics schema with hybridisation and bond partner columns
-2. **Statistics generation**: Extend existing `stats_generator.py` to compute additional aggregates during HOSE processing
-3. **CLI layer**: Add new `detect` command group following existing Click pattern
-4. **Agent integration**: CASE agent calls `lucy detect` CLI commands via Bash (same pattern as existing `lucy lsd rank`)
+**Key architectural changes:**
 
-The architecture is additive, not invasive. Existing HOSE prediction infrastructure provides the foundation - statistical detection reuses the same database, the same HOSE code generator, and the same query patterns.
+1. **Orchestrator skill** (`~/.claude/commands/lucy-ng/case.md`): Replace `Task(lucy-case-agent)` with `TeamCreate(team_definition)`, manage team lifecycle
+2. **Agent definitions**: 5 specialized agent files in `~/.claude/agents/lucy-ng/case-team/` (new directory structure)
+3. **Domain knowledge distribution**: NMR/LSD knowledge split by specialization vs current monolithic inlining
+4. **Shared state**: CASE-PROGRESS.md becomes multi-agent journal with per-agent sections
+5. **Diagnostic integration**: Specialist remains spawned by orchestrator (not team member)
 
-## 1. CLI Command Structure
+**Integration complexity:** MEDIUM — TeamCreate API is new but straightforward; knowledge distribution requires careful design; constraint tracking is the critical success factor.
 
-### Current Pattern
+## 1. Orchestrator Architecture: From Task to TeamCreate
 
-lucy-ng uses Click multi-level command groups. Main entry point at `src/lucy_ng/cli/main.py`:
+### Current Architecture (v3.0)
 
-```python
-@click.group()
-def cli() -> None:
-    """lucy-ng: AI-powered Computer-Assisted Structure Elucidation."""
-    pass
+**File:** `~/.claude/commands/lucy-ng/case.md` (672+ lines)
 
-# Command groups registered
-cli.add_command(read)
-cli.add_command(pick)
-cli.add_command(analyze)
-cli.add_command(dereplicate)
-cli.add_command(predict)
-cli.add_command(lsd)
-cli.add_command(visualize)
-cli.add_command(fetch)
-cli.add_command(database)
+**Pattern:**
+```markdown
+<step name="spawn_case_agent">
+Task(
+  agent_type="lucy-case-agent",
+  model="opus",
+  instructions="Perform CASE workflow for compound at <path> with formula <formula>.
+
+  [Task-specific instructions only, agent has inlined knowledge]
+  "
+)
+</step>
 ```
 
-Each command group is a separate module in `src/lucy_ng/cli/`:
-- `read.py` - Read NMR spectra
-- `pick.py` - Peak picking
-- `analyze.py` - Analysis tools (symmetry detection)
-- `dereplicate.py` - Database matching
-- `predict.py` - 13C shift prediction
-- `lsd.py` - LSD structure elucidation
-- `visualize.py` - Correlation diagrams
-- `fetch.py` - Fetch external data
-- `database.py` - Database management
+**Characteristics:**
+- Single agent runs 3-10 LSD iterations autonomously
+- Returns control to orchestrator when stuck or complete
+- Orchestrator monitors CASE-PROGRESS.md, detects loops, spawns diagnostic specialist
 
-### Integration Point: New `detect.py` Module
+### New Architecture (v4.0)
 
-**File:** `src/lucy_ng/cli/detect.py`
+**File:** `~/.claude/commands/lucy-ng/case.md` (estimated 800+ lines)
 
-**Commands:**
-```bash
-lucy detect hybridisation <db_path> <shift>
-lucy detect quaternary <db_path> <shift>
-lucy detect bond-partners <db_path> <shift> <hose_code>
+**Pattern:**
+```markdown
+<step name="spawn_case_team">
+TeamCreate(
+  team_definition={
+    "team_lead": "case-coordinator",
+    "teammates": [
+      "nmr-chemist",
+      "lsd-engineer",
+      "solution-analyst",
+      "devils-advocate"
+    ],
+    "shared_context": {
+      "compound_path": "<path>",
+      "formula": "<formula>",
+      "iteration": 0
+    }
+  },
+  instructions="Coordinate CASE workflow with specialized team.
+
+  Team lead (case-coordinator) manages workflow and iteration cycles.
+  Teammates collaborate on peak picking, constraint building, validation, analysis.
+
+  [Team-level coordination instructions]
+  "
+)
+</step>
 ```
 
-**Pattern to follow:**
+**Characteristics:**
+- Team runs iteratively with real-time peer review
+- Team lead coordinates workflow, teammates specialize
+- Orchestrator monitors team task list and CASE-PROGRESS.md
+- Diagnostic specialist remains orchestrator-spawned (not team member)
 
-```python
-import click
-from lucy_ng.detection import StatisticalDetector
+### Integration Points for Orchestrator
 
-@click.group()
-def detect() -> None:
-    """Statistical detection from HOSE database."""
-    pass
+| Component | v3.0 (Task) | v4.0 (TeamCreate) | Changes Required |
+|-----------|-------------|-------------------|------------------|
+| **Spawning** | `Task(agent_type="lucy-case-agent")` | `TeamCreate(team_definition={...})` | Replace spawn logic |
+| **Progress monitoring** | Read CASE-PROGRESS.md after Task returns | Read CASE-PROGRESS.md after team iteration batch | Parse multi-agent entries |
+| **Loop detection** | Parse single-agent iteration history | Parse team iteration history with multi-agent contributions | Update parsers for team format |
+| **Advisory intervention** | Re-spawn Task with advisory text | Send message to team lead with advisory | Use TeamMessage API |
+| **Diagnostic delegation** | Spawn Task(lucy-diagnostic) separately | Spawn Task(lucy-diagnostic) separately (unchanged) | No change |
+| **Results presentation** | Read final_results.md after Task complete | Read final_results.md after team complete | No change |
 
-@detect.command("hybridisation")
-@click.argument("db_path", type=click.Path(exists=True))
-@click.argument("shift", type=float)
-@click.option("--format", type=click.Choice(["text", "json"]), default="text")
-def detect_hybridisation(db_path: str, shift: float, format: str) -> None:
-    """Detect hybridisation state from chemical shift statistics."""
-    detector = StatisticalDetector.from_database(db_path)
-    result = detector.detect_hybridisation(shift)
+**Key architectural shift:** Orchestrator becomes **team manager** rather than **supervisor**. Instead of detecting loops and intervening, it provides resources and resolves escalations.
 
-    if format == "json":
-        click.echo(result.to_json())
-    else:
-        click.echo(result.summary())
+**Confidence:** HIGH — TeamCreate API is documented, mapping from Task to TeamCreate is straightforward.
+
+## 2. Agent Definitions: File Structure and Location
+
+### Current Structure (v3.0)
+
+```
+~/.claude/agents/
+├── lucy-case-agent.md          (666 lines — monolithic autonomous agent)
+└── lucy-diagnostic.md           (diagnostic specialist, orchestrator-spawned)
 ```
 
-**Registration:** Add to `main.py`:
-```python
-from lucy_ng.cli.detect import detect
-cli.add_command(detect)
+### Proposed Structure (v4.0)
+
+```
+~/.claude/agents/lucy-ng/
+└── case-team/                   (NEW directory for team agents)
+    ├── coordinator.md           (team lead — workflow coordination)
+    ├── nmr-chemist.md           (peak picking, multiplicity assignment)
+    ├── lsd-engineer.md          (LSD file construction, constraint inventory)
+    ├── solution-analyst.md      (solution ranking, chemical plausibility)
+    └── devils-advocate.md       (pre-run validation, constraint checking)
+
+~/.claude/agents/
+└── lucy-diagnostic.md           (unchanged — orchestrator-spawned specialist)
 ```
 
-**Confidence:** HIGH - pattern is well-established, straightforward to replicate.
+**Rationale for directory structure:**
+- **Scoped namespace**: `lucy-ng/case-team/` prevents name collision with other projects
+- **Team cohesion**: All team agents in one directory signals they work together
+- **Discovery**: Easier to find and update related agents
+- **Version control**: Team agents can be versioned together
 
-## 2. Database Layer Integration
+**Alternative considered:** Flat structure with prefixes (`lucy-ng-case-coordinator.md`). Rejected because directory structure is cleaner and matches Claude SDK conventions.
 
-### Current Schema
+**Confidence:** MEDIUM — Directory structure is logical, but needs validation that Claude Code discovers agents in subdirectories correctly.
 
-Database schema defined in `src/lucy_ng/database/schema.py`:
+## 3. Domain Knowledge Distribution Strategy
 
-```sql
--- Existing compounds table (928K compounds)
-CREATE TABLE compounds (
-    id INTEGER PRIMARY KEY,
-    name TEXT, smiles TEXT, formula TEXT,
-    inchi TEXT, inchi_key TEXT,
-    carbon_count INTEGER, source TEXT
-);
+### Current Distribution (v3.0)
 
--- Existing shifts table (13C NMR data)
-CREATE TABLE shifts (
-    id INTEGER PRIMARY KEY,
-    compound_id INTEGER,
-    atom_index INTEGER,
-    shift_ppm REAL,
-    hydrogen_count INTEGER
-);
+**lucy-case-agent.md (666 lines):**
+- NMR background (50 lines)
+- LSD command reference (200 lines)
+- Statistical detection protocol (150 lines)
+- Incremental HMBC strategy (100 lines)
+- Chemistry-first hierarchy (80 lines)
+- CASE-PROGRESS.md format (86 lines)
 
--- Existing HOSE statistics table (7.9M entries)
-CREATE TABLE hose_stats (
-    hose_code TEXT NOT NULL,
-    radius INTEGER NOT NULL,
-    mean REAL NOT NULL,
-    std REAL NOT NULL,
-    count INTEGER NOT NULL,
-    m2 REAL NOT NULL,  -- For Welford's algorithm
-    PRIMARY KEY (hose_code, radius)
-);
+**All knowledge inlined in single agent.**
+
+### Proposed Distribution (v4.0)
+
+#### Coordinator (team lead)
+**File:** `~/.claude/agents/lucy-ng/case-team/coordinator.md` (~300 lines)
+
+**Knowledge:**
+- Workflow orchestration (iteration lifecycle)
+- Team coordination patterns (assign tasks, synthesize results)
+- Progress documentation (CASE-PROGRESS.md format)
+- Stopping conditions (convergence, safety cap)
+
+**NOT included:**
+- Detailed NMR experiment knowledge (delegates to nmr-chemist)
+- LSD command syntax (delegates to lsd-engineer)
+- Solution chemistry validation (delegates to solution-analyst)
+
+#### NMR Chemist
+**File:** `~/.claude/agents/lucy-ng/case-team/nmr-chemist.md` (~400 lines)
+
+**Knowledge:**
+- NMR experiment types and information content (13C, DEPT, HSQC, HMBC, COSY)
+- Chemical shift regions and typical assignments
+- Peak picking strategies (DEPT-guided, HMBC-guided)
+- Multiplicity determination (DEPT-135 sign, DEPT-90 presence)
+- Statistical detection protocol (hybridisation, neighbours, hhb, grouping)
+- Chemistry-first hierarchy (DEPT > HSQC > detection > shift heuristics)
+- Spectral quality assessment (SNR, resolution, artifacts)
+
+**NOT included:**
+- LSD file syntax (knows what constraints are needed, not how to write them)
+- Ranking algorithms (knows expected shifts, not prediction mechanics)
+
+#### LSD Engineer
+**File:** `~/.claude/agents/lucy-ng/case-team/lsd-engineer.md` (~350 lines)
+
+**Knowledge:**
+- LSD command reference (MULT, HSQC, HMBC, BOND, LIST, PROP, ELEM, SYME, DEFF, ELIM)
+- Constraint translation (NMR evidence → LSD syntax)
+- Constraint inventory management (read previous file, track all constraints)
+- Hybridization rules (even sp2 count)
+- Hydrogen budget matching
+- Correlation order (HSQC before HMBC)
+- Badlist filters (DEFF NOT patterns for strained rings)
+- Incremental HMBC strategy (3-5 correlations per batch)
+
+**NOT included:**
+- NMR experiment details (receives constraints from nmr-chemist, doesn't interpret spectra)
+- Solution ranking (builds inputs, doesn't evaluate outputs)
+
+#### Solution Analyst
+**File:** `~/.claude/agents/lucy-ng/case-team/solution-analyst.md` (~250 lines)
+
+**Knowledge:**
+- 13C shift prediction with HOSE codes
+- Two-tier ranking (match count primary, MAE secondary)
+- Solution quality assessment (MAE thresholds, match coverage)
+- Chemical plausibility checks (strained rings, unusual connectivity)
+- Confidence scoring (per-atom and overall)
+- Ambiguity detection (close shifts, overlapping predictions)
+
+**NOT included:**
+- NMR data interpretation (receives experimental shifts from nmr-chemist)
+- LSD file construction (analyzes solutions, doesn't build constraints)
+
+#### Devils Advocate
+**File:** `~/.claude/agents/lucy-ng/case-team/devils-advocate.md` (~200 lines)
+
+**Knowledge:**
+- Pre-run validation checklist (sp2 count, H budget, correlation order)
+- Constraint diff protocol (compare current vs previous LSD file)
+- Constraint persistence checks (DEFF NOT, SYME, grouped notation, detection results)
+- Common failure modes (odd sp2, 1J artifacts, close carbons)
+- Validation criteria (what makes an LSD file ready to run)
+
+**NOT included:**
+- How to fix issues (flags problems, lsd-engineer fixes them)
+- Post-run analysis (validates inputs, solution-analyst validates outputs)
+
+### Knowledge Distribution Principles
+
+**1. Single Responsibility:** Each agent owns one aspect of the workflow
+**2. Interface not Implementation:** Agents know WHAT to ask for, not HOW it's computed
+**3. Shared Core:** Common NMR concepts (shift ranges, experiment types) duplicated minimally
+**4. Explicit Handoffs:** Coordinator defines task boundaries and data contracts
+
+**Example workflow with distributed knowledge:**
+
+```
+Coordinator: "nmr-chemist, pick peaks and determine multiplicities for iteration 1"
+  ↓
+NMR-Chemist: Runs `lucy pick 1d`, `lucy pick hsqc`, applies DEPT-guided strategy
+NMR-Chemist: Runs `lucy detect hybridisation` for ambiguous shifts
+NMR-Chemist: Posts to team: "13 carbons assigned, 3 quaternary, 10 protonated, 2 ambiguous (sp2/sp3)"
+  ↓
+Coordinator: "lsd-engineer, build LSD file from nmr-chemist assignments"
+  ↓
+LSD-Engineer: Reads previous iteration_NN/compound.lsd (if exists)
+LSD-Engineer: Translates assignments to MULT commands (preserving constraints)
+LSD-Engineer: Adds new HMBC batch (3-5 high-confidence correlations)
+LSD-Engineer: Writes analysis/iteration_NN/compound.lsd
+LSD-Engineer: Posts to team: "LSD file ready at iteration_NN/compound.lsd, 16 MULT, 10 HSQC, 8 HMBC, 6 DEFF NOT"
+  ↓
+Coordinator: "devils-advocate, validate LSD file before running"
+  ↓
+Devils-Advocate: Diffs iteration_NN vs iteration_{NN-1} (if exists)
+Devils-Advocate: Checks sp2 count (even), H budget (matches formula), correlation order
+Devils-Advocate: Verifies DEFF NOT present, SYME preserved (if applicable)
+Devils-Advocate: Posts to team: "✓ Validation passed — sp2=14 (even), H=18 (matches), DEFF NOT=6 (preserved)"
+  ↓
+Coordinator: Runs `lucy lsd run`, observes solution count
+Coordinator: "solution-analyst, evaluate 13 solutions from LSD"
+  ↓
+Solution-Analyst: Converts `outlsd 5 < compound.sol > solutions.smi`
+Solution-Analyst: Ranks `lucy lsd rank solutions.smi --shifts "..."`
+Solution-Analyst: Checks top solutions for strained rings, chemical plausibility
+Solution-Analyst: Posts to team: "Rank #1: MAE=2.23, 13/13 matched, no strained rings, high confidence"
 ```
 
-### Extended Schema for Statistical Detection
+**Confidence:** MEDIUM — Distribution is logical but requires validation through UAT. Risk: coordination overhead may slow workflow vs monolithic agent.
 
-**Option A: Extend hose_stats table (RECOMMENDED)**
+## 4. CASE-PROGRESS.md: Multi-Agent Journal Format
 
-Add columns to existing `hose_stats` table:
-
-```sql
-ALTER TABLE hose_stats ADD COLUMN sp2_fraction REAL DEFAULT NULL;
-ALTER TABLE hose_stats ADD COLUMN sp3_fraction REAL DEFAULT NULL;
-ALTER TABLE hose_stats ADD COLUMN quat_fraction REAL DEFAULT NULL;
-ALTER TABLE hose_stats ADD COLUMN common_partners TEXT DEFAULT NULL;
-```
-
-**Rationale:**
-- Statistics are HOSE-code specific, not compound-specific
-- Computed during same pass as mean/std/count
-- Same query pattern (lookup by hose_code + radius)
-- No schema version bump needed (columns have defaults)
-
-**Option B: Separate detection_stats table**
-
-```sql
-CREATE TABLE detection_stats (
-    hose_code TEXT NOT NULL,
-    radius INTEGER NOT NULL,
-    sp2_fraction REAL NOT NULL,
-    sp3_fraction REAL NOT NULL,
-    quat_fraction REAL NOT NULL,
-    common_partners TEXT,  -- JSON array
-    PRIMARY KEY (hose_code, radius),
-    FOREIGN KEY (hose_code, radius) REFERENCES hose_stats(hose_code, radius)
-);
-```
-
-**Tradeoff:**
-- Pro: Cleaner separation, easier to add/remove
-- Con: Requires JOIN for queries, more complex schema management
-
-**Recommendation:** Option A (extend hose_stats). The data is conceptually part of HOSE statistics, computed at the same time, queried together. Extending the table is simpler.
-
-**Confidence:** HIGH - schema extension is straightforward, pattern exists (m2 column was added in schema v3).
-
-### Database Manager Methods
-
-**File:** `src/lucy_ng/database/manager.py`
-
-Current pattern for HOSE stats queries:
-
-```python
-def get_hose_stats(self, hose_code: str, radius: int) -> HOSEStatsRecord | None:
-    """Get statistics for a specific HOSE code at a given radius."""
-    cursor.execute(
-        """
-        SELECT hose_code, radius, mean, std, count
-        FROM hose_stats WHERE hose_code = ? AND radius = ?
-        """,
-        (hose_code, radius),
-    )
-    # Returns HOSEStatsRecord
-```
-
-**Extended query for detection:**
-
-```python
-def get_detection_stats(self, hose_code: str, radius: int) -> DetectionStatsRecord | None:
-    """Get detection statistics for a HOSE code at a given radius."""
-    cursor.execute(
-        """
-        SELECT hose_code, radius, mean, std, count,
-               sp2_fraction, sp3_fraction, quat_fraction, common_partners
-        FROM hose_stats WHERE hose_code = ? AND radius = ?
-        """,
-        (hose_code, radius),
-    )
-    # Returns DetectionStatsRecord with full detection info
-```
-
-**Confidence:** HIGH - follows existing pattern exactly.
-
-## 3. HOSE Statistics Generation Pipeline
-
-### Current Pipeline
-
-**File:** `src/lucy_ng/prediction/stats_generator.py`
-
-Three generator classes:
-1. **HOSEStatsGenerator** - In-memory batch processing (original)
-2. **ResumableHOSEStatsGenerator** - Checkpointed chunked processing (production)
-3. **SDFHOSEStatsGenerator** - Direct SDF processing (COCONUT import)
-
-**Core algorithm (simplified):**
-
-```python
-for compound_id, smiles, shifts in db.iter_compounds_with_shifts():
-    mol = Chem.MolFromSmiles(smiles)
-
-    for atom_idx, shift_ppm in shifts:
-        for radius in range(1, max_radius + 1):
-            hose_code = hose_gen.generate_for_atom(mol, atom_idx, radius)
-
-            # Accumulate shift for statistics
-            aggregates[(hose_code, radius)].append(shift_ppm)
-
-# Compute statistics
-for (hose_code, radius), shifts in aggregates.items():
-    mean = statistics.mean(shifts)
-    std = statistics.stdev(shifts)
-    count = len(shifts)
-
-    db.insert_hose_stats(hose_code, radius, mean, std, count)
-```
-
-**Uses Welford's online algorithm** for memory efficiency in `ResumableHOSEStatsGenerator`:
-- O(1) memory per HOSE code
-- Incremental updates (chunk by chunk)
-- Parallel merge support
-
-### Extended Pipeline for Detection Statistics
-
-**Integration point:** Extend the accumulation phase to track hybridisation and bond partners.
-
-**Proposed structure:**
-
-```python
-from collections import defaultdict
-from lucy_ng.prediction.hose import HOSECodeGenerator
-
-class DetectionStatsAccumulator:
-    """Track hybridisation and bond partner statistics for a HOSE code."""
-
-    def __init__(self):
-        self.shifts = []
-        self.sp2_count = 0
-        self.sp3_count = 0
-        self.quat_count = 0
-        self.partner_symbols = defaultdict(int)  # {'C': 15, 'O': 3, 'N': 1}
-
-    def update(self, shift_ppm, atom, mol):
-        self.shifts.append(shift_ppm)
-
-        # Determine hybridisation
-        if atom.GetHybridization() == Chem.HybridizationType.SP2:
-            self.sp2_count += 1
-        elif atom.GetHybridization() == Chem.HybridizationType.SP3:
-            self.sp3_count += 1
-
-        # Quaternary check
-        if atom.GetTotalNumHs() == 0:
-            self.quat_count += 1
-
-        # Bond partners
-        for neighbor in atom.GetNeighbors():
-            self.partner_symbols[neighbor.GetSymbol()] += 1
-
-    def compute_stats(self):
-        total = len(self.shifts)
-        return {
-            'sp2_fraction': self.sp2_count / total if total > 0 else 0.0,
-            'sp3_fraction': self.sp3_count / total if total > 0 else 0.0,
-            'quat_fraction': self.quat_count / total if total > 0 else 0.0,
-            'common_partners': dict(self.partner_symbols)
-        }
-```
-
-**Modified generation loop:**
-
-```python
-accumulators = defaultdict(DetectionStatsAccumulator)
-
-for compound_id, smiles, shifts in db.iter_compounds_with_shifts():
-    mol = Chem.MolFromSmiles(smiles)
-
-    for atom_idx, shift_ppm in shifts:
-        atom = mol.GetAtomWithIdx(atom_idx)
-
-        for radius in range(1, max_radius + 1):
-            hose_code = hose_gen.generate_for_atom(mol, atom_idx, radius)
-
-            # Accumulate with detection info
-            accumulators[(hose_code, radius)].update(shift_ppm, atom, mol)
-
-# Compute statistics
-for (hose_code, radius), acc in accumulators.items():
-    stats = acc.compute_stats()
-    mean = statistics.mean(acc.shifts)
-    std = statistics.stdev(acc.shifts)
-
-    db.insert_hose_stats(
-        hose_code, radius, mean, std, len(acc.shifts),
-        sp2_fraction=stats['sp2_fraction'],
-        sp3_fraction=stats['sp3_fraction'],
-        quat_fraction=stats['quat_fraction'],
-        common_partners=json.dumps(stats['common_partners'])
-    )
-```
-
-**For ResumableHOSEStatsGenerator:** Modify `WelfordAccumulator` dataclass to include detection counters:
-
-```python
-@dataclass
-class WelfordAccumulator:
-    count: int = 0
-    mean: float = 0.0
-    m2: float = 0.0
-    # NEW: detection statistics
-    sp2_count: int = 0
-    sp3_count: int = 0
-    quat_count: int = 0
-    partner_counts: dict = field(default_factory=dict)  # {'C': 15, 'O': 3}
-```
-
-**Confidence:** MEDIUM - Extension is conceptually straightforward but requires:
-- RDKit atom API familiarity (GetHybridization, GetTotalNumHs, GetNeighbors)
-- Testing with actual COCONUT data to verify hybridisation detection accuracy
-- Merge algorithm for Welford parallel processing (straightforward for counters)
-
-## 4. Agent Integration Pattern
-
-### Current Agent Architecture
-
-**CASE agent:** `~/.claude/agents/lucy-case-agent.md` (666 lines)
-
-**Agent spawning:** Claude Code Task tool with working directory set to compound directory
-
-**CLI usage pattern:** Agent calls `lucy` commands via Bash tool:
-
-```bash
-# Symmetry analysis
-lucy analyze symmetry C13H18O2 data/compound/2
-
-# Peak picking
-lucy pick 1d data/compound/2 --format json
-lucy pick hsqc data/compound/6 --format json
-
-# LSD workflow
-cd analysis/iteration_01 && lucy lsd run compound.lsd
-outlsd 5 < compound.sol > solutions.smi
-lucy lsd rank solutions.smi --shifts "155.08,151.58,..."
-```
-
-**Key pattern:** Agent uses thin CLI commands, all domain knowledge is encoded in agent definition (inlined NMR/LSD knowledge).
-
-### Statistical Detection Integration
-
-**Agent workflow addition:**
-
-```bash
-# Step 1: Detect hybridisation for each carbon
-lucy detect hybridisation data/reference/lucy-ng-derep.db 139.94 --format json
-# Output: {"shift": 139.94, "prediction": "sp2", "confidence": 0.92, "sp2_fraction": 0.91}
-
-# Step 2: Use detection to inform MULT command
-# If sp2_fraction > 0.7 → MULT N C 2 H
-# If sp3_fraction > 0.7 → MULT N C 3 H
-
-# Step 3: Detect quaternary
-lucy detect quaternary data/reference/lucy-ng-derep.db 155.08 --format json
-# Output: {"shift": 155.08, "is_quaternary": true, "confidence": 0.88, "quat_fraction": 0.85}
-
-# Step 4: Detect bond partners for heteroatom inference
-lucy detect bond-partners data/reference/lucy-ng-derep.db 180.5 "C-4;C(//" --format json
-# Output: {"common_partners": {"O": 0.95, "C": 0.82}, "interpretation": "Likely C=O"}
-```
-
-**Agent instruction addition (to `lucy-case-agent.md`):**
+### Current Format (v3.0)
 
 ```markdown
-## Statistical Detection Commands (Optional Enhancement)
+# CASE Progress Log
 
-Before writing MULT commands, optionally consult statistical detection:
+**Compound:** data/compound/ibuprofen
+**Formula:** C13H18O2
+**Started:** 2026-02-16 10:23:45
+**CASE Agent:** lucy-case-agent
 
-**Hybridisation detection:**
-```bash
-lucy detect hybridisation <db_path> <shift> --format json
-```
-Returns sp2/sp3 prediction with confidence. Use when chemical shift region is ambiguous.
+---
 
-**Quaternary detection:**
-```bash
-lucy detect quaternary <db_path> <shift> --format json
-```
-Returns quaternary probability. Use for carbons appearing in 13C but absent from DEPT/HSQC.
+## Setup
 
-**Bond partner detection:**
-```bash
-lucy detect bond-partners <db_path> <shift> <hose_code> --format json
-```
-Returns common heteroatom partners. Use for inferring O/N attachment from chemical shift.
+**DBE:** 4 (calculation: (2×13 + 2 - 18) / 2)
+**Spectra found:** 1H (exp 1), 13C (exp 2), DEPT-135 (exp 3), HSQC (exp 6), HMBC (exp 7)
+...
 
-**Integration example:**
-1. Pick 13C peaks: 180.5, 139.0, 75.0, 30.0 ppm
-2. Run detection for each: `lucy detect hybridisation db 180.5`
-3. 180.5 → sp2 (0.95) → carbonyl carbon → MULT 1 C 2 0
-4. 139.0 → sp2 (0.88) → aromatic CH → MULT 2 C 2 1
-5. 75.0 → sp3 (0.92) → C-O CH → MULT 3 C 3 1
-6. 30.0 → sp3 (0.98) → aliphatic CH2 → MULT 4 C 3 2
-```
+---
 
-**Confidence:** HIGH - Follows exact same pattern as existing `lucy lsd rank`. Agent already uses JSON output parsing.
+## Iteration 1: Baseline with first HMBC batch
 
-## 5. Ranking Integration: Two-Tier Approach
+**Time:** 2026-02-16 10:24:12
+**LSD file:** analysis/iteration_01/compound.lsd
+**Solution count:** 47
 
-### Current Ranking Architecture
+**Constraints added:**
+- HMBC C180.56-H2.45 (isolated carbon, unique proton)
+...
 
-**File:** `src/lucy_ng/ranking/ranker.py`
-
-**Algorithm:**
-1. For each LSD solution (SMILES)
-2. Predict 13C shifts using HOSE database
-3. Match predicted to experimental shifts
-4. Compute MAE (Mean Absolute Error)
-5. Sort by MAE (lower is better)
-
-**Output:** `RankedSolution` objects with MAE, quality label, deviations.
-
-### Two-Tier Ranking Integration
-
-**Tier 1: Hybridisation pre-filter**
-
-Before HOSE-based ranking, check if solution's hybridisation matches statistical expectations:
-
-```python
-class HybridisationFilter:
-    """Pre-filter solutions by hybridisation consistency."""
-
-    def filter_solutions(
-        self,
-        solutions: list[LSDSolution],
-        experimental_shifts: list[float],
-        detector: StatisticalDetector,
-    ) -> list[LSDSolution]:
-        """Remove solutions with inconsistent hybridisation."""
-        filtered = []
-
-        for solution in solutions:
-            mol = Chem.MolFromSmiles(solution.smiles)
-            consistent = True
-
-            for exp_shift in experimental_shifts:
-                # Get expected hybridisation from statistics
-                detection = detector.detect_hybridisation(exp_shift)
-
-                # Find carbon in solution at similar shift
-                carbon = self._find_carbon_at_shift(mol, exp_shift, tolerance=5.0)
-                if carbon is None:
-                    continue
-
-                # Check consistency
-                actual_hyb = carbon.GetHybridization()
-                expected_hyb = detection.predicted_hybridisation
-
-                if actual_hyb != expected_hyb and detection.confidence > 0.8:
-                    consistent = False
-                    break
-
-            if consistent:
-                filtered.append(solution)
-
-        return filtered
+**Why:** Starting with 5 high-confidence HMBC correlations...
 ```
 
-**Tier 2: HOSE-based MAE ranking**
+**Characteristics:**
+- Single agent writes all entries
+- Linear narrative
+- Clear iteration boundaries
 
-Unchanged - existing `SolutionRanker` class.
+### Proposed Format (v4.0)
 
-**Modified workflow:**
+```markdown
+# CASE Progress Log
 
-```python
-# Current workflow
-result = ranker.rank(solutions, experimental_shifts, top_n=10)
+**Compound:** data/compound/ibuprofen
+**Formula:** C13H18O2
+**Started:** 2026-02-16 10:23:45
+**Team:** case-team (coordinator, nmr-chemist, lsd-engineer, solution-analyst, devils-advocate)
 
-# Two-tier workflow
-filtered_solutions = hyb_filter.filter_solutions(solutions, experimental_shifts, detector)
-result = ranker.rank(filtered_solutions, experimental_shifts, top_n=10)
+---
+
+## Setup
+
+### Coordinator
+**DBE:** 4 (calculation: (2×13 + 2 - 18) / 2)
+**Team plan:** 5-phase workflow (symmetry → peaks → constraints → solve → analyze)
+
+### NMR-Chemist
+**Spectra found:** 1H (exp 1), 13C (exp 2), DEPT-135 (exp 3), HSQC (exp 6), HMBC (exp 7)
+**Quality assessment:** 13C SNR=85 (good), HSQC SNR=62 (good), HMBC SNR=38 (moderate)
+**Peak counts:** 13C: 10 peaks, DEPT-135: 10 peaks (7 positive, 3 negative), HSQC: 10, HMBC: 47 (raw)
+**Symmetry:** 13 carbons expected (formula), 10 observed (13C spectrum) → 3 equivalent carbons
+**Multiplicities:** 3 CH3, 5 CH2, 2 CH, 3 Cq (from DEPT-135 sign and HSQC)
+**Statistical detection:**
+  - 180.56 ppm: sp2=99%, O mandatory (98%) → carbonyl
+  - 132.1 ppm: sp2=91%, C neighbors only → aromatic
+  - 44.90/45.03 ppm: grouped (span 0.13 ppm) → equivalent CH2
+**Key observations:** Carboxylic acid suspected (180.56 ppm + molecular formula C13H18O2)
+
+### LSD-Engineer
+**Constraint inventory (iteration 0):**
+  - MULT: 0 atoms defined
+  - HSQC: 0 correlations
+  - HMBC: 0 correlations
+  - DEFF NOT: 0 filters
+  - SYME: 0 constraints
+**Plan:** Build from NMR-Chemist assignments, start with 5 HMBC correlations
+
+---
+
+## Iteration 1: Baseline with first HMBC batch
+
+### Coordinator
+**Time:** 2026-02-16 10:24:12
+**Phase:** Constraint building → LSD run → solution analysis
+**Iteration goal:** Establish baseline solution count with initial constraints
+
+### LSD-Engineer
+**LSD file:** analysis/iteration_01/compound.lsd
+**Constraints added:**
+  - MULT: 13 C atoms (3 sp2 Cq, 7 sp3, 3 sp2 CH) + 2 O atoms (1 sp2, 1 sp3)
+  - HSQC: 10 correlations (all protonated carbons)
+  - HMBC: 5 correlations (high-confidence batch)
+    - C180.56-H2.45 (isolated carbon, unique proton, quaternary carbonyl)
+    - C132.1-H7.12 (aromatic, strong intensity)
+    - C44.90-H1.45 (CH2, top quartile intensity)
+    - C27.3-H1.05 (aliphatic, unique proton)
+    - C18.2-H0.89 (CH3, terminal methyl)
+  - DEFF NOT: 6 filters (cyclopropane, cyclobutane, aziridine, azetidine, thiirane, thietane)
+  - BOND: C1-O13 (carbonyl C=O from detection)
+  - SYME: None (symmetric atoms not yet encoded)
+**Constraints removed:** None
+**Why:** Starting with high-confidence correlations from isolated carbons, avoiding 1J artifacts
+**Constraint inventory delta:** +15 MULT, +10 HSQC, +5 HMBC, +6 DEFF NOT, +1 BOND
+
+### Devils-Advocate
+**Validation:** ✓ sp2 count=6 (even), H budget=18 (matches), correlation order correct
+**Pre-run checks:** ✓ All HSQC before HMBC, no 1J artifacts detected, DEFF NOT present
+**Concerns:** Symmetric carbons (44.90/45.03 ppm) not encoded as SYME yet — may inflate solution count
+
+### Coordinator
+**LSD run:** `cd analysis/iteration_01 && lucy lsd run compound.lsd`
+**Solution count:** 47
+**Effectiveness:** Baseline established
+**Next steps:** Convert solutions, rank, evaluate quality
+
+### Solution-Analyst
+**Conversion:** `outlsd 5 < compound.sol > solutions.smi` (47 solutions)
+**Ranking:** `lucy lsd rank solutions.smi --shifts "180.56,132.1,..."`
+**Top solution:** Rank #1: Ibuprofen (SMILES: CC(C)Cc1ccc(cc1)C(C)C(=O)O)
+  - MAE: 2.23 ppm
+  - Matched: 13/13 signals
+  - Quality: HIGH
+**Strained rings:** None detected in top 10
+**Chemical plausibility:** ✓ Carboxylic acid (180.56 ppm matches), para-substituted benzene, branched aliphatic
+**Concerns:** Solution count still high (47) — need more HMBC constraints or SYME encoding
+
+---
+
+## Iteration 2: Add SYME for symmetric carbons and second HMBC batch
+
+[Team continues in same format...]
 ```
 
-**CLI integration:**
+**Characteristics:**
+- Multi-agent sections per iteration
+- Each agent documents their contribution
+- Explicit handoffs between agents
+- Constraint inventory tracking (lsd-engineer maintains delta)
+- Validation results visible (devils-advocate)
 
-```bash
-# Option 1: Automatic (detect database presence)
-lucy lsd rank solutions.smi --shifts "..." --use-detection
+**Coordinator responsibilities:**
+- Writes iteration header (time, phase, goal)
+- Writes LSD run results (solution count, effectiveness)
+- Writes next steps (coordination)
+- **Does NOT write** agent-specific details (agents write their own sections)
 
-# Option 2: Explicit
-lucy lsd rank solutions.smi --shifts "..." --filter-hybridisation --db data/reference/lucy-ng-derep.db
+**File management:**
+- Coordinator creates file headers and iteration boundaries
+- Agents append their sections via direct file write
+- Append-only pattern preserved (no overwrites)
+
+**Confidence:** MEDIUM — Format is logical but may require iteration based on team dynamics. Risk: verbose logs if agents over-document.
+
+## 5. Diagnostic Specialist Integration
+
+### Current Integration (v3.0)
+
+**Spawning:** Orchestrator detects loop pattern, spawns `Task(lucy-diagnostic)`
+
+**Pattern:**
+```markdown
+<step name="delegate_specialist">
+Task(
+  agent_type="lucy-diagnostic",
+  model="opus",
+  instructions="Analyze LSD failure for compound at <path>.
+
+  Read:
+  - <path>/analysis/CASE-PROGRESS.md
+  - <path>/<latest_lsd_file>
+
+  Failure type: <failure_type>
+
+  Write structured report to <path>/DIAGNOSTIC-REPORT.md.
+  "
+)
+</step>
 ```
 
-**Confidence:** MEDIUM - Concept is sound, but requires:
-- Robust shift-to-carbon matching algorithm
-- Tuning of confidence thresholds
-- Validation with known structures to measure false positive rate
+**Report consumption:** Orchestrator reads DIAGNOSTIC-REPORT.md, extracts root cause and primary fix, re-spawns CASE agent with advisory
 
-## 6. Build Order and Dependencies
+### Proposed Integration (v4.0)
 
-### Phase 1: Database Schema Extension
+**Spawning:** UNCHANGED — orchestrator still detects loops and spawns specialist
 
-**Dependencies:** None (extends existing schema)
+**Why not a team member?**
+1. **Diagnostic is reactive, not proactive:** Only needed when team is stuck
+2. **Different lifecycle:** Spawned mid-workflow, not at start
+3. **Independent analysis:** Should review team's work objectively, not participate
+4. **Maintains existing pattern:** No changes to lucy-diagnostic.md needed
+
+**Team interaction:**
+```markdown
+<step name="delegate_specialist">
+Task(
+  agent_type="lucy-diagnostic",
+  model="opus",
+  instructions="Analyze LSD failure for compound at <path>.
+
+  Read:
+  - <path>/analysis/CASE-PROGRESS.md (multi-agent iteration history)
+  - <path>/<latest_lsd_file> (built by lsd-engineer)
+
+  Failure type: <failure_type>
+  Pattern: <pattern_name> (detected from team workflow)
+
+  Write structured report to <path>/DIAGNOSTIC-REPORT.md.
+  Include team-specific context in findings.
+  "
+)
+</step>
+
+<step name="apply_diagnostic">
+# After specialist completes:
+# 1. Read DIAGNOSTIC-REPORT.md
+# 2. Extract root cause and primary fix
+# 3. Send TeamMessage to case-coordinator with advisory
+# 4. Team lead distributes fix tasks to appropriate agents
+
+TeamMessage(
+  team_id=<team_id>,
+  recipient="case-coordinator",
+  message="Diagnostic specialist identified: <root_cause>
+
+  Primary fix: <fix_action>
+
+  Suggested delegation:
+  - lsd-engineer: <constraint fix>
+  - devils-advocate: <validation check>
+  "
+)
+</step>
+```
+
+**CASE-PROGRESS.md entry:**
+```markdown
+## Diagnostic Intervention (After Iteration 5)
+
+### Orchestrator
+**Pattern detected:** ELIM_THRASHING (2 occurrences)
+**Specialist spawned:** lucy-diagnostic at 2026-02-16 10:45:23
+**Report:** DIAGNOSTIC-REPORT.md
+
+### Diagnostic Specialist (External)
+**Root cause:** Odd sp2 count (15 atoms) — ether oxygen (O14) marked sp2 instead of sp3
+**Primary fix:** Change `MULT 14 O 2 0` to `MULT 14 O 3 0`
+**Confidence:** HIGH
+**Evidence:** sp2 atoms = {C1, C2, ..., C13, O13, O14} = 15 (ODD)
+
+### Coordinator
+**Advisory received:** Fix sp2 count via O14 hybridization change
+**Delegation:** lsd-engineer to update MULT 14, devils-advocate to verify sp2 count even
+
+### LSD-Engineer
+**Action:** Read iteration_05/compound.lsd, change line 27: `MULT 14 O 3 0`
+**Verification:** sp2 count = 14 (even) ✓
+
+### Devils-Advocate
+**Validation:** ✓ sp2=14 (even), H budget=18 (matches), fix applied correctly
+
+[Iteration 6 continues...]
+```
+
+**Confidence:** HIGH — Pattern is well-established, minimal changes needed.
+
+## 6. Team Lifecycle and Coordination Flow
+
+### Initialization
+
+```
+Orchestrator:
+  1. Parse user input (compound path, formula)
+  2. Validate prerequisites (lucy-ng, LSD, database)
+  3. TeamCreate(team_definition)
+  4. Wait for team initialization
+
+Team Lead (coordinator):
+  1. Receive compound path and formula
+  2. Create analysis/ directory structure
+  3. Create CASE-PROGRESS.md with team header
+  4. Assign setup tasks to teammates:
+     - nmr-chemist: Assess spectra, check symmetry
+     - lsd-engineer: Initialize constraint inventory
+     - solution-analyst: Verify database connection
+     - devils-advocate: No action yet (validates later)
+  5. Wait for setup completion
+
+Teammates:
+  1. Execute assigned setup tasks
+  2. Post results to team
+  3. Write sections to CASE-PROGRESS.md
+
+Team Lead:
+  4. Synthesize setup results
+  5. Proceed to iteration 1
+```
+
+### Iteration Loop
+
+```
+Team Lead (coordinator):
+  1. Start iteration N
+  2. Assign peak picking (if N=1) or HMBC selection (if N>1) to nmr-chemist
+  3. Wait for nmr-chemist completion
+
+NMR-Chemist:
+  1. Pick peaks OR select next HMBC batch
+  2. Run statistical detection if ambiguous
+  3. Post assignments to team
+  4. Write to CASE-PROGRESS.md
+
+Team Lead:
+  5. Assign LSD file construction to lsd-engineer
+
+LSD-Engineer:
+  1. Read previous iteration_NN/compound.lsd (if exists)
+  2. Update MULT commands from nmr-chemist assignments
+  3. Add new HMBC batch (preserving all previous constraints)
+  4. Update constraint inventory
+  5. Write iteration_{N}/compound.lsd
+  6. Post to team
+  7. Write to CASE-PROGRESS.md
+
+Team Lead:
+  6. Assign pre-run validation to devils-advocate
+
+Devils-Advocate:
+  1. Diff iteration_{N} vs iteration_{N-1} (if exists)
+  2. Check sp2 count, H budget, correlation order
+  3. Verify DEFF NOT preserved, SYME preserved (if applicable)
+  4. Post validation results to team
+  5. Write to CASE-PROGRESS.md
+  6. If validation fails: Flag to team, lsd-engineer fixes, re-validate
+
+Team Lead:
+  7. Run LSD: `cd analysis/iteration_{N} && lucy lsd run compound.lsd`
+  8. Observe solution count
+  9. Post to team
+  10. Write to CASE-PROGRESS.md
+
+Team Lead:
+  11. If solution_count <= 10: Assign solution analysis to solution-analyst
+  12. If solution_count > 10: Proceed to iteration N+1
+  13. If solution_count = 0: Escalate to orchestrator
+
+Solution-Analyst (if solution_count <= 10):
+  1. Convert: `outlsd 5 < compound.sol > solutions.smi`
+  2. Rank: `lucy lsd rank solutions.smi --shifts "..."`
+  3. Check top solutions for strained rings, chemical plausibility
+  4. Post quality assessment to team
+  5. Write to CASE-PROGRESS.md
+
+Team Lead:
+  14. If quality HIGH: Write final_results.md, signal completion
+  15. If quality MEDIUM/LOW: Continue iterations or flag concerns
+```
+
+### Termination
+
+```
+Team Lead:
+  If solution_count <= 10 AND quality >= MEDIUM:
+    1. solution-analyst writes final_results.md
+    2. Team lead signals completion to orchestrator
+    3. Orchestrator reads final_results.md, presents to user
+
+  If iterations >= 10 (safety cap):
+    1. Team lead writes incomplete convergence report
+    2. Orchestrator presents with caveats
+
+  If zero-solution loop OR ELIM thrashing:
+    1. Team lead flags to orchestrator
+    2. Orchestrator spawns diagnostic specialist
+    3. Specialist writes DIAGNOSTIC-REPORT.md
+    4. Orchestrator sends TeamMessage with advisory
+    5. Team lead delegates fixes, continues
+```
+
+**Confidence:** MEDIUM — Flow is logical but needs validation through live testing. Risk: coordination overhead may slow iterations.
+
+## 7. Build Order and Dependencies
+
+### Phase 1: Orchestrator Skill Modification (Week 1)
 
 **Files:**
-- `src/lucy_ng/database/schema.py` - Add columns to hose_stats table
-- `src/lucy_ng/database/models.py` - Add DetectionStatsRecord Pydantic model
-- `src/lucy_ng/database/manager.py` - Add get_detection_stats() method
+- `~/.claude/commands/lucy-ng/case.md` — Replace Task() with TeamCreate()
 
-**Validation:** Schema migration, test queries
+**Changes:**
+1. Replace `<step name="spawn_case_agent">` with `<step name="spawn_case_team">`
+2. Define team_definition structure
+3. Update progress monitoring to parse multi-agent CASE-PROGRESS.md
+4. Replace advisory re-spawn with TeamMessage
+5. Keep diagnostic specialist spawning (unchanged)
 
-### Phase 2: Statistics Generation
+**Validation:**
+- Team spawns successfully
+- Team lead receives compound path and formula
+- Orchestrator can send TeamMessage
+- Diagnostic specialist still spawns on loop detection
 
-**Dependencies:** Phase 1 (schema must exist)
+**Dependencies:** None (extends existing orchestrator)
 
-**Files:**
-- `src/lucy_ng/prediction/stats_generator.py` - Extend accumulators
-- `src/lucy_ng/detection/accumulator.py` - NEW: DetectionStatsAccumulator class
-
-**Validation:** Generate statistics from small test dataset, verify fractions
-
-### Phase 3: Detection Module
-
-**Dependencies:** Phase 2 (statistics must be generated)
-
-**Files:**
-- `src/lucy_ng/detection/__init__.py` - NEW module
-- `src/lucy_ng/detection/detector.py` - StatisticalDetector class
-- `src/lucy_ng/detection/models.py` - DetectionResult Pydantic models
-
-**Validation:** Unit tests with known HOSE codes, verify predictions
-
-### Phase 4: CLI Commands
-
-**Dependencies:** Phase 3 (detector must exist)
+### Phase 2: Agent Definitions (Week 1-2)
 
 **Files:**
-- `src/lucy_ng/cli/detect.py` - NEW: detect command group
-- `src/lucy_ng/cli/main.py` - Register detect command group
+- `~/.claude/agents/lucy-ng/case-team/coordinator.md` — NEW
+- `~/.claude/agents/lucy-ng/case-team/nmr-chemist.md` — NEW
+- `~/.claude/agents/lucy-ng/case-team/lsd-engineer.md` — NEW
+- `~/.claude/agents/lucy-ng/case-team/solution-analyst.md` — NEW
+- `~/.claude/agents/lucy-ng/case-team/devils-advocate.md` — NEW
 
-**Validation:** CLI smoke tests, JSON output validation
+**Knowledge distribution:**
+1. Extract relevant sections from lucy-case-agent.md
+2. Split by responsibility (see Section 3)
+3. Define inter-agent interfaces (what each agent posts to team)
+4. Write agent-specific workflow sections
 
-### Phase 5: Agent Integration
+**Validation:**
+- Each agent can read CASE-PROGRESS.md
+- Each agent can append to CASE-PROGRESS.md
+- Each agent can post to team task list
+- Coordinator can assign tasks to teammates
 
-**Dependencies:** Phase 4 (CLI must work)
+**Dependencies:** Phase 1 (orchestrator must support TeamCreate)
+
+### Phase 3: Constraint Inventory System (Week 2)
 
 **Files:**
-- `~/.claude/agents/lucy-case-agent.md` - Add detection command documentation
-- Test with live CASE workflow
+- `~/.claude/agents/lucy-ng/case-team/lsd-engineer.md` — Constraint tracking protocol
 
-**Validation:** Run CASE on test compound with detection enabled
+**Changes:**
+1. Define constraint inventory format (JSON or structured comment)
+2. Implement "read previous LSD file" protocol
+3. Implement "diff current vs previous" logic for devils-advocate
+4. Document constraint delta in CASE-PROGRESS.md
 
-### Phase 6: Ranking Enhancement (Optional)
+**Example constraint inventory (LSD file header comment):**
+```
+; Constraint Inventory (Iteration 5)
+; MULT: 15 atoms (13 C, 2 O)
+; HSQC: 10 correlations
+; HMBC: 23 correlations (5+5+5+5+3 batches)
+; DEFF NOT: 6 patterns (cyclopropane, cyclobutane, ...)
+; SYME: 2 constraints (C5-C6, C7-C8)
+; BOND: 1 (C1-O13 carbonyl)
+; LIST/PROP: 0
+; ELIM: 0
+```
 
-**Dependencies:** Phase 3 (detector must exist)
+**Validation:**
+- lsd-engineer reads previous file correctly
+- All constraints preserved when adding new batch
+- devils-advocate detects dropped constraints (DEFF NOT, SYME)
+- Constraint delta appears in CASE-PROGRESS.md
+
+**Dependencies:** Phase 2 (lsd-engineer and devils-advocate must exist)
+
+### Phase 4: CASE-PROGRESS.md Format (Week 2)
 
 **Files:**
-- `src/lucy_ng/ranking/filters.py` - NEW: HybridisationFilter class
-- `src/lucy_ng/ranking/ranker.py` - Add two-tier ranking option
-- `src/lucy_ng/cli/lsd.py` - Add --use-detection flag to rank command
+- `~/.claude/agents/lucy-ng/case-team/coordinator.md` — Update format definition
 
-**Validation:** Compare ranking with/without detection on known structures
+**Changes:**
+1. Define multi-agent section structure
+2. Define iteration header format (coordinator writes)
+3. Define agent section format (agents write)
+4. Define append-only protocol (no overwrites)
+
+**Validation:**
+- Coordinator creates iteration headers
+- Agents append their sections
+- File remains parseable by orchestrator monitoring
+- No section overwrites or corruption
+
+**Dependencies:** Phase 2 (all agents must write sections)
+
+### Phase 5: Team Coordination Protocol (Week 3)
+
+**Files:**
+- `~/.claude/agents/lucy-ng/case-team/coordinator.md` — Task assignment and result synthesis
+
+**Changes:**
+1. Define task list structure (shared team state)
+2. Define teammate assignment protocol
+3. Define result collection and synthesis
+4. Define stopping conditions (same as v3.0)
+
+**Validation:**
+- Coordinator assigns tasks correctly
+- Teammates claim and complete tasks
+- Coordinator synthesizes results
+- Team converges to solution
+
+**Dependencies:** Phases 1-4 (full stack must exist)
+
+### Phase 6: Diagnostic Integration (Week 3)
+
+**Files:**
+- `~/.claude/commands/lucy-ng/case.md` — Update diagnostic delegation for teams
+
+**Changes:**
+1. Update DIAGNOSTIC-REPORT.md consumption for multi-agent context
+2. Implement TeamMessage advisory delivery
+3. Update coordinator to distribute fixes
+
+**Validation:**
+- Specialist reads multi-agent CASE-PROGRESS.md
+- Orchestrator sends advisory via TeamMessage
+- Coordinator delegates fixes appropriately
+- Team resumes after diagnostic intervention
+
+**Dependencies:** Phase 5 (team must be fully functional)
+
+### Phase 7: UAT with Live Compounds (Week 4)
+
+**Test cases:**
+- Ibuprofen (C13H18O2) — baseline validation (v3.0 SUCCESS)
+- Pulegone (C10H16O) — additional test case
+- Virgiline (complex alkaloid) — stress test
+
+**Success criteria:**
+1. Team completes CASE workflow end-to-end
+2. All v3.0 constraint-loss bugs fixed (DEFF NOT, SYME, grouped notation)
+3. devils-advocate catches dropped constraints before LSD runs
+4. solution-analyst provides quality assessment
+5. CASE-PROGRESS.md is coherent and informative
+
+**Dependencies:** Phases 1-6 (full stack complete)
 
 ### Dependency Chain Rationale
 
-1. **Database first**: Schema must exist before any generation code can write to it
-2. **Generation second**: Statistics must be computed before they can be queried
-3. **Detection third**: Query interface must work before CLI can call it
-4. **CLI fourth**: Commands must be stable before agent uses them
-5. **Agent fifth**: Agent integration tests actual workflow end-to-end
-6. **Ranking last**: Optional enhancement, doesn't block core detection features
+1. **Orchestrator first:** Team cannot spawn without orchestrator support
+2. **Agents second:** Orchestrator needs agents to delegate to
+3. **Constraint inventory third:** Critical for fixing v3.0 bugs
+4. **Format fourth:** Communication protocol must be stable
+5. **Coordination fifth:** All pieces assembled, now integrate workflow
+6. **Diagnostic sixth:** Edge case handling after core workflow works
+7. **UAT last:** Validate full system with real data
 
-## 7. Data Flow Summary
+**Critical path:** Orchestrator → Agents → Constraint inventory → Coordination → UAT
 
-### Hybridisation Detection Flow
+**Estimated timeline:** 4 weeks for full implementation and validation
 
-```
-User: lucy detect hybridisation db.sqlite 139.94
-  ↓
-CLI: detect.py parses args, calls detector
-  ↓
-Detector: StatisticalDetector.detect_hybridisation(139.94)
-  ↓
-Detector: Generate HOSE codes at each radius for shift estimation
-  ↓
-Database: DatabaseManager.get_detection_stats(hose_code, radius)
-  ↓
-Database: SELECT sp2_fraction, sp3_fraction FROM hose_stats WHERE ...
-  ↓
-Detector: Compare sp2_fraction vs sp3_fraction
-  ↓
-Detector: Return DetectionResult(prediction="sp2", confidence=0.91)
-  ↓
-CLI: Format as JSON/text, print to stdout
-  ↓
-Agent: Parse JSON, use in MULT command generation
-```
+**Confidence:** HIGH — Build order is logical and incremental, each phase is independently testable.
 
-### Statistics Generation Flow
+## 8. Integration Patterns and Examples
 
-```
-Admin: lucy database generate-detection-stats
-  ↓
-CLI: database.py calls ResumableHOSEStatsGenerator
-  ↓
-Generator: Iterate compounds from database
-  ↓
-For each compound:
-  Generator: Parse SMILES → RDKit Mol
-  Generator: For each carbon with shift:
-    Generator: Generate HOSE code
-    Generator: Get atom.GetHybridization()
-    Generator: Get atom.GetTotalNumHs()
-    Generator: Get atom.GetNeighbors()
-    Generator: Accumulate in DetectionStatsAccumulator
-  ↓
-Generator: Compute fractions (sp2_count / total, etc.)
-  ↓
-Database: INSERT INTO hose_stats (sp2_fraction, ...) VALUES (...)
-  ↓
-Generator: Save checkpoint every 10K compounds
+### Pattern 1: TeamCreate in Orchestrator
+
+**Before (v3.0):**
+```markdown
+<step name="spawn_case_agent">
+Task(
+  agent_type="lucy-case-agent",
+  model="opus",
+  instructions="Perform CASE workflow for compound at <compound_path> with formula <formula>.
+
+  Write analysis/CASE-PROGRESS.md after EVERY LSD iteration.
+  ..."
+)
+</step>
 ```
 
-### Agent CASE Workflow with Detection
+**After (v4.0):**
+```markdown
+<step name="spawn_case_team">
+TeamCreate(
+  team_definition={
+    "team_lead": "case-coordinator",
+    "teammates": [
+      {"agent_type": "nmr-chemist", "model": "opus"},
+      {"agent_type": "lsd-engineer", "model": "opus"},
+      {"agent_type": "solution-analyst", "model": "opus"},
+      {"agent_type": "devils-advocate", "model": "opus"}
+    ],
+    "shared_context": {
+      "compound_path": "<compound_path>",
+      "formula": "<formula>",
+      "database_path": "data/reference/lucy-ng-derep.db",
+      "iteration": 0,
+      "safety_cap": 10
+    }
+  },
+  instructions="Coordinate CASE workflow with specialized team.
 
+  Team lead (case-coordinator): Manage iteration lifecycle, assign tasks, synthesize results.
+
+  NMR-Chemist: Peak picking, multiplicity assignment, statistical detection.
+
+  LSD-Engineer: Constraint building, LSD file construction, inventory management.
+
+  Solution-Analyst: Solution ranking, chemical plausibility, quality assessment.
+
+  Devils-Advocate: Pre-run validation, constraint checking, diff analysis.
+
+  All agents: Append to analysis/CASE-PROGRESS.md after completing assigned tasks.
+
+  Stopping conditions: solution_count <= 10 OR iterations >= 10 OR team consensus on escalation.
+  "
+)
+</step>
 ```
-Agent: lucy detect hybridisation db 180.5
-  ↓ (sp2, 0.95)
-Agent: lucy detect quaternary db 180.5
-  ↓ (true, 0.88)
-Agent: Write LSD file
-  MULT 1 C 2 0  ; sp2, quaternary → carbonyl
-  ↓
-Agent: lucy lsd run compound.lsd
-  ↓ (10 solutions)
-Agent: outlsd 5 < compound.sol > solutions.smi
-  ↓
-Agent: lucy lsd rank solutions.smi --shifts "..." --use-detection
-  ↓ (Tier 1: filter by hybridisation)
-  ↓ (Tier 2: rank by MAE)
-Agent: Examine top solution
+
+**Key changes:**
+- Explicit team structure (lead + teammates)
+- Shared context (all agents see same data)
+- Role-specific instructions (but detailed knowledge in agent definitions)
+
+### Pattern 2: Knowledge Distribution Example
+
+**v3.0 monolithic (lucy-case-agent.md):**
+```markdown
+## 3. LSD Command Reference
+
+### MULT - Atom Definitions
+**Syntax:** `MULT atom_index element hybridization hydrogen_count`
+...
+
+### HSQC - Direct C-H Attachment
+**Syntax:** `HSQC carbon_index proton_position`
+...
+
+### Statistical Detection Protocol
+**Timing:** Run detection AFTER peak picking, BEFORE LSD file writing
+**Commands:** `lucy detect hybridisation <shift>`, ...
+...
+
+### Incremental HMBC Strategy
+**Core principle:** NEVER add all HMBC at once, use 3-5 batches
+...
 ```
 
-## 8. Integration Risks and Mitigations
+**v4.0 distributed:**
 
-### Risk 1: Hybridisation Detection Accuracy
+**nmr-chemist.md:**
+```markdown
+## Statistical Detection Protocol
 
-**Issue:** RDKit's `GetHybridization()` may not always match NMR chemical shift expectations.
+Run detection for ambiguous assignments:
+- Hybridisation: `lucy detect hybridisation <db> <shift> --format json`
+- Neighbours: `lucy detect neighbours <db> <shift> --format json`
+- Signal grouping: `lucy analyze grouping "<shifts>" --format json`
 
-**Example:** Aromatic carbons are sp2, but some edge cases (e.g., pyrrole N-adjacent C) may have unexpected shifts.
+Post results to team:
+"Carbon at <shift> ppm: sp2=<fraction> (detection), sp3=<fraction> → recommend MULT hybridization=<2 or 3>"
+
+DO NOT write LSD commands directly — report findings to lsd-engineer.
+```
+
+**lsd-engineer.md:**
+```markdown
+## LSD Command Reference
+
+### MULT - Atom Definitions
+**Syntax:** `MULT atom_index element hybridization hydrogen_count`
+**Example:** `MULT 1 C 2 0  ; sp2 quaternary carbon`
+
+Receive hybridization assignments from nmr-chemist:
+- "sp2=0.92" → hybridization=2
+- "sp3=0.88" → hybridization=3
+
+### Incremental HMBC Strategy
+
+Receive HMBC batch from nmr-chemist (3-5 correlations per iteration).
+
+**CRITICAL:** Read previous iteration LSD file BEFORE writing new one.
+Preserve ALL existing constraints (MULT, HSQC, DEFF NOT, SYME, BOND, LIST/PROP).
+
+**Workflow:**
+1. Read analysis/iteration_{N-1}/compound.lsd (if exists)
+2. Extract constraint inventory
+3. Add new HMBC batch from nmr-chemist
+4. Write analysis/iteration_N/compound.lsd with full inventory
+5. Update constraint inventory comment header
+```
+
+**devils-advocate.md:**
+```markdown
+## Pre-Run Validation Protocol
+
+Before LSD runs, validate file:
+
+1. **Constraint preservation check:**
+   - Diff iteration_N vs iteration_{N-1}
+   - Verify DEFF NOT count unchanged (should be 6 patterns)
+   - Verify SYME constraints preserved (if symmetric carbons detected)
+   - Verify grouped notation preserved (if signal grouping detected)
+
+2. **Structural checks:**
+   - sp2 count EVEN
+   - H budget matches formula
+   - HSQC before HMBC (correlation order)
+
+Post to team:
+"✓ Validation passed: sp2=<count> (even), H=<count> (matches), DEFF NOT=<count> (preserved), SYME=<count> (preserved)"
+
+OR
+
+"✗ Validation FAILED: <issue> detected — lsd-engineer please fix before running"
+```
+
+**Handoff clarity:**
+- nmr-chemist provides WHAT (assignments), not HOW (LSD syntax)
+- lsd-engineer translates WHAT to HOW (LSD commands)
+- devils-advocate validates HOW (file structure), not WHAT (chemistry)
+
+### Pattern 3: Constraint Inventory Tracking
+
+**LSD file header comment (iteration 3):**
+```
+; lucy-ng LSD Input File
+; Compound: data/compound/ibuprofen
+; Formula: C13H18O2
+; Iteration: 3
+; Generated: 2026-02-16 10:30:15
+;
+; === CONSTRAINT INVENTORY ===
+; MULT: 15 atoms (13 C, 2 O)
+;   - sp2: 6 (C1, C5, C6, C7, C8, O13)
+;   - sp3: 9 (C2, C3, C4, C9, C10, C11, C12, C13, O14)
+; HSQC: 10 correlations (all protonated carbons)
+; HMBC: 15 correlations (5+5+5 batches from iterations 1-3)
+; DEFF NOT: 6 patterns (strained rings)
+;   - C1CC1 (cyclopropane)
+;   - C1CCC1 (cyclobutane)
+;   - C1NC1 (aziridine)
+;   - C1NCC1 (azetidine)
+;   - C1SC1 (thiirane)
+;   - C1SCC1 (thietane)
+; SYME: 2 constraints (equivalent carbons)
+;   - C9-C10 (para-benzene pair)
+;   - C11-C12 (para-benzene pair)
+; BOND: 1 (C1-O13 carbonyl from detection)
+; LIST/PROP: 0
+; ELIM: 0 (not used)
+; === END INVENTORY ===
+
+MULT 1 C 2 0    ; C1: sp2 quaternary (carbonyl) at 180.56 ppm
+MULT 2 C 3 2    ; C2: sp3 CH2 at 44.90 ppm (grouped with C3)
+...
+```
+
+**devils-advocate diff check:**
+```bash
+# Compare iteration 3 vs iteration 2
+diff analysis/iteration_02/compound.lsd analysis/iteration_03/compound.lsd
+
+# Expected: 5 new HMBC lines, inventory updated, all other constraints preserved
+# If DEFF NOT count changed: FLAG to team
+# If SYME constraints removed: FLAG to team
+```
+
+**CASE-PROGRESS.md entry (lsd-engineer section):**
+```markdown
+### LSD-Engineer
+**LSD file:** analysis/iteration_03/compound.lsd
+**Constraints added:**
+  - HMBC: 5 correlations (third batch)
+    - C5-H12 (aromatic, strong intensity)
+    - ...
+**Constraints removed:** None
+**Constraint inventory delta:**
+  - HMBC: +5 (10 → 15)
+  - All other constraints: unchanged (MULT=15, HSQC=10, DEFF NOT=6, SYME=2, BOND=1)
+**Why:** Continuing incremental HMBC strategy, preserving all baseline constraints
+```
+
+**This fixes v3.0 bugs:**
+- DEFF NOT dropped after iteration 1: Inventory tracks count, devils-advocate flags if missing
+- SYME forgotten: Inventory tracks constraints, devils-advocate flags if removed
+- Grouped notation lost: Inventory includes grouped signals, devils-advocate checks preservation
+
+## 9. Risk Assessment and Mitigations
+
+### Risk 1: Team Coordination Overhead
+
+**Issue:** 5 agents coordinating may be slower than 1 monolithic agent
+
+**Impact:** MEDIUM — Slower workflow acceptable if quality improves, but not if 5x slower
 
 **Mitigation:**
-- Validate against known structures before deployment
-- Report confidence scores, not absolute predictions
-- Allow manual override in agent workflow
+- Benchmark v3.0 vs v4.0 on same compounds (time to solution)
+- Optimize task assignment (parallel where possible)
+- If overhead > 2x, consider reducing team size (3 agents instead of 5)
 
-**Impact:** MEDIUM - Affects feature usefulness but not system stability
+**Fallback:** Revert to enhanced monolithic agent with constraint inventory (hybrid approach)
 
-### Risk 2: Database Size Growth
+### Risk 2: Knowledge Distribution Gaps
 
-**Issue:** Adding 4 columns to 7.9M row table increases storage.
+**Issue:** Splitting knowledge may create gaps where no agent knows the full context
 
-**Estimate:**
-- sp2_fraction: 4 bytes (REAL)
-- sp3_fraction: 4 bytes (REAL)
-- quat_fraction: 4 bytes (REAL)
-- common_partners: ~50 bytes average (TEXT JSON)
-- Total: ~62 bytes × 7.9M = ~490 MB additional storage
-
-**Current database:** ~2.8 GB
-**With detection:** ~3.3 GB (+18%)
+**Impact:** HIGH — Could cause workflow failures or incorrect chemistry
 
 **Mitigation:**
-- Acceptable growth (modern systems have TB storage)
-- Could compress common_partners JSON if needed
-- Could make detection stats optional (separate table)
+- Define clear interfaces between agents (WHAT each agent posts to team)
+- Validate knowledge coverage during Phase 2 (ensure no NMR/LSD concepts missing)
+- Include cross-references in agent definitions ("For X, see agent Y")
+- UAT with diverse compounds to expose gaps
 
-**Impact:** LOW - Storage is cheap, growth is reasonable
+**Fallback:** Re-inline shared knowledge (duplicated across agents) if gaps emerge
 
-### Risk 3: Statistics Generation Time
+### Risk 3: CASE-PROGRESS.md Corruption
 
-**Issue:** Extending HOSE generation to compute detection stats may increase runtime.
+**Issue:** Multiple agents appending concurrently may corrupt file
 
-**Analysis:**
-- Current bottleneck: HOSE code generation (RDKit mol graph traversal)
-- Detection stats: Additional atom property lookups (GetHybridization, GetNeighbors)
-- Estimated overhead: +10-20% runtime (same mol object, just extra queries)
-
-**Current generation time:** ~8-12 hours for 928K compounds (from project experience)
-**With detection:** Estimated ~10-14 hours
+**Impact:** LOW — File corruption breaks orchestrator monitoring
 
 **Mitigation:**
-- Checkpointing already handles long runs
-- Can run overnight or as background job
-- Parallel processing possible (database upsert is atomic)
+- Define append-only protocol (agents never overwrite)
+- Use structured sections (agent name headers) for safe parsing
+- Test concurrent writes during Phase 4
+- Consider file locking if corruption observed
 
-**Impact:** LOW - Runtime increase is acceptable for one-time generation
+**Fallback:** Coordinator as sole writer, agents post to team only (coordinator writes to file)
 
-### Risk 4: Agent Complexity Creep
+### Risk 4: Constraint Inventory Maintenance Burden
 
-**Issue:** Adding detection commands to agent may make decision logic more complex.
+**Issue:** lsd-engineer must maintain accurate inventory across iterations
+
+**Impact:** MEDIUM — Inventory errors cause constraint loss (same bugs as v3.0)
 
 **Mitigation:**
-- Make detection OPTIONAL in agent workflow (not required)
-- Provide clear heuristics (e.g., "use detection when shift is 50-90 ppm and DEPT is unclear")
-- Fall back to existing DEPT-based multiplicity if detection unavailable
+- Structured inventory format (JSON in LSD comment)
+- devils-advocate validates inventory on every run
+- Automated diff checking (not manual inspection)
+- Fail-safe: If inventory corrupt, rebuild from full LSD file parse
 
-**Impact:** LOW - Agent already handles complex decision trees, detection is additive
+**Fallback:** Simplified inventory (count-only, no detail), stricter diff validation
 
-## 9. Alternative Architectures Considered
+### Risk 5: TeamCreate API Limitations
 
-### Alternative 1: Real-time Computation (No Database Extension)
+**Issue:** Claude SDK TeamCreate may have undocumented limitations or bugs
 
-**Idea:** Compute detection statistics on-the-fly by querying raw shifts table.
+**Impact:** HIGH — Could block entire v4.0 milestone
+
+**Mitigation:**
+- Early prototype during Phase 1 (validate TeamCreate works as expected)
+- Test team size limits (5 agents may be near max)
+- Test message passing (TeamMessage latency, reliability)
+- Engage with Anthropic support if blockers encountered
+
+**Fallback:** Revert to Task-based architecture with enhanced monolithic agent (v3.5 instead of v4.0)
+
+## 10. Alternative Architectures Considered
+
+### Alternative 1: Enhanced Monolithic Agent with Constraint Inventory
+
+**Idea:** Keep single agent, add constraint inventory tracking and pre-run validation to existing lucy-case-agent.md
 
 **Rejected because:**
-- Query would scan millions of rows per lookup (too slow)
-- Would require re-implementing HOSE aggregation logic
-- No benefit over pre-computed statistics
+- Doesn't address fundamental issue: agent reconstructs LSD from memory, loses constraints
+- Single agent still prone to same bugs (forgetting DEFF NOT, SYME)
+- No peer review → constraint loss invisible until results are wrong
+- Misses opportunity for specialization (nmr-chemist, lsd-engineer have different expertise)
 
-### Alternative 2: Separate Detection Service
+**Could be fallback if TeamCreate doesn't work.**
 
-**Idea:** Build detection as microservice with its own database.
+### Alternative 2: 3-Agent Simplified Team
 
-**Rejected because:**
-- Over-engineering for single-user CLI tool
-- lucy-ng is not a service architecture (no MCP server after v2.0)
-- Adds deployment complexity
-
-### Alternative 3: Machine Learning Model
-
-**Idea:** Train ML model to predict hybridisation from shift + HOSE code.
+**Idea:** Reduce team size to coordinator, scientist (nmr+lsd), validator (devils-advocate+solution-analyst)
 
 **Rejected because:**
-- Requires training data labeling (expensive)
-- Requires model deployment (scikit-learn/TensorFlow dependency)
-- Rule-based statistics are interpretable and sufficient
+- Scientist role too broad (combines peak picking and constraint building, both complex)
+- Loses specialization benefits (deep NMR knowledge vs deep LSD syntax knowledge)
+- Constraint inventory still managed by scientist (same risk as monolithic)
 
-## 10. Open Questions for Implementation
+**Could be optimization if 5-agent overhead is excessive.**
 
-1. **Hybridisation edge cases:** How to handle atoms with unusual hybridisation (e.g., carbocations, radicals)?
-   - **Recommendation:** Filter to stable closed-shell molecules during database import
+### Alternative 3: Blackboard Pattern with Shared State
 
-2. **Bond partner encoding:** JSON array vs delimited string for common_partners?
-   - **Recommendation:** JSON for flexibility, SQLite has native JSON functions
+**Idea:** Agents post to shared blackboard (JSON file), no direct communication
 
-3. **Confidence threshold tuning:** What sp2/sp3 fraction difference constitutes "high confidence"?
-   - **Recommendation:** Start with 0.7 threshold, tune based on validation set
+**Rejected because:**
+- TeamCreate provides native messaging, blackboard is reinventing the wheel
+- Blackboard requires coordination protocol design (who reads, who writes, when)
+- No real-time peer review (agents don't see each other's posts immediately)
+- Harder to debug (no conversation history, just state changes)
 
-4. **Quaternary detection threshold:** What quat_fraction indicates "definitely quaternary"?
-   - **Recommendation:** 0.8+ = very likely, 0.5-0.8 = uncertain, <0.5 = unlikely
+### Alternative 4: Sequential Pipeline (No Team Coordination)
 
-5. **Agent decision logic:** When should agent prefer detection over DEPT?
-   - **Recommendation:** Use DEPT as ground truth when available, detection for ambiguous cases or missing DEPT
+**Idea:** Task chain: nmr-chemist → lsd-engineer → devils-advocate → solution-analyst (no team lead)
 
-## 11. Success Metrics
+**Rejected because:**
+- No feedback loops (solution-analyst can't request more HMBC from nmr-chemist)
+- No iterative workflow (constraint building is inherently iterative)
+- No peer review (agents can't flag each other's issues)
+- Sequential = slow (can't parallelize independent tasks)
 
-**Database generation:**
-- Statistics computed for >95% of HOSE codes
-- sp2_fraction + sp3_fraction approximately 1.0 (accounting for other hybridisations)
+## 11. Success Criteria
 
-**Detection accuracy:**
-- >90% agreement with DEPT-based multiplicity on test set
-- Confidence scores correlate with accuracy (high confidence = high accuracy)
+### Functional Criteria
 
-**Agent integration:**
-- Agent successfully uses detection in at least 3 ambiguous cases per compound
-- Detection-informed MULT commands reduce LSD solution count by 20-50%
+1. **Team spawns successfully:** Orchestrator TeamCreate produces 5 agents with correct roles
+2. **Workflow completes end-to-end:** Team solves test compound (Ibuprofen) without manual intervention
+3. **Constraint persistence:** DEFF NOT, SYME, grouped notation preserved across all iterations
+4. **Pre-run validation:** devils-advocate detects and flags constraint loss BEFORE LSD runs
+5. **Solution quality assessment:** solution-analyst provides chemical plausibility review
+6. **CASE-PROGRESS.md coherence:** Multi-agent journal is readable and informative
 
-**User impact:**
-- Faster time to correct structure (fewer manual iterations)
-- Higher confidence in LSD input file correctness
-- Reduced reliance on trial-and-error for multiplicity assignment
+### Performance Criteria
+
+1. **Time to solution:** v4.0 completes in < 2x v3.0 time (acceptable overhead for quality gain)
+2. **Iteration count:** Similar or fewer iterations than v3.0 (better constraint building)
+3. **Solution rank:** Correct structure in top 3 (same as v3.0)
+4. **Constraint coverage:** >= 95% of relevant constraints captured (HMBC, SYME, DEFF NOT)
+
+### Quality Criteria
+
+1. **Bug fixes verified:** All v3.0 UAT bugs fixed (DEFF NOT persistence, SYME encoding, grouped notation)
+2. **Peer review effectiveness:** devils-advocate catches >= 90% of constraint errors before LSD runs
+3. **Knowledge coverage:** No NMR/LSD concepts missing from distributed knowledge
+4. **Coordination clarity:** Task assignments and results are unambiguous in CASE-PROGRESS.md
+
+### UAT Validation
+
+**Test 1: Ibuprofen (C13H18O2)**
+- Baseline validation (v3.0 SUCCESS, rank #1, MAE=2.23)
+- v4.0 should match or exceed (rank #1, MAE < 3.0, 3-5 iterations)
+- All constraints preserved across iterations
+- devils-advocate flags any dropped constraints
+
+**Test 2: Pulegone (C10H16O)**
+- Additional validation (different functional groups)
+- Ketone vs carboxylic acid differentiation
+- SYME for equivalent methyl groups
+- v4.0 should solve in < 8 iterations
+
+**Test 3: Virgiline (complex alkaloid)**
+- Stress test (multiple nitrogen atoms, complex connectivity)
+- Team should handle complexity better than monolithic agent
+- If team escalates to orchestrator: acceptable (diagnostic specialist should help)
+
+## 12. Integration Checklist
+
+### Orchestrator Modifications
+- [ ] Replace Task() with TeamCreate() in spawn step
+- [ ] Define team_definition structure
+- [ ] Update CASE-PROGRESS.md parser for multi-agent format
+- [ ] Implement TeamMessage for advisory delivery
+- [ ] Test diagnostic specialist integration with team context
+
+### Agent Definitions
+- [ ] Create ~/.claude/agents/lucy-ng/case-team/ directory
+- [ ] Write coordinator.md (team lead workflow)
+- [ ] Write nmr-chemist.md (peak picking, detection)
+- [ ] Write lsd-engineer.md (constraint building, inventory)
+- [ ] Write solution-analyst.md (ranking, quality)
+- [ ] Write devils-advocate.md (pre-run validation)
+- [ ] Verify agent discovery in subdirectory
+
+### Knowledge Distribution
+- [ ] Extract NMR knowledge from lucy-case-agent.md → nmr-chemist.md
+- [ ] Extract LSD knowledge from lucy-case-agent.md → lsd-engineer.md
+- [ ] Extract ranking knowledge → solution-analyst.md
+- [ ] Define inter-agent interfaces (WHAT to post)
+- [ ] Cross-reference agents for shared concepts
+- [ ] Validate no knowledge gaps
+
+### Constraint Inventory System
+- [ ] Define inventory format (JSON in LSD comment)
+- [ ] Implement "read previous LSD file" in lsd-engineer
+- [ ] Implement diff protocol in devils-advocate
+- [ ] Test constraint preservation across iterations
+- [ ] Validate DEFF NOT, SYME, grouped notation tracking
+
+### CASE-PROGRESS.md Format
+- [ ] Define multi-agent section structure
+- [ ] Implement coordinator iteration headers
+- [ ] Implement agent section append protocol
+- [ ] Test concurrent writes (no corruption)
+- [ ] Validate orchestrator can parse team format
+
+### Team Coordination
+- [ ] Define task list structure (shared state)
+- [ ] Implement coordinator task assignment
+- [ ] Implement teammate task claiming
+- [ ] Implement result synthesis
+- [ ] Test iteration loop (full cycle)
+
+### UAT Execution
+- [ ] Run v4.0 on Ibuprofen (baseline)
+- [ ] Run v4.0 on Pulegone (additional)
+- [ ] Run v4.0 on Virgiline (stress test)
+- [ ] Compare performance vs v3.0 (time, iterations, quality)
+- [ ] Verify all v3.0 bugs fixed
 
 ## Conclusion
 
-Statistical detection integrates cleanly into lucy-ng's existing architecture:
+The 5-agent CASE team architecture is a substantial but achievable evolution of the v3.0 single-agent system. Key integration points:
 
-- **Database layer:** Extend hose_stats table with 4 columns (+18% storage)
-- **Generation layer:** Extend existing stats_generator.py (+10-20% runtime)
-- **CLI layer:** New detect.py module following established Click pattern
-- **Agent layer:** Use via Bash tool, same as existing lucy lsd rank
+1. **Orchestrator:** Replace Task() with TeamCreate(), update monitoring for multi-agent format
+2. **Agents:** 5 specialized agents in `~/.claude/agents/lucy-ng/case-team/` with distributed knowledge
+3. **Constraint inventory:** lsd-engineer reads previous file, devils-advocate validates, inventory tracked in LSD comments
+4. **CASE-PROGRESS.md:** Multi-agent journal with per-agent sections, coordinator writes headers
+5. **Diagnostic specialist:** Remains orchestrator-spawned (not team member), sends advisory via TeamMessage
 
 **Critical success factors:**
-1. RDKit hybridisation detection must be validated against real NMR data
-2. Database schema migration must be tested on existing 2.8GB database
-3. Agent decision logic must be clear and fall back gracefully
+- Constraint inventory must be reliable (prevents v3.0 bugs)
+- Knowledge distribution must be complete (no gaps)
+- Team coordination must be efficient (< 2x overhead)
+- Pre-run validation must catch errors (devils-advocate effectiveness)
 
 **Recommended build order:**
-1. Schema extension (1 day)
-2. Statistics generation (2-3 days)
-3. Detection module (3-4 days)
-4. CLI commands (2 days)
-5. Agent integration (2-3 days)
-6. Two-tier ranking (optional, 3-4 days)
+1. Orchestrator skill modification (Week 1)
+2. Agent definitions with knowledge distribution (Weeks 1-2)
+3. Constraint inventory system (Week 2)
+4. CASE-PROGRESS.md format (Week 2)
+5. Team coordination protocol (Week 3)
+6. Diagnostic integration (Week 3)
+7. UAT with live compounds (Week 4)
 
-Total: ~2-3 weeks for core features, +1 week for ranking enhancement.
+**Estimated effort:** 4 weeks for full implementation and validation.
+
+**Confidence:** HIGH for integration points, MEDIUM for team dynamics and coordination efficiency (requires empirical validation through UAT).
+
+## Sources
+
+Research based on:
+
+**Claude Agent Teams:**
+- [Orchestrate teams of Claude Code sessions - Claude Code Docs](https://code.claude.com/docs/en/agent-teams)
+- [Agent Teams with Claude Code and Claude Agent SDK | Medium](https://kargarisaac.medium.com/agent-teams-with-claude-code-and-claude-agent-sdk-e7de4e0cb03e)
+- [Claude Code Agent Teams: Multi-Session Orchestration](https://claudefa.st/blog/guide/agents/agent-teams)
+- [Anthropic releases Opus 4.6 with new 'agent teams' | TechCrunch](https://techcrunch.com/2026/02/05/anthropic-releases-opus-4-6-with-new-agent-teams/)
+- [Introducing Claude Opus 4.6 | Anthropic](https://www.anthropic.com/news/claude-opus-4-6)
+
+**Multi-Agent Architecture Patterns:**
+- [AI Agent Orchestration Patterns - Azure Architecture Center](https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/ai-agent-design-patterns)
+- [Four Design Patterns for Event-Driven, Multi-Agent Systems](https://www.confluent.io/blog/event-driven-multi-agent-systems/)
+- [Choose a design pattern for your agentic AI system | Google Cloud](https://docs.cloud.google.com/architecture/choose-design-pattern-agentic-ai-system)
+- [Choosing the Right Multi-Agent Architecture | LangChain](https://blog.langchain.com/choosing-the-right-multi-agent-architecture/)
+
+**Project Context:**
+- lucy-ng CLAUDE.md, PROJECT.md, STATE.md (local project files)
+- Existing ARCHITECTURE.md (statistical detection features, v3.0)
+- lucy-case-agent.md, lucy-diagnostic.md, case.md (current agent/skill architecture)
+
+---
+*Architecture research for: lucy-ng v4.0 Team-Based CASE*
+*Researched: 2026-02-16*

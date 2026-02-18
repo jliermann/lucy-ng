@@ -147,3 +147,32 @@
 **Git range:** `feat(01-01)` → `feat(10-01)`
 
 ---
+
+## v4.0 Team-Based CASE (Shipped: 2026-02-18)
+
+**Delivered:** 5-agent collaborative CASE team replacing monolithic agent — coordinator, nmr-chemist, lsd-engineer, solution-analyst, devils-advocate with real-time peer review, constraint inventory persistence, pre-run validation gates, aromatic ring awareness, and all v3.0 constraint-loss bugs fixed.
+
+**Phases completed:** 41-48 + 46.1 (21 plans total)
+
+**Key accomplishments:**
+- 5-agent CASE team: orchestrator spawns coordinator, nmr-chemist, lsd-engineer, solution-analyst, devils-advocate via TeamCreate with 3,460 lines of distributed agent/skill definitions
+- Constraint inventory system: JSON-based tracking in LSD file headers prevents DEFF NOT, SYME, grouped notation, and detection result loss across iterations
+- Devils-advocate pre-run validation: three-check inventory reconciliation (accuracy, regression, content) gates every LSD solver run
+- Aromatic ring awareness: nmr-chemist flags aromatic expectation from sp2 clusters, solution-analyst verifies `has_aromatic_ring` on solutions, recommends 4J HMBC removal when mismatch detected
+- Coordinator-as-sole-writer pattern: agents post via SendMessage, coordinator writes CASE-PROGRESS.md — prevents file corruption from concurrent writes
+- All 5 v3.0 constraint-loss bugs verified fixed in UAT: DEFF NOT persistence, SYME applied, grouped notation preserved, PROP/BOND used, detection constraints translated
+
+**Stats:**
+- 9 phases (8 + 46.1), 21 plans, 48 commits
+- 3,460 lines agent/skill definitions
+- 18,963 lines Python, 768 tests
+- 2 days (2026-02-17 → 2026-02-18)
+
+**Git range:** `719f158` → `9055a62`
+
+**Tech debt:** 3 WARNING-level integration gaps (write_progress aromatic field templates, lsd-engineer step 8 message source wording). Accepted as non-blocking — no behavioral impact, narrative documentation gaps only.
+
+**What's next:** Statistical 4J coupling detection, multi-compound UAT, COSY integration
+
+---
+
