@@ -226,10 +226,11 @@ Plans:
 - `.planning/phases/46.1-*/46.1-VERIFICATION.md` — new
 - `.planning/phases/47-*/47-VERIFICATION.md` — new
 
-**Plans:** 0 (not yet planned)
+**Plans:** 2 plans
 
 Plans:
-- [ ] 48-01-PLAN.md — Fix integration gaps and write missing verifications
+- [ ] 48-01-PLAN.md — Fix integration gaps in case.md, lucy-diagnostic.md, lucy-devils-advocate.md
+- [ ] 48-02-PLAN.md — Write missing VERIFICATION.md for Phases 46.1 and 47
 
 ---
 
