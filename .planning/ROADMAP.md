@@ -8,11 +8,11 @@
 - **v2.0 Robust Multi-Agent CASE** - Phases 20-26 (shipped 2026-02-08)
 - **v2.1 Working Multi-Agent CASE** - Phases 27-33 (shipped 2026-02-09)
 - [v3.0 Statistical Detection](milestones/v3.0-ROADMAP.md) - Phases 34-40 (shipped 2026-02-16)
-- **v4.0 Team-Based CASE** - Phases 41-47 (current)
+- **v4.0 Team-Based CASE** - Phases 41-48 (current)
 
 ---
 
-## v4.0 Team-Based CASE (Phases 41-47)
+## v4.0 Team-Based CASE (Phases 41-48)
 
 **Milestone Goal:** Replace the single autonomous CASE agent with a 5-agent collaborative team that self-corrects through real-time peer review, fixing all v3.0 constraint-loss bugs.
 
@@ -33,7 +33,8 @@
 - [x] **Phase 44: CASE-PROGRESS.md Format** - Multi-agent journal with per-agent sections (completed 2026-02-17)
 - [x] **Phase 45: Team Coordination Protocol** - Iteration loop, task assignment, stopping conditions (completed 2026-02-17)
 - [x] **Phase 46: Diagnostic Integration** - Specialist integration with team context (completed 2026-02-17)
-- [ ] **Phase 47: UAT with Live Compounds** - Validation against v3.0 baseline
+- [x] **Phase 47: UAT with Live Compounds** - Validation against v3.0 baseline (completed 2026-02-18)
+- [ ] **Phase 48: Integration Hygiene & Tech Debt** - Close audit gaps (MISSING-01 relay, stale paths, missing verifications)
 
 ---
 
@@ -206,6 +207,32 @@ Plans:
 
 ---
 
+### Phase 48: Integration Hygiene & Tech Debt (GAP CLOSURE)
+**Goal**: Close all gaps identified by v4.0 milestone audit — DA approval relay, stale paths, missing verifications
+**Depends on**: Phase 47 (UAT complete, audit done)
+**Gap Closure**: Closes gaps from v4.0-MILESTONE-AUDIT.md
+**Success Criteria** (what must be TRUE):
+  1. case.md monitor_progress explicitly SendMessages DA approval/block decision to lsd-engineer (MISSING-01 closed)
+  2. Stale example paths in lucy-diagnostic.md updated to match analysis/ convention
+  3. Spawn prompt wording in case.md consistent across all agent spawn blocks
+  4. DA aromatic data relay path documented (CASE-PROGRESS.md read path)
+  5. VERIFICATION.md written for Phase 46.1 (aromatic ring awareness)
+  6. VERIFICATION.md written for Phase 47 (UAT with live compounds)
+
+**Files to modify:**
+- `~/.claude/commands/lucy-ng/case.md` — DA relay SendMessage, spawn prompt cleanup
+- `~/.claude/agents/lucy-diagnostic.md` — stale example paths
+- `~/.claude/agents/lucy-devils-advocate.md` — document CASE-PROGRESS.md read for aromatic data
+- `.planning/phases/46.1-*/46.1-VERIFICATION.md` — new
+- `.planning/phases/47-*/47-VERIFICATION.md` — new
+
+**Plans:** 0 (not yet planned)
+
+Plans:
+- [ ] 48-01-PLAN.md — Fix integration gaps and write missing verifications
+
+---
+
 ## Progress
 
 | Phase | Milestone | Plans | Status | Completed |
@@ -216,7 +243,9 @@ Plans:
 | 44. CASE-PROGRESS.md Format | v4.0 | Complete    | 2026-02-17 | -- |
 | 45. Team Coordination Protocol | v4.0 | Complete    | 2026-02-17 | -- |
 | 46. Diagnostic Integration | v4.0 | Complete    | 2026-02-17 | -- |
-| 47. UAT with Live Compounds | v4.0 | -- | Planned | -- |
+| 46.1. Agent Aromatic Ring Awareness | v4.0 | Complete | 2026-02-18 | -- |
+| 47. UAT with Live Compounds | v4.0 | Complete | 2026-02-18 | -- |
+| 48. Integration Hygiene & Tech Debt | v4.0 | -- | Planned | -- |
 
 ---
-*Last updated: 2026-02-17 after v4.0 milestone creation*
+*Last updated: 2026-02-18 after gap closure phase creation*
