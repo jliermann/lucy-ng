@@ -5,15 +5,15 @@
 See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a collaborative team architecture that self-corrects through peer review
-**Current focus:** v4.0 Team-Based CASE — Phase 46.1 complete, Phase 47 UAT next
+**Current focus:** v4.0 Team-Based CASE — Phase 47 UAT with Live Compounds
 
 ## Current Position
 
 **Milestone**: v4.0 Team-Based CASE — Phases 41-47
-**Phase**: 46.1 — Agent Aromatic Ring Awareness (complete)
-**Plan**: 2/2 complete (solution-analyst Check 6, nmr-chemist aromatic expectation, devils-advocate defense-in-depth)
-**Status**: All 3 CASE agents updated with aromatic ring awareness
-**Last activity**: 2026-02-18 — Phase 46.1 executed (2 plans, 3 agent files updated)
+**Phase**: 47 — UAT with Live Compounds (ready to execute)
+**Plan**: Not started (2 plans: live Ibuprofen CASE run, performance comparison report)
+**Status**: Ready for Phase 47 — all prerequisite phases complete (41-46 + 46.1)
+**Last activity**: 2026-02-18 — Phase 46.1 complete, transitioning to Phase 47
 
 Progress: [##########################░░░░░░░░░░░░░░░] 6/7 phases (+46.1)
 
@@ -104,8 +104,8 @@ Decisions are logged in PROJECT.md Key Decisions table.
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Completed Phase 46.1 Agent Aromatic Ring Awareness (2 plans, 3 agent files)
+Stopped at: Phase 46.1 complete, ready to execute Phase 47 UAT
 Resume file: None
 
 ---
-*Last updated: 2026-02-18 after Phase 46.1 execution*
+*Last updated: 2026-02-18 after Phase 46.1 -> 47 transition*
