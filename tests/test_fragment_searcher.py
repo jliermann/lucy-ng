@@ -155,6 +155,7 @@ class TestPrescreening:
                 dev_threshold=5.0,  # lenient for this test
                 avgdev_threshold=5.0,
                 max_results=10,
+                min_atom_count=1,  # SSC has 2 atoms
             )
             # The SSC should pass pre-screening (subset test)
             # and pass fine matching (shifts are close)

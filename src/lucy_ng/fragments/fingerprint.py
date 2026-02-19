@@ -47,3 +47,36 @@ def shifts_to_fingerprint(
             bin_idx = int(shift / bin_ppm)
             fp[bin_idx // 8] |= np.uint8(1 << (bin_idx % 8))
     return fp.tobytes()
+
+
+def expand_query_fingerprint(fp: bytes, expand_bins: int = 1) -> bytes:
+    """Expand a query fingerprint by setting neighbouring bits.
+
+    For each set bit in *fp*, the ``expand_bins`` neighbours on each side are
+    also set.  This compensates for bin-boundary effects: a stored SSC shift
+    at 45.1 ppm (bin 22) will match a query shift at 44.9 ppm (also bin 22
+    but near the edge) thanks to the ±1 bin tolerance.
+
+    Expansion is applied **only** to the query fingerprint.  Stored SSC
+    fingerprints in the database are never expanded.
+
+    Edge handling: bits at index 0 do not wrap to 255 and vice versa.
+
+    Args:
+        fp: 32-byte fingerprint from :func:`shifts_to_fingerprint`.
+        expand_bins: Number of neighbouring bins to set on each side
+            (default 1, giving ±1 bin = ±2 ppm tolerance).
+
+    Returns:
+        32-byte expanded fingerprint as a :class:`bytes` object.
+    """
+    bits = np.unpackbits(
+        np.frombuffer(fp, dtype=np.uint8), bitorder="little"
+    )
+    expanded = bits.copy()
+    set_indices = np.nonzero(bits)[0]
+    for idx in set_indices:
+        lo = max(0, idx - expand_bins)
+        hi = min(FINGERPRINT_BITS - 1, idx + expand_bins)
+        expanded[lo : hi + 1] = 1
+    return np.packbits(expanded, bitorder="little").tobytes()
