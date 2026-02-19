@@ -157,6 +157,72 @@ class FragmentDatabaseManager:
         return None
 
     # =========================================================================
+    # Checkpoint Methods
+    # =========================================================================
+
+    def set_checkpoint(self, key: str, value: str) -> None:
+        """Store a checkpoint value in schema_meta.
+
+        Uses INSERT OR REPLACE to upsert.  Checkpoint keys MUST use the
+        ``checkpoint_`` prefix to distinguish them from schema metadata
+        (``schema_version``, ``bin_size``).
+
+        Args:
+            key: Checkpoint key (e.g. ``"checkpoint_ssc_last_compound_id"``).
+            value: Checkpoint value as string.
+        """
+        self.connection.execute(
+            "INSERT OR REPLACE INTO schema_meta (key, value) VALUES (?, ?)",
+            (key, value),
+        )
+        self.connection.commit()
+
+    def get_checkpoint(self, key: str) -> str | None:
+        """Retrieve a checkpoint value from schema_meta.
+
+        Args:
+            key: Checkpoint key to look up.
+
+        Returns:
+            Checkpoint value as string, or ``None`` if not found.
+        """
+        cursor = self.connection.cursor()
+        cursor.execute(
+            "SELECT value FROM schema_meta WHERE key = ?",
+            (key,),
+        )
+        row = cursor.fetchone()
+        return row["value"] if row else None
+
+    def clear_checkpoints(self) -> None:
+        """Remove all checkpoint_ keys from schema_meta.
+
+        Preserves non-checkpoint metadata (``schema_version``, ``bin_size``).
+        Used internally by :meth:`clear_ssc_data` and directly when resuming
+        a fresh extraction run without discarding SSC data.
+        """
+        self.connection.execute(
+            "DELETE FROM schema_meta WHERE key LIKE 'checkpoint_%'"
+        )
+        self.connection.commit()
+
+    def clear_ssc_data(self) -> None:
+        """Delete all SSC data and checkpoint state.
+
+        Truncates ``ssc_bitset`` first (foreign-key cascade would handle it,
+        but explicit deletion is clearer), then ``ssc``, then clears all
+        ``checkpoint_`` keys from ``schema_meta``.
+
+        Used by the ``--fresh`` flag in the SSC extraction pipeline
+        (Phase 50, Plan 02) to start a clean extraction run.
+        """
+        conn = self.connection
+        conn.execute("DELETE FROM ssc_bitset")
+        conn.execute("DELETE FROM ssc")
+        conn.commit()
+        self.clear_checkpoints()
+
+    # =========================================================================
     # SSC Count
     # =========================================================================
 

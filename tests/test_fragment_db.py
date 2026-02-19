@@ -367,3 +367,98 @@ class TestSchemaIsolation:
         assert SCHEMA_VERSION == 6, (
             f"database/schema.py SCHEMA_VERSION must remain 6, got {SCHEMA_VERSION}"
         )
+
+
+# ---------------------------------------------------------------------------
+# Checkpoint Methods (Phase 50, Plan 01)
+# ---------------------------------------------------------------------------
+
+
+class TestCheckpointMethods:
+    """Tests for FragmentDatabaseManager checkpoint get/set/clear methods."""
+
+    def test_set_checkpoint_stores_value(self, tmp_path: Path) -> None:
+        """set_checkpoint must persist value retrievable by get_checkpoint."""
+        db_path = tmp_path / "frag.db"
+        with FragmentDatabaseManager(db_path) as db:
+            db.create_tables()
+            db.set_checkpoint("checkpoint_last_id", "42")
+            assert db.get_checkpoint("checkpoint_last_id") == "42"
+
+    def test_get_checkpoint_missing_returns_none(self, tmp_path: Path) -> None:
+        """get_checkpoint must return None for a key that was never set."""
+        db_path = tmp_path / "frag.db"
+        with FragmentDatabaseManager(db_path) as db:
+            db.create_tables()
+            assert db.get_checkpoint("checkpoint_nonexistent") is None
+
+    def test_set_checkpoint_overwrites(self, tmp_path: Path) -> None:
+        """Setting the same checkpoint key twice must keep the latest value."""
+        db_path = tmp_path / "frag.db"
+        with FragmentDatabaseManager(db_path) as db:
+            db.create_tables()
+            db.set_checkpoint("checkpoint_last_id", "100")
+            db.set_checkpoint("checkpoint_last_id", "999")
+            assert db.get_checkpoint("checkpoint_last_id") == "999"
+
+    def test_clear_checkpoints_removes_checkpoint_keys(self, tmp_path: Path) -> None:
+        """clear_checkpoints must remove all checkpoint_ keys."""
+        db_path = tmp_path / "frag.db"
+        with FragmentDatabaseManager(db_path) as db:
+            db.create_tables()
+            db.set_checkpoint("checkpoint_x", "aaa")
+            db.set_checkpoint("checkpoint_y", "bbb")
+            db.clear_checkpoints()
+            assert db.get_checkpoint("checkpoint_x") is None
+            assert db.get_checkpoint("checkpoint_y") is None
+
+    def test_clear_checkpoints_preserves_schema_metadata(self, tmp_path: Path) -> None:
+        """clear_checkpoints must NOT remove schema_version or bin_size rows."""
+        db_path = tmp_path / "frag.db"
+        with FragmentDatabaseManager(db_path) as db:
+            db.create_tables()
+            db.set_checkpoint("checkpoint_x", "some_value")
+            db.clear_checkpoints()
+            assert db.get_schema_version() == 7, (
+                "schema_version must survive clear_checkpoints()"
+            )
+            assert db.get_bin_size() == 2.0, (
+                "bin_size must survive clear_checkpoints()"
+            )
+
+    def test_clear_ssc_data_truncates_tables(self, tmp_path: Path) -> None:
+        """clear_ssc_data must delete all rows from ssc (and ssc_bitset)."""
+        db_path = tmp_path / "frag.db"
+        bitset = bytes(range(32))
+        records = [
+            _make_ssc("CC=O", [30.5, 199.1], bitset=bitset),
+            _make_ssc("CCO", [18.1, 57.5], bitset=bitset),
+        ]
+        with FragmentDatabaseManager(db_path) as db:
+            db.create_tables()
+            db.insert_ssc_batch(records)
+            assert db.get_ssc_count() == 2
+
+            db.clear_ssc_data()
+            assert db.get_ssc_count() == 0
+
+            # ssc_bitset must also be empty
+            bitsets = list(db.iter_ssc_bitsets())
+            assert bitsets == [], "ssc_bitset must be empty after clear_ssc_data()"
+
+    def test_clear_ssc_data_also_clears_checkpoints(self, tmp_path: Path) -> None:
+        """clear_ssc_data must clear both SSC rows and checkpoint keys."""
+        db_path = tmp_path / "frag.db"
+        bitset = bytes(range(32))
+        record = _make_ssc("CC=O", [30.5, 199.1], bitset=bitset)
+        with FragmentDatabaseManager(db_path) as db:
+            db.create_tables()
+            db.set_checkpoint("checkpoint_last_id", "42")
+            db.insert_ssc_batch([record])
+            assert db.get_ssc_count() == 1
+
+            db.clear_ssc_data()
+            assert db.get_ssc_count() == 0
+            assert db.get_checkpoint("checkpoint_last_id") is None, (
+                "Checkpoint must be cleared by clear_ssc_data()"
+            )
