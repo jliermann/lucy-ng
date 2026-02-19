@@ -11,10 +11,10 @@ See: .planning/PROJECT.md (updated 2026-02-19)
 
 **Milestone**: v5.0 Fragment Library
 **Phase**: 50 of 54 (SSC Extraction Pipeline)
-**Status**: Ready to plan
-**Last activity**: 2026-02-19 — Phase 49 Plan 02 executed: lucy fragment CLI command group with info subcommand
+**Status**: In progress (Plan 01 complete, Plan 02 remaining)
+**Last activity**: 2026-02-19 — Phase 50 Plan 01 executed: fingerprint utility + checkpoint methods
 
-Progress: [██░░░░░░░░] 20% (2 plans complete)
+Progress: [███░░░░░░░] 30% (3 plans complete)
 
 ## Completed Milestones
 
@@ -31,10 +31,10 @@ Progress: [██░░░░░░░░] 20% (2 plans complete)
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 88 across 7 milestones (+ 1 in v5.0)
+- Total plans completed: 88 across 7 milestones (+ 2 in v5.0)
 - v4.0: 9 phases, 21 plans, 48 commits, 2 days
-- v5.0: 1 plan, 2 commits, 3 min
-- Total execution time: ~78.2 hours + 3 min
+- v5.0: 2 plans, 4 commits, ~15 min
+- Total execution time: ~78.2 hours + 15 min
 
 ## Accumulated Context
 
@@ -49,6 +49,8 @@ Recent decisions affecting v5.0:
 - Phases 51 and 52 can run in parallel — both depend only on SSCMatch model from Phase 49, not on Phase 50 data
 - Phase 49: fragments/ module fully independent from database/ (zero cross-imports), INSERT OR IGNORE for bin_size protects existing populated DBs
 - Phase 49 Plan 02: existence check (db_path.exists()) before FragmentDatabaseManager open prevents sqlite3 silent empty-file creation
+- Phase 50 Plan 01: Fingerprint valid range [0, 512) ppm — out-of-range shifts silently ignored (set semantics, not error)
+- Phase 50 Plan 01: clear_checkpoints uses LIKE 'checkpoint_%' pattern to preserve schema_version/bin_size rows
 
 ### Pending Todos
 
@@ -69,8 +71,8 @@ See `background/sherlock-analysis.md` for full Sherlock vs lucy-ng comparison. F
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Phase 49 complete (verified 11/11), transitioning to Phase 50
+Stopped at: Phase 50 Plan 01 complete — fingerprint utility + checkpoint methods
 Resume file: None
 
 ---
-*Last updated: 2026-02-19 after Phase 49 Plan 02 complete*
+*Last updated: 2026-02-19 after Phase 50 Plan 01 complete*
