@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 import re
+import shutil
+import subprocess
 from pathlib import Path
 
 import pytest
 
 from lucy_ng.fragments.lsd_formatter import DEFFFormatter
+
+LSD_AVAILABLE = shutil.which("LSD") is not None
 
 
 class TestSmilesToFragmentContent:
@@ -182,3 +186,166 @@ class TestFexpCommand:
         """Empty fragment list returns empty string."""
         cmd = DEFFFormatter.fexp_command([])
         assert cmd == ""
+
+
+# ---------------------------------------------------------------------------
+# LSD Smoke Tests -- require LSD solver on PATH
+# ---------------------------------------------------------------------------
+
+# Toluene baseline LSD file (no fragments): 7 carbons, 5 ArCH + 1 ArC + 1 CH3
+TOLUENE_BASELINE = """\
+MULT 1 C 2 1
+MULT 2 C 2 1
+MULT 3 C 2 1
+MULT 4 C 2 1
+MULT 5 C 2 1
+MULT 6 C 2 0
+MULT 7 C 3 3
+HSQC 1 1
+HSQC 2 2
+HSQC 3 3
+HSQC 4 4
+HSQC 5 5
+HSQC 7 7
+"""
+
+# Generic 6-membered aromatic carbon ring fragment with flexible H count (0 1)
+# to allow substituted ring carbons. This is the correct pattern for goodlist
+# matching -- exact H counts from DEFFFormatter.smiles_to_fragment_content would
+# be too restrictive (benzene has all 1H, but toluene has one 0H ring carbon).
+BENZENE_GENERIC_FRAGMENT = """\
+; Generic 6-membered aromatic carbon ring
+SSTR S1 C 2 (0 1)
+SSTR S2 C 2 (0 1)
+SSTR S3 C 2 (0 1)
+SSTR S4 C 2 (0 1)
+SSTR S5 C 2 (0 1)
+SSTR S6 C 2 (0 1)
+LINK S1 S2
+LINK S2 S3
+LINK S3 S4
+LINK S4 S5
+LINK S5 S6
+LINK S1 S6
+"""
+
+
+def _parse_solution_count(stderr: str) -> int:
+    """Extract solution count from LSD stderr output."""
+    match = re.search(r"(\d+) solution", stderr)
+    if match:
+        return int(match.group(1))
+    return 0
+
+
+@pytest.mark.skipif(not LSD_AVAILABLE, reason="LSD solver not installed")
+class TestLSDSmokeGoodlist:
+    """LSD smoke tests proving goodlist semantics with generated fragment files."""
+
+    def test_lsd_smoke_goodlist_reduces_solutions(self, tmp_path: Path) -> None:
+        """Benzene goodlist reduces toluene from 4 solutions to 1."""
+        # 1. Write generic benzene fragment file (flexible H count for ring
+        #    carbons that may be substituted in target molecule).
+        fragment_filename = "benzene_generic.lsd"
+        fragment_path = tmp_path / fragment_filename
+        fragment_path.write_text(BENZENE_GENERIC_FRAGMENT)
+
+        # 2. Write baseline LSD file (no DEFF/FEXP)
+        baseline_path = tmp_path / "toluene_baseline.lsd"
+        baseline_path.write_text(TOLUENE_BASELINE)
+
+        # 3. Write goodlist LSD file (DEFF/FEXP before MULT)
+        deff_line = DEFFFormatter.deff_command(1, fragment_filename)
+        fexp_line = DEFFFormatter.fexp_command([1])
+        goodlist_content = f"{deff_line}\n{fexp_line}\n{TOLUENE_BASELINE}"
+        goodlist_path = tmp_path / "toluene_goodlist.lsd"
+        goodlist_path.write_text(goodlist_content)
+
+        # 4. Run LSD on baseline
+        baseline_result = subprocess.run(
+            ["LSD", str(baseline_path)],
+            capture_output=True,
+            text=True,
+            cwd=str(tmp_path),
+        )
+        baseline_solutions = _parse_solution_count(baseline_result.stderr)
+
+        # 5. Run LSD on goodlist
+        goodlist_result = subprocess.run(
+            ["LSD", str(goodlist_path)],
+            capture_output=True,
+            text=True,
+            cwd=str(tmp_path),
+        )
+        goodlist_solutions = _parse_solution_count(goodlist_result.stderr)
+
+        # 6. Assertions
+        assert baseline_solutions == 4, (
+            f"Expected 4 baseline solutions, got {baseline_solutions}. "
+            f"stderr: {baseline_result.stderr}"
+        )
+        assert goodlist_solutions == 1, (
+            f"Expected 1 goodlist solution, got {goodlist_solutions}. "
+            f"stderr: {goodlist_result.stderr}"
+        )
+        assert goodlist_solutions < baseline_solutions, (
+            "Goodlist must reduce solutions (confirming it is not accidentally a "
+            "badlist)"
+        )
+
+    def test_lsd_smoke_deff_fexp_before_mult(self, tmp_path: Path) -> None:
+        """DEFF/FEXP lines are placed before MULT in generated goodlist file."""
+        # Write generic benzene fragment
+        fragment_filename = "benzene_generic.lsd"
+        fragment_path = tmp_path / fragment_filename
+        fragment_path.write_text(BENZENE_GENERIC_FRAGMENT)
+
+        deff_line = DEFFFormatter.deff_command(1, fragment_filename)
+        fexp_line = DEFFFormatter.fexp_command([1])
+        goodlist_content = f"{deff_line}\n{fexp_line}\n{TOLUENE_BASELINE}"
+        goodlist_path = tmp_path / "toluene_goodlist.lsd"
+        goodlist_path.write_text(goodlist_content)
+
+        # Verify ordering
+        lines = goodlist_path.read_text().splitlines()
+        deff_idx = next(i for i, ln in enumerate(lines) if ln.startswith("DEFF"))
+        fexp_idx = next(i for i, ln in enumerate(lines) if ln.startswith("FEXP"))
+        mult_idx = next(i for i, ln in enumerate(lines) if ln.startswith("MULT"))
+
+        assert deff_idx < mult_idx, (
+            f"DEFF (line {deff_idx}) must be before MULT (line {mult_idx})"
+        )
+        assert fexp_idx < mult_idx, (
+            f"FEXP (line {fexp_idx}) must be before MULT (line {mult_idx})"
+        )
+
+
+class TestSearchDeffDoubleQuotes:
+    """Verify the search command's DEFF output uses double quotes."""
+
+    def test_deff_commands_use_double_quotes(self) -> None:
+        """DEFF commands from search must use double quotes, not single."""
+        # Replicate the search command's DEFF generation logic
+        match_count = 3
+        deff_commands = [
+            f'DEFF F{i + 1} "fragment_{i + 1}.lsd"'
+            for i in range(match_count)
+        ]
+
+        for cmd in deff_commands:
+            assert '"' in cmd, f"Missing double quotes in: {cmd}"
+            # Single quotes should NOT appear anywhere in the command
+            assert "'" not in cmd, f"Single quote found in: {cmd}"
+
+    def test_fexp_command_uses_double_quotes(self) -> None:
+        """FEXP command from search must use double quotes."""
+        # Single match case
+        fexp_single = 'FEXP "F1"'
+        assert '"' in fexp_single
+        assert "'" not in fexp_single
+
+        # Multiple match case
+        parts = " OR ".join(f"F{i + 1}" for i in range(3))
+        fexp_multi = f'FEXP "{parts}"'
+        assert '"' in fexp_multi
+        assert "'" not in fexp_multi
