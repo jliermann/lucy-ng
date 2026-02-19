@@ -8,7 +8,7 @@ from pathlib import Path
 import click
 
 from lucy_ng.database import DatabaseManager
-from lucy_ng.fragments import FragmentDatabaseManager
+from lucy_ng.fragments import DEFFFormatter, FragmentDatabaseManager
 from lucy_ng.fragments.extractor import SSCExtractor
 from lucy_ng.fragments.searcher import FragmentSearcher
 
@@ -181,19 +181,19 @@ def search(
         prescreening_count = searcher.prescreening_count
         fine_match_count = searcher.fine_match_count
 
-    # Build DEFF commands
+    # Build DEFF commands (double quotes required by LSD 3.4.9)
     deff_commands = [
-        f"DEFF F{i + 1} 'fragment_{i + 1}.lsd'" for i in range(len(matches))
+        f'DEFF F{i + 1} "fragment_{i + 1}.lsd"' for i in range(len(matches))
     ]
 
-    # Build FEXP command
+    # Build FEXP command (double quotes required by LSD 3.4.9)
     if len(matches) == 0:
         fexp_command = ""
     elif len(matches) == 1:
-        fexp_command = "FEXP 'F1'"
+        fexp_command = 'FEXP "F1"'
     else:
         parts = " OR ".join(f"F{i + 1}" for i in range(len(matches)))
-        fexp_command = f"FEXP '{parts}'"
+        fexp_command = f'FEXP "{parts}"'
 
     # Output
     if output_format == "json":
@@ -315,3 +315,77 @@ def build(
         total_count = fragment_db_mgr.get_ssc_count()
         click.echo("")
         click.echo(f"Fragment DB total SSCs: {total_count:,}")
+
+
+@fragment.command("to-lsd")
+@click.argument("smiles", type=str)
+@click.option(
+    "--output-dir",
+    type=click.Path(path_type=Path),
+    default=None,
+    help="Directory to write fragment file. Defaults to current directory.",
+)
+@click.option(
+    "--format",
+    "output_format",
+    type=click.Choice(["text", "json"]),
+    default="json",
+    show_default=True,
+    help="Output format.",
+)
+def to_lsd(smiles: str, output_dir: Path | None, output_format: str) -> None:
+    """Generate an LSD fragment file from SMILES.
+
+    Converts a SMILES string to an LSD SSTR/LINK fragment definition file
+    and writes it to the output directory (or current directory by default).
+
+    The generated file can be referenced from an LSD input file using the
+    printed DEFF/FEXP commands.
+
+    \b
+    Examples:
+        lucy fragment to-lsd "Cc1ccccc1"
+
+        lucy fragment to-lsd "c1ccccc1" --format text
+
+        lucy fragment to-lsd "c1ccccc1" --output-dir analysis/iteration_01/
+    """
+    try:
+        written_path = DEFFFormatter.write_fragment_file(
+            smiles, output_dir=output_dir
+        )
+    except ValueError as e:
+        click.echo(f"Error: {e}", err=True)
+        raise click.Abort() from e
+
+    deff_cmd = DEFFFormatter.deff_command(1, written_path.name)
+    fexp_cmd = DEFFFormatter.fexp_command([1])
+    content = written_path.read_text()
+
+    # Count SSTR lines for atom count
+    atom_count = sum(1 for ln in content.splitlines() if ln.startswith("SSTR"))
+
+    # Extract canonical SMILES from comment line
+    canonical = ""
+    for line in content.splitlines():
+        if line.startswith("; Fragment:"):
+            canonical = line.split(": ", 1)[1].strip()
+            break
+
+    if output_format == "json":
+        output = {
+            "smiles": smiles,
+            "canonical": canonical,
+            "filename": written_path.name,
+            "path": str(written_path),
+            "deff_command": deff_cmd,
+            "fexp_command": fexp_cmd,
+            "atom_count": atom_count,
+            "content": content,
+        }
+        click.echo(json.dumps(output, indent=2))
+    else:
+        click.echo(f"Fragment file written: {written_path}")
+        click.echo(f"Atoms: {atom_count}")
+        click.echo(f"DEFF command: {deff_cmd}")
+        click.echo(f"FEXP command: {fexp_cmd}")
