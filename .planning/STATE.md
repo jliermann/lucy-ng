@@ -5,17 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-19)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a collaborative team architecture that self-corrects through peer review
-**Current focus:** v5.0 Fragment Library — Phase 52 complete (DEFFFormatter + CLI + LSD smoke test)
+**Current focus:** v5.0 Fragment Library — Phase 54 (Multi-Compound UAT) next
 
 ## Current Position
 
 **Milestone**: v5.0 Fragment Library
-**Phase**: 52 of 54 (LSD Fragment Formatter) -- COMPLETE
-**Current Plan**: 2 of 2 (complete)
-**Status**: Phase Complete
-**Last activity**: 2026-02-19 — Phase 52 Plan 02 executed: CLI to-lsd command + LSD smoke test
+**Phase**: 54 of 54 (Multi-Compound UAT)
+**Status**: Ready to plan
+**Last activity**: 2026-02-19 — Phase 53 complete (agent integration, 3 files modified)
 
-Progress: [████████░░] 80% (9 plans complete)
+Progress: [█████████░] 90% (10 plans complete)
 
 ## Completed Milestones
 
@@ -32,10 +31,10 @@ Progress: [████████░░] 80% (9 plans complete)
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 88 across 7 milestones (+ 6 in v5.0)
+- Total plans completed: 88 across 7 milestones (+ 7 in v5.0)
 - v4.0: 9 phases, 21 plans, 48 commits, 2 days
-- v5.0: 9 plans, 15 commits, ~87 min
-- Total execution time: ~78.2 hours + 71 min
+- v5.0: 10 plans, 15 commits, ~90 min
+- Total execution time: ~78.2 hours + 74 min
 
 ## Accumulated Context
 
@@ -44,6 +43,9 @@ Progress: [████████░░] 80% (9 plans complete)
 Decisions are logged in PROJECT.md Key Decisions table.
 
 Recent decisions affecting v5.0 (latest first):
+- Phase 53 Plan 01: Agent files outside lucy-ng git repo (~/.claude/) -- changes tracked in summary, no per-task commits
+- Phase 53 Plan 01: DEFF F1/FEXP ordering: after inventory comment block, before first MULT (different from DEFF NOT after correlations)
+- Phase 53 Plan 01: Fragment persistence follows same rule as DEFF NOT: copy from previous LSD file, never reconstruct
 - Phase 52 Plan 02: Generic benzene fragment with (0 1) H counts for smoke test -- exact H counts too restrictive for substituted ring matching
 - Phase 52 Plan 02: Fragment file written to CWD by default with bare filename in DEFF command (LSD resolves relative to working directory)
 - Phase 52 Plan 01: HybridizationType from rdkit.Chem.rdchem (not rdkit.Chem.Hybridization which does not exist)
@@ -85,8 +87,8 @@ See `background/sherlock-analysis.md` for full Sherlock vs lucy-ng comparison. F
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 52-02-PLAN.md (Phase 52 complete)
+Stopped at: Completed 53-01-PLAN.md (Phase 53 complete)
 Resume file: None
 
 ---
-*Last updated: 2026-02-19 after Phase 52 Plan 02 complete*
+*Last updated: 2026-02-19 after Phase 53 Plan 01 complete*

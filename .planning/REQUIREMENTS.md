@@ -31,10 +31,10 @@ Requirements for fragment library milestone. Each maps to roadmap phases.
 
 ### Agent Integration
 
-- [ ] **AGNT-01**: lsd-engineer runs fragment search before each LSD iteration and applies best fragment as DEFF/FEXP
-- [ ] **AGNT-02**: Sequential injection protocol: one fragment at a time, discard if zero solutions, log conflict and continue
-- [ ] **AGNT-03**: Fragment constraints tracked in constraint inventory JSON (DEFF/FEXP section)
-- [ ] **AGNT-04**: Devils-advocate verifies fragment file existence before LSD solver run
+- [x] **AGNT-01**: lsd-engineer runs fragment search before each LSD iteration and applies best fragment as DEFF/FEXP
+- [x] **AGNT-02**: Sequential injection protocol: one fragment at a time, discard if zero solutions, log conflict and continue
+- [x] **AGNT-03**: Fragment constraints tracked in constraint inventory JSON (DEFF/FEXP section)
+- [x] **AGNT-04**: Devils-advocate verifies fragment file existence before LSD solver run
 
 ### Validation
 
@@ -89,10 +89,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LINT-01 | Phase 52 | Complete |
 | LINT-02 | Phase 52 | Complete |
 | LINT-03 | Phase 52 | Complete |
-| AGNT-01 | Phase 53 | Pending |
-| AGNT-02 | Phase 53 | Pending |
-| AGNT-03 | Phase 53 | Pending |
-| AGNT-04 | Phase 53 | Pending |
+| AGNT-01 | Phase 53 | Complete |
+| AGNT-02 | Phase 53 | Complete |
+| AGNT-03 | Phase 53 | Complete |
+| AGNT-04 | Phase 53 | Complete |
 | VALD-01 | Phase 54 | Pending |
 | VALD-02 | Phase 54 | Pending |
 
@@ -103,4 +103,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-19*
-*Last updated: 2026-02-19 after roadmap created — traceability complete*
+*Last updated: 2026-02-19 after Phase 53 complete — AGNT-01 through AGNT-04 complete*
