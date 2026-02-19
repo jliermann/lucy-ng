@@ -5,17 +5,17 @@
 See: .planning/PROJECT.md (updated 2026-02-19)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a collaborative team architecture that self-corrects through peer review
-**Current focus:** v5.0 Fragment Library — Phase 52 Plan 01 complete (DEFFFormatter); Plan 02 next (CLI)
+**Current focus:** v5.0 Fragment Library — Phase 52 complete (DEFFFormatter + CLI + LSD smoke test)
 
 ## Current Position
 
 **Milestone**: v5.0 Fragment Library
-**Phase**: 52 of 54 (LSD Fragment Formatter)
-**Current Plan**: 2 of 2
-**Status**: In Progress
-**Last activity**: 2026-02-19 — Phase 52 Plan 01 executed: DEFFFormatter for SSTR/LINK fragment files
+**Phase**: 52 of 54 (LSD Fragment Formatter) -- COMPLETE
+**Current Plan**: 2 of 2 (complete)
+**Status**: Phase Complete
+**Last activity**: 2026-02-19 — Phase 52 Plan 02 executed: CLI to-lsd command + LSD smoke test
 
-Progress: [███████░░░] 70% (7 plans complete)
+Progress: [████████░░] 80% (9 plans complete)
 
 ## Completed Milestones
 
@@ -32,10 +32,10 @@ Progress: [███████░░░] 70% (7 plans complete)
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 88 across 7 milestones (+ 4 in v5.0)
+- Total plans completed: 88 across 7 milestones (+ 6 in v5.0)
 - v4.0: 9 phases, 21 plans, 48 commits, 2 days
-- v5.0: 7 plans, 11 commits, ~80 min
-- Total execution time: ~78.2 hours + 64 min
+- v5.0: 9 plans, 15 commits, ~87 min
+- Total execution time: ~78.2 hours + 71 min
 
 ## Accumulated Context
 
@@ -44,6 +44,8 @@ Progress: [███████░░░] 70% (7 plans complete)
 Decisions are logged in PROJECT.md Key Decisions table.
 
 Recent decisions affecting v5.0 (latest first):
+- Phase 52 Plan 02: Generic benzene fragment with (0 1) H counts for smoke test -- exact H counts too restrictive for substituted ring matching
+- Phase 52 Plan 02: Fragment file written to CWD by default with bare filename in DEFF command (LSD resolves relative to working directory)
 - Phase 52 Plan 01: HybridizationType from rdkit.Chem.rdchem (not rdkit.Chem.Hybridization which does not exist)
 - Phase 52 Plan 01: type: ignore[no-untyped-call] for RDKit GetAtoms/GetBonds (untyped C++ stubs in strict mypy)
 - Phase 51 Plan 02: DEFF/FEXP are path templates -- actual .lsd files written by Phase 52
@@ -83,8 +85,8 @@ See `background/sherlock-analysis.md` for full Sherlock vs lucy-ng comparison. F
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 52-01-PLAN.md
+Stopped at: Completed 52-02-PLAN.md (Phase 52 complete)
 Resume file: None
 
 ---
-*Last updated: 2026-02-19 after Phase 52 Plan 01 complete*
+*Last updated: 2026-02-19 after Phase 52 Plan 02 complete*
