@@ -10,6 +10,20 @@ Lucy-ng is an AI-agent skill for Computer-Assisted Structure Elucidation (CASE) 
 
 An AI agent can autonomously determine the structure of an unknown organic compound from its NMR spectra, with a multi-agent architecture that prevents unproductive loops and keeps the elucidation on track.
 
+## Current Milestone: v5.0 Fragment Library
+
+**Goal:** Build a substructure-subspectrum correlation (SSC) fragment library from the existing compound database, enabling fragment search and goodlist constraint injection to dramatically reduce LSD solution counts.
+
+**Target features:**
+- SSC extraction pipeline from 928K compound database
+- Bitset fingerprint index for fast pre-screening (256-bit, 2 ppm bins)
+- Fragment search CLI command matching experimental spectra against library
+- DEFF/FEXP goodlist constraint injection into LSD files
+- LSD-engineer agent integration for automatic fragment application
+- Multi-compound UAT to validate fragment impact
+
+**Strategic context:** In Sherlock (Wenk thesis), the 24.5M SSC fragment library reduced 34/40 cases to a single solution. This is the single highest-impact feature for CASE success rate. See `background/sherlock-analysis.md` for full analysis.
+
 ## Current State
 
 **Version:** v4.0 shipped 2026-02-18
@@ -18,15 +32,7 @@ An AI agent can autonomously determine the structure of an unknown organic compo
 **Agent definitions:** 3,460 lines across 5 agent files + orchestrator skill
 **Live UAT:** Ibuprofen team-based CASE — all v3.0 constraint-loss bugs fixed, aromatic ring awareness added
 
-**What v4.0 delivered:**
-- 5-agent collaborative CASE team via TeamCreate (coordinator, nmr-chemist, lsd-engineer, solution-analyst, devils-advocate)
-- Constraint inventory system preventing constraint loss across iterations
-- Devils-advocate pre-run validation gate with three-check reconciliation
-- Aromatic ring awareness (nmr-chemist flags expectation, solution-analyst verifies, remediation guidance)
-- Coordinator-as-sole-writer pattern for CASE-PROGRESS.md
-- Diagnostic specialist integration with team context and constraint inventory
-
-**Known limitation:** 4J HMBC couplings through aromatic rings silently exclude correct structures. Ibuprofen correct structure not found due to 3 W-pathway 4J correlations enforced as 2-3 bond. Needs statistical 4J detection in next milestone.
+**Known limitation:** 4J HMBC couplings through aromatic rings silently exclude correct structures. Ibuprofen correct structure not found due to 3 W-pathway 4J correlations enforced as 2-3 bond. Deferred to v5.1.
 
 ## Architecture
 

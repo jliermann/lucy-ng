@@ -2,16 +2,17 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-18)
+See: .planning/PROJECT.md (updated 2026-02-19)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a collaborative team architecture that self-corrects through peer review
-**Current focus:** Planning next milestone
+**Current focus:** v5.0 Fragment Library — defining requirements
 
 ## Current Position
 
-**Milestone**: None active — v4.0 shipped, next milestone not yet started
-**Status**: Ready for `/gsd:new-milestone`
-**Last activity**: 2026-02-18 — v4.0 Team-Based CASE archived
+**Milestone**: v5.0 Fragment Library
+**Phase**: Not started (defining requirements)
+**Status**: Defining requirements
+**Last activity**: 2026-02-19 — Milestone v5.0 started
 
 ## Completed Milestones
 
@@ -40,20 +41,25 @@ Decisions are logged in PROJECT.md Key Decisions table.
 
 ### Pending Todos
 
-- Statistical 4J coupling detection (DB-based probability for atom-type pairs)
+- Statistical 4J coupling detection (deferred to v5.1)
 - Multi-compound UAT (pulegone, virgiline, etc.)
-- COSY correlation integration
+- COSY correlation integration (deferred to v5.2)
+- NP-likeness scoring (deferred to v5.2)
 
 ### Blockers/Concerns
 
-- 4J HMBC couplings silently exclude correct structures — highest priority for next milestone
+- 4J HMBC couplings silently exclude correct structures — deferred to v5.1
 - Database regeneration: End users with pre-v3.0 databases must regenerate
+
+### Strategic Reference
+
+See `background/sherlock-analysis.md` for full Sherlock vs lucy-ng comparison with prioritized milestone sequence.
 
 ## Session Continuity
 
-Last session: 2026-02-18
-Stopped at: v4.0 milestone archived, ready for /gsd:new-milestone
+Last session: 2026-02-19
+Stopped at: v5.0 milestone started, defining requirements
 Resume file: None
 
 ---
-*Last updated: 2026-02-18 after v4.0 milestone archived*
+*Last updated: 2026-02-19 after v5.0 milestone started*
