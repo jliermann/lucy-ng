@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-19)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a collaborative team architecture that self-corrects through peer review
-**Current focus:** v5.0 Fragment Library — Phase 54 (Multi-Compound UAT) next
+**Current focus:** v5.0 Fragment Library — Phase 54 Plan 01 complete (self-search validation), Plan 02 pending (full extraction running)
 
 ## Current Position
 
 **Milestone**: v5.0 Fragment Library
 **Phase**: 54 of 54 (Multi-Compound UAT)
-**Status**: Ready to plan
-**Last activity**: 2026-02-19 — Phase 53 complete (agent integration, 3 files modified)
+**Status**: In progress (Plan 01 complete, Plan 02 pending)
+**Last activity**: 2026-02-19 — Phase 54 Plan 01 complete (self-search recall 100%, full extraction running)
 
-Progress: [█████████░] 90% (10 plans complete)
+Progress: [█████████░] 92% (11 plans complete)
 
 ## Completed Milestones
 
@@ -33,7 +33,7 @@ Progress: [█████████░] 90% (10 plans complete)
 **Velocity:**
 - Total plans completed: 88 across 7 milestones (+ 7 in v5.0)
 - v4.0: 9 phases, 21 plans, 48 commits, 2 days
-- v5.0: 10 plans, 15 commits, ~90 min
+- v5.0: 11 plans, 15 commits, ~92 min
 - Total execution time: ~78.2 hours + 74 min
 
 ## Accumulated Context
@@ -43,6 +43,8 @@ Progress: [█████████░] 90% (10 plans complete)
 Decisions are logged in PROJECT.md Key Decisions table.
 
 Recent decisions affecting v5.0 (latest first):
+- Phase 54 Plan 01: Self-search recall 100% validates 2 ppm bin size and BFS extraction pipeline end-to-end
+- Phase 54 Plan 01: Full extraction started as background process (~4-8 hours at ~65 compounds/sec); Plan 02 blocked until complete
 - Phase 53 Plan 01: Agent files outside lucy-ng git repo (~/.claude/) -- changes tracked in summary, no per-task commits
 - Phase 53 Plan 01: DEFF F1/FEXP ordering: after inventory comment block, before first MULT (different from DEFF NOT after correlations)
 - Phase 53 Plan 01: Fragment persistence follows same rule as DEFF NOT: copy from previous LSD file, never reconstruct
@@ -87,8 +89,8 @@ See `background/sherlock-analysis.md` for full Sherlock vs lucy-ng comparison. F
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 53-01-PLAN.md (Phase 53 complete)
+Stopped at: Completed 54-01-PLAN.md (self-search recall validated, full extraction running)
 Resume file: None
 
 ---
-*Last updated: 2026-02-19 after Phase 53 Plan 01 complete*
+*Last updated: 2026-02-19 after Phase 54 Plan 01 complete*

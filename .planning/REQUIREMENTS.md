@@ -39,7 +39,7 @@ Requirements for fragment library milestone. Each maps to roadmap phases.
 ### Validation
 
 - [ ] **VALD-01**: Multi-compound UAT on 5+ compounds from Sherlock test set with solution count before/after fragment injection
-- [ ] **VALD-02**: Self-search validation: 100 compounds' own spectra must find their own SSCs (>99% recall)
+- [x] **VALD-02**: Self-search validation: 100 compounds' own spectra must find their own SSCs (>99% recall)
 
 ## Future Requirements
 
@@ -94,7 +94,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AGNT-03 | Phase 53 | Complete |
 | AGNT-04 | Phase 53 | Complete |
 | VALD-01 | Phase 54 | Pending |
-| VALD-02 | Phase 54 | Pending |
+| VALD-02 | Phase 54 | Complete |
 
 **Coverage:**
 - v5.0 requirements: 19 total
@@ -103,4 +103,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-19*
-*Last updated: 2026-02-19 after Phase 53 complete — AGNT-01 through AGNT-04 complete*
+*Last updated: 2026-02-19 after Phase 54 Plan 01 complete — VALD-02 complete (self-search recall 100%)*
