@@ -5,17 +5,17 @@
 See: .planning/PROJECT.md (updated 2026-02-19)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a collaborative team architecture that self-corrects through peer review
-**Current focus:** v5.0 Fragment Library — Phase 51 complete (search algorithm + CLI); Phase 52 next
+**Current focus:** v5.0 Fragment Library — Phase 52 Plan 01 complete (DEFFFormatter); Plan 02 next (CLI)
 
 ## Current Position
 
 **Milestone**: v5.0 Fragment Library
 **Phase**: 52 of 54 (LSD Fragment Formatter)
-**Current Plan**: 1 of 2
-**Status**: Ready
-**Last activity**: 2026-02-19 — Phase 51 Plan 02 executed: lucy fragment search CLI
+**Current Plan**: 2 of 2
+**Status**: In Progress
+**Last activity**: 2026-02-19 — Phase 52 Plan 01 executed: DEFFFormatter for SSTR/LINK fragment files
 
-Progress: [██████░░░░] 60% (6 plans complete)
+Progress: [███████░░░] 70% (7 plans complete)
 
 ## Completed Milestones
 
@@ -32,10 +32,10 @@ Progress: [██████░░░░] 60% (6 plans complete)
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 88 across 7 milestones (+ 3 in v5.0)
+- Total plans completed: 88 across 7 milestones (+ 4 in v5.0)
 - v4.0: 9 phases, 21 plans, 48 commits, 2 days
-- v5.0: 6 plans, 9 commits, ~69 min
-- Total execution time: ~78.2 hours + 53 min
+- v5.0: 7 plans, 11 commits, ~80 min
+- Total execution time: ~78.2 hours + 64 min
 
 ## Accumulated Context
 
@@ -44,6 +44,8 @@ Progress: [██████░░░░] 60% (6 plans complete)
 Decisions are logged in PROJECT.md Key Decisions table.
 
 Recent decisions affecting v5.0 (latest first):
+- Phase 52 Plan 01: HybridizationType from rdkit.Chem.rdchem (not rdkit.Chem.Hybridization which does not exist)
+- Phase 52 Plan 01: type: ignore[no-untyped-call] for RDKit GetAtoms/GetBonds (untyped C++ stubs in strict mypy)
 - Phase 51 Plan 02: DEFF/FEXP are path templates -- actual .lsd files written by Phase 52
 - Phase 51 Plan 02: prescreening_count/fine_match_count as public attributes on FragmentSearcher (not changing return type)
 - Phase 51 Plan 01: LSB-first bitorder='little' in unpackbits/packbits to match shifts_to_fingerprint encoding
@@ -81,8 +83,8 @@ See `background/sherlock-analysis.md` for full Sherlock vs lucy-ng comparison. F
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Phase 51 complete — fragment search CLI shipped
+Stopped at: Completed 52-01-PLAN.md
 Resume file: None
 
 ---
-*Last updated: 2026-02-19 after Phase 51 Plan 02 complete*
+*Last updated: 2026-02-19 after Phase 52 Plan 01 complete*

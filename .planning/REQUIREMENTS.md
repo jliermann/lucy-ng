@@ -25,9 +25,9 @@ Requirements for fragment library milestone. Each maps to roadmap phases.
 
 ### LSD Integration
 
-- [ ] **LINT-01**: Fragment SMILES converted to LSD DEFF goodlist file format (validated against LSD manual)
+- [x] **LINT-01**: Fragment SMILES converted to LSD DEFF goodlist file format (validated against LSD manual)
 - [ ] **LINT-02**: CLI `lucy fragment to-lsd` generates fragment definition file from SMILES
-- [ ] **LINT-03**: DEFF/FEXP commands placed before MULT in LSD file (critical ordering)
+- [x] **LINT-03**: DEFF/FEXP commands placed before MULT in LSD file (critical ordering)
 
 ### Agent Integration
 
@@ -86,9 +86,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SRCH-04 | Phase 51 | Complete |
 | SRCH-05 | Phase 51 | Complete |
 | SRCH-06 | Phase 51 | Complete |
-| LINT-01 | Phase 52 | Pending |
+| LINT-01 | Phase 52 | Complete |
 | LINT-02 | Phase 52 | Pending |
-| LINT-03 | Phase 52 | Pending |
+| LINT-03 | Phase 52 | Complete |
 | AGNT-01 | Phase 53 | Pending |
 | AGNT-02 | Phase 53 | Pending |
 | AGNT-03 | Phase 53 | Pending |
