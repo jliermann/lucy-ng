@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-19)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a collaborative team architecture that self-corrects through peer review
-**Current focus:** v5.0 Fragment Library — Phase 49 ready to plan
+**Current focus:** v5.0 Fragment Library — Phase 49 Plan 01 complete; Phase 50 ready to plan
 
 ## Current Position
 
 **Milestone**: v5.0 Fragment Library
 **Phase**: 49 of 54 (Fragment Schema and Infrastructure)
-**Status**: Ready to plan
-**Last activity**: 2026-02-19 — v5.0 roadmap created (6 phases, 19 requirements mapped)
+**Status**: Phase 49 complete (1/1 plans done)
+**Last activity**: 2026-02-19 — Phase 49 Plan 01 executed: fragments/ module with schema v7, SSCRecord/SSCMatch models, FragmentDatabaseManager
 
-Progress: [░░░░░░░░░░] 0% (0 plans complete)
+Progress: [█░░░░░░░░░] 10% (1 plan complete)
 
 ## Completed Milestones
 
@@ -31,9 +31,10 @@ Progress: [░░░░░░░░░░] 0% (0 plans complete)
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 87 across 7 milestones
+- Total plans completed: 88 across 7 milestones (+ 1 in v5.0)
 - v4.0: 9 phases, 21 plans, 48 commits, 2 days
-- Total execution time: ~78.2 hours
+- v5.0: 1 plan, 2 commits, 3 min
+- Total execution time: ~78.2 hours + 3 min
 
 ## Accumulated Context
 
@@ -46,6 +47,7 @@ Recent decisions affecting v5.0:
 - Validate 2 ppm bin size on 1K sample BEFORE full 24M extraction — bin size is unrecoverable once baked in
 - DEFF goodlist LSD syntax requires LSD smoke test validation BEFORE agent integration — goodlist vs DEFF NOT semantic confusion is silent failure
 - Phases 51 and 52 can run in parallel — both depend only on SSCMatch model from Phase 49, not on Phase 50 data
+- Phase 49: fragments/ module fully independent from database/ (zero cross-imports), INSERT OR IGNORE for bin_size protects existing populated DBs
 
 ### Pending Todos
 
@@ -66,8 +68,8 @@ See `background/sherlock-analysis.md` for full Sherlock vs lucy-ng comparison. F
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: v5.0 roadmap created; 6 phases defined (49-54), 19/19 requirements mapped
+Stopped at: Completed 49-01-PLAN.md — fragments/ module with schema v7 and FragmentDatabaseManager; Phase 50 ready
 Resume file: None
 
 ---
-*Last updated: 2026-02-19 after v5.0 roadmap created*
+*Last updated: 2026-02-19 after Phase 49 Plan 01 complete*
