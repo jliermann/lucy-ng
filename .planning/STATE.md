@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-19)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a collaborative team architecture that self-corrects through peer review
-**Current focus:** v5.0 Fragment Library — Phase 49 Plans 01-02 complete; Phase 50 ready to execute
+**Current focus:** v5.0 Fragment Library — Phase 50 Plans 01-02 complete; Phase 51 (fragment search) is next
 
 ## Current Position
 
 **Milestone**: v5.0 Fragment Library
-**Phase**: 50 of 54 (SSC Extraction Pipeline)
-**Status**: In progress (Plan 01 complete, Plan 02 remaining)
-**Last activity**: 2026-02-19 — Phase 50 Plan 01 executed: fingerprint utility + checkpoint methods
+**Phase**: 50 of 54 (SSC Extraction Pipeline) — COMPLETE
+**Status**: Phase 50 complete (both plans done). Next: Phase 51 Fragment Search
+**Last activity**: 2026-02-19 — Phase 50 Plan 02 executed: BFS fragmentation pipeline + CLI
 
-Progress: [███░░░░░░░] 30% (3 plans complete)
+Progress: [████░░░░░░] 40% (4 plans complete)
 
 ## Completed Milestones
 
@@ -33,8 +33,8 @@ Progress: [███░░░░░░░] 30% (3 plans complete)
 **Velocity:**
 - Total plans completed: 88 across 7 milestones (+ 2 in v5.0)
 - v4.0: 9 phases, 21 plans, 48 commits, 2 days
-- v5.0: 2 plans, 4 commits, ~15 min
-- Total execution time: ~78.2 hours + 15 min
+- v5.0: 4 plans, 6 commits, ~44 min
+- Total execution time: ~78.2 hours + 44 min
 
 ## Accumulated Context
 
@@ -51,6 +51,9 @@ Recent decisions affecting v5.0:
 - Phase 49 Plan 02: existence check (db_path.exists()) before FragmentDatabaseManager open prevents sqlite3 silent empty-file creation
 - Phase 50 Plan 01: Fingerprint valid range [0, 512) ppm — out-of-range shifts silently ignored (set semantics, not error)
 - Phase 50 Plan 01: clear_checkpoints uses LIKE 'checkpoint_%' pattern to preserve schema_version/bin_size rows
+- Phase 50 Plan 02: Ring-centred environments expand ring bonds + all bonds to immediate non-ring neighbours (radius 1 expansion)
+- Phase 50 Plan 02: Sample mode counts processed compounds only (not skipped) — correct semantics for "validate on N compounds with shifts"
+- Phase 50 Plan 02: Sequence[tuple[int | None, float]] covariant annotation for public API — avoids mypy list invariance error
 
 ### Pending Todos
 
@@ -71,8 +74,8 @@ See `background/sherlock-analysis.md` for full Sherlock vs lucy-ng comparison. F
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Phase 50 Plan 01 complete — fingerprint utility + checkpoint methods
+Stopped at: Phase 50 Plan 02 complete — BFS fragmentation pipeline + lucy fragment build CLI
 Resume file: None
 
 ---
-*Last updated: 2026-02-19 after Phase 50 Plan 01 complete*
+*Last updated: 2026-02-19 after Phase 50 Plan 02 complete*
