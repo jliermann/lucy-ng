@@ -5,16 +5,17 @@
 See: .planning/PROJECT.md (updated 2026-02-19)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a collaborative team architecture that self-corrects through peer review
-**Current focus:** v5.0 Fragment Library — Phase 50 Plans 01-02 complete; Phase 51 (fragment search) is next
+**Current focus:** v5.0 Fragment Library — Phase 51 Plan 01 complete; Plan 02 (CLI) is next
 
 ## Current Position
 
 **Milestone**: v5.0 Fragment Library
 **Phase**: 51 of 54 (Fragment Search Engine)
-**Status**: Ready to plan
-**Last activity**: 2026-02-19 — Phase 50 Plan 02 executed: BFS fragmentation pipeline + CLI
+**Current Plan**: 2 of 2
+**Status**: Executing
+**Last activity**: 2026-02-19 — Phase 51 Plan 01 executed: fragment search algorithm
 
-Progress: [████░░░░░░] 40% (4 plans complete)
+Progress: [█████░░░░░] 50% (5 plans complete)
 
 ## Completed Milestones
 
@@ -33,7 +34,7 @@ Progress: [████░░░░░░] 40% (4 plans complete)
 **Velocity:**
 - Total plans completed: 88 across 7 milestones (+ 2 in v5.0)
 - v4.0: 9 phases, 21 plans, 48 commits, 2 days
-- v5.0: 4 plans, 6 commits, ~44 min
+- v5.0: 5 plans, 8 commits, ~60 min
 - Total execution time: ~78.2 hours + 44 min
 
 ## Accumulated Context
@@ -42,7 +43,11 @@ Progress: [████░░░░░░] 40% (4 plans complete)
 
 Decisions are logged in PROJECT.md Key Decisions table.
 
-Recent decisions affecting v5.0:
+Recent decisions affecting v5.0 (latest first):
+- Phase 51 Plan 01: LSB-first bitorder='little' in unpackbits/packbits to match shifts_to_fingerprint encoding
+- Phase 51 Plan 01: np.asarray wrapper for np.all(..., axis=1) to resolve mypy union type without type: ignore
+- Phase 51 Plan 01: Chunked get_ssc_by_id at 999 IDs to respect SQLite placeholder limit
+Previous decisions:
 - Separate `lucy-ng-fragments.db` file (not merged into 2.8 GB main DB) — Dropbox sync and index contention
 - Validate 2 ppm bin size on 1K sample BEFORE full 24M extraction — bin size is unrecoverable once baked in
 - DEFF goodlist LSD syntax requires LSD smoke test validation BEFORE agent integration — goodlist vs DEFF NOT semantic confusion is silent failure
@@ -74,8 +79,8 @@ See `background/sherlock-analysis.md` for full Sherlock vs lucy-ng comparison. F
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Phase 50 Plan 02 complete — BFS fragmentation pipeline + lucy fragment build CLI
+Stopped at: Phase 51 Plan 01 complete — FragmentSearcher + expand_query_fingerprint
 Resume file: None
 
 ---
-*Last updated: 2026-02-19 after Phase 50 Plan 02 complete*
+*Last updated: 2026-02-19 after Phase 51 Plan 01 complete*

@@ -16,10 +16,10 @@ Requirements for fragment library milestone. Each maps to roadmap phases.
 
 ### Fragment Search
 
-- [ ] **SRCH-01**: 256-bit fingerprint generated per SSC (2 ppm bins, 0-510 ppm range) with tolerance expansion
-- [ ] **SRCH-02**: Boolean AND pre-screening eliminates non-matching SSCs before fine matching
-- [ ] **SRCH-03**: Fine spectral matching filters by DEV (2 ppm), AVGDEV (1 ppm), multiplicity, and equivalence
-- [ ] **SRCH-04**: Fragment results ranked by heavy atom count (descending) then AVGDEV (ascending)
+- [x] **SRCH-01**: 256-bit fingerprint generated per SSC (2 ppm bins, 0-510 ppm range) with tolerance expansion
+- [x] **SRCH-02**: Boolean AND pre-screening eliminates non-matching SSCs before fine matching
+- [x] **SRCH-03**: Fine spectral matching filters by DEV (2 ppm), AVGDEV (1 ppm), multiplicity, and equivalence
+- [x] **SRCH-04**: Fragment results ranked by heavy atom count (descending) then AVGDEV (ascending)
 - [ ] **SRCH-05**: CLI `lucy fragment search --shifts "..." --format json` returns ranked fragments with matched signals
 - [ ] **SRCH-06**: CLI `lucy fragment info` reports library statistics (SSC count, database size)
 
@@ -80,10 +80,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FRAG-02 | Phase 50 | Complete |
 | FRAG-03 | Phase 50 | Complete |
 | FRAG-04 | Phase 50 | Complete |
-| SRCH-01 | Phase 51 | Pending |
-| SRCH-02 | Phase 51 | Pending |
-| SRCH-03 | Phase 51 | Pending |
-| SRCH-04 | Phase 51 | Pending |
+| SRCH-01 | Phase 51 | Complete |
+| SRCH-02 | Phase 51 | Complete |
+| SRCH-03 | Phase 51 | Complete |
+| SRCH-04 | Phase 51 | Complete |
 | SRCH-05 | Phase 51 | Pending |
 | SRCH-06 | Phase 51 | Pending |
 | LINT-01 | Phase 52 | Pending |
