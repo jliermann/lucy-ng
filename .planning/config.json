@@ -3,8 +3,8 @@
   "depth": "standard",
   "project": "lucy-ng",
   "created": "2026-01-08",
-  "milestone_version": "v4.0",
-  "milestone_name": "Team-Based CASE",
+  "milestone_version": "v5.0",
+  "milestone_name": "Fragment Library",
   "workflow": {
     "auto_advance": false,
     "research": true
