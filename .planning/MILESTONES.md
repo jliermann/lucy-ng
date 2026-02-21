@@ -176,3 +176,32 @@
 
 ---
 
+
+## v5.0 Fragment Library (Shipped: 2026-02-21)
+
+**Delivered:** Substructure-subspectrum correlation (SSC) fragment library with 2.4M fragments from 928K compounds, two-phase search engine, DEFF/FEXP goodlist injection validated against LSD solver, and full CASE agent team integration — the last major feature gap for Sherlock parity.
+
+**Phases completed:** 49-54 (12 plans total)
+
+**Key accomplishments:**
+- Fragment database: 2,385,146 SSCs extracted from 928K compounds via BFS sphere fragmentation with bond-preservation rules (605 MB, schema v7, checkpointed 3.5-hour pipeline)
+- Fragment search engine: 256-bit fingerprint pre-screening + greedy fine matching (DEV 2 ppm, AVGDEV 1 ppm), ranked by atom count then deviation, sub-second search on 2.4M SSCs
+- DEFF/FEXP goodlist: SMILES-to-SSTR/LINK fragment file conversion validated with LSD smoke test (toluene: 4 solutions → 1 with benzene ring goodlist)
+- Agent integration: lsd-engineer searches fragments per iteration, devils-advocate verifies fragment files, orchestrator logs fragment status per iteration
+- Self-search recall: 100% on 100-compound sample (fingerprint indexing validated)
+- Full test suite: 867 tests (860 passing, 7 skipped), 20,974 lines Python
+
+**Stats:**
+- 6 phases, 12 plans, 47 commits
+- 61 files changed, +13,861 / -2,338 lines
+- 20,974 lines Python, 867 tests
+- 3 days (2026-02-19 → 2026-02-21)
+
+**Git range:** `feat(49-01)` → `docs(54)`
+
+**Known gaps:** VALD-01 (multi-compound CASE comparison) deferred — all 6 local test compounds have 4J HMBC coupling risk, making controlled A/B fragment comparison unreliable. Self-search validation (VALD-02) PASSED.
+
+**What's next:** Statistical 4J HMBC detection, non-aromatic test compounds for fragment UAT, COSY integration
+
+---
+

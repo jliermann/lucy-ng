@@ -10,29 +10,16 @@ Lucy-ng is an AI-agent skill for Computer-Assisted Structure Elucidation (CASE) 
 
 An AI agent can autonomously determine the structure of an unknown organic compound from its NMR spectra, with a multi-agent architecture that prevents unproductive loops and keeps the elucidation on track.
 
-## Current Milestone: v5.0 Fragment Library
-
-**Goal:** Build a substructure-subspectrum correlation (SSC) fragment library from the existing compound database, enabling fragment search and goodlist constraint injection to dramatically reduce LSD solution counts.
-
-**Target features:**
-- SSC extraction pipeline from 928K compound database
-- Bitset fingerprint index for fast pre-screening (256-bit, 2 ppm bins)
-- Fragment search CLI command matching experimental spectra against library
-- DEFF/FEXP goodlist constraint injection into LSD files
-- LSD-engineer agent integration for automatic fragment application
-- Multi-compound UAT to validate fragment impact
-
-**Strategic context:** In Sherlock (Wenk thesis), the 24.5M SSC fragment library reduced 34/40 cases to a single solution. This is the single highest-impact feature for CASE success rate. See `background/sherlock-analysis.md` for full analysis.
-
 ## Current State
 
-**Version:** v4.0 shipped 2026-02-18
-**Codebase:** ~18,963 lines Python, 768 tests, 10 CLI command groups
-**Database:** SQLite v6 schema with 928K compounds and 7.89M HOSE statistics
-**Agent definitions:** 3,460 lines across 5 agent files + orchestrator skill
-**Live UAT:** Ibuprofen team-based CASE — all v3.0 constraint-loss bugs fixed, aromatic ring awareness added
+**Version:** v5.0 shipped 2026-02-21
+**Codebase:** ~20,974 lines Python, 867 tests, 11 CLI command groups
+**Database:** SQLite v6 schema with 928K compounds, 7.89M HOSE statistics + fragment library (2.4M SSCs, 605 MB)
+**Agent definitions:** ~3,600 lines across 5 agent files + orchestrator skill (updated with fragment search workflow)
 
-**Known limitation:** 4J HMBC couplings through aromatic rings silently exclude correct structures. Ibuprofen correct structure not found due to 3 W-pathway 4J correlations enforced as 2-3 bond. Deferred to v5.1.
+**What shipped in v5.0:** Fragment library infrastructure — 2,385,146 SSCs from 928K compounds, two-phase search engine (fingerprint pre-screening + fine matching), DEFF/FEXP goodlist injection validated with LSD smoke test, full agent team integration. Self-search recall 100%.
+
+**Known limitation:** 4J HMBC couplings through aromatic rings silently exclude correct structures. All 6 local test compounds have this risk, preventing controlled fragment A/B testing. Statistical 4J detection is the highest-priority next feature.
 
 ## Architecture
 
@@ -84,13 +71,20 @@ An AI agent can autonomously determine the structure of an unknown organic compo
 - Aromatic ring awareness: nmr-chemist flags expectation, solution-analyst verifies, remediation guidance for 4J — v4.0
 - Diagnostic specialist integration with team context (constraint inventory, analysis/ paths) — v4.0
 
+### Validated (v5.0)
+
+- Fragment library: 2.4M SSCs from 928K compounds with two-phase search engine — v5.0
+- DEFF/FEXP goodlist injection validated with LSD smoke test — v5.0
+- Agent team integration: lsd-engineer fragment search, devils-advocate file verification — v5.0
+- Self-search recall 100% (fingerprint indexing validated) — v5.0
+
 ### Deferred
 
-- [ ] Fragment library for substructure suggestion (Priority 1 — see background/sherlock-analysis.md)
-- [ ] Statistical 4J HMBC coupling detection (Priority 2 — v4.0 UAT root cause)
+- [ ] Statistical 4J HMBC coupling detection (Priority 1 — v4.0/v5.0 UAT root cause)
+- [ ] Multi-compound CASE comparison UAT (blocked on 4J detection or non-aromatic test compounds)
 - [ ] Support for COSY correlations in LSD constraints (Priority 3)
 - [ ] NP-likeness scoring for solution filtering (Priority 4 — RDKit built-in)
-- [ ] Multi-compound UAT against Sherlock's 45-case benchmark
+- [ ] Multi-fragment sequential injection (FRAG-05)
 - [ ] Solvent-aware 13C prediction
 - [ ] Stereochemistry handling (E/Z, R/S)
 - [ ] Interactive CASE mode with user feedback loop
@@ -169,32 +163,38 @@ Minimum viable spectral data for v1:
 | Constraint inventory in LSD headers | v4.0: JSON block tracking all constraint types, read-previous-never-reconstruct rule, DA reconciliation | Good |
 | Coordinator-as-sole-writer | v4.0: Agents post via SendMessage, coordinator writes CASE-PROGRESS.md — prevents corruption | Good |
 | Aromatic ring awareness | v4.0: Post-ranking sanity check when NMR evidence shows aromatic pattern but solutions lack rings | Good — caught in UAT |
+| Separate fragment DB | v5.0: lucy-ng-fragments.db (605 MB) independent from main DB (2.8 GB) — prevents Dropbox sync contention | Good |
+| 2 ppm fingerprint bins | v5.0: 256-bit fingerprint with 2 ppm bins validated by 100% self-search recall on 1K sample | Good |
+| DEFF goodlist over badlist | v5.0: DEFF/FEXP constrains structures TO contain fragment (positive constraint, more powerful than exclusion) | Good — LSD smoke test confirms |
+| Fragment persistence rule | v5.0: Copy DEFF F1/FEXP from previous LSD file, never reconstruct — same as DEFF NOT rule | Good |
+| UAT deferral for 4J risk | v5.0: All 6 compounds have 4J HMBC risk, deferred CASE comparison to avoid confounding variables | Pending — need non-aromatic compounds |
 
 ## Technical State
 
-**Version:** v4.0 (shipped 2026-02-18)
-**Codebase:** ~18,963 lines Python, 768 tests
-**Tech stack:** Python 3.10+, Pydantic v2, nmrglue, RDKit, SQLite, Click
-**Database:** v6 schema with 928K compounds, 7.89M HOSE statistics
-**Agent definitions:** 3,460 lines across 6 files (5 agents + orchestrator skill)
+**Version:** v5.0 (shipped 2026-02-21)
+**Codebase:** ~20,974 lines Python, 867 tests
+**Tech stack:** Python 3.10+, Pydantic v2, nmrglue, RDKit, NumPy, SQLite, Click
+**Database:** v6 schema with 928K compounds, 7.89M HOSE statistics + fragment library (2.4M SSCs, 605 MB)
+**Agent definitions:** ~3,600 lines across 6 files (5 agents + orchestrator skill)
 
 **Capabilities:**
-- 10 CLI command groups, 26+ commands (thin data-access wrappers)
+- 11 CLI command groups, 30+ commands (thin data-access wrappers)
 - 4 statistical detection commands: hybridisation, neighbours, hhb, grouping
+- Fragment library: build, search, to-lsd, info commands
 - Two-tier ranking with badlist strained ring exclusion + aromatic ring sanity check
-- SQLite database with 928K compounds (COCONUT + NMRShiftDB)
+- SQLite databases: compound DB (928K compounds, COCONUT + NMRShiftDB) + fragment DB (2.4M SSCs)
 - 7.89M HOSE statistics for 13C prediction and statistical detection
-- Full CASE pipeline: peak picking → statistical detection → LSD generation → solving → ranking
+- Full CASE pipeline: peak picking → statistical detection → fragment search → LSD generation → solving → ranking
 - Sub-command skills: status, dereplicate, predict, sanitise, case (in ~/.claude/commands/lucy-ng/)
-- 5-agent CASE team: lucy-nmr-chemist.md, lucy-lsd-engineer.md, lucy-solution-analyst.md, lucy-devils-advocate.md + case.md orchestrator
+- 5-agent CASE team with fragment integration: lsd-engineer searches+injects fragments, devils-advocate verifies files
 - Diagnostic specialist: lucy-diagnostic.md (constraint inventory-aware, team context)
-- CASE orchestrator: spawns 5-agent team via TeamCreate, monitors CASE-PROGRESS.md, detects 4 loop patterns, intervenes with advisory constraints, delegates to diagnostic specialist
-- Constraint inventory: JSON tracking in LSD file headers, DA reconciliation gate
+- CASE orchestrator: spawns 5-agent team via TeamCreate, monitors CASE-PROGRESS.md, detects 4 loop patterns
+- Constraint inventory: JSON tracking in LSD file headers, DA reconciliation gate, DEFF/FEXP tracking
 
-**Known tech debt (from v4.0 UAT):**
-- 4J HMBC couplings through aromatic rings not detected — silently excludes correct structures
+**Known tech debt:**
+- 4J HMBC couplings through aromatic rings not detected — silently excludes correct structures (highest priority)
+- Multi-compound CASE UAT deferred — all test compounds have 4J risk
 - 3 WARNING-level write_progress template gaps (aromatic field propagation)
-- Multi-compound UAT not yet performed (only ibuprofen tested)
 
 ---
-*Last updated: 2026-02-18 after v4.0 milestone complete*
+*Last updated: 2026-02-21 after v5.0 milestone complete*
