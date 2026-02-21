@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-19)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a collaborative team architecture that self-corrects through peer review
-**Current focus:** v5.0 Fragment Library — Phase 54 Plan 01 complete (self-search validation), Plan 02 pending (full extraction running)
+**Current focus:** v5.0 Fragment Library — COMPLETE (all 6 phases done, 12 plans executed)
 
 ## Current Position
 
 **Milestone**: v5.0 Fragment Library
 **Phase**: 54 of 54 (Multi-Compound UAT)
-**Status**: In progress (Plan 01 complete, Plan 02 pending)
-**Last activity**: 2026-02-19 — Phase 54 Plan 01 complete (self-search recall 100%, full extraction running)
+**Status**: Complete (all plans executed)
+**Last activity**: 2026-02-21 — Phase 54 Plan 02 complete (UAT: self-search PASSED, CASE comparison DEFERRED)
 
-Progress: [█████████░] 92% (11 plans complete)
+Progress: [██████████] 100% (12 plans complete)
 
 ## Completed Milestones
 
@@ -31,10 +31,10 @@ Progress: [█████████░] 92% (11 plans complete)
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 88 across 7 milestones (+ 7 in v5.0)
+- Total plans completed: 88 across 7 milestones (+ 12 in v5.0)
 - v4.0: 9 phases, 21 plans, 48 commits, 2 days
-- v5.0: 11 plans, 15 commits, ~92 min
-- Total execution time: ~78.2 hours + 74 min
+- v5.0: 6 phases, 12 plans, 16 commits, 3 days
+- Total execution time: ~78.2 hours + ~2 hours (v5.0)
 
 ## Accumulated Context
 
@@ -43,8 +43,10 @@ Progress: [█████████░] 92% (11 plans complete)
 Decisions are logged in PROJECT.md Key Decisions table.
 
 Recent decisions affecting v5.0 (latest first):
+- Phase 54 Plan 02: Multi-compound CASE comparison (VALD-01) deferred — all 6 compounds have 4J HMBC risk
+- Phase 54 Plan 02: Fragment library accepted as infrastructure-complete based on self-search + integration tests
 - Phase 54 Plan 01: Self-search recall 100% validates 2 ppm bin size and BFS extraction pipeline end-to-end
-- Phase 54 Plan 01: Full extraction started as background process (~4-8 hours at ~65 compounds/sec); Plan 02 blocked until complete
+- Phase 54 Plan 01: Full extraction completed: 2,385,146 SSCs from 928K compounds (605 MB)
 - Phase 53 Plan 01: Agent files outside lucy-ng git repo (~/.claude/) -- changes tracked in summary, no per-task commits
 - Phase 53 Plan 01: DEFF F1/FEXP ordering: after inventory comment block, before first MULT (different from DEFF NOT after correlations)
 - Phase 53 Plan 01: Fragment persistence follows same rule as DEFF NOT: copy from previous LSD file, never reconstruct
@@ -55,42 +57,32 @@ Recent decisions affecting v5.0 (latest first):
 - Phase 51 Plan 02: DEFF/FEXP are path templates -- actual .lsd files written by Phase 52
 - Phase 51 Plan 02: prescreening_count/fine_match_count as public attributes on FragmentSearcher (not changing return type)
 - Phase 51 Plan 01: LSB-first bitorder='little' in unpackbits/packbits to match shifts_to_fingerprint encoding
-- Phase 51 Plan 01: np.asarray wrapper for np.all(..., axis=1) to resolve mypy union type without type: ignore
-- Phase 51 Plan 01: Chunked get_ssc_by_id at 999 IDs to respect SQLite placeholder limit
 Previous decisions:
 - Separate `lucy-ng-fragments.db` file (not merged into 2.8 GB main DB) — Dropbox sync and index contention
 - Validate 2 ppm bin size on 1K sample BEFORE full 24M extraction — bin size is unrecoverable once baked in
 - DEFF goodlist LSD syntax requires LSD smoke test validation BEFORE agent integration — goodlist vs DEFF NOT semantic confusion is silent failure
-- Phases 51 and 52 can run in parallel — both depend only on SSCMatch model from Phase 49, not on Phase 50 data
-- Phase 49: fragments/ module fully independent from database/ (zero cross-imports), INSERT OR IGNORE for bin_size protects existing populated DBs
-- Phase 49 Plan 02: existence check (db_path.exists()) before FragmentDatabaseManager open prevents sqlite3 silent empty-file creation
-- Phase 50 Plan 01: Fingerprint valid range [0, 512) ppm — out-of-range shifts silently ignored (set semantics, not error)
-- Phase 50 Plan 01: clear_checkpoints uses LIKE 'checkpoint_%' pattern to preserve schema_version/bin_size rows
-- Phase 50 Plan 02: Ring-centred environments expand ring bonds + all bonds to immediate non-ring neighbours (radius 1 expansion)
-- Phase 50 Plan 02: Sample mode counts processed compounds only (not skipped) — correct semantics for "validate on N compounds with shifts"
-- Phase 50 Plan 02: Sequence[tuple[int | None, float]] covariant annotation for public API — avoids mypy list invariance error
 
 ### Pending Todos
 
 - Statistical 4J HMBC coupling detection (deferred to v5.1)
-- Multi-compound UAT (pulegone, virgiline, etc.)
+- Multi-compound UAT with non-aromatic compounds (deferred — need compounds without 4J risk)
 - COSY correlation integration (deferred to v5.2)
 - NP-likeness scoring (deferred to v5.2)
 
 ### Blockers/Concerns
 
-- 4J HMBC couplings silently exclude correct structures — deferred to v5.1; v5.0 UAT should test non-4J compounds first
-- SSC extraction runtime: projected 4-8 hours; checkpointing is mandatory before full run
+- 4J HMBC couplings silently exclude correct structures — highest priority for next milestone
+- All 6 local test compounds are aromatic with 4J risk — need non-aromatic compounds for clean fragment UAT
 
 ### Strategic Reference
 
-See `background/sherlock-analysis.md` for full Sherlock vs lucy-ng comparison. Fragment library is the last remaining major gap for Sherlock parity.
+See `background/sherlock-analysis.md` for full Sherlock vs lucy-ng comparison. Fragment library is now built (2.4M SSCs). Remaining gap: statistical 4J coupling detection.
 
 ## Session Continuity
 
-Last session: 2026-02-19
-Stopped at: Completed 54-01-PLAN.md (self-search recall validated, full extraction running)
-Resume file: None
+Last session: 2026-02-21
+Stopped at: v5.0 milestone complete — ready for `/gsd:complete-milestone v5.0`
+Resume with: `/gsd:complete-milestone v5.0`
 
 ---
-*Last updated: 2026-02-19 after Phase 54 Plan 01 complete*
+*Last updated: 2026-02-21 — v5.0 Fragment Library all phases complete*
