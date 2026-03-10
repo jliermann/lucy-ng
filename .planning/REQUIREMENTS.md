@@ -9,7 +9,7 @@ Requirements for Skill Quality Overhaul milestone. Each maps to roadmap phases.
 
 ### Skill Architecture
 
-- [ ] **ARCH-01**: case.md orchestrator skill is factored into core flow (<500 lines) plus bundled reference files for progress format, loop patterns, and advisory templates
+- [x] **ARCH-01**: case.md orchestrator skill is factored into core flow (<500 lines) plus bundled reference files for progress format, loop patterns, and advisory templates
 - [x] **ARCH-02**: Legacy monolithic lucy-case-agent.md is archived with deprecation header and removed from active agent registry
 - [x] **ARCH-03**: Shared NMR reference tables (experiment types, chemical shift regions) are extracted into a reference file that agents can read, reducing per-agent duplication by 30-50 lines each
 
@@ -56,7 +56,7 @@ Deferred to future releases.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ARCH-01 | Phase 55 | Pending |
+| ARCH-01 | Phase 55 | Complete |
 | ARCH-02 | Phase 55 | Complete |
 | ARCH-03 | Phase 55 | Complete |
 | INTL-01 | Phase 56 | Pending |

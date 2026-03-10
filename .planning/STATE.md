@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 55-skill-architecture-02-PLAN.md
-last_updated: "2026-03-10T13:56:16.441Z"
+stopped_at: Completed 55-01-PLAN.md — case.md slimmed from 1093 to 497 lines
+last_updated: "2026-03-10T14:02:25.176Z"
 last_activity: 2026-03-10 — v6.0 roadmap created, ready to plan Phase 55
 progress:
   total_phases: 53
-  completed_phases: 48
+  completed_phases: 49
   total_plans: 82
-  completed_plans: 80
+  completed_plans: 81
   percent: 98
 ---
 
@@ -60,6 +60,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Phase 55-skill-architecture]: Deprecated lucy-case-agent.md via blockquote header to preserve history while clearly marking retirement
 - [Phase 55-skill-architecture]: Created shared nmr-basics.md as canonical reference for NMR experiment types and shift regions
 - [Phase 55-skill-architecture]: Read-file directive pattern: agents reference shared files rather than duplicating tables
+- [Phase 55-skill-architecture]: Extract progress-format, loop-patterns, advisory-templates to references/ for on-demand loading
 
 ### Pending Todos
 
@@ -79,8 +80,8 @@ See `background/sherlock-analysis.md` for full Sherlock vs lucy-ng comparison. F
 
 ## Session Continuity
 
-Last session: 2026-03-10T13:56:16.437Z
-Stopped at: Completed 55-skill-architecture-02-PLAN.md
+Last session: 2026-03-10T14:02:25.173Z
+Stopped at: Completed 55-01-PLAN.md — case.md slimmed from 1093 to 497 lines
 Resume with: `/gsd:plan-phase 55`
 
 ---
