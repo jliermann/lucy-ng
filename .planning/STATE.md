@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v7.0
-milestone_name: Statistical 4J Detection
-status: executing
-stopped_at: Phase 59 complete, ready for phase 60
-last_updated: "2026-03-10T19:30:00Z"
+milestone: v1.0
+milestone_name: milestone
+status: "Ready for `/gsd:plan-phase 60`"
+stopped_at: Completed 60-01-PLAN.md
+last_updated: "2026-03-10T19:57:39.084Z"
 last_activity: 2026-03-10 — Phase 59 Database Foundation complete
 progress:
-  total_phases: 64
-  completed_phases: 59
-  total_plans: 109
-  completed_plans: 109
+  total_phases: 58
+  completed_phases: 53
+  total_plans: 91
+  completed_plans: 89
   percent: 92
 ---
 
@@ -72,6 +72,8 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Phase 59]: Hardcoded version strings in migration functions prevent version drift when SCHEMA_VERSION is bumped
 - [Phase 59]: Used executemany for insert_coupling_path_stats_batch — simpler and faster
 - [Phase 59]: get_coupling_path_stats_count returns 0 on OperationalError for pre-v7 DB backward compat
+- [Phase 60]: Accumulate coupling path counts in memory for full run; checkpoint saves position only, write once at end to avoid INSERT OR REPLACE partial-count conflict
+- [Phase 60]: Skip compound entirely on any NULL atom_index; partial atom mapping yields unreliable distances
 
 ### Pending Todos
 
@@ -89,8 +91,8 @@ See `background/sherlock-analysis.md` for full Sherlock vs lucy-ng comparison. F
 
 ## Session Continuity
 
-Last session: 2026-03-10
-Stopped at: Phase 59 Database Foundation complete
+Last session: 2026-03-10T19:57:39.079Z
+Stopped at: Completed 60-01-PLAN.md
 Resume with: `/gsd:plan-phase 60`
 
 ---
