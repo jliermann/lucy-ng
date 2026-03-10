@@ -168,6 +168,15 @@ def info(db_path: Path) -> None:
             for source, count in sources:
                 click.echo(f"    {source or 'unknown'}: {count:,}")
 
+        # Coupling path statistics (v7+)
+        coupling_count = db.get_coupling_path_stats_count()
+        if coupling_count > 0:
+            click.echo(f"  Coupling path stats: {coupling_count:,} entries")
+        else:
+            click.echo(
+                "  Coupling path stats: empty (run 'lucy database generate-coupling-stats' to populate)"
+            )
+
 
 @database.command()
 @click.option(

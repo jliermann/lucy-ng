@@ -7,7 +7,9 @@ import tempfile
 from pathlib import Path
 
 import pytest
+from click.testing import CliRunner
 
+from lucy_ng.cli.database import info
 from lucy_ng.database.manager import DatabaseManager
 from lucy_ng.database.models import CouplingPathStatsRecord
 from lucy_ng.database.schema import (
@@ -540,6 +542,70 @@ def test_insert_coupling_path_stats_batch_idempotent() -> None:
             results = db.get_coupling_path_stats("C-4;CC(//)", "C-4;C(//)")
             assert len(results) == 1
             assert results[0].count == 999
+
+    finally:
+        db_path.unlink()
+
+
+# =============================================================================
+# Task 2: CLI info command tests
+# =============================================================================
+
+
+def test_cli_info_shows_coupling_path_stats_empty() -> None:
+    """Test that lucy database info shows 'Coupling path stats: empty' on a fresh v7 DB."""
+    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
+        db_path = Path(tmp.name)
+
+    try:
+        with DatabaseManager(db_path) as db:
+            db.create_tables()
+            # No coupling_path_stats records inserted
+
+        runner = CliRunner()
+        result = runner.invoke(info, [str(db_path)])
+
+        assert result.exit_code == 0
+        assert "Coupling path stats:" in result.output
+        assert "empty" in result.output
+
+    finally:
+        db_path.unlink()
+
+
+def test_cli_info_shows_coupling_path_stats_populated() -> None:
+    """Test that lucy database info shows count when coupling_path_stats has records."""
+    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
+        db_path = Path(tmp.name)
+
+    try:
+        with DatabaseManager(db_path) as db:
+            db.create_tables()
+
+            records = [
+                CouplingPathStatsRecord(
+                    carbon_hose="C-4;CC(//)",
+                    h_carbon_hose="C-4;C(//)",
+                    bond_distance=3,
+                    count=100,
+                ),
+                CouplingPathStatsRecord(
+                    carbon_hose="C-3;=C(//)",
+                    h_carbon_hose="C-3;=C(//)",
+                    bond_distance=4,
+                    count=50,
+                ),
+            ]
+            db.insert_coupling_path_stats_batch(records)
+
+        runner = CliRunner()
+        result = runner.invoke(info, [str(db_path)])
+
+        assert result.exit_code == 0
+        assert "Coupling path stats:" in result.output
+        assert "2" in result.output  # 2 entries
+        # Should NOT show "empty" when populated
+        assert "empty" not in result.output
 
     finally:
         db_path.unlink()
