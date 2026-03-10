@@ -3,7 +3,7 @@
 import sqlite3
 
 # Schema version for migrations
-SCHEMA_VERSION = 6
+SCHEMA_VERSION = 7
 
 # Compounds table - stores compound metadata
 CREATE_COMPOUNDS_TABLE = """
@@ -120,6 +120,31 @@ CREATE INDEX IF NOT EXISTS idx_bond_pair_formula
 ON bond_pair_stats(formula_normalized)
 """
 
+# Coupling path statistics table - pairwise HOSE-code bond-distance counts (v7+)
+# Stores how often two HOSE-coded carbons appear at each bond distance in the corpus,
+# enabling statistical 4J HMBC coupling detection.
+CREATE_COUPLING_PATH_STATS_TABLE = """
+CREATE TABLE IF NOT EXISTS coupling_path_stats (
+    carbon_hose TEXT NOT NULL,
+    h_carbon_hose TEXT NOT NULL,
+    bond_distance INTEGER NOT NULL,
+    count INTEGER NOT NULL,
+    PRIMARY KEY (carbon_hose, h_carbon_hose, bond_distance)
+)
+"""
+
+# Index on (carbon_hose, h_carbon_hose) for pair-lookup queries (v7+)
+CREATE_COUPLING_PATH_PAIR_INDEX = """
+CREATE INDEX IF NOT EXISTS idx_coupling_path_pair
+ON coupling_path_stats(carbon_hose, h_carbon_hose)
+"""
+
+# Index on carbon_hose alone for single-carbon queries (v7+)
+CREATE_COUPLING_PATH_CARBON_INDEX = """
+CREATE INDEX IF NOT EXISTS idx_coupling_path_carbon
+ON coupling_path_stats(carbon_hose)
+"""
+
 # All schema statements in order
 SCHEMA_STATEMENTS = [
     CREATE_COMPOUNDS_TABLE,
@@ -133,6 +158,9 @@ SCHEMA_STATEMENTS = [
     CREATE_BOND_PAIR_STATS_TABLE,
     CREATE_BOND_PAIR_FORMULA_INDEX,
     CREATE_CHECKPOINT_TABLE,
+    CREATE_COUPLING_PATH_STATS_TABLE,
+    CREATE_COUPLING_PATH_PAIR_INDEX,
+    CREATE_COUPLING_PATH_CARBON_INDEX,
 ]
 
 
@@ -243,7 +271,34 @@ def migrate_v5_to_v6(conn: sqlite3.Connection) -> None:
     # Update schema version
     cursor.execute(
         "UPDATE schema_meta SET value = ? WHERE key = ?",
-        (str(SCHEMA_VERSION), "schema_version"),
+        ("6", "schema_version"),
+    )
+
+    conn.commit()
+
+
+def migrate_v6_to_v7(conn: sqlite3.Connection) -> None:
+    """Migrate database from schema v6 to v7.
+
+    Adds coupling_path_stats table and its indices for statistical
+    4J HMBC coupling detection.
+
+    Args:
+        conn: SQLite connection to database
+    """
+    cursor = conn.cursor()
+
+    # Create coupling path statistics table
+    cursor.execute(CREATE_COUPLING_PATH_STATS_TABLE)
+
+    # Create indices for efficient queries
+    cursor.execute(CREATE_COUPLING_PATH_PAIR_INDEX)
+    cursor.execute(CREATE_COUPLING_PATH_CARBON_INDEX)
+
+    # Update schema version
+    cursor.execute(
+        "UPDATE schema_meta SET value = ? WHERE key = ?",
+        ("7", "schema_version"),
     )
 
     conn.commit()
