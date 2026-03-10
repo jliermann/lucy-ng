@@ -30,8 +30,8 @@ Requirements for Skill Quality Overhaul milestone. Each maps to roadmap phases.
 
 ### Operations
 
-- [ ] **OPER-01**: status.md checks lucy-ng CLI version against minimum required version and reports incompatibility clearly
-- [ ] **OPER-02**: A lightweight smoke test mode exists for /lucy-ng:case that runs 1 iteration to verify the full pipeline (team spawn, peak picking, LSD file build, DA validation) without running to convergence
+- [x] **OPER-01**: status.md checks lucy-ng CLI version against minimum required version and reports incompatibility clearly
+- [x] **OPER-02**: A lightweight smoke test mode exists for /lucy-ng:case that runs 1 iteration to verify the full pipeline (team spawn, peak picking, LSD file build, DA validation) without running to convergence
 
 ## Future Requirements
 
@@ -68,8 +68,8 @@ Deferred to future releases.
 | SKUX-03 | Phase 57 | Complete |
 | SKUX-04 | Phase 57 | Complete |
 | SKUX-05 | Phase 57 | Complete |
-| OPER-01 | Phase 58 | Pending |
-| OPER-02 | Phase 58 | Pending |
+| OPER-01 | Phase 58 | Complete |
+| OPER-02 | Phase 58 | Complete |
 
 **Coverage:**
 - v6.0 requirements: 14 total

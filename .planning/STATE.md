@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 57-02-PLAN.md — error recovery in predict/dereplicate, dry-run gate in sanitise
-last_updated: "2026-03-10T15:32:24.960Z"
+stopped_at: Completed 58-01-PLAN.md — version compatibility check in status.md, smoke test mode in case.md
+last_updated: "2026-03-10T15:44:11.558Z"
 last_activity: 2026-03-10 — v6.0 roadmap created, ready to plan Phase 55
 progress:
-  total_phases: 55
-  completed_phases: 51
-  total_plans: 86
-  completed_plans: 85
+  total_phases: 56
+  completed_phases: 52
+  total_plans: 87
+  completed_plans: 86
   percent: 98
 ---
 
@@ -69,6 +69,8 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Phase 57-skill-ux]: Decision tree uses first-person goal phrasing in lucy-ng.md to match natural user language
 - [Phase 57-skill-ux]: Dry-run gate in sanitise.md requires exact string 'proceed' before any file modifications
 - [Phase 57-skill-ux]: Error recovery sections positioned in present_results step for HOSE misses and 0-match cases
+- [Phase 58-operations]: MINIMUM_REQUIRED_VERSION = 0.1.0 defined inline in check_lucy step for easy future updates
+- [Phase 58-operations]: Smoke test defaults to data/Ibuprofen + C13H18O2 as canonical well-known test dataset; tracks 3 checkpoints (SETUP-COMPLETE, ITERATION-COMPLETE, VALIDATION-*); exits before ranking
 
 ### Pending Todos
 
@@ -88,8 +90,8 @@ See `background/sherlock-analysis.md` for full Sherlock vs lucy-ng comparison. F
 
 ## Session Continuity
 
-Last session: 2026-03-10T15:05:19.534Z
-Stopped at: Completed 57-02-PLAN.md — error recovery in predict/dereplicate, dry-run gate in sanitise
+Last session: 2026-03-10T15:44:11.555Z
+Stopped at: Completed 58-01-PLAN.md — version compatibility check in status.md, smoke test mode in case.md
 Resume with: `/gsd:plan-phase 55`
 
 ---
