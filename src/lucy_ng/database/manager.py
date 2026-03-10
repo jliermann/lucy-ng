@@ -6,13 +6,14 @@ import sqlite3
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from lucy_ng.database.models import BondPairStatsRecord, CompoundRecord, HOSEStatsRecord, ShiftRecord
+from lucy_ng.database.models import BondPairStatsRecord, CompoundRecord, CouplingPathStatsRecord, HOSEStatsRecord, ShiftRecord
 from lucy_ng.database.schema import (
     SCHEMA_STATEMENTS,
     SCHEMA_VERSION,
     migrate_v3_to_v4,
     migrate_v4_to_v5,
     migrate_v5_to_v6,
+    migrate_v6_to_v7,
 )
 
 if TYPE_CHECKING:
@@ -156,6 +157,24 @@ class DatabaseManager:
             if current_version is None or current_version < 5:
                 self.migrate_to_v5()
             migrate_v5_to_v6(self.connection)
+            return True
+        return False
+
+    def migrate_to_v7(self) -> bool:
+        """Migrate database to schema version 7.
+
+        Adds coupling_path_stats table and indices for statistical
+        4J HMBC coupling detection.
+
+        Returns:
+            True if migration was performed, False if already at v7+
+        """
+        current_version = self.get_schema_version()
+        if current_version is None or current_version < 7:
+            # Ensure at v6 first
+            if current_version is None or current_version < 6:
+                self.migrate_to_v6()
+            migrate_v6_to_v7(self.connection)
             return True
         return False
 
