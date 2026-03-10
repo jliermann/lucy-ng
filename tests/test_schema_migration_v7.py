@@ -345,3 +345,201 @@ def test_migrate_to_v7_idempotent() -> None:
 
     finally:
         db_path.unlink()
+
+
+# =============================================================================
+# Task 1: Query method tests
+# =============================================================================
+
+
+def test_insert_and_query_coupling_path_stats() -> None:
+    """Test insert_coupling_path_stats_batch and get_coupling_path_stats."""
+    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
+        db_path = Path(tmp.name)
+
+    try:
+        with DatabaseManager(db_path) as db:
+            db.create_tables()
+
+            # Insert 3 records with different bond_distances for the same pair
+            records = [
+                CouplingPathStatsRecord(
+                    carbon_hose="C-4;CC(//)",
+                    h_carbon_hose="C-4;C(//)",
+                    bond_distance=2,
+                    count=50,
+                ),
+                CouplingPathStatsRecord(
+                    carbon_hose="C-4;CC(//)",
+                    h_carbon_hose="C-4;C(//)",
+                    bond_distance=3,
+                    count=200,
+                ),
+                CouplingPathStatsRecord(
+                    carbon_hose="C-4;CC(//)",
+                    h_carbon_hose="C-4;C(//)",
+                    bond_distance=4,
+                    count=30,
+                ),
+            ]
+
+            inserted = db.insert_coupling_path_stats_batch(records)
+            assert inserted == 3
+
+            # Query exact pair — ordered by bond_distance ASC
+            results = db.get_coupling_path_stats("C-4;CC(//)", "C-4;C(//)")
+            assert len(results) == 3
+            assert results[0].bond_distance == 2
+            assert results[0].count == 50
+            assert results[1].bond_distance == 3
+            assert results[1].count == 200
+            assert results[2].bond_distance == 4
+            assert results[2].count == 30
+
+            # All records carry correct HOSE codes
+            for r in results:
+                assert r.carbon_hose == "C-4;CC(//)"
+                assert r.h_carbon_hose == "C-4;C(//)"
+
+    finally:
+        db_path.unlink()
+
+
+def test_query_coupling_path_stats_nonexistent_pair() -> None:
+    """Test that get_coupling_path_stats returns [] for a non-existent pair."""
+    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
+        db_path = Path(tmp.name)
+
+    try:
+        with DatabaseManager(db_path) as db:
+            db.create_tables()
+
+            results = db.get_coupling_path_stats("NONEXISTENT-HOSE", "ALSO-NONEXISTENT")
+            assert results == []
+
+    finally:
+        db_path.unlink()
+
+
+def test_query_coupling_path_stats_by_carbon() -> None:
+    """Test get_coupling_path_stats_by_carbon aggregates across h_carbon_hose values."""
+    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
+        db_path = Path(tmp.name)
+
+    try:
+        with DatabaseManager(db_path) as db:
+            db.create_tables()
+
+            records = [
+                CouplingPathStatsRecord(
+                    carbon_hose="C-4;CC(//)",
+                    h_carbon_hose="C-4;C(//)",
+                    bond_distance=3,
+                    count=100,
+                ),
+                CouplingPathStatsRecord(
+                    carbon_hose="C-4;CC(//)",
+                    h_carbon_hose="C-3;=C(//)",
+                    bond_distance=2,
+                    count=80,
+                ),
+                CouplingPathStatsRecord(
+                    carbon_hose="C-4;CC(//)",
+                    h_carbon_hose="C-3;=C(//)",
+                    bond_distance=3,
+                    count=40,
+                ),
+                # Different carbon_hose — should NOT be returned
+                CouplingPathStatsRecord(
+                    carbon_hose="C-3;=C(//)",
+                    h_carbon_hose="C-4;C(//)",
+                    bond_distance=3,
+                    count=999,
+                ),
+            ]
+            db.insert_coupling_path_stats_batch(records)
+
+            results = db.get_coupling_path_stats_by_carbon("C-4;CC(//)")
+            assert len(results) == 3
+
+            # Ordered by bond_distance ASC
+            assert results[0].bond_distance == 2
+            assert results[1].bond_distance == 3
+            # Both distance-3 entries are present
+            d3_counts = {r.h_carbon_hose: r.count for r in results if r.bond_distance == 3}
+            assert "C-4;C(//)" in d3_counts
+            assert d3_counts["C-4;C(//)"] == 100
+
+    finally:
+        db_path.unlink()
+
+
+def test_query_coupling_path_stats_by_carbon_nonexistent() -> None:
+    """Test get_coupling_path_stats_by_carbon returns [] for non-existent carbon."""
+    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
+        db_path = Path(tmp.name)
+
+    try:
+        with DatabaseManager(db_path) as db:
+            db.create_tables()
+
+            results = db.get_coupling_path_stats_by_carbon("NONEXISTENT-HOSE")
+            assert results == []
+
+    finally:
+        db_path.unlink()
+
+
+def test_coupling_path_stats_backward_compat_v6_db() -> None:
+    """Test that query methods return [] on a v6 database (no coupling_path_stats table)."""
+    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
+        db_path = Path(tmp.name)
+
+    try:
+        # Create a v6 database (no coupling_path_stats table)
+        create_v6_database(db_path)
+
+        with DatabaseManager(db_path) as db:
+            # Should not raise — should return empty list (backward compat)
+            results_pair = db.get_coupling_path_stats("C-4;CC(//)", "C-4;C(//)")
+            assert results_pair == []
+
+            results_carbon = db.get_coupling_path_stats_by_carbon("C-4;CC(//)")
+            assert results_carbon == []
+
+    finally:
+        db_path.unlink()
+
+
+def test_insert_coupling_path_stats_batch_idempotent() -> None:
+    """Test that INSERT OR REPLACE is idempotent (second insert updates count)."""
+    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
+        db_path = Path(tmp.name)
+
+    try:
+        with DatabaseManager(db_path) as db:
+            db.create_tables()
+
+            record = CouplingPathStatsRecord(
+                carbon_hose="C-4;CC(//)",
+                h_carbon_hose="C-4;C(//)",
+                bond_distance=3,
+                count=100,
+            )
+            db.insert_coupling_path_stats_batch([record])
+
+            # Insert same key with updated count
+            updated = CouplingPathStatsRecord(
+                carbon_hose="C-4;CC(//)",
+                h_carbon_hose="C-4;C(//)",
+                bond_distance=3,
+                count=999,
+            )
+            db.insert_coupling_path_stats_batch([updated])
+
+            results = db.get_coupling_path_stats("C-4;CC(//)", "C-4;C(//)")
+            assert len(results) == 1
+            assert results[0].count == 999
+
+    finally:
+        db_path.unlink()

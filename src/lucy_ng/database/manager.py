@@ -1273,3 +1273,151 @@ class DatabaseManager:
         except sqlite3.OperationalError:
             # Backward compatibility: v5 database without bond_pair_stats table
             return []
+
+    # =========================================================================
+    # Coupling Path Statistics Methods (v7+)
+    # =========================================================================
+
+    def insert_coupling_path_stats_batch(
+        self,
+        records: list[CouplingPathStatsRecord],
+    ) -> int:
+        """Batch insert coupling path statistics.
+
+        Uses INSERT OR REPLACE for idempotent reruns (updates count on duplicate
+        primary key).
+
+        Args:
+            records: List of CouplingPathStatsRecord to insert
+
+        Returns:
+            Number of records inserted/updated
+        """
+        conn = self.connection
+        cursor = conn.cursor()
+
+        try:
+            cursor.executemany(
+                """
+                INSERT OR REPLACE INTO coupling_path_stats
+                    (carbon_hose, h_carbon_hose, bond_distance, count)
+                VALUES (?, ?, ?, ?)
+                """,
+                [
+                    (r.carbon_hose, r.h_carbon_hose, r.bond_distance, r.count)
+                    for r in records
+                ],
+            )
+            conn.commit()
+            return len(records)
+        except sqlite3.OperationalError:
+            # Backward compatibility: pre-v7 database without coupling_path_stats table
+            return 0
+
+    def get_coupling_path_stats(
+        self,
+        carbon_hose: str,
+        h_carbon_hose: str,
+    ) -> list[CouplingPathStatsRecord]:
+        """Get coupling path statistics for an exact HOSE code pair.
+
+        Primary lookup for 4J detection: given the HOSE codes of two carbons,
+        return the bond-distance distribution from the training corpus.
+
+        Args:
+            carbon_hose: HOSE code (radius 2) of the observed carbon
+            h_carbon_hose: HOSE code (radius 2) of the proton-bearing carbon
+
+        Returns:
+            List of CouplingPathStatsRecord ordered by bond_distance ASC.
+            Returns empty list on pre-v7 databases (backward compatible).
+        """
+        conn = self.connection
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                SELECT carbon_hose, h_carbon_hose, bond_distance, count
+                FROM coupling_path_stats
+                WHERE carbon_hose = ? AND h_carbon_hose = ?
+                ORDER BY bond_distance ASC
+                """,
+                (carbon_hose, h_carbon_hose),
+            )
+
+            return [
+                CouplingPathStatsRecord(
+                    carbon_hose=row["carbon_hose"],
+                    h_carbon_hose=row["h_carbon_hose"],
+                    bond_distance=row["bond_distance"],
+                    count=row["count"],
+                )
+                for row in cursor.fetchall()
+            ]
+        except sqlite3.OperationalError:
+            # Backward compatibility: pre-v7 database without coupling_path_stats table
+            return []
+
+    def get_coupling_path_stats_by_carbon(
+        self,
+        carbon_hose: str,
+    ) -> list[CouplingPathStatsRecord]:
+        """Get all coupling path statistics for a carbon HOSE code.
+
+        Carbon-only fallback lookup: returns all records for a given carbon
+        regardless of the proton-bearing carbon partner.  Useful when an exact
+        pair match is absent from the corpus.
+
+        Args:
+            carbon_hose: HOSE code (radius 2) of the observed carbon
+
+        Returns:
+            List of CouplingPathStatsRecord ordered by bond_distance ASC.
+            Returns empty list on pre-v7 databases (backward compatible).
+        """
+        conn = self.connection
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                SELECT carbon_hose, h_carbon_hose, bond_distance, count
+                FROM coupling_path_stats
+                WHERE carbon_hose = ?
+                ORDER BY bond_distance ASC
+                """,
+                (carbon_hose,),
+            )
+
+            return [
+                CouplingPathStatsRecord(
+                    carbon_hose=row["carbon_hose"],
+                    h_carbon_hose=row["h_carbon_hose"],
+                    bond_distance=row["bond_distance"],
+                    count=row["count"],
+                )
+                for row in cursor.fetchall()
+            ]
+        except sqlite3.OperationalError:
+            # Backward compatibility: pre-v7 database without coupling_path_stats table
+            return []
+
+    def get_coupling_path_stats_count(self) -> int:
+        """Return total number of coupling path statistics entries.
+
+        Used by the CLI info command to report table status.
+
+        Returns:
+            Count of rows in coupling_path_stats table, or 0 on pre-v7 databases.
+        """
+        conn = self.connection
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("SELECT COUNT(*) FROM coupling_path_stats")
+            row = cursor.fetchone()
+            return row[0] if row else 0
+        except sqlite3.OperationalError:
+            # Backward compatibility: pre-v7 database without coupling_path_stats table
+            return 0
