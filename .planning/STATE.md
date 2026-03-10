@@ -1,11 +1,11 @@
 ---
 gsd_state_version: 1.0
-milestone: v6.0
-milestone_name: Skill Quality Overhaul
-status: complete
-stopped_at: v6.0 milestone completed — all 4 phases shipped, audit passed
-last_updated: "2026-03-10T17:00:00Z"
-last_activity: 2026-03-10 — v6.0 Skill Quality Overhaul shipped
+milestone: v7.0
+milestone_name: Statistical 4J Detection
+status: planning
+stopped_at: Milestone v7.0 started — defining requirements
+last_updated: "2026-03-10T17:30:00Z"
+last_activity: 2026-03-10 — Milestone v7.0 started
 progress:
   total_phases: 58
   completed_phases: 58
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-10)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a collaborative team architecture that self-corrects through peer review
-**Current focus:** Between milestones — run /gsd:new-milestone
+**Current focus:** v7.0 Statistical 4J Detection — defining requirements
 
 ## Current Position
 
-Phase: All 58 phases complete
-Status: Between milestones
-Last activity: 2026-03-10 — v6.0 Skill Quality Overhaul shipped
+Phase: Not started (defining requirements)
+Status: Defining requirements
+Last activity: 2026-03-10 — Milestone v7.0 started
 
 Progress: [██████████] 100%
 

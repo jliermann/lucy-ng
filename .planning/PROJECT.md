@@ -10,7 +10,15 @@ Lucy-ng is an AI-agent skill for Computer-Assisted Structure Elucidation (CASE) 
 
 An AI agent can autonomously determine the structure of an unknown organic compound from its NMR spectra, with a multi-agent architecture that prevents unproductive loops and keeps the elucidation on track.
 
-## Current Milestone: None — ready for /gsd:new-milestone
+## Current Milestone: v7.0 Statistical 4J Detection
+
+**Goal:** Build database-backed statistical detection of 4J CH HMBC couplings so the CASE pipeline can identify and exclude them before LSD solving, enabling correct structure determination for aromatic compounds.
+
+**Target features:**
+- Statistical 4J coupling probability from HOSE database (atom-type pair frequencies at 4-bond distance)
+- CLI command for 4J detection (`lucy detect 4j` or similar)
+- Integration with nmr-chemist agent (replace heuristic flagging with statistical evidence)
+- Multi-compound CASE UAT to validate the full pipeline with 4J-aware solving
 
 ## Current State
 
@@ -216,4 +224,4 @@ Minimum viable spectral data for v1:
 - 2 minor integration gaps from v6.0 audit (INTL-03 aromatic expectation relay, INTL-04 4J status field validation) — cosmetic
 
 ---
-*Last updated: 2026-03-10 after v6.0 milestone completed*
+*Last updated: 2026-03-10 after v7.0 milestone started*
