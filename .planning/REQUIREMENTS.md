@@ -22,8 +22,8 @@ Requirements for Skill Quality Overhaul milestone. Each maps to roadmap phases.
 
 ### Skill UX
 
-- [ ] **SKUX-01**: All 5 skill descriptions are optimized for natural language triggering (NMR, structure determination, unknown compound, blind testing, etc.)
-- [ ] **SKUX-02**: Routing page (lucy-ng.md) includes a decision tree guiding users to the correct sub-command
+- [x] **SKUX-01**: All 5 skill descriptions are optimized for natural language triggering (NMR, structure determination, unknown compound, blind testing, etc.)
+- [x] **SKUX-02**: Routing page (lucy-ng.md) includes a decision tree guiding users to the correct sub-command
 - [ ] **SKUX-03**: sanitise.md includes a dry-run mode that scans and reports findings without modifying files, requiring user confirmation before proceeding
 - [ ] **SKUX-04**: predict.md handles HOSE code miss gracefully with suggestions (alternative SMILES, database coverage note)
 - [ ] **SKUX-05**: dereplicate.md handles 0-match results with actionable guidance (check formula, try related formulas, compound may not be in database)
@@ -63,8 +63,8 @@ Deferred to future releases.
 | INTL-02 | Phase 56 | Complete |
 | INTL-03 | Phase 56 | Complete |
 | INTL-04 | Phase 56 | Complete |
-| SKUX-01 | Phase 57 | Pending |
-| SKUX-02 | Phase 57 | Pending |
+| SKUX-01 | Phase 57 | Complete |
+| SKUX-02 | Phase 57 | Complete |
 | SKUX-03 | Phase 57 | Pending |
 | SKUX-04 | Phase 57 | Pending |
 | SKUX-05 | Phase 57 | Pending |

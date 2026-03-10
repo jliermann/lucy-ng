@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 56-02-PLAN.md — 4J deferral in lsd-engineer and aromatic verification in solution-analyst
-last_updated: "2026-03-10T14:52:45.673Z"
+stopped_at: Completed 57-01-PLAN.md — trigger phrases and decision tree routing page
+last_updated: "2026-03-10T15:02:22.569Z"
 last_activity: 2026-03-10 — v6.0 roadmap created, ready to plan Phase 55
 progress:
-  total_phases: 54
+  total_phases: 55
   completed_phases: 50
-  total_plans: 84
-  completed_plans: 83
+  total_plans: 86
+  completed_plans: 84
   percent: 98
 ---
 
@@ -65,6 +65,8 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Phase 56-agent-intelligence]: Orchestrator validates structured messages with required fields list, sends RESEND-REQUIRED on missing fields
 - [Phase 56-agent-intelligence]: lsd-engineer defers 4J-flagged HMBC correlations to last batch, skips entirely if solutions converge before that batch
 - [Phase 56-agent-intelligence]: solution-analyst uses two-tier aromatic verification: warnings array (Tier 1) + prediction-based shift count in 110-160 ppm (Tier 2)
+- [Phase 57-skill-ux]: Use 'Use when:' prefix in skill descriptions as trigger-phrase pattern for intent routing
+- [Phase 57-skill-ux]: Decision tree uses first-person goal phrasing in lucy-ng.md to match natural user language
 
 ### Pending Todos
 
@@ -84,8 +86,8 @@ See `background/sherlock-analysis.md` for full Sherlock vs lucy-ng comparison. F
 
 ## Session Continuity
 
-Last session: 2026-03-10T14:49:49.453Z
-Stopped at: Completed 56-02-PLAN.md — 4J deferral in lsd-engineer and aromatic verification in solution-analyst
+Last session: 2026-03-10T15:02:22.566Z
+Stopped at: Completed 57-01-PLAN.md — trigger phrases and decision tree routing page
 Resume with: `/gsd:plan-phase 55`
 
 ---
