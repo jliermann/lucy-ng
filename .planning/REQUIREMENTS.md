@@ -9,7 +9,7 @@
 ## Database Foundation
 
 - [DB-01] Schema v7 migration: new `coupling_path_stats` table with (carbon_hose, h_carbon_hose, bond_distance, count) schema, additive ALTER TABLE migration preserving all existing data
-- [DB-02] Pydantic models: `CouplingPathStatsRecord` for database rows, `CouplingPathDistribution` and `CouplingPathResult` for detection results
+- [DB-02] Pydantic model: `CouplingPathStatsRecord` for database rows (maps to coupling_path_stats table columns)
 - [DB-03] DatabaseManager queries: `get_coupling_path_stats(carbon_hose, h_carbon_hose)` for exact pair lookup, `get_coupling_path_stats_by_carbon(carbon_hose)` for fallback aggregation
 
 ## Statistics Generation
