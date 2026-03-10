@@ -5,14 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-10)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a collaborative team architecture that self-corrects through peer review
-**Current focus:** v6.0 Skill Quality Overhaul
+**Current focus:** v6.0 Skill Quality Overhaul — Phase 55: Skill Architecture
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-03-10 — Milestone v6.0 started
+Phase: 55 of 58 (Skill Architecture)
+Plan: 0 of TBD in current phase
+Status: Ready to plan
+Last activity: 2026-03-10 — v6.0 roadmap created, ready to plan Phase 55
+
+Progress: [░░░░░░░░░░] 0%
 
 ## Completed Milestones
 
@@ -42,29 +44,25 @@ Decisions are logged in PROJECT.md Key Decisions table.
 
 ### Pending Todos
 
-- Statistical 4J HMBC coupling detection (highest priority)
+- Statistical 4J HMBC coupling detection (highest priority — deferred to future milestone)
 - Multi-compound UAT with non-aromatic compounds
 - COSY correlation integration
 - NP-likeness scoring
 
 ### Blockers/Concerns
 
-- 4J HMBC couplings silently exclude correct structures — all 6 local test compounds affected
-- Need non-aromatic test compounds for clean fragment UAT
+- 4J HMBC couplings silently exclude correct structures — all 6 local test compounds affected (not blocking v6.0, deferred)
+- v6.0 smoke test (OPER-02) requires a minimal test NMR dataset at data/test/minimal/
 
 ### Strategic Reference
 
 See `background/sherlock-analysis.md` for full Sherlock vs lucy-ng comparison. Fragment library now built (2.4M SSCs). Remaining gap: statistical 4J coupling detection.
 
-### Skill Analysis
-
-See `.planning/skill-analysis.md` for the comprehensive skill-creator review that drives v6.0 milestone scope.
-
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: v6.0 milestone requirements definition
-Resume with: Continue requirements/roadmap definition
+Stopped at: v6.0 roadmap created — Phase 55 ready to plan
+Resume with: `/gsd:plan-phase 55`
 
 ---
-*Last updated: 2026-03-10 — v6.0 milestone started*
+*Last updated: 2026-03-10 — v6.0 roadmap created*

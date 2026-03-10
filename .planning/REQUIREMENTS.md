@@ -56,26 +56,26 @@ Deferred to future releases.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ARCH-01 | — | Pending |
-| ARCH-02 | — | Pending |
-| ARCH-03 | — | Pending |
-| INTL-01 | — | Pending |
-| INTL-02 | — | Pending |
-| INTL-03 | — | Pending |
-| INTL-04 | — | Pending |
-| SKUX-01 | — | Pending |
-| SKUX-02 | — | Pending |
-| SKUX-03 | — | Pending |
-| SKUX-04 | — | Pending |
-| SKUX-05 | — | Pending |
-| OPER-01 | — | Pending |
-| OPER-02 | — | Pending |
+| ARCH-01 | Phase 55 | Pending |
+| ARCH-02 | Phase 55 | Pending |
+| ARCH-03 | Phase 55 | Pending |
+| INTL-01 | Phase 56 | Pending |
+| INTL-02 | Phase 56 | Pending |
+| INTL-03 | Phase 56 | Pending |
+| INTL-04 | Phase 56 | Pending |
+| SKUX-01 | Phase 57 | Pending |
+| SKUX-02 | Phase 57 | Pending |
+| SKUX-03 | Phase 57 | Pending |
+| SKUX-04 | Phase 57 | Pending |
+| SKUX-05 | Phase 57 | Pending |
+| OPER-01 | Phase 58 | Pending |
+| OPER-02 | Phase 58 | Pending |
 
 **Coverage:**
 - v6.0 requirements: 14 total
-- Mapped to phases: 0
-- Unmapped: 14 (pending roadmap)
+- Mapped to phases: 14
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-10*
-*Last updated: 2026-03-10 after initial definition*
+*Last updated: 2026-03-10 after roadmap created — all 14 requirements mapped*
