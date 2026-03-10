@@ -364,8 +364,8 @@ class TestSchemaIsolation:
         from lucy_ng.database.manager import DatabaseManager  # noqa: F401
         from lucy_ng.database.schema import SCHEMA_VERSION
 
-        assert SCHEMA_VERSION == 6, (
-            f"database/schema.py SCHEMA_VERSION must remain 6, got {SCHEMA_VERSION}"
+        assert SCHEMA_VERSION == 7, (
+            f"database/schema.py SCHEMA_VERSION must remain 7, got {SCHEMA_VERSION}"
         )
 
 
