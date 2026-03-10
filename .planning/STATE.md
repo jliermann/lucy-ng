@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 57-01-PLAN.md — trigger phrases and decision tree routing page
-last_updated: "2026-03-10T15:02:22.569Z"
+stopped_at: Completed 57-02-PLAN.md — error recovery in predict/dereplicate, dry-run gate in sanitise
+last_updated: "2026-03-10T15:05:19.538Z"
 last_activity: 2026-03-10 — v6.0 roadmap created, ready to plan Phase 55
 progress:
   total_phases: 55
-  completed_phases: 50
+  completed_phases: 51
   total_plans: 86
-  completed_plans: 84
+  completed_plans: 85
   percent: 98
 ---
 
@@ -67,6 +67,8 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Phase 56-agent-intelligence]: solution-analyst uses two-tier aromatic verification: warnings array (Tier 1) + prediction-based shift count in 110-160 ppm (Tier 2)
 - [Phase 57-skill-ux]: Use 'Use when:' prefix in skill descriptions as trigger-phrase pattern for intent routing
 - [Phase 57-skill-ux]: Decision tree uses first-person goal phrasing in lucy-ng.md to match natural user language
+- [Phase 57-skill-ux]: Dry-run gate in sanitise.md requires exact string 'proceed' before any file modifications
+- [Phase 57-skill-ux]: Error recovery sections positioned in present_results step for HOSE misses and 0-match cases
 
 ### Pending Todos
 
@@ -86,8 +88,8 @@ See `background/sherlock-analysis.md` for full Sherlock vs lucy-ng comparison. F
 
 ## Session Continuity
 
-Last session: 2026-03-10T15:02:22.566Z
-Stopped at: Completed 57-01-PLAN.md — trigger phrases and decision tree routing page
+Last session: 2026-03-10T15:05:19.534Z
+Stopped at: Completed 57-02-PLAN.md — error recovery in predict/dereplicate, dry-run gate in sanitise
 Resume with: `/gsd:plan-phase 55`
 
 ---
