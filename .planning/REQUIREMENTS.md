@@ -16,8 +16,8 @@ Requirements for Skill Quality Overhaul milestone. Each maps to roadmap phases.
 ### Agent Intelligence
 
 - [x] **INTL-01**: nmr-chemist flags potential 4J HMBC couplings for aromatic systems (4+ carbons in 110-160 ppm) as separate category in [SETUP-COMPLETE] message
-- [ ] **INTL-02**: lsd-engineer defers correlations flagged as potential 4J to later HMBC batches, skipping them entirely if solutions already exist
-- [ ] **INTL-03**: solution-analyst uses lucy predict c13 to structurally verify aromatic ring presence in top candidates, not just the warnings array
+- [x] **INTL-02**: lsd-engineer defers correlations flagged as potential 4J to later HMBC batches, skipping them entirely if solutions already exist
+- [x] **INTL-03**: solution-analyst uses lucy predict c13 to structurally verify aromatic ring presence in top candidates, not just the warnings array
 - [x] **INTL-04**: Orchestrator validates incoming structured messages ([SETUP-COMPLETE], [ITERATION-COMPLETE], [RANKING-COMPLETE]) for required fields and requests resend if malformed
 
 ### Skill UX
@@ -60,8 +60,8 @@ Deferred to future releases.
 | ARCH-02 | Phase 55 | Complete |
 | ARCH-03 | Phase 55 | Complete |
 | INTL-01 | Phase 56 | Complete |
-| INTL-02 | Phase 56 | Pending |
-| INTL-03 | Phase 56 | Pending |
+| INTL-02 | Phase 56 | Complete |
+| INTL-03 | Phase 56 | Complete |
 | INTL-04 | Phase 56 | Complete |
 | SKUX-01 | Phase 57 | Pending |
 | SKUX-02 | Phase 57 | Pending |
