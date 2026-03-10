@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: "Ready for `/gsd:plan-phase 60`"
-stopped_at: Completed 60-01-PLAN.md
-last_updated: "2026-03-10T19:57:39.084Z"
+stopped_at: Completed 60-02-PLAN.md
+last_updated: "2026-03-10T20:07:14.189Z"
 last_activity: 2026-03-10 — Phase 59 Database Foundation complete
 progress:
   total_phases: 58
-  completed_phases: 53
+  completed_phases: 54
   total_plans: 91
-  completed_plans: 89
+  completed_plans: 90
   percent: 92
 ---
 
@@ -25,18 +25,18 @@ See: .planning/PROJECT.md (updated 2026-03-10)
 
 ## Current Position
 
-Phase: 60 (Statistics Generator) — not yet planned
-Status: Ready for `/gsd:plan-phase 60`
-Last activity: 2026-03-10 — Phase 59 Database Foundation complete
+Phase: 60 (Statistics Generator) — complete
+Status: Ready for `/gsd:plan-phase 61`
+Last activity: 2026-03-10 — Phase 60 Statistics Generator complete
 
-Progress: [█████████░] 92% (59/64 phases)
+Progress: [██████████] 99% (90/91 plans)
 
 ## v7.0 Phase Map
 
 | Phase | Name | Status | Requirements |
 |-------|------|--------|-------------|
 | 59 | Database Foundation | ✓ Complete | DB-01..03, VAL-02 |
-| 60 | Statistics Generator | Not started | GEN-01..04, VAL-04 |
+| 60 | Statistics Generator | ✓ Complete | GEN-01..04, VAL-04 |
 | 61 | Detection Engine | Not started | DET-01..05, CLI-01..03 |
 | 62 | Agent Skill Updates | Not started | AGT-01..04 |
 | 63 | Full Generation Run | Not started | VAL-01 (partial) |
@@ -59,9 +59,9 @@ Progress: [█████████░] 92% (59/64 phases)
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 109 across 9 milestones + v7.0 phase 59
-- v7.0: 1 phase, 2 plans, 6 commits so far
-- Cumulative: 59 phases, 109 plans
+- Total plans completed: 111 across 9 milestones + v7.0 phases 59-60
+- v7.0: 2 phases, 4 plans, 10 commits so far
+- Cumulative: 60 phases, 111 plans
 
 ## Accumulated Context
 
@@ -74,6 +74,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Phase 59]: get_coupling_path_stats_count returns 0 on OperationalError for pre-v7 DB backward compat
 - [Phase 60]: Accumulate coupling path counts in memory for full run; checkpoint saves position only, write once at end to avoid INSERT OR REPLACE partial-count conflict
 - [Phase 60]: Skip compound entirely on any NULL atom_index; partial atom mapping yields unreliable distances
+- [Phase 60]: CLI generate-coupling-stats command follows generate-hose-stats pattern for consistent output style and lazy imports
 
 ### Pending Todos
 
@@ -91,9 +92,9 @@ See `background/sherlock-analysis.md` for full Sherlock vs lucy-ng comparison. F
 
 ## Session Continuity
 
-Last session: 2026-03-10T19:57:39.079Z
-Stopped at: Completed 60-01-PLAN.md
+Last session: 2026-03-10T20:07:04.409Z
+Stopped at: Completed 60-02-PLAN.md
 Resume with: `/gsd:plan-phase 60`
 
 ---
-*Last updated: 2026-03-10 — Phase 59 complete*
+*Last updated: 2026-03-10 — Phase 60 complete*
