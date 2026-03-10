@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v7.0
-milestone_name: Statistical 4J Detection
-status: ready
-stopped_at: v7.0 roadmap created — ready for phase 59
-last_updated: "2026-03-10T19:00:00Z"
-last_activity: 2026-03-10 — v7.0 research + requirements + roadmap complete
+milestone: v1.0
+milestone_name: milestone
+status: "Ready for `/gsd:plan-phase 59`"
+stopped_at: Completed 59-01-PLAN.md
+last_updated: "2026-03-10T17:14:55.029Z"
+last_activity: 2026-03-10 — Research, requirements, and roadmap completed
 progress:
-  total_phases: 64
-  completed_phases: 58
-  total_plans: 107
-  completed_plans: 107
+  total_phases: 57
+  completed_phases: 52
+  total_plans: 89
+  completed_plans: 87
   percent: 90
 ---
 
@@ -68,6 +68,8 @@ Progress: [█████████░] 90% (58/64 phases)
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
+- [Phase 59-database-foundation]: coupling_path_stats PRIMARY KEY is (carbon_hose, h_carbon_hose, bond_distance) for O(1) pair-distance lookup
+- [Phase 59-database-foundation]: Hardcoded version strings in migration functions prevent version drift when SCHEMA_VERSION is bumped
 
 ### Pending Todos
 
@@ -85,8 +87,8 @@ See `background/sherlock-analysis.md` for full Sherlock vs lucy-ng comparison. F
 
 ## Session Continuity
 
-Last session: 2026-03-10
-Stopped at: v7.0 roadmap created — ready for phase 59
+Last session: 2026-03-10T17:14:55.026Z
+Stopped at: Completed 59-01-PLAN.md
 Resume with: `/gsd:plan-phase 59`
 
 ---
