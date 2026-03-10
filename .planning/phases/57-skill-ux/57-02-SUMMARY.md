@@ -95,3 +95,11 @@ The skill files reside in `~/.claude/commands/lucy-ng/` which is outside the luc
 ---
 *Phase: 57-skill-ux*
 *Completed: 2026-03-10*
+
+## Self-Check: PASSED
+
+- FOUND: 57-02-SUMMARY.md
+- FOUND: predict.md (HOSE miss section present)
+- FOUND: dereplicate.md (0-match section present)
+- FOUND: sanitise.md (dry_run_scan step and "No changes have been made" confirmation present)
+- FOUND: commit f149f1e (docs(57-02): complete error recovery and dry-run plan)

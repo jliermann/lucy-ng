@@ -89,6 +89,15 @@ None.
 - references/ directory established as pattern for future reference extractions
 - Phase 55 Plan 02 (agent deprecation and shared NMR reference) can proceed
 
+## Self-Check: PASSED
+
+- FOUND: ~/.claude/commands/lucy-ng/references/progress-format.md
+- FOUND: ~/.claude/commands/lucy-ng/references/loop-patterns.md
+- FOUND: ~/.claude/commands/lucy-ng/references/advisory-templates.md
+- FOUND: ~/.claude/commands/lucy-ng/case.md (497 lines, under 500 target)
+- FOUND: commit 42593a2 (chore(55-01): extract reference sections)
+- FOUND: commit 25ba72c (docs(55-01): metadata)
+
 ---
 *Phase: 55-skill-architecture*
 *Completed: 2026-03-10*
