@@ -11,7 +11,9 @@ import time
 from pathlib import Path
 
 import pytest
+from click.testing import CliRunner
 
+from lucy_ng.cli.database import database
 from lucy_ng.database import DatabaseManager
 from lucy_ng.database.models import CompoundRecord, ShiftRecord
 from lucy_ng.prediction.coupling_path_generator import CouplingPathStatsGenerator
@@ -604,3 +606,129 @@ def test_invalid_smiles_counted_as_failed():
 
         assert generator.compounds_failed == 1
         assert generator.compounds_processed == 2
+
+
+# ---------------------------------------------------------------------------
+# Task 3 Tests: CLI integration
+# ---------------------------------------------------------------------------
+
+
+def _make_cli_test_db(tmpdir: Path) -> Path:
+    """Create a test database with 8 compounds for CLI integration tests."""
+    compounds = [
+        {"smiles": "CCO", "shifts": [(1, 18.0), (2, 58.0)], "name": "ethanol", "formula": "C2H6O"},
+        {"smiles": "CCC", "shifts": [(1, 15.0), (2, 16.2), (3, 15.0)], "name": "propane", "formula": "C3H8"},
+        {"smiles": "c1ccccc1", "shifts": [(1, 128.0), (2, 128.0), (3, 128.0), (4, 128.0), (5, 128.0), (6, 128.0)], "name": "benzene", "formula": "C6H6"},
+        {"smiles": "c1ccccc1C", "shifts": [(1, 137.9), (2, 126.3), (3, 128.4), (4, 125.4), (5, 128.4), (6, 126.3), (7, 21.3)], "name": "toluene", "formula": "C7H8"},
+        {"smiles": "CCCC", "shifts": [(1, 13.7), (2, 19.0), (3, 19.0), (4, 13.7)], "name": "butane", "formula": "C4H10"},
+        {"smiles": "C(C)(C)(C)C", "shifts": [(1, 32.0), (2, 31.9), (3, 31.9), (4, 31.9), (5, 31.9)], "name": "neopentane", "formula": "C5H12"},
+        {"smiles": "OCC", "shifts": [(1, 64.0), (2, 18.0)], "name": "ethanol2", "formula": "C2H6O"},
+        {"smiles": "CCCCC", "shifts": [(1, 13.9), (2, 22.0), (3, 34.0), (4, 22.0), (5, 13.9)], "name": "pentane", "formula": "C5H12"},
+    ]
+    return _make_multi_compound_db(tmpdir, compounds)
+
+
+def test_cli_generate_coupling_stats_basic():
+    """lucy database generate-coupling-stats populates coupling_path_stats and exits 0."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmpdir = Path(tmpdir)
+        db_path = _make_cli_test_db(tmpdir)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            database,
+            ["generate-coupling-stats", "--db", str(db_path), "--fresh"],
+        )
+
+        assert result.exit_code == 0, f"CLI failed:\n{result.output}"
+        assert "compounds processed" in result.output.lower()
+
+        # Verify data was actually inserted
+        with DatabaseManager(db_path) as db:
+            count = db.get_coupling_path_stats_count()
+        assert count > 0, "No coupling path stats were inserted"
+
+
+def test_cli_generate_coupling_stats_with_limit():
+    """--limit N processes only N compounds."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmpdir = Path(tmpdir)
+        db_path = _make_cli_test_db(tmpdir)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            database,
+            ["generate-coupling-stats", "--db", str(db_path), "--fresh", "--limit", "3"],
+        )
+
+        assert result.exit_code == 0, f"CLI failed:\n{result.output}"
+        # Output should mention 3 compounds processed
+        assert "3" in result.output
+
+
+def test_cli_generate_coupling_stats_fresh_flag():
+    """--fresh clears existing data and re-generates; final count equals first run."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmpdir = Path(tmpdir)
+        db_path = _make_cli_test_db(tmpdir)
+
+        runner = CliRunner()
+
+        # First run
+        result1 = runner.invoke(
+            database,
+            ["generate-coupling-stats", "--db", str(db_path), "--fresh"],
+        )
+        assert result1.exit_code == 0, f"First run failed:\n{result1.output}"
+
+        with DatabaseManager(db_path) as db:
+            count_after_first = db.get_coupling_path_stats_count()
+
+        # Second run with --fresh
+        result2 = runner.invoke(
+            database,
+            ["generate-coupling-stats", "--db", str(db_path), "--fresh"],
+        )
+        assert result2.exit_code == 0, f"Second run failed:\n{result2.output}"
+
+        with DatabaseManager(db_path) as db:
+            count_after_second = db.get_coupling_path_stats_count()
+
+        # Fresh re-run should produce same count (not doubled)
+        assert count_after_first == count_after_second
+
+
+def test_cli_database_info_shows_coupling_stats():
+    """lucy database info reports coupling_path_stats count after generation."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmpdir = Path(tmpdir)
+        db_path = _make_cli_test_db(tmpdir)
+
+        runner = CliRunner()
+
+        # Populate coupling stats
+        gen_result = runner.invoke(
+            database,
+            ["generate-coupling-stats", "--db", str(db_path), "--fresh"],
+        )
+        assert gen_result.exit_code == 0
+
+        # Check info command shows populated count
+        info_result = runner.invoke(database, ["info", str(db_path)])
+        assert info_result.exit_code == 0, f"info failed:\n{info_result.output}"
+        assert "coupling path stats" in info_result.output.lower()
+        # Should NOT show the "empty" message
+        assert "empty" not in info_result.output.lower()
+
+
+def test_cli_generate_coupling_stats_help():
+    """generate-coupling-stats --help shows all expected options."""
+    runner = CliRunner()
+    result = runner.invoke(database, ["generate-coupling-stats", "--help"])
+
+    assert result.exit_code == 0
+    assert "--db" in result.output
+    assert "--resume" in result.output
+    assert "--fresh" in result.output
+    assert "--chunk-size" in result.output
+    assert "--limit" in result.output
