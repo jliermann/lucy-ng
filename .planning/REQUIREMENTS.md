@@ -1,0 +1,56 @@
+# Requirements: v7.0 Statistical 4J Detection
+
+**Goal:** Build database-backed statistical detection of 4J CH HMBC couplings so the CASE pipeline can identify and exclude them before LSD solving, enabling correct structure determination for aromatic compounds.
+
+**Success criteria:** Ibuprofen CASE run correctly identifies the 3 known 4J HMBC correlations, defers them, and finds the correct aromatic structure.
+
+---
+
+## Database Foundation
+
+- [DB-01] Schema v7 migration: new `coupling_path_stats` table with (carbon_hose, h_carbon_hose, bond_distance, count) schema, additive ALTER TABLE migration preserving all existing data
+- [DB-02] Pydantic models: `CouplingPathStatsRecord` for database rows, `CouplingPathDistribution` and `CouplingPathResult` for detection results
+- [DB-03] DatabaseManager queries: `get_coupling_path_stats(carbon_hose, h_carbon_hose)` for exact pair lookup, `get_coupling_path_stats_by_carbon(carbon_hose)` for fallback aggregation
+
+## Statistics Generation
+
+- [GEN-01] `CouplingPathStatsGenerator`: iterate all compounds with SMILES + atom-indexed shifts, compute CH pair shortest bond paths via RDKit `GetDistanceMatrix`, generate HOSE codes at radius 2 for both carbons, accumulate (c_hose_r2, h_hose_r2, path_length) → count
+- [GEN-02] Resumable with checkpoint/resume pattern (existing `operation_checkpoint` table), checkpoint every 10K compounds
+- [GEN-03] CLI command: `lucy database generate-coupling-stats [--db PATH] [--resume/--fresh]`
+- [GEN-04] Handle COCONUT 1-based to 0-based atom index conversion, skip compounds with NULL atom_index, validate atom symbol is carbon
+
+## Detection
+
+- [DET-01] `StatisticalDetector.detect_4j_coupling()`: single-correlation scoring — find matching HOSE codes by shift window, query coupling_path_stats, compute P(4J) distribution, classify risk level
+- [DET-02] `StatisticalDetector.detect_4j_batch()`: score all HMBC correlations at once with optimized HOSE code pre-loading
+- [DET-03] Three-tier classification: unlikely_4j (P < 0.15, normal HMBC), possible_4j (0.15 ≤ P < 0.50, `HMBC X Y 2 4`), likely_4j (P ≥ 0.50, defer)
+- [DET-04] Return probability, observation count, and recommendation per correlation — never binary flag
+- [DET-05] Minimum observation threshold: below 50 observations, return "insufficient data" instead of probability
+
+## CLI
+
+- [CLI-01] `lucy detect 4j <c_shift> <h_shift> [--format json]`: single correlation 4J risk assessment
+- [CLI-02] `lucy detect 4j-batch --correlations "c1:h1,c2:h2,..." [--format json]`: batch assessment with summary statistics
+- [CLI-03] JSON output includes per-correlation probability, risk level, observation count, recommendation, and batch summary
+
+## Agent Integration
+
+- [AGT-01] nmr-chemist: replace heuristic 4J flagging (Section 3) with `lucy detect 4j-batch` CLI call on all HMBC correlations during setup
+- [AGT-02] lsd-engineer: read statistical risk scores from nmr-chemist — high risk → defer, medium risk → `HMBC X Y 2 4`, low risk → normal
+- [AGT-03] devils-advocate: validate deferral decisions against statistical evidence, challenge if high-risk included in early batch or low-risk deferred without justification
+- [AGT-04] Cap deferred correlations at 3-4 maximum to prevent combinatorial explosion
+
+## Validation
+
+- [VAL-01] Ibuprofen UAT: the 3 known 4J correlations (ArCH 129.38↔CH2 45.03, ArCH 127.26↔CH 44.90) must be classified as likely_4j or possible_4j
+- [VAL-02] Regression test: all existing `lucy detect` commands (hybridisation, neighbours, hhb, grouping) work unchanged after schema migration
+- [VAL-03] `lucy database info` reports coupling_path_stats population status
+- [VAL-04] Checkpoint recovery: kill generation mid-run, restart continues from checkpoint with identical final results
+
+---
+
+## Priority
+
+All requirements are must-have for v7.0 except:
+- [DET-03] three-tier with `HMBC X Y 2 4` middle tier — could ship as two-tier (include/defer) if LSD bond range integration proves complex
+- [AGT-04] cap enforcement — could be advisory (agent instruction) rather than code-enforced

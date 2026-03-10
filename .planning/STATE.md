@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v7.0
 milestone_name: Statistical 4J Detection
-status: planning
-stopped_at: Milestone v7.0 started — defining requirements
-last_updated: "2026-03-10T17:30:00Z"
-last_activity: 2026-03-10 — Milestone v7.0 started
+status: ready
+stopped_at: v7.0 roadmap created — ready for phase 59
+last_updated: "2026-03-10T19:00:00Z"
+last_activity: 2026-03-10 — v7.0 research + requirements + roadmap complete
 progress:
-  total_phases: 58
+  total_phases: 64
   completed_phases: 58
   total_plans: 107
   completed_plans: 107
-  percent: 100
+  percent: 90
 ---
 
 # lucy-ng State
@@ -21,15 +21,26 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-10)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a collaborative team architecture that self-corrects through peer review
-**Current focus:** v7.0 Statistical 4J Detection — defining requirements
+**Current focus:** v7.0 Statistical 4J Detection — ready for execution
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Status: Defining requirements
-Last activity: 2026-03-10 — Milestone v7.0 started
+Phase: 59 (Database Foundation) — not yet planned
+Status: Ready for `/gsd:plan-phase 59`
+Last activity: 2026-03-10 — Research, requirements, and roadmap completed
 
-Progress: [██████████] 100%
+Progress: [█████████░] 90% (58/64 phases)
+
+## v7.0 Phase Map
+
+| Phase | Name | Status | Requirements |
+|-------|------|--------|-------------|
+| 59 | Database Foundation | Not started | DB-01..03, VAL-02 |
+| 60 | Statistics Generator | Not started | GEN-01..04, VAL-04 |
+| 61 | Detection Engine | Not started | DET-01..05, CLI-01..03 |
+| 62 | Agent Skill Updates | Not started | AGT-01..04 |
+| 63 | Full Generation Run | Not started | VAL-01 (partial) |
+| 64 | UAT | Not started | VAL-01, VAL-03 |
 
 ## Completed Milestones
 
@@ -60,24 +71,23 @@ Decisions are logged in PROJECT.md Key Decisions table.
 
 ### Pending Todos
 
-- Statistical 4J HMBC coupling detection (highest priority — deferred to future milestone)
 - Multi-compound UAT with non-aromatic compounds
 - COSY correlation integration
 - NP-likeness scoring
 
 ### Blockers/Concerns
 
-- 4J HMBC couplings through aromatic rings — heuristic flagging added in v6.0, statistical detection still needed
+None — 4J detection is now the active milestone.
 
 ### Strategic Reference
 
-See `background/sherlock-analysis.md` for full Sherlock vs lucy-ng comparison. Fragment library built (2.4M SSCs). Remaining gap: statistical 4J coupling detection.
+See `background/sherlock-analysis.md` for full Sherlock vs lucy-ng comparison. Fragment library built (2.4M SSCs). Statistical 4J coupling detection is the final major gap.
 
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: v6.0 milestone completed — all 4 phases shipped, audit passed
-Resume with: `/gsd:new-milestone`
+Stopped at: v7.0 roadmap created — ready for phase 59
+Resume with: `/gsd:plan-phase 59`
 
 ---
-*Last updated: 2026-03-10 — v6.0 Skill Quality Overhaul shipped*
+*Last updated: 2026-03-10 — v7.0 Statistical 4J Detection roadmap complete*

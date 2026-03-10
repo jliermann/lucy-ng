@@ -11,6 +11,7 @@
 - [v4.0 Team-Based CASE](milestones/v4.0-ROADMAP.md) - Phases 41-48 (shipped 2026-02-18)
 - [v5.0 Fragment Library](milestones/v5.0-ROADMAP.md) - Phases 49-54 (shipped 2026-02-21)
 - [v6.0 Skill Quality Overhaul](milestones/v6.0-ROADMAP.md) - Phases 55-58 (shipped 2026-03-10)
+- [v7.0 Statistical 4J Detection](milestones/v7.0-ROADMAP.md) - Phases 59-64 (in progress)
 
 ---
-*Last updated: 2026-03-10 after v6.0 milestone completed*
+*Last updated: 2026-03-10 after v7.0 milestone planned*
