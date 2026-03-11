@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: "Ready for `/gsd:plan-phase 61`"
-stopped_at: Completed 62-01-PLAN.md
-last_updated: "2026-03-11T10:07:24.223Z"
+stopped_at: Paused at checkpoint in 63-01-PLAN.md (Task 2 - awaiting generation completion)
+last_updated: "2026-03-11T13:43:57.919Z"
 last_activity: 2026-03-10 — Phase 60 Statistics Generator complete
 progress:
-  total_phases: 60
+  total_phases: 61
   completed_phases: 56
-  total_plans: 94
-  completed_plans: 93
+  total_plans: 96
+  completed_plans: 94
   percent: 99
 ---
 
@@ -82,6 +82,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Phase 62]: nmr-chemist runs lucy detect 4j-batch on ALL HMBC correlations (not just aromatic) — batch call once during setup
 - [Phase 62]: possible_4j uses HMBC X Y 2 4 extended bond range (not deferred); only likely_4j is deferred; deferral cap 3-4 correlations
 - [Phase 62]: deferred_4j inventory field changed to object array [{correlation, risk_level, probability}] for devils-advocate validation
+- [Phase 63]: Used --fresh flag to clear partial data; generation runs in background via nohup with output to hose_regen.log
 
 ### Pending Todos
 
@@ -99,8 +100,8 @@ See `background/sherlock-analysis.md` for full Sherlock vs lucy-ng comparison. F
 
 ## Session Continuity
 
-Last session: 2026-03-11T10:04:07.562Z
-Stopped at: Completed 62-01-PLAN.md
+Last session: 2026-03-11T13:43:57.915Z
+Stopped at: Paused at checkpoint in 63-01-PLAN.md (Task 2 - awaiting generation completion)
 Resume with: `/gsd:plan-phase 60`
 
 ---
