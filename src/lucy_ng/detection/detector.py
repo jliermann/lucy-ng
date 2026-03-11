@@ -396,7 +396,7 @@ class StatisticalDetector:
         Returns:
             CouplingPathResult with risk_level, recommendation, distribution, and metadata
         """
-        # Step 1: Get candidate HOSE codes for each shift
+        # Get candidate HOSE codes for each shift
         carbon_hose_records = self._db.get_hose_stats_by_shift_window(
             carbon_shift, radius=2, window_ppm=window_ppm
         )
@@ -407,6 +407,89 @@ class StatisticalDetector:
         carbon_hoses = list({r.hose_code for r in carbon_hose_records})
         h_carbon_hoses = list({r.hose_code for r in h_carbon_hose_records})
 
+        return self._classify_from_hose_sets(
+            carbon_shift=carbon_shift,
+            h_carbon_shift=h_carbon_shift,
+            carbon_hoses=carbon_hoses,
+            h_carbon_hoses=h_carbon_hoses,
+            likely_threshold=likely_threshold,
+            possible_threshold=possible_threshold,
+            min_observations=min_observations,
+        )
+
+    def detect_4j_batch(
+        self,
+        correlations: list[tuple[float, float]],
+        *,
+        window_ppm: float = 2.0,
+        likely_threshold: float = 0.50,
+        possible_threshold: float = 0.15,
+        min_observations: int = 50,
+    ) -> list[CouplingPathResult]:
+        """Detect 4J long-range coupling risk for multiple HMBC correlations.
+
+        Optimized for batch processing: pre-loads HOSE codes for all unique
+        shifts to avoid redundant shift-window queries when multiple correlations
+        share the same carbon or H-bearing carbon shifts.
+
+        Args:
+            correlations: List of (carbon_shift, h_carbon_shift) tuples
+            window_ppm: Shift window for HOSE code lookup (default: 2.0 ppm)
+            likely_threshold: P(4J+) above which risk is "likely" (default: 0.50)
+            possible_threshold: P(4J+) above which risk is "possible" (default: 0.15)
+            min_observations: Minimum total observations for reliable result (default: 50)
+
+        Returns:
+            List of CouplingPathResult in the same order as input correlations
+        """
+        if not correlations:
+            return []
+
+        # Collect all unique shifts
+        unique_shifts = {shift for pair in correlations for shift in pair}
+
+        # Pre-load HOSE codes for each unique shift (avoids duplicate DB queries)
+        shift_to_hose_codes: dict[float, list[str]] = {}
+        for shift in unique_shifts:
+            records = self._db.get_hose_stats_by_shift_window(
+                shift, radius=2, window_ppm=window_ppm
+            )
+            shift_to_hose_codes[shift] = list({r.hose_code for r in records})
+
+        # Process each correlation using cached HOSE codes
+        results = []
+        for carbon_shift, h_carbon_shift in correlations:
+            carbon_hoses = shift_to_hose_codes[carbon_shift]
+            h_carbon_hoses = shift_to_hose_codes[h_carbon_shift]
+
+            result = self._classify_from_hose_sets(
+                carbon_shift=carbon_shift,
+                h_carbon_shift=h_carbon_shift,
+                carbon_hoses=carbon_hoses,
+                h_carbon_hoses=h_carbon_hoses,
+                likely_threshold=likely_threshold,
+                possible_threshold=possible_threshold,
+                min_observations=min_observations,
+            )
+            results.append(result)
+
+        return results
+
+    def _classify_from_hose_sets(
+        self,
+        carbon_shift: float,
+        h_carbon_shift: float,
+        carbon_hoses: list[str],
+        h_carbon_hoses: list[str],
+        likely_threshold: float,
+        possible_threshold: float,
+        min_observations: int,
+    ) -> CouplingPathResult:
+        """Classify 4J coupling risk given pre-resolved HOSE code sets.
+
+        Shared implementation used by both detect_4j_coupling and detect_4j_batch.
+        Handles exact pair lookup, fallback to carbon-only, and risk classification.
+        """
         # No HOSE codes found for either shift => no data at all
         if not carbon_hoses or not h_carbon_hoses:
             return CouplingPathResult(
@@ -420,7 +503,7 @@ class StatisticalDetector:
                 warning="No HOSE codes found for one or both shifts",
             )
 
-        # Step 2: Exact pair lookup
+        # Exact pair lookup
         all_records = []
         used_fallback = False
 
@@ -429,7 +512,7 @@ class StatisticalDetector:
                 records = self._db.get_coupling_path_stats(carbon_hose, h_hose)
                 all_records.extend(records)
 
-        # Step 3: Fallback to carbon-only aggregation if no exact pairs
+        # Fallback to carbon-only aggregation if no exact pairs
         if not all_records:
             used_fallback = True
             for carbon_hose in carbon_hoses:
@@ -449,7 +532,7 @@ class StatisticalDetector:
                 warning="No coupling path statistics found for these HOSE codes",
             )
 
-        # Step 4: Aggregate counts by bond distance
+        # Aggregate counts by bond distance
         count_by_distance: dict[int, int] = {2: 0, 3: 0, 4: 0, 5: 0}
         for rec in all_records:
             dist = rec.bond_distance
@@ -464,7 +547,7 @@ class StatisticalDetector:
         # Count unique HOSE pairs that contributed
         unique_hose_pairs = len({(r.carbon_hose, r.h_carbon_hose) for r in all_records})
 
-        # Step 5: Insufficient data check
+        # Insufficient data check
         if total_observations < min_observations:
             return CouplingPathResult(
                 carbon_shift=carbon_shift,
@@ -479,7 +562,7 @@ class StatisticalDetector:
                 warning=f"Only {total_observations} observations (minimum: {min_observations})",
             )
 
-        # Step 6: Compute probabilities
+        # Compute probabilities
         j2 = count_by_distance[2] / total_observations
         j3 = count_by_distance[3] / total_observations
         j4 = count_by_distance[4] / total_observations
@@ -488,7 +571,7 @@ class StatisticalDetector:
         distribution = CouplingPathDistribution(j2=j2, j3=j3, j4=j4, j5_plus=j5_plus)
         p_long_range = distribution.p_long_range
 
-        # Step 7: Classify into risk tiers
+        # Classify into risk tiers
         if p_long_range >= likely_threshold:
             risk_level = RiskLevel.likely_4j
             recommendation = "defer"

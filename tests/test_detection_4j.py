@@ -477,3 +477,117 @@ def test_detect_4j_coupling_configurable_window(test_db: Path) -> None:
     # Just verify the call succeeds and returns a valid result
     assert isinstance(result, CouplingPathResult)
     assert isinstance(result.risk_level, RiskLevel)
+
+
+# ---------------------------------------------------------------------------
+# Task 3: detect_4j_batch tests
+# ---------------------------------------------------------------------------
+
+
+def test_detect_4j_batch_returns_list(test_db: Path) -> None:
+    """detect_4j_batch returns a list of CouplingPathResult."""
+    with StatisticalDetector(test_db) as detector:
+        results = detector.detect_4j_batch([(129.0, 45.0)])
+
+    assert isinstance(results, list)
+    assert len(results) == 1
+    assert isinstance(results[0], CouplingPathResult)
+
+
+def test_detect_4j_batch_empty_input(test_db: Path) -> None:
+    """Empty input list returns empty list."""
+    with StatisticalDetector(test_db) as detector:
+        results = detector.detect_4j_batch([])
+
+    assert results == []
+
+
+def test_detect_4j_batch_single_element(test_db: Path) -> None:
+    """Single-element batch matches detect_4j_coupling result."""
+    with StatisticalDetector(test_db) as detector:
+        batch_results = detector.detect_4j_batch([(129.0, 45.0)])
+        single_result = detector.detect_4j_coupling(129.0, 45.0)
+
+    assert len(batch_results) == 1
+    result = batch_results[0]
+    assert result.risk_level == single_result.risk_level
+    assert result.total_observations == single_result.total_observations
+    assert result.has_data == single_result.has_data
+    assert result.recommendation == single_result.recommendation
+
+
+def test_detect_4j_batch_multiple_correlations(test_db: Path) -> None:
+    """Batch processes multiple correlations correctly."""
+    correlations = [
+        (129.0, 45.0),   # likely_4j
+        (135.0, 45.0),   # possible_4j
+        (129.0, 39.0),   # unlikely_4j
+        (135.0, 39.0),   # insufficient_data
+    ]
+    with StatisticalDetector(test_db) as detector:
+        results = detector.detect_4j_batch(correlations)
+
+    assert len(results) == 4
+    assert results[0].risk_level == RiskLevel.likely_4j
+    assert results[1].risk_level == RiskLevel.possible_4j
+    assert results[2].risk_level == RiskLevel.unlikely_4j
+    assert results[3].risk_level == RiskLevel.insufficient_data
+
+
+def test_detect_4j_batch_matches_individual_calls(test_db: Path) -> None:
+    """Each batch result matches the corresponding single detect_4j_coupling call."""
+    correlations = [
+        (129.0, 45.0),
+        (135.0, 45.0),
+        (129.0, 39.0),
+    ]
+    with StatisticalDetector(test_db) as detector:
+        batch_results = detector.detect_4j_batch(correlations)
+        single_results = [
+            detector.detect_4j_coupling(c, h) for c, h in correlations
+        ]
+
+    for batch, single in zip(batch_results, single_results, strict=True):
+        assert batch.risk_level == single.risk_level
+        assert batch.total_observations == single.total_observations
+        assert batch.has_data == single.has_data
+        assert batch.carbon_shift == single.carbon_shift
+        assert batch.h_carbon_shift == single.h_carbon_shift
+
+
+def test_detect_4j_batch_preserves_order(test_db: Path) -> None:
+    """Results are in the same order as input correlations."""
+    correlations = [
+        (135.0, 45.0),   # possible_4j first
+        (129.0, 45.0),   # likely_4j second
+    ]
+    with StatisticalDetector(test_db) as detector:
+        results = detector.detect_4j_batch(correlations)
+
+    assert len(results) == 2
+    assert results[0].carbon_shift == 135.0
+    assert results[0].risk_level == RiskLevel.possible_4j
+    assert results[1].carbon_shift == 129.0
+    assert results[1].risk_level == RiskLevel.likely_4j
+
+
+def test_detect_4j_batch_no_data(test_db: Path) -> None:
+    """Batch handles correlations with no matching data."""
+    with StatisticalDetector(test_db) as detector:
+        results = detector.detect_4j_batch([(300.0, 400.0)])
+
+    assert len(results) == 1
+    assert results[0].has_data is False
+
+
+def test_detect_4j_batch_custom_thresholds(test_db: Path) -> None:
+    """Custom thresholds are forwarded to each detection."""
+    with StatisticalDetector(test_db) as detector:
+        # 20% 4J becomes likely with low threshold
+        results = detector.detect_4j_batch(
+            [(135.0, 45.0)],
+            likely_threshold=0.10,
+            possible_threshold=0.05,
+        )
+
+    assert results[0].risk_level == RiskLevel.likely_4j
