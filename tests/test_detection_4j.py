@@ -251,7 +251,17 @@ class TestCouplingPathResult:
 
 @pytest.fixture
 def test_db(tmp_path: Path) -> Path:
-    """Create test database with hose_stats and coupling_path_stats data."""
+    """Create test database with hose_stats and coupling_path_stats data.
+
+    Uses well-separated shift regions so each scenario has exactly one
+    carbon HOSE code match (window=2.0 ppm, shifts separated by 5+ ppm).
+
+    Scenarios:
+      A) likely_4j:         carbon at 129.0, h_carbon at 45.0 => 4J=52.4%
+      B) possible_4j:       carbon at 135.0, h_carbon at 45.0 => 4J=20%
+      C) unlikely_4j:       carbon at 129.0, h_carbon at 39.0 => 4J=5%
+      D) insufficient_data: carbon at 135.0, h_carbon at 39.0 => total=30
+    """
     db_path = tmp_path / "test_4j.db"
 
     with DatabaseManager(db_path) as db:
@@ -260,57 +270,63 @@ def test_db(tmp_path: Path) -> Path:
         conn = db.connection
         cursor = conn.cursor()
 
-        # HOSE stats for ~129 ppm (aromatic carbon) — radius 2
+        # HOSE stats — carbon shifts well separated (5+ ppm apart)
+        # Scenario A carbon: 129.0 ppm
+        # Scenario B carbon: 135.0 ppm (135-129=6 > 2*window, no overlap)
         cursor.execute(
             """
             INSERT INTO hose_stats
                 (hose_code, radius, mean, std, count, sp3_count, sp2_count, sp1_count)
             VALUES
                 ('C-3;=CC(//)', 2, 129.0, 1.5, 500, 5, 490, 5),
-                ('C-3;=CC(=C/)', 2, 130.0, 1.5, 400, 4, 392, 4)
+                ('C-3;=CC(=N/)', 2, 135.0, 1.5, 400, 4, 392, 4)
             """
         )
 
-        # HOSE stats for ~45 ppm (aliphatic CH2 — CH or CH2 next to aromatic)
+        # HOSE stats — h_carbon shifts well separated
+        # Scenario A/B h_carbon: 45.0 ppm
+        # Scenario C/D h_carbon: 39.0 ppm (39-45=-6 < -2*window, no overlap)
         cursor.execute(
             """
             INSERT INTO hose_stats
                 (hose_code, radius, mean, std, count, sp3_count, sp2_count, sp1_count)
             VALUES
                 ('C-4;CC(CC/)', 2, 45.0, 1.5, 600, 595, 5, 0),
-                ('C-4;CC(CO/)', 2, 44.5, 1.5, 300, 298, 2, 0)
+                ('C-4;CC(CO/)', 2, 39.0, 1.5, 300, 298, 2, 0)
             """
         )
 
         # coupling_path_stats rows:
-        # Scenario A: likely_4j (p_long_range >= 0.50)
-        # carbon_hose='C-3;=CC(//)', h_carbon_hose='C-4;CC(CC/)'
-        # bond_distance=2: 30 obs, bond_distance=3: 20 obs, bond_distance=4: 55 obs => total=105, 4J=52.4%
+        # Scenario A: likely_4j — carbon='C-3;=CC(//)', h_carbon='C-4;CC(CC/)'
+        # J2=10, J3=10, J4=55 => total=75, 4J=73.3% >= 0.50 => likely_4j
+        # Scenario B: possible_4j — carbon='C-3;=CC(=N/)', h_carbon='C-4;CC(CC/)'
+        # J2=40, J3=40, J4=20 => total=100, 4J=20% >= 0.15 => possible_4j
+        # Scenario C: unlikely_4j — carbon='C-3;=CC(//)', h_carbon='C-4;CC(CO/)'
+        # J2=80, J3=15, J4=5 => total=100, 4J=5% < 0.15 => unlikely_4j
+        # Scenario D: insufficient_data — carbon='C-3;=CC(=N/)', h_carbon='C-4;CC(CO/)'
+        # J2=15, J3=10, J4=5 => total=30 < min_observations=50 => insufficient_data
         cursor.executemany(
             """
             INSERT INTO coupling_path_stats (carbon_hose, h_carbon_hose, bond_distance, count)
             VALUES (?, ?, ?, ?)
             """,
             [
-                ("C-3;=CC(//)", "C-4;CC(CC/)", 2, 30),
-                ("C-3;=CC(//)", "C-4;CC(CC/)", 3, 20),
+                # Scenario A: likely_4j
+                ("C-3;=CC(//)", "C-4;CC(CC/)", 2, 10),
+                ("C-3;=CC(//)", "C-4;CC(CC/)", 3, 10),
                 ("C-3;=CC(//)", "C-4;CC(CC/)", 4, 55),
-                # Scenario B: possible_4j (p_long_range >= 0.15 but < 0.50)
-                # carbon_hose='C-3;=CC(=C/)', h_carbon_hose='C-4;CC(CC/)'
-                # bond_distance=2: 40, bond_distance=3: 40, bond_distance=4: 20 => total=100, 4J=20%
-                ("C-3;=CC(=C/)", "C-4;CC(CC/)", 2, 40),
-                ("C-3;=CC(=C/)", "C-4;CC(CC/)", 3, 40),
-                ("C-3;=CC(=C/)", "C-4;CC(CC/)", 4, 20),
-                # Scenario C: unlikely_4j (p_long_range < 0.15)
-                # use a different h_carbon_hose for carbon 'C-3;=CC(//)'
+                # Scenario B: possible_4j
+                ("C-3;=CC(=N/)", "C-4;CC(CC/)", 2, 40),
+                ("C-3;=CC(=N/)", "C-4;CC(CC/)", 3, 40),
+                ("C-3;=CC(=N/)", "C-4;CC(CC/)", 4, 20),
+                # Scenario C: unlikely_4j
                 ("C-3;=CC(//)", "C-4;CC(CO/)", 2, 80),
                 ("C-3;=CC(//)", "C-4;CC(CO/)", 3, 15),
-                ("C-3;=CC(//)", "C-4;CC(CO/)", 4, 5),  # total=100, 4J=5%
-                # Scenario D: insufficient_data — only 30 total observations
-                # use carbon='C-3;=CC(=C/)', h_carbon='C-4;CC(CO/)'
-                ("C-3;=CC(=C/)", "C-4;CC(CO/)", 2, 15),
-                ("C-3;=CC(=C/)", "C-4;CC(CO/)", 3, 10),
-                ("C-3;=CC(=C/)", "C-4;CC(CO/)", 4, 5),  # total=30, < min_observations=50
+                ("C-3;=CC(//)", "C-4;CC(CO/)", 4, 5),
+                # Scenario D: insufficient_data
+                ("C-3;=CC(=N/)", "C-4;CC(CO/)", 2, 15),
+                ("C-3;=CC(=N/)", "C-4;CC(CO/)", 3, 10),
+                ("C-3;=CC(=N/)", "C-4;CC(CO/)", 4, 5),
             ],
         )
 
@@ -322,8 +338,8 @@ def test_db(tmp_path: Path) -> Path:
 def test_detect_4j_coupling_likely_tier(test_db: Path) -> None:
     """P(4J) >= 0.50 returns likely_4j with defer recommendation."""
     with StatisticalDetector(test_db) as detector:
-        # carbon at ~129 ppm (matches 'C-3;=CC(//)'), h_carbon at ~45 ppm
-        # coupling stats: 30J2 + 20J3 + 55J4 = 105 total => 4J = 52.4%
+        # carbon at 129.0 ppm (matches 'C-3;=CC(//)'), h_carbon at 45.0 ppm
+        # coupling stats: 10J2 + 10J3 + 55J4 = 75 total => 4J = 73.3%
         result = detector.detect_4j_coupling(129.0, 45.0)
 
     assert result.risk_level == RiskLevel.likely_4j
@@ -335,9 +351,9 @@ def test_detect_4j_coupling_likely_tier(test_db: Path) -> None:
 def test_detect_4j_coupling_possible_tier(test_db: Path) -> None:
     """P(4J) >= 0.15 but < 0.50 returns possible_4j."""
     with StatisticalDetector(test_db) as detector:
-        # carbon at ~130 ppm (matches 'C-3;=CC(=C/)'), h_carbon at ~45 ppm
+        # carbon at 135.0 ppm (matches 'C-3;=CC(=N/)'), h_carbon at 45.0 ppm
         # coupling stats: 40J2 + 40J3 + 20J4 = 100 total => 4J = 20%
-        result = detector.detect_4j_coupling(130.0, 45.0)
+        result = detector.detect_4j_coupling(135.0, 45.0)
 
     assert result.risk_level == RiskLevel.possible_4j
     assert "2 4" in result.recommendation or "HMBC" in result.recommendation
@@ -348,9 +364,9 @@ def test_detect_4j_coupling_possible_tier(test_db: Path) -> None:
 def test_detect_4j_coupling_unlikely_tier(test_db: Path) -> None:
     """P(4J) < 0.15 returns unlikely_4j with normal recommendation."""
     with StatisticalDetector(test_db) as detector:
-        # carbon at ~129 ppm, h_carbon at ~44.5 ppm
+        # carbon at 129.0 ppm, h_carbon at 39.0 ppm
         # coupling stats: 80J2 + 15J3 + 5J4 = 100 total => 4J = 5%
-        result = detector.detect_4j_coupling(129.0, 44.5)
+        result = detector.detect_4j_coupling(129.0, 39.0)
 
     assert result.risk_level == RiskLevel.unlikely_4j
     assert result.recommendation == "normal"
@@ -361,8 +377,8 @@ def test_detect_4j_coupling_unlikely_tier(test_db: Path) -> None:
 def test_detect_4j_coupling_insufficient_data(test_db: Path) -> None:
     """Total observations < min_observations returns insufficient_data."""
     with StatisticalDetector(test_db) as detector:
-        # carbon at ~130 ppm, h_carbon at ~44.5 ppm => 30 total observations
-        result = detector.detect_4j_coupling(130.0, 44.5, min_observations=50)
+        # carbon at 135.0 ppm, h_carbon at 39.0 ppm => 30 total observations
+        result = detector.detect_4j_coupling(135.0, 39.0, min_observations=50)
 
     assert result.risk_level == RiskLevel.insufficient_data
     assert result.total_observations == 30
@@ -439,9 +455,9 @@ def test_detect_4j_coupling_fallback_to_carbon_aggregation(tmp_path: Path) -> No
 def test_detect_4j_coupling_configurable_thresholds(test_db: Path) -> None:
     """Custom thresholds are applied correctly."""
     with StatisticalDetector(test_db) as detector:
-        # 20% 4J is "possible" by default, but "unlikely" with likely_threshold=0.10
+        # 20% 4J is "possible" by default, but "likely" with likely_threshold=0.10
         result = detector.detect_4j_coupling(
-            130.0,
+            135.0,
             45.0,
             likely_threshold=0.10,
             possible_threshold=0.05,
@@ -454,7 +470,7 @@ def test_detect_4j_coupling_configurable_thresholds(test_db: Path) -> None:
 def test_detect_4j_coupling_configurable_window(test_db: Path) -> None:
     """window_ppm parameter controls HOSE lookup window."""
     with StatisticalDetector(test_db) as detector:
-        # Very narrow window => no HOSE codes match 129.0 (nearest is at 129.0 exactly)
+        # Very narrow window — still finds the exact-match HOSE code at 129.0
         result = detector.detect_4j_coupling(129.0, 45.0, window_ppm=0.001)
 
     # Window might be too narrow to find any coupling stats; could be no data or reduced

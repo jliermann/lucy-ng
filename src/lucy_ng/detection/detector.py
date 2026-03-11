@@ -7,11 +7,14 @@ from pathlib import Path
 from lucy_ng.database import DatabaseManager
 from lucy_ng.detection.models import (
     BondPairInfo,
+    CouplingPathDistribution,
+    CouplingPathResult,
     HHBResult,
     HybridisationDistribution,
     HybridisationResult,
     NeighbourDistribution,
     NeighbourResult,
+    RiskLevel,
 )
 
 
@@ -354,4 +357,156 @@ class StatisticalDetector:
             forbidden_pairs=forbidden_pairs,
             total_compounds=total_compounds,
             has_data=True,
+        )
+
+    def detect_4j_coupling(
+        self,
+        carbon_shift: float,
+        h_carbon_shift: float,
+        *,
+        window_ppm: float = 2.0,
+        likely_threshold: float = 0.50,
+        possible_threshold: float = 0.15,
+        min_observations: int = 50,
+    ) -> CouplingPathResult:
+        """Detect 4J long-range coupling risk for an HMBC correlation.
+
+        Looks up coupling path statistics for the HOSE codes matching the
+        given carbon and H-bearing carbon shifts, then classifies the
+        correlation into one of three risk tiers based on the probability
+        of a 4J (or longer) coupling.
+
+        Algorithm:
+        1. Find candidate HOSE codes for each shift via hose_stats shift window
+        2. Look up coupling_path_stats for all (carbon_hose, h_carbon_hose) pairs
+        3. If no exact pairs found, fall back to carbon-only aggregation
+        4. Aggregate counts by bond distance, compute probabilities
+        5. Classify: p_long_range >= likely_threshold => likely_4j (defer)
+                     p_long_range >= possible_threshold => possible_4j (HMBC X Y 2 4)
+                     else => unlikely_4j (normal)
+
+        Args:
+            carbon_shift: Chemical shift of the observed carbon in ppm
+            h_carbon_shift: Chemical shift of the proton-bearing carbon in ppm
+            window_ppm: Shift window for HOSE code lookup (default: 2.0 ppm)
+            likely_threshold: P(4J+) above which risk is "likely" (default: 0.50)
+            possible_threshold: P(4J+) above which risk is "possible" (default: 0.15)
+            min_observations: Minimum total observations for reliable result (default: 50)
+
+        Returns:
+            CouplingPathResult with risk_level, recommendation, distribution, and metadata
+        """
+        # Step 1: Get candidate HOSE codes for each shift
+        carbon_hose_records = self._db.get_hose_stats_by_shift_window(
+            carbon_shift, radius=2, window_ppm=window_ppm
+        )
+        h_carbon_hose_records = self._db.get_hose_stats_by_shift_window(
+            h_carbon_shift, radius=2, window_ppm=window_ppm
+        )
+
+        carbon_hoses = list({r.hose_code for r in carbon_hose_records})
+        h_carbon_hoses = list({r.hose_code for r in h_carbon_hose_records})
+
+        # No HOSE codes found for either shift => no data at all
+        if not carbon_hoses or not h_carbon_hoses:
+            return CouplingPathResult(
+                carbon_shift=carbon_shift,
+                h_carbon_shift=h_carbon_shift,
+                distribution=CouplingPathDistribution(),
+                total_observations=0,
+                risk_level=RiskLevel.insufficient_data,
+                recommendation="insufficient data — include as normal",
+                has_data=False,
+                warning="No HOSE codes found for one or both shifts",
+            )
+
+        # Step 2: Exact pair lookup
+        all_records = []
+        used_fallback = False
+
+        for carbon_hose in carbon_hoses:
+            for h_hose in h_carbon_hoses:
+                records = self._db.get_coupling_path_stats(carbon_hose, h_hose)
+                all_records.extend(records)
+
+        # Step 3: Fallback to carbon-only aggregation if no exact pairs
+        if not all_records:
+            used_fallback = True
+            for carbon_hose in carbon_hoses:
+                fallback_records = self._db.get_coupling_path_stats_by_carbon(carbon_hose)
+                all_records.extend(fallback_records)
+
+        # Still no records => no data
+        if not all_records:
+            return CouplingPathResult(
+                carbon_shift=carbon_shift,
+                h_carbon_shift=h_carbon_shift,
+                distribution=CouplingPathDistribution(),
+                total_observations=0,
+                risk_level=RiskLevel.insufficient_data,
+                recommendation="insufficient data — include as normal",
+                has_data=False,
+                warning="No coupling path statistics found for these HOSE codes",
+            )
+
+        # Step 4: Aggregate counts by bond distance
+        count_by_distance: dict[int, int] = {2: 0, 3: 0, 4: 0, 5: 0}
+        for rec in all_records:
+            dist = rec.bond_distance
+            # bond_distance 5 represents "5 or more" (stored as 5 in schema)
+            if dist >= 5:
+                count_by_distance[5] += rec.count
+            elif dist in count_by_distance:
+                count_by_distance[dist] += rec.count
+
+        total_observations = sum(count_by_distance.values())
+
+        # Count unique HOSE pairs that contributed
+        unique_hose_pairs = len({(r.carbon_hose, r.h_carbon_hose) for r in all_records})
+
+        # Step 5: Insufficient data check
+        if total_observations < min_observations:
+            return CouplingPathResult(
+                carbon_shift=carbon_shift,
+                h_carbon_shift=h_carbon_shift,
+                distribution=CouplingPathDistribution(),
+                total_observations=total_observations,
+                risk_level=RiskLevel.insufficient_data,
+                recommendation="insufficient data — include as normal",
+                has_data=True,
+                unique_hose_pairs=unique_hose_pairs,
+                used_fallback=used_fallback,
+                warning=f"Only {total_observations} observations (minimum: {min_observations})",
+            )
+
+        # Step 6: Compute probabilities
+        j2 = count_by_distance[2] / total_observations
+        j3 = count_by_distance[3] / total_observations
+        j4 = count_by_distance[4] / total_observations
+        j5_plus = count_by_distance[5] / total_observations
+
+        distribution = CouplingPathDistribution(j2=j2, j3=j3, j4=j4, j5_plus=j5_plus)
+        p_long_range = distribution.p_long_range
+
+        # Step 7: Classify into risk tiers
+        if p_long_range >= likely_threshold:
+            risk_level = RiskLevel.likely_4j
+            recommendation = "defer"
+        elif p_long_range >= possible_threshold:
+            risk_level = RiskLevel.possible_4j
+            recommendation = "HMBC X Y 2 4"
+        else:
+            risk_level = RiskLevel.unlikely_4j
+            recommendation = "normal"
+
+        return CouplingPathResult(
+            carbon_shift=carbon_shift,
+            h_carbon_shift=h_carbon_shift,
+            distribution=distribution,
+            total_observations=total_observations,
+            risk_level=risk_level,
+            recommendation=recommendation,
+            has_data=True,
+            unique_hose_pairs=unique_hose_pairs,
+            used_fallback=used_fallback,
         )
