@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: "Ready for `/gsd:plan-phase 61`"
-stopped_at: Completed 61-01-PLAN.md
-last_updated: "2026-03-11T08:41:02.357Z"
+stopped_at: Completed 61-02-PLAN.md
+last_updated: "2026-03-11T09:10:55.013Z"
 last_activity: 2026-03-10 — Phase 60 Statistics Generator complete
 progress:
   total_phases: 59
-  completed_phases: 54
+  completed_phases: 55
   total_plans: 93
-  completed_plans: 91
+  completed_plans: 92
   percent: 99
 ---
 
@@ -77,6 +77,8 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Phase 60]: CLI generate-coupling-stats command follows generate-hose-stats pattern for consistent output style and lazy imports
 - [Phase 61]: Test data for each tier uses well-separated shifts (5+ ppm apart) so HOSE window never picks up wrong scenario HOSE codes
 - [Phase 61]: has_data=False only when no HOSE codes found; insufficient_data uses has_data=True (data exists, insufficient count)
+- [Phase 61]: HOSE pre-loading in detect_4j_batch: collect unique shifts first, query DB once per unique shift, reuse cached results per correlation
+- [Phase 61]: detect_4j_batch uses private _classify_from_hose_sets shared with detect_4j_coupling to avoid code duplication
 
 ### Pending Todos
 
@@ -94,8 +96,8 @@ See `background/sherlock-analysis.md` for full Sherlock vs lucy-ng comparison. F
 
 ## Session Continuity
 
-Last session: 2026-03-11T08:38:58.801Z
-Stopped at: Completed 61-01-PLAN.md
+Last session: 2026-03-11T09:10:55.009Z
+Stopped at: Completed 61-02-PLAN.md
 Resume with: `/gsd:plan-phase 60`
 
 ---
