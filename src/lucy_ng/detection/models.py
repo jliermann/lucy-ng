@@ -403,6 +403,115 @@ class SignalGroup(BaseModel):
             return f"({' '.join(str(aid) for aid in self.atom_ids)})"
 
 
+class RiskLevel(str, Enum):
+    """Classification of 4J coupling risk for an HMBC correlation."""
+
+    unlikely_4j = "unlikely_4j"
+    possible_4j = "possible_4j"
+    likely_4j = "likely_4j"
+    insufficient_data = "insufficient_data"
+
+
+class CouplingPathDistribution(BaseModel):
+    """Probability distribution over bond distances for an HMBC correlation.
+
+    Probabilities sum to ~1.0 (or 0.0 if no data).
+    """
+
+    j2: float = 0.0  # Probability of 2-bond coupling
+    j3: float = 0.0  # Probability of 3-bond coupling (typical HMBC)
+    j4: float = 0.0  # Probability of 4-bond long-range coupling
+    j5_plus: float = 0.0  # Probability of 5+ bond (very long range)
+
+    @property
+    def dominant(self) -> str:
+        """Return the coupling order with highest probability.
+
+        Returns:
+            "j2", "j3", "j4", "j5_plus", or "unknown" if all zero
+        """
+        if self.j2 == 0.0 and self.j3 == 0.0 and self.j4 == 0.0 and self.j5_plus == 0.0:
+            return "unknown"
+
+        values = {"j2": self.j2, "j3": self.j3, "j4": self.j4, "j5_plus": self.j5_plus}
+        return max(values, key=lambda k: values[k])
+
+    @property
+    def p_long_range(self) -> float:
+        """Return combined probability of 4J or longer coupling (j4 + j5_plus).
+
+        This is the key risk indicator: high values mean the HMBC correlation
+        is likely a long-range artifact rather than a reliable 2-3 bond correlation.
+
+        Returns:
+            Combined probability [0.0, 1.0]
+        """
+        return self.j4 + self.j5_plus
+
+
+class CouplingPathResult(BaseModel):
+    """Result of 4J coupling risk assessment for an HMBC correlation.
+
+    Contains the probability distribution, risk level, and actionable
+    recommendation for how to handle the correlation in LSD.
+    """
+
+    carbon_shift: float  # Chemical shift of the observed carbon (ppm)
+    h_carbon_shift: float  # Chemical shift of the proton-bearing carbon (ppm)
+    distribution: CouplingPathDistribution  # Bond distance distribution
+    total_observations: int  # Total coupling path observations used
+    risk_level: RiskLevel  # Classified risk level
+    recommendation: str  # Actionable recommendation
+    has_data: bool = True  # False if no HOSE codes found for shifts
+    warning: str | None = None  # Warning message if applicable
+    unique_hose_pairs: int = 0  # Number of distinct HOSE code pairs contributing
+    used_fallback: bool = False  # True if exact pair lookup failed, used carbon-only
+
+    def summary(self) -> str:
+        """Generate human-readable summary of 4J coupling risk assessment.
+
+        Returns:
+            Multi-line text summary
+        """
+        lines = []
+
+        lines.append(
+            f"4J Coupling Risk: C={self.carbon_shift} ppm / "
+            f"H-C={self.h_carbon_shift} ppm"
+        )
+
+        if not self.has_data:
+            lines.append("No HOSE code data available for these shifts")
+            if self.warning:
+                lines.append(f"Warning: {self.warning}")
+            return "\n".join(lines)
+
+        # Risk level and recommendation
+        lines.append(f"Risk level: {self.risk_level.value}")
+        lines.append(f"Recommendation: {self.recommendation}")
+
+        # Distribution if we have data
+        if self.risk_level != RiskLevel.insufficient_data:
+            dist = self.distribution
+            lines.append(
+                f"Distribution: J2={dist.j2*100:.1f}%, J3={dist.j3*100:.1f}%, "
+                f"J4={dist.j4*100:.1f}%, J5+={dist.j5_plus*100:.1f}% "
+                f"(P(4J+)={dist.p_long_range*100:.1f}%)"
+            )
+
+        # Data coverage
+        fallback_note = " [fallback: carbon-only]" if self.used_fallback else ""
+        lines.append(
+            f"Based on {self.total_observations:,} observations from "
+            f"{self.unique_hose_pairs} HOSE pair(s){fallback_note}"
+        )
+
+        if self.warning:
+            lines.append(f"Warning: {self.warning}")
+
+        return "\n".join(lines)
+
+
 class GroupingResult(BaseModel):
     """Result of signal grouping analysis.
 
