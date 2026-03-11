@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: "Ready for `/gsd:plan-phase 61`"
-stopped_at: Completed 60-02-PLAN.md
-last_updated: "2026-03-10T20:18:29.009Z"
+stopped_at: Completed 61-01-PLAN.md
+last_updated: "2026-03-11T08:41:02.357Z"
 last_activity: 2026-03-10 — Phase 60 Statistics Generator complete
 progress:
-  total_phases: 58
+  total_phases: 59
   completed_phases: 54
-  total_plans: 91
-  completed_plans: 90
+  total_plans: 93
+  completed_plans: 91
   percent: 99
 ---
 
@@ -75,6 +75,8 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Phase 60]: Accumulate coupling path counts in memory for full run; checkpoint saves position only, write once at end to avoid INSERT OR REPLACE partial-count conflict
 - [Phase 60]: Skip compound entirely on any NULL atom_index; partial atom mapping yields unreliable distances
 - [Phase 60]: CLI generate-coupling-stats command follows generate-hose-stats pattern for consistent output style and lazy imports
+- [Phase 61]: Test data for each tier uses well-separated shifts (5+ ppm apart) so HOSE window never picks up wrong scenario HOSE codes
+- [Phase 61]: has_data=False only when no HOSE codes found; insufficient_data uses has_data=True (data exists, insufficient count)
 
 ### Pending Todos
 
@@ -92,8 +94,8 @@ See `background/sherlock-analysis.md` for full Sherlock vs lucy-ng comparison. F
 
 ## Session Continuity
 
-Last session: 2026-03-10T20:07:04.409Z
-Stopped at: Completed 60-02-PLAN.md
+Last session: 2026-03-11T08:38:58.801Z
+Stopped at: Completed 61-01-PLAN.md
 Resume with: `/gsd:plan-phase 60`
 
 ---
