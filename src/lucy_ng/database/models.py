@@ -155,20 +155,3 @@ class BondPairStatsRecord(BaseModel):
     compound_count: int  # Compounds with this bond pair
     total_compounds: int  # Total compounds with this formula
     frequency: float  # compound_count / total_compounds
-
-
-class CouplingPathStatsRecord(BaseModel):
-    """Pairwise HOSE-code bond-distance statistics for 4J coupling detection.
-
-    Each record captures how many times two carbons (identified by HOSE codes
-    at radius 2) appear at a given bond distance in the training corpus.  This
-    enables the detector to distinguish genuine 2-3J HMBC correlations from
-    4J (and longer) artefacts by comparing observed vs expected bond distances.
-
-    Schema v7+.
-    """
-
-    carbon_hose: str  # HOSE code (radius 2) of the observed carbon
-    h_carbon_hose: str  # HOSE code (radius 2) of the proton-bearing carbon
-    bond_distance: int  # Shortest bond path: 2, 3, 4, or 5 (for 5+)
-    count: int  # Number of observations in corpus

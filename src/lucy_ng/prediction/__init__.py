@@ -1,6 +1,5 @@
 """NMR chemical shift prediction using HOSE codes."""
 
-from .coupling_path_generator import CouplingPathStatsGenerator
 from .db_lookup import DatabaseHOSELookup
 from .hose import HOSEGEN_AVAILABLE, HOSECodeGenerator
 from .lookup import HOSELookupProtocol, HOSELookupTable
@@ -16,7 +15,6 @@ from .stats_generator import (
 
 __all__ = [
     "C13Predictor",
-    "CouplingPathStatsGenerator",
     "DatabaseHOSELookup",
     "HOSEGEN_AVAILABLE",
     "HOSECodeGenerator",

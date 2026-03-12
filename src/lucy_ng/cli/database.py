@@ -168,14 +168,6 @@ def info(db_path: Path) -> None:
             for source, count in sources:
                 click.echo(f"    {source or 'unknown'}: {count:,}")
 
-        # Coupling path statistics (v7+)
-        coupling_count = db.get_coupling_path_stats_count()
-        if coupling_count > 0:
-            click.echo(f"  Coupling path stats: {coupling_count:,} entries")
-        else:
-            click.echo(
-                "  Coupling path stats: empty (run 'lucy database generate-coupling-stats' to populate)"
-            )
 
 
 @database.command()
@@ -497,92 +489,3 @@ def generate_hose_stats(
                 click.echo(f"Generation complete. See {log_file} for details.")
 
 
-@database.command("generate-coupling-stats")
-@click.option(
-    "--db",
-    type=click.Path(path_type=Path),
-    default=DEFAULT_DB_PATH,
-    help=f"Path to database (default: {DEFAULT_DB_PATH})",
-)
-@click.option(
-    "--resume/--no-resume",
-    default=True,
-    help="Resume from checkpoint if exists (default: --resume)",
-)
-@click.option(
-    "--fresh",
-    is_flag=True,
-    help="Clear existing coupling path stats and checkpoint before starting",
-)
-@click.option(
-    "--chunk-size",
-    default=10000,
-    type=int,
-    help="Compounds per checkpoint (default: 10000)",
-)
-@click.option(
-    "--limit",
-    default=None,
-    type=int,
-    help="Process only first N compounds (for development)",
-)
-def generate_coupling_stats(
-    db: Path,
-    resume: bool,
-    fresh: bool,
-    chunk_size: int,
-    limit: int | None,
-) -> None:
-    """Generate coupling path statistics for 4J HMBC detection.
-
-    Processes all compounds in the database, computes shortest bond-path
-    distances for all (carbon, proton-bearing-carbon) HOSE-code pairs, and
-    populates the coupling_path_stats table.
-
-    This table is required for statistical 4J HMBC coupling detection.
-
-    \b
-        lucy database generate-coupling-stats --limit 1000
-        lucy database generate-coupling-stats --fresh
-        lucy database generate-coupling-stats --resume
-        lucy database generate-coupling-stats --db my_database.db --limit 10000
-    """
-    import time
-
-    from lucy_ng.prediction import CouplingPathStatsGenerator
-
-    start_time = time.time()
-
-    click.echo("Generating coupling path statistics...")
-    click.echo(f"  Database: {db}")
-    click.echo(f"  Chunk size: {chunk_size:,}")
-    click.echo(f"  Resume: {resume}")
-    if fresh:
-        click.echo("  Fresh start: clearing existing data")
-    if limit is not None:
-        click.echo(f"  Limit: {limit:,} compounds")
-
-    with DatabaseManager(db) as db_manager:
-        db_manager.create_tables()
-
-        compound_count = db_manager.get_compound_count()
-        click.echo(f"  Compounds in database: {compound_count:,}")
-
-        generator = CouplingPathStatsGenerator(db_manager)
-        result = generator.run(
-            resume=resume,
-            fresh=fresh,
-            chunk_size=chunk_size,
-            limit=limit,
-            progress=True,
-        )
-
-    elapsed = time.time() - start_time
-    elapsed_min = elapsed / 60
-
-    click.echo(f"\nCompleted in {elapsed_min:.1f} min")
-    click.echo(f"  Compounds processed: {result['compounds_processed']:,}")
-    if result["compounds_failed"] > 0:
-        click.echo(f"  Compounds failed/skipped: {result['compounds_failed']:,}")
-    click.echo(f"  Unique entries inserted: {result['unique_entries']:,}")
-    click.echo("\nRun 'lucy database info' to verify.")
