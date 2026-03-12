@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: "Ready for `/gsd:plan-phase 61`"
-stopped_at: Paused at checkpoint in 63-01-PLAN.md (Task 2 - awaiting generation completion)
-last_updated: "2026-03-11T13:43:57.919Z"
+stopped_at: Completed 63-01-PLAN.md (full generation run — 3,775,564 coupling_path_stats entries)
+last_updated: "2026-03-12T00:00:00.000Z"
 last_activity: 2026-03-10 — Phase 60 Statistics Generator complete
 progress:
   total_phases: 61
   completed_phases: 56
   total_plans: 96
-  completed_plans: 94
+  completed_plans: 95
   percent: 99
 ---
 
@@ -83,6 +83,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Phase 62]: possible_4j uses HMBC X Y 2 4 extended bond range (not deferred); only likely_4j is deferred; deferral cap 3-4 correlations
 - [Phase 62]: deferred_4j inventory field changed to object array [{correlation, risk_level, probability}] for devils-advocate validation
 - [Phase 63]: Used --fresh flag to clear partial data; generation runs in background via nohup with output to hose_regen.log
+- [Phase 63]: 3,775,564 coupling_path_stats entries generated from 895,099 compounds (66,372 skipped due to NULL atom indices); schema v7
 
 ### Pending Todos
 
@@ -100,9 +101,9 @@ See `background/sherlock-analysis.md` for full Sherlock vs lucy-ng comparison. F
 
 ## Session Continuity
 
-Last session: 2026-03-11T13:43:57.915Z
-Stopped at: Paused at checkpoint in 63-01-PLAN.md (Task 2 - awaiting generation completion)
-Resume with: `/gsd:plan-phase 60`
+Last session: 2026-03-12T00:00:00.000Z
+Stopped at: Completed 63-01-PLAN.md
+Resume with: `/gsd:execute-phase 63` (for 63-02) or `/gsd:plan-phase 64`
 
 ---
 *Last updated: 2026-03-10 — Phase 60 complete*
