@@ -10,11 +10,15 @@ Lucy-ng is an AI-agent skill for Computer-Assisted Structure Elucidation (CASE) 
 
 An AI agent can autonomously determine the structure of an unknown organic compound from its NMR spectra, with a multi-agent architecture that prevents unproductive loops and keeps the elucidation on track.
 
-## Current Milestone: None (between milestones)
+## Current Milestone: v8.0 pyLSD Integration
 
-v7.0 Statistical 4J Detection was **abandoned** (2026-03-12) after calibration proved the statistical approach non-viable (100% false positive rate). All code reverted. See `.planning/milestones/v7.0-ROADMAP.md` for post-mortem.
+**Goal:** Migrate from direct LSD calls to pyLSD orchestration, enabling systematic exploration of 4J HMBC coupling possibilities through multiple solver runs with different constraint configurations.
 
-**Next milestone direction:** pyLSD integration for 4J handling — use the constraint solver itself to explore 4J possibilities rather than statistical pre-filtering.
+**Target features:**
+- Replace `lucy lsd run` with pyLSD-based solving (handles ambiguous atom states, multiple LSD runs)
+- 4J exploration: systematically test suspect HMBC correlations as 2-4J using ELIM/extended bond ranges
+- Agent team integration: teach agents to use pyLSD's multi-run capabilities for 4J handling
+- pyLSD input file generation (FORM, ELIM, SHIX/SHIH commands not currently used)
 
 ## Current State
 
@@ -222,4 +226,4 @@ Minimum viable spectral data for v1:
 - 2 minor integration gaps from v6.0 audit (INTL-03 aromatic expectation relay, INTL-04 4J status field validation) — cosmetic
 
 ---
-*Last updated: 2026-03-13 after v7.0 milestone abandoned*
+*Last updated: 2026-03-13 after v8.0 milestone started*

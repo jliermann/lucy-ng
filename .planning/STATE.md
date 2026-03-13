@@ -1,11 +1,11 @@
 ---
 gsd_state_version: 1.0
-milestone: none
-milestone_name: between milestones
-status: "Between milestones — v7.0 abandoned, next milestone not started"
-stopped_at: v7.0 abandoned and archived
+milestone: v8.0
+milestone_name: pyLSD Integration
+status: "Defining requirements"
+stopped_at: null
 last_updated: "2026-03-13"
-last_activity: 2026-03-13 — v7.0 milestone abandoned and archived
+last_activity: 2026-03-13 — Milestone v8.0 started
 progress:
   total_phases: 58
   completed_phases: 57
@@ -21,13 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-13)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a collaborative team architecture that self-corrects through peer review
-**Current focus:** Between milestones — planning next milestone
+**Current focus:** v8.0 pyLSD Integration — defining requirements
 
 ## Current Position
 
-No active milestone. v7.0 abandoned (2026-03-12), archived (2026-03-13).
-
-Next step: `/gsd:new-milestone`
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-13 — Milestone v8.0 started
 
 ## Completed Milestones
 
@@ -77,7 +78,7 @@ See `background/sherlock-analysis.md` for full Sherlock vs lucy-ng comparison. F
 
 Last session: 2026-03-13
 Stopped at: v7.0 milestone abandoned and archived
-Resume with: `/gsd:new-milestone`
+Resume with: Define requirements, then `/gsd:plan-phase`
 
 ---
 *Last updated: 2026-03-13 — v7.0 abandoned and archived*
