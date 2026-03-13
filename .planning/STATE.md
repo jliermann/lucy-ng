@@ -1,13 +1,13 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: "Ready for `/gsd:plan-phase 61`"
-stopped_at: Completed 63-02-PLAN.md (calibration reveals 100% false positive rate — architectural fix needed before UAT)
-last_updated: "2026-03-12T16:31:49.867Z"
-last_activity: 2026-03-10 — Phase 60 Statistics Generator complete
+milestone: none
+milestone_name: between milestones
+status: "Between milestones — v7.0 abandoned, next milestone not started"
+stopped_at: v7.0 abandoned and archived
+last_updated: "2026-03-13"
+last_activity: 2026-03-13 — v7.0 milestone abandoned and archived
 progress:
-  total_phases: 61
+  total_phases: 58
   completed_phases: 57
   total_plans: 96
   completed_plans: 95
@@ -18,29 +18,16 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-10)
+See: .planning/PROJECT.md (updated 2026-03-13)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a collaborative team architecture that self-corrects through peer review
-**Current focus:** v7.0 Statistical 4J Detection — Phase 59 complete
+**Current focus:** Between milestones — planning next milestone
 
 ## Current Position
 
-Phase: 60 (Statistics Generator) — complete
-Status: Ready for `/gsd:plan-phase 61`
-Last activity: 2026-03-10 — Phase 60 Statistics Generator complete
+No active milestone. v7.0 abandoned (2026-03-12), archived (2026-03-13).
 
-Progress: [██████████] 99% (90/91 plans)
-
-## v7.0 Phase Map
-
-| Phase | Name | Status | Requirements |
-|-------|------|--------|-------------|
-| 59 | Database Foundation | ✓ Complete | DB-01..03, VAL-02 |
-| 60 | Statistics Generator | ✓ Complete | GEN-01..04, VAL-04 |
-| 61 | Detection Engine | Not started | DET-01..05, CLI-01..03 |
-| 62 | Agent Skill Updates | Not started | AGT-01..04 |
-| 63 | Full Generation Run | Not started | VAL-01 (partial) |
-| 64 | UAT | Not started | VAL-01, VAL-03 |
+Next step: `/gsd:new-milestone`
 
 ## Completed Milestones
 
@@ -55,36 +42,22 @@ Progress: [██████████] 99% (90/91 plans)
 | v4.0 Team-Based CASE | 41-48 | 2026-02-18 |
 | v5.0 Fragment Library | 49-54 | 2026-02-21 |
 | v6.0 Skill Quality Overhaul | 55-58 | 2026-03-10 |
+| v7.0 Statistical 4J Detection | 59-64 | ABANDONED 2026-03-12 |
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 111 across 9 milestones + v7.0 phases 59-60
-- v7.0: 2 phases, 4 plans, 10 commits so far
-- Cumulative: 60 phases, 111 plans
+- Total plans completed: 111 across 10 milestones (9 shipped + 1 abandoned)
+- v7.0: 5 phases executed, 9 plans, all reverted
+- Cumulative: 58 phases with code, 111 plans
 
 ## Accumulated Context
 
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
-- [Phase 59]: coupling_path_stats PRIMARY KEY is (carbon_hose, h_carbon_hose, bond_distance) for O(1) pair-distance lookup
-- [Phase 59]: Hardcoded version strings in migration functions prevent version drift when SCHEMA_VERSION is bumped
-- [Phase 59]: Used executemany for insert_coupling_path_stats_batch — simpler and faster
-- [Phase 59]: get_coupling_path_stats_count returns 0 on OperationalError for pre-v7 DB backward compat
-- [Phase 60]: Accumulate coupling path counts in memory for full run; checkpoint saves position only, write once at end to avoid INSERT OR REPLACE partial-count conflict
-- [Phase 60]: Skip compound entirely on any NULL atom_index; partial atom mapping yields unreliable distances
-- [Phase 60]: CLI generate-coupling-stats command follows generate-hose-stats pattern for consistent output style and lazy imports
-- [Phase 61]: Test data for each tier uses well-separated shifts (5+ ppm apart) so HOSE window never picks up wrong scenario HOSE codes
-- [Phase 61]: has_data=False only when no HOSE codes found; insufficient_data uses has_data=True (data exists, insufficient count)
-- [Phase 61]: HOSE pre-loading in detect_4j_batch: collect unique shifts first, query DB once per unique shift, reuse cached results per correlation
-- [Phase 61]: detect_4j_batch uses private _classify_from_hose_sets shared with detect_4j_coupling to avoid code duplication
-- [Phase 62]: nmr-chemist runs lucy detect 4j-batch on ALL HMBC correlations (not just aromatic) — batch call once during setup
-- [Phase 62]: possible_4j uses HMBC X Y 2 4 extended bond range (not deferred); only likely_4j is deferred; deferral cap 3-4 correlations
-- [Phase 62]: deferred_4j inventory field changed to object array [{correlation, risk_level, probability}] for devils-advocate validation
-- [Phase 63]: Used --fresh flag to clear partial data; generation runs in background via nohup with output to hose_regen.log
-- [Phase 63]: 3,775,564 coupling_path_stats entries generated from 895,099 compounds (66,372 skipped due to NULL atom indices); schema v7
-- [Phase 63]: Threshold calibration (63-02): p_long_range = j4 + j5_plus produces 100% false positive rate; j5+ dominates universally; no threshold adjustment can fix this; architectural fix required before UAT
+- [v7.0 Post-Mortem]: Statistical 4J detection non-viable — 100% FP rate, j5_plus dominates universally
+- [v7.0 Post-Mortem]: Next approach is pyLSD integration — solver explores 4J possibilities directly
 
 ### Pending Todos
 
@@ -98,13 +71,13 @@ None.
 
 ### Strategic Reference
 
-See `background/sherlock-analysis.md` for full Sherlock vs lucy-ng comparison. Fragment library built (2.4M SSCs). Statistical 4J coupling detection is the final major gap.
+See `background/sherlock-analysis.md` for full Sherlock vs lucy-ng comparison. Fragment library built (2.4M SSCs). 4J handling is the remaining major gap — next approach: pyLSD integration.
 
 ## Session Continuity
 
-Last session: 2026-03-12T16:31:42.594Z
-Stopped at: Completed 63-02-PLAN.md (calibration reveals 100% false positive rate — architectural fix needed before UAT)
-Resume with: `/gsd:execute-phase 63` (for 63-02) or `/gsd:plan-phase 64`
+Last session: 2026-03-13
+Stopped at: v7.0 milestone abandoned and archived
+Resume with: `/gsd:new-milestone`
 
 ---
-*Last updated: 2026-03-10 — Phase 60 complete*
+*Last updated: 2026-03-13 — v7.0 abandoned and archived*

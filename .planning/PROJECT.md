@@ -10,15 +10,11 @@ Lucy-ng is an AI-agent skill for Computer-Assisted Structure Elucidation (CASE) 
 
 An AI agent can autonomously determine the structure of an unknown organic compound from its NMR spectra, with a multi-agent architecture that prevents unproductive loops and keeps the elucidation on track.
 
-## Current Milestone: v7.0 Statistical 4J Detection
+## Current Milestone: None (between milestones)
 
-**Goal:** Build database-backed statistical detection of 4J CH HMBC couplings so the CASE pipeline can identify and exclude them before LSD solving, enabling correct structure determination for aromatic compounds.
+v7.0 Statistical 4J Detection was **abandoned** (2026-03-12) after calibration proved the statistical approach non-viable (100% false positive rate). All code reverted. See `.planning/milestones/v7.0-ROADMAP.md` for post-mortem.
 
-**Target features:**
-- Statistical 4J coupling probability from HOSE database (atom-type pair frequencies at 4-bond distance)
-- CLI command for 4J detection (`lucy detect 4j` or similar)
-- Integration with nmr-chemist agent (replace heuristic flagging with statistical evidence)
-- Multi-compound CASE UAT to validate the full pipeline with 4J-aware solving
+**Next milestone direction:** pyLSD integration for 4J handling — use the constraint solver itself to explore 4J possibilities rather than statistical pre-filtering.
 
 ## Current State
 
@@ -101,8 +97,8 @@ An AI agent can autonomously determine the structure of an unknown organic compo
 
 ### Deferred
 
-- [ ] Statistical 4J HMBC coupling detection (Priority 1 — v4.0/v5.0 UAT root cause)
-- [ ] Multi-compound CASE comparison UAT (blocked on 4J detection or non-aromatic test compounds)
+- [ ] 4J HMBC coupling handling via pyLSD (Priority 1 — v7.0 statistical approach failed, pyLSD solver-based approach next)
+- [ ] Multi-compound CASE comparison UAT (blocked on 4J handling or non-aromatic test compounds)
 - [ ] Support for COSY correlations in LSD constraints (Priority 3)
 - [ ] NP-likeness scoring for solution filtering (Priority 4 — RDKit built-in)
 - [ ] Multi-fragment sequential injection (FRAG-05)
@@ -195,6 +191,8 @@ Minimum viable spectral data for v1:
 | Trigger phrase pattern | v6.0: "Use when:" prefix in skill descriptions for NL intent routing | Good |
 | Dry-run gate in sanitise | v6.0: READ-ONLY scan, manifest report, exact "proceed" required before writes | Good |
 | Smoke test mode | v6.0: --smoke-test flag for 1-iteration CASE pipeline validation | Good |
+| Statistical 4J detection abandoned | v7.0: HOSE pair distance statistics produce 100% false positive rate — j5_plus dominates universally. Approach fundamentally non-viable. | Failed |
+| pyLSD for 4J handling | v7.0 post-mortem: Use constraint solver to explore 4J possibilities directly rather than statistical pre-filtering | Pending |
 
 ## Technical State
 
@@ -219,9 +217,9 @@ Minimum viable spectral data for v1:
 - Constraint inventory: JSON tracking in LSD file headers, DA reconciliation gate, DEFF/FEXP tracking
 
 **Known tech debt:**
-- 4J HMBC couplings through aromatic rings not statistically detected — heuristic flagging added in v6.0, statistical 4J-01 still needed
+- 4J HMBC couplings through aromatic rings: heuristic flagging in v6.0, statistical approach failed in v7.0 — next approach: pyLSD integration
 - Multi-compound CASE UAT deferred — all test compounds have 4J risk
 - 2 minor integration gaps from v6.0 audit (INTL-03 aromatic expectation relay, INTL-04 4J status field validation) — cosmetic
 
 ---
-*Last updated: 2026-03-10 after v7.0 milestone started*
+*Last updated: 2026-03-13 after v7.0 milestone abandoned*

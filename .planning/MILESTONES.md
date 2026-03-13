@@ -1,5 +1,31 @@
 # Project Milestones: lucy-ng
 
+## v7.0 Statistical 4J Detection (ABANDONED: 2026-03-12)
+
+**Delivered:** Nothing — milestone abandoned after calibration revealed fundamental non-viability of statistical approach. All code reverted (commit `ee797e0`).
+
+**Phases:** 59-64 (6 phases planned, 5 executed, all code reverted)
+
+**Post-mortem finding:** After generating 3.78M coupling_path_stats entries from 895K compounds, calibration showed a 100% false positive rate. The `p_long_range = j4 + j5_plus` metric does not discriminate because j5_plus (5+ bond paths) dominates universally (67-90%) for ALL shift pairs. No threshold combination produces correct behavior.
+
+**Root cause:** The generator records all (carbon, H-carbon) atom pair distances in each molecule, but most pairs are 5+ bonds apart regardless of chemical environment. Aggregate statistics cannot distinguish "this HMBC correlation is likely 4J" from "these atoms happen to be far apart in most molecules."
+
+**Decision:** 4J problem will be addressed differently — pyLSD integration (constraint solver explores 4J possibilities directly) rather than statistical pre-filtering.
+
+**Stats:**
+- 6 phases, 9 plans executed then reverted, 0 requirements met
+- ~3,600 lines written and deleted
+- 3 days (2026-03-10 → 2026-03-12)
+- Net code change: 0 lines (full revert)
+
+**Git range:** `23cbf91` → `ee797e0` (revert)
+
+**Calibration data:** `.planning/phases/63-full-generation-run/calibration-results.md`
+
+**What's next:** pyLSD integration for 4J handling, multi-compound UAT
+
+---
+
 ## v6.0 Skill Quality Overhaul (Shipped: 2026-03-10)
 
 **Delivered:** Comprehensive quality overhaul of all skill and agent definitions — factored oversized orchestrator, added 4J HMBC coupling awareness, optimized skill triggering, archived legacy agent, improved error handling, and added smoke test infrastructure.
