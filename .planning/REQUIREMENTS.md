@@ -72,31 +72,31 @@ Deferred to future release. Tracked but not in current roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| GATE-01 | — | Pending |
-| INPUT-01 | — | Pending |
-| INPUT-02 | — | Pending |
-| INPUT-03 | — | Pending |
-| INPUT-04 | — | Pending |
-| INPUT-05 | — | Pending |
-| ORCH-01 | — | Pending |
-| ORCH-02 | — | Pending |
-| ORCH-03 | — | Pending |
-| ORCH-04 | — | Pending |
-| CLI-01 | — | Pending |
-| CLI-02 | — | Pending |
-| CLI-03 | — | Pending |
-| AGT-01 | — | Pending |
-| AGT-02 | — | Pending |
-| AGT-03 | — | Pending |
-| AGT-04 | — | Pending |
-| UAT-01 | — | Pending |
-| UAT-02 | — | Pending |
+| GATE-01 | Phase 65 | Pending |
+| INPUT-01 | Phase 66 | Pending |
+| INPUT-02 | Phase 66 | Pending |
+| INPUT-03 | Phase 66 | Pending |
+| INPUT-04 | Phase 66 | Pending |
+| INPUT-05 | Phase 68 | Pending |
+| ORCH-01 | Phase 67 | Pending |
+| ORCH-02 | Phase 67 | Pending |
+| ORCH-03 | Phase 67 | Pending |
+| ORCH-04 | Phase 67 | Pending |
+| CLI-01 | Phase 69 | Pending |
+| CLI-02 | Phase 69 | Pending |
+| CLI-03 | Phase 69 | Pending |
+| AGT-01 | Phase 70 | Pending |
+| AGT-02 | Phase 70 | Pending |
+| AGT-03 | Phase 70 | Pending |
+| AGT-04 | Phase 70 | Pending |
+| UAT-01 | Phase 71 | Pending |
+| UAT-02 | Phase 71 | Pending |
 
 **Coverage:**
 - v1 requirements: 19 total
-- Mapped to phases: 0
-- Unmapped: 19 (roadmap pending)
+- Mapped to phases: 19
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-13*
-*Last updated: 2026-03-13 after initial definition*
+*Last updated: 2026-03-13 — traceability complete after roadmap creation*

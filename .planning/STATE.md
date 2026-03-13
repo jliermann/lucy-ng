@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v8.0
 milestone_name: pyLSD Integration
-status: "Defining requirements"
+status: "Roadmap defined"
 stopped_at: null
 last_updated: "2026-03-13"
-last_activity: 2026-03-13 — Milestone v8.0 started
+last_activity: 2026-03-13 — v8.0 roadmap created (7 phases, 65-71)
 progress:
-  total_phases: 58
-  completed_phases: 57
-  total_plans: 96
+  total_phases: 65
+  completed_phases: 58
+  total_plans: 97
   completed_plans: 95
-  percent: 99
+  percent: 98
 ---
 
 # lucy-ng State
@@ -21,14 +21,33 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-13)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a collaborative team architecture that self-corrects through peer review
-**Current focus:** v8.0 pyLSD Integration — defining requirements
+**Current focus:** v8.0 pyLSD Integration — Phase 65 (Hypothesis Validation Gate) ready to start
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-03-13 — Milestone v8.0 started
+Phase: 65 — Hypothesis Validation Gate
+Plan: — (not yet planned)
+Status: Roadmap defined, ready to plan Phase 65
+Last activity: 2026-03-13 — v8.0 roadmap created
+
+## Phase Map (v8.0)
+
+```
+Phase 65: Hypothesis Validation Gate    [ ] Not started
+Phase 66: LSDInputGenerator Extensions  [ ] Not started  (depends on 65)
+Phase 67: PyLSDOrchestrator/Merger      [ ] Not started  (depends on 66)
+Phase 68: Constraint Inventory v2       [ ] Not started  (depends on 65)
+Phase 69: CLI and Regression Suite      [ ] Not started  (depends on 66, 67)
+Phase 70: Agent Skill Updates           [ ] Not started  (depends on 68, 69)
+Phase 71: Ibuprofen CASE UAT            [ ] Not started  (depends on 70)
+```
+
+Wave structure:
+- Wave 0: Phase 65 (gate — must complete before all others)
+- Wave 1: Phases 66, 68 (parallel — generator extensions and schema, both depend only on 65)
+- Wave 2: Phase 67 (depends on 66), Phase 69 (depends on 66 + 67)
+- Wave 3: Phase 70 (depends on 68 + 69)
+- Wave 4: Phase 71 (depends on 70)
 
 ## Completed Milestones
 
@@ -49,7 +68,7 @@ Last activity: 2026-03-13 — Milestone v8.0 started
 
 **Velocity:**
 - Total plans completed: 111 across 10 milestones (9 shipped + 1 abandoned)
-- v7.0: 5 phases executed, 9 plans, all reverted
+- v7.0: 5 phases executed, 9 plans, all reverted — 0 requirements met
 - Cumulative: 58 phases with code, 111 plans
 
 ## Accumulated Context
@@ -59,26 +78,29 @@ Last activity: 2026-03-13 — Milestone v8.0 started
 Decisions are logged in PROJECT.md Key Decisions table.
 - [v7.0 Post-Mortem]: Statistical 4J detection non-viable — 100% FP rate, j5_plus dominates universally
 - [v7.0 Post-Mortem]: Next approach is pyLSD integration — solver explores 4J possibilities directly
+- [v8.0 Research]: ELIM does NOT extend bond ranges — it drops correlations entirely. Use `HMBC X Y 2 4` for 4J handling.
+- [v8.0 Research]: pyLSD should NOT be installed as an external tool — implement PyLSDOrchestrator directly in Python (~230 lines)
+- [v8.0 Research]: Phase 65 is a manual validation gate (30 minutes, no code) — hypothesis must be confirmed before coding begins
 
 ### Pending Todos
 
-- Multi-compound UAT with non-aromatic compounds
-- COSY correlation integration
-- NP-likeness scoring
+- Multi-compound UAT with non-aromatic compounds (v9.0)
+- COSY correlation integration (deferred)
+- NP-likeness scoring (deferred)
 
 ### Blockers/Concerns
 
-None.
+None. Phase 65 (hypothesis gate) is the first action — if it fails, roadmap is revised before any code is written.
 
 ### Strategic Reference
 
-See `background/sherlock-analysis.md` for full Sherlock vs lucy-ng comparison. Fragment library built (2.4M SSCs). 4J handling is the remaining major gap — next approach: pyLSD integration.
+See `background/sherlock-analysis.md` for full Sherlock vs lucy-ng comparison. Fragment library built (2.4M SSCs). 4J handling is the remaining major gap — v8.0 approach: pyLSD-style multi-run orchestration.
 
 ## Session Continuity
 
 Last session: 2026-03-13
-Stopped at: v7.0 milestone abandoned and archived
-Resume with: Define requirements, then `/gsd:plan-phase`
+Stopped at: v8.0 roadmap created
+Resume with: `/gsd:plan-phase 65` — manual hypothesis validation (30-minute test, no code)
 
 ---
-*Last updated: 2026-03-13 — v7.0 abandoned and archived*
+*Last updated: 2026-03-13 — v8.0 roadmap created (7 phases, 65-71)*
