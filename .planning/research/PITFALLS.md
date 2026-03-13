@@ -1,229 +1,255 @@
-# Pitfalls Research: Fragment Library for CASE
+# Pitfalls Research: pyLSD Integration and 4J HMBC Exploration
 
-**Domain:** Adding SSC-based fragment library to existing 928K-compound CASE system
-**Researched:** 2026-02-19
-**Confidence:** MEDIUM-HIGH (Sherlock thesis analysis + project source code + architecture review)
+**Domain:** Adding pyLSD-based solving and systematic 4J HMBC exploration to existing LSD-based CASE system
+**Researched:** 2026-03-13
+**Confidence:** HIGH (v7.0 post-mortem + direct LSD/pyLSD documentation + WebCocon 4J research + existing codebase analysis)
 
 ---
 
 ## Critical Pitfalls
 
-Mistakes that require rewrites, corrupt the database, or silently produce wrong structures.
+Mistakes that require rewrites, silently produce wrong structures, or break working ibuprofen-free test cases.
 
-### Pitfall 1: SSC Extraction Takes 10-20+ Hours — No Checkpointing Built In
-
-**What goes wrong:**
-SSC extraction from 928K compounds involves generating RDKit substructures for every carbon atom in every compound. Sherlock extracted 24.5M SSCs from 892K compounds. At comparable scale, this is a multi-hour job (HOSE stats regeneration for lucy-ng took 8h39m for 7.9M entries — SSC extraction is similar or worse because substructure enumeration involves graph traversal per atom per compound, not just HOSE lookups). If the process fails at hour 7 with no checkpoint, you restart from zero.
-
-**Why it happens:**
-SSC extraction is a one-time pipeline step, so developers underestimate its duration and write a simple for-loop without checkpointing. The existing HOSE stats generator already has this exact pitfall pattern — the checkpoint infrastructure (`operation_checkpoint` table, `CHECKPOINT_KEY_LAST_COMPOUND_ID`) was added after experiencing restart pain.
-
-**How to avoid:**
-Reuse the existing checkpoint pattern from `stats_generator.py`. The `operation_checkpoint` table and `set_checkpoint`/`get_checkpoint` methods already exist in `DatabaseManager`. Implement SSC extraction with:
-1. Batch processing in groups of 1000 compounds
-2. Checkpoint after every batch: `db.set_checkpoint("ssc_last_compound_id", str(compound_id))`
-3. Resume with `iter_compounds_with_shifts_from(start_id=last_checkpoint)`
-4. Validate checkpoint resume by verifying SSC count at restart matches expected from prior run
-
-**Warning signs:**
-- Extraction script has no progress bar and no checkpoint saves
-- Extraction takes > 30 minutes on a test run without any intermediate commits
-- No `ssc_last_compound_id` key in `operation_checkpoint` table during a run
-- Log shows "processed N compounds" but no intermediate database inserts
-
-**Phase to address:**
-SSC Extraction Pipeline phase — must be the first deliverable tested. Run on 10K compound sample first to measure per-compound cost and project total time before committing to full 928K run.
-
----
-
-### Pitfall 2: Fingerprint Bin Size Determines the Quality of Every Search — Wrong Value Is Unrecoverable
+### Pitfall 1: ELIM Command Semantics Are Counterintuitive — `ELIM x y` Explores Elimination, Not Bonds
 
 **What goes wrong:**
-Sherlock uses 256-bit fingerprints with 2 ppm bins. The bit at position N is set if any carbon in the SSC has a shift in the range [N×2, (N+1)×2] ppm. This 2 ppm bin is a calibrated choice: too small (0.5 ppm) → fingerprints too sparse, AND operations return too few candidates → over-filters; too large (5 ppm) → fingerprints too dense, AND operations return too many candidates → no pre-screening benefit. The fingerprint bin size is baked into every row of the SSC table at extraction time. Changing it requires re-extracting all 24.5M+ SSCs.
+The ELIM command means "allow LSD to eliminate up to x HMBC correlations that may arise from VLRCs through up to y bonds." The second parameter `y` is NOT the maximum allowed bond count — it is the maximum bond count of correlations that may be ELIMINATED. The HMBC correlation is still interpreted as 2J then 3J; it is discarded entirely (not extended to 4J) if that fails and fewer than x correlations have been dropped.
+
+Concretely:
+- `ELIM 1 0` — LSD may ignore up to 1 HMBC correlation with no bond distance restriction. This is how the existing agent uses ELIM as a last resort for over-constrained problems.
+- `ELIM 1 4` — LSD may ignore up to 1 correlation that passes through 4 bonds. This is NOT the same as "allow HMBC to be 4J."
+
+The correct syntax for allowing 4J HMBC interpretation is NOT ELIM — it is using `HMBC C H 2 4` (the 4-argument form) which explicitly sets min/max bond range per correlation. ELIM causes correlations to be dropped entirely, not extended.
+
+Using `ELIM 1 4` when you intend "allow this correlation to be 4J" causes the correlation to be silently discarded when it cannot be satisfied as 2J/3J, producing structures that ignore genuine 4J-only connections. Solutions found under ELIM may be valid subsets of the over-constrained problem, but the 4J connectivity is missing — not resolved.
 
 **Why it happens:**
-The bin size looks like a tunable parameter that can be changed at search time. It is not — it determines how the bitsets are computed at storage time. A developer implementing this for the first time may choose "something reasonable" and proceed, discovering only after full extraction that the search recall is unacceptable.
+The ELIM command looks like it relaxes bond distance constraints ("through up to y bonds") but it actually controls correlation *elimination* not correlation *extension*. The distinction is invisible in the syntax. ELIM is the existing agent's emergency tool for zero solutions — the obvious next step when you know 4J correlations exist is to raise the ELIM distance parameter. That is the wrong approach.
 
 **How to avoid:**
-Validate the bin size on a sample BEFORE full extraction:
-1. Extract SSCs from 1K compounds with each candidate bin size (0.5, 1.0, 2.0, 5.0 ppm)
-2. For each bin size, run fragment search on 5 known compounds from the Sherlock test set
-3. Measure recall (does the correct fragment appear in the candidate set?) and precision (fraction of candidates that survive fine matching)
-4. Accept 2 ppm only if: recall > 99% and candidates-per-search < 1000
-5. Commit bin size to `schema_meta` table before extraction: `db.set_checkpoint("ssc_fingerprint_bin_ppm", "2.0")`
-
-**Warning signs:**
-- Bin size selected based on intuition, not empirical validation
-- Fragment search returns 0 candidates for known-matching fragments (too-small bin)
-- Fragment search returns > 5000 candidates requiring fine matching (too-large bin)
-- Bin size not recorded anywhere in the database
-
-**Phase to address:**
-SSC Extraction Pipeline phase — validate bin size on sample before full run. This is a BLOCKING decision. Nothing else can proceed until bin size is confirmed.
-
----
-
-### Pitfall 3: RDKit Substructure Enumeration Produces Invalid SSCs from Aromatic Systems
-
-**What goes wrong:**
-RDKit's ring system handling with aromatic SMILES produces ambiguous substructures. A benzene ring fragment may be enumerated as `c1ccccc1` (aromatic) or `C1=CC=CC=C1` (Kekulé). These do NOT match via RDKit's `HasSubstructMatch` if one is aromatic and the other Kekulé. Result: SSC stored as aromatic, query substructure is Kekulé → false negative. In Sherlock (Java/CDK), aromaticity perception is explicit. In RDKit (Python), it depends on `SanitizeMol` call order.
-
-**Why it happens:**
-SMILES from the compound database may be stored in either aromatic or Kekulé form depending on source (COCONUT uses aromatic notation, NMRShiftDB may not). When generating substructures via RDKit, the output form depends on which sanitization path is taken. Inconsistency between storage and query time causes lookup failures.
-
-**How to avoid:**
-Standardize ALL molecules before SSC extraction using a single aromaticity model:
-```python
-from rdkit import Chem
-from rdkit.Chem import MolFromSmiles
-
-# CORRECT: explicit aromaticity perception with canonical SMILES output
-def standardize_mol(smiles: str) -> str | None:
-    mol = MolFromSmiles(smiles)
-    if mol is None:
-        return None
-    Chem.SetAromaticity(mol, Chem.AromaticityModel.AROMATICITY_MDL)
-    return Chem.MolToSmiles(mol)  # canonical, consistent aromaticity
+Use per-correlation explicit bond range syntax for known 4J correlations:
 ```
-Apply the same standardization at query time (when building the query fragment from the experimental spectrum data). The molecule representation at storage time MUST match query time exactly.
+HMBC 4 8 2 4    ; C4 to H8, allow 2J-4J (explicit range)
+HMBC 6 9 2 3    ; C6 to H9, strict 2J-3J (default range)
+```
+Reserve `ELIM x 0` for its intended use: when a small number of correlations are suspected to be spectral artifacts or data entry errors (not genuine 4J). The v8.0 design should use explicit per-correlation ranges for 4J candidates, NOT ELIM.
 
 **Warning signs:**
-- SSC search on a compound using its own spectrum returns 0 matches (self-search should always match)
-- Fragment search performance is asymmetric: aromatic compounds get 0 candidates, aliphatic compounds work
-- Recall drops sharply for compounds containing aromatic rings
+- Agent writes `ELIM 1 4` to "allow 4J" and gets solutions, but solutions lack the expected aromatic ring pattern (4J connectivity was dropped rather than satisfied)
+- lsd-engineer skill documentation conflates ELIM's "through y bonds" with explicit bond range syntax
+- Solutions pass with ELIM but fail the aromatic ring sanity check (silent 4J correlation loss)
 
 **Phase to address:**
-SSC Extraction Pipeline phase — implement standardization before any extraction. Add a self-search test to the extraction validation suite: for 100 randomly sampled compounds, verify that searching with their own spectrum finds at least one matching SSC.
+pyLSD integration phase — lsd-engineer knowledge update must distinguish ELIM from per-correlation bond ranges. Add explicit tested examples to agent skill. Document: "ELIM drops correlations entirely. Use `HMBC C H min max` to allow 4J without dropping."
 
 ---
 
-### Pitfall 4: DEFF/FEXP Goodlist Semantics Are Opposite to DEFF NOT Badlist — Agent Will Conflate Them
+### Pitfall 2: FORM Command Specifies Formula Independently of MULT — Mismatch Causes Zero Solutions Without Diagnosis
 
 **What goes wrong:**
-LSD's DEFF NOT badlist EXCLUDES structures containing the pattern. LSD's DEFF/FEXP goodlist REQUIRES that at least one solution contains the fragment. These are fundamentally different semantics. The agent (lsd-engineer) already knows DEFF NOT from v3.0/v4.0. When adding fragment goodlist support, the agent may:
-- Write DEFF (goodlist) when it should write DEFF NOT (badlist), eliminating all solutions instead of filtering bad ones
-- Apply DEFF goodlist constraints too aggressively, requiring multiple fragments simultaneously when LSD only requires each fragment to match at least ONE solution
-- Mix goodlist and badlist DEFF commands in a way LSD doesn't support
+pyLSD's FORM command defines the molecular formula of the problem. LSD's MULT commands implicitly define the formula by listing every atom. If FORM specifies `C13H18O2` but the MULT block defines 12 carbons (off-by-one from a typo), pyLSD filters out atom status combinations that don't match FORM — silently producing zero valid LSD input files to run. No LSD run occurs. The agent reports "0 solutions" but the real failure is that pyLSD generated 0 input files before LSD even started.
+
+This is worse than a standard 0-solution outcome because:
+- The existing agent diagnostic for 0 solutions (check sp2 parity, H budget, HMBC correctness) is designed for LSD failures, not pyLSD pre-filtering failures.
+- Diagnostic iteration will not help: the problem is upstream of LSD in the pyLSD layer.
+- LSD stderr will not contain informative output because LSD was never called.
 
 **Why it happens:**
-Both use the `DEFF` command root in LSD. The distinction is DEFF (fragment must be present in result) vs DEFF NOT (fragment must not be present). When the agent is given new knowledge about goodlist fragments, it is easy to confuse the constraint polarity, especially since both use similar SMILES pattern notation.
+In the current workflow, MULT implicitly defines the formula and there is no FORM command. When migrating to pyLSD, a FORM command is added. If the FORM comes from peak picking (trusted) and MULT comes from agent knowledge (re-derived per iteration), they can diverge. Common divergence points: agent uses FORM formula but adds one extra heteroatom MULT for a hydroxyl oxygen that was already counted; agent updates MULT block in a later iteration but forgets to match FORM.
 
 **How to avoid:**
-In the agent knowledge update, use EXPLICIT semantic labeling with worked examples:
-```
-; DEFF NOT = BADLIST (exclusion filter)
-DEFF NOT C1CC1    ; EXCLUDES all solutions containing cyclopropane
-
-; DEFF = GOODLIST (inclusion requirement)
-; This pattern must appear in at LEAST ONE solution
-DEFF Cc1ccccc1    ; At least one solution must contain methylbenzene substructure
-```
-Teach the agent: "DEFF goodlist reduces solution count by REQUIRING structural features. Use only when fragment search confidence is HIGH (fine matching score < threshold). NEVER mix goodlist with badlist in same file unless you understand LSD's precedence."
-
-The CLI command `lucy fragment search` should output the LSD command syntax explicitly, not just the SMILES pattern, to remove any ambiguity.
+1. Make FORM the single source of truth and derive MULT atom count validation from it at write time, not at LSD run time. The agent (or a pyLSD input generator) should verify: `sum(MULT carbon atoms) == FORM carbon count` before writing the file.
+2. Write a `validate_pylsd_input(content: str) -> list[str]` function that checks FORM vs MULT consistency as part of the pre-run validation gate (currently handled by devils-advocate).
+3. Treat pyLSD "0 input files generated" as a distinct error class from LSD "0 solutions" — they require different diagnostic paths.
 
 **Warning signs:**
-- Zero solutions after fragment injection (goodlist applied when badlist was intended)
-- Solution count unchanged after fragment injection (badlist applied when goodlist was intended)
-- Agent writes DEFF commands but solution count goes UP (impossible — constraint is wrong)
-- CASE-PROGRESS.md shows "fragment injected" but constraint is not verified against LSD docs
+- pyLSD exits without printing any LSD run output (normally prints "Running LSD file 1/N...")
+- 0 solutions with no stderr from LSD process (LSD was never invoked)
+- Agent diagnostic focuses on HMBC correctness but FORM/MULT mismatch is the actual cause
+- After adding FORM command, first pyLSD run produces 0 solutions on a previously-working LSD file
 
 **Phase to address:**
-Agent Integration phase — lsd-engineer knowledge update must include explicit DEFF vs DEFF NOT semantic tests. Add a verification step: run LSD on a minimal test case with known fragment before adding to compound workflow.
+pyLSD input file generator phase — FORM/MULT consistency check must be part of the LSD input validation function. Add to devils-advocate pre-run checklist: "FORM carbon count matches MULT carbon atom count."
 
 ---
 
-### Pitfall 5: Fragment Constraint Conflicts with HMBC-Derived Constraints — Over-Constraining Eliminates Correct Structure
+### Pitfall 3: Combinatorial Explosion from Ambiguous MULT — pyLSD Can Generate Thousands of LSD Files
 
 **What goes wrong:**
-HMBC correlations define connectivity constraints (which carbon connects to which proton). Fragment goodlist constraints define substructural requirements (which bonding pattern must exist). These can conflict: an HMBC constraint requires C5-H12 (3-bond path through 6-membered ring), but the fragment goodlist requires a 5-membered ring substructure. LSD must satisfy BOTH, but the correct ibuprofen-like structure satisfies neither fragment (it has a 6-membered ring). Result: correct structure eliminated, only wrong structures survive.
+pyLSD's power is generating multiple LSD files for ambiguous atom states. But the number of LSD files grows combinatorially with the number of ambiguous atoms. The Wenk thesis shows this directly:
 
-This is the ibuprofen failure mode inverted: v4.0 excluded correct structures via over-constraining with HMBC 4J couplings. Fragment constraints can do the same, especially if:
-- Fragment was matched by spectral similarity but has wrong topology
-- Fine matching threshold is too permissive (matches fragments that are spectrally similar but structurally wrong)
-- Multiple fragments are injected simultaneously (each fragment correct individually, but impossible to satisfy all simultaneously)
+| Constraint added | LSD files created | Solutions |
+|-----------------|-------------------|-----------|
+| NMR correlations only | 56,829 LSD files | 1,607,593 |
+| + HHB forbidden | still many | reduced |
+| + hybridization states | 30 LSD files | 30 |
+| + forbidden/mandatory neighbors | 10 LSD files | 10 |
+
+Without hybridization constraints (MULT with explicit sp state), pyLSD generates ALL combinations of sp1/sp2/sp3 for each atom — `56,829 LSD files for Caripyrin`. At 1-2 seconds per LSD run, 56,829 runs = 15+ hours. This happens silently when the MULT block omits explicit hybridization.
+
+For the v8.0 4J exploration approach (run pyLSD once per suspect-4J-excluded combination), even a 2-atom ELIM combination space generates `C(n,2)` combinations. With 5 suspect 4J correlations, that is `C(5,2) = 10` combinations plus individual and all-in runs — manageable. But if hybridization is also ambiguous in any atom, these multiply.
 
 **Why it happens:**
-Fragment search is a pre-filter, not a definitive structural assignment. The fine matching step catches most false positives, but not all. When two correct fragments (e.g., "aromatic ring with methyl" and "carboxylic acid group") are each individually valid but their combined injection conflicts with HMBC constraints (say the HMBC forces them to be adjacent in a way the fragments don't permit), zero solutions emerge.
+The existing agent uses explicit hybridization in every MULT command (sp2/sp3 always specified). When migrating to pyLSD syntax, if any MULT line is written without explicit hybridization (using pyLSD's ambiguous MULT form), the combinatorial count explodes. The pyLSD documentation shows how to write ambiguous MULT commands — the developer may use them without understanding the scale consequence.
 
 **How to avoid:**
-Inject ONE fragment at a time and measure solution count change:
-1. Baseline: N solutions without fragment
-2. Inject fragment A: M solutions (if M = 0, fragment A conflicts with HMBC constraints — discard)
-3. Inject fragment B: P solutions (if P = 0, B conflicts — discard)
-4. Never inject two fragments simultaneously unless each was validated individually
-
-Implement a fragment injection protocol in the agent:
-```
-For each candidate fragment (sorted by fine matching score, best first):
-  1. Write LSD file with existing constraints + this fragment
-  2. Run LSD
-  3. If solutions > 0: keep fragment, move to next
-  4. If solutions = 0: discard fragment, log conflict
-  5. If final solution count = original (no improvement): report "no helpful fragments found"
-```
+1. Maintain the existing rule: always specify hybridization in MULT. Never use pyLSD's ambiguous MULT form unless you have confirmed the sp state is genuinely unknown AND that the hybridization detector (`lucy detect hybridisation`) was inconclusive.
+2. Add a pre-run check: count the number of MULT lines with ambiguous hybridization. If > 0 for the initial run, reject and require explicit states.
+3. Cap pyLSD's output: if the count of generated LSD files exceeds 50, abort and diagnose before proceeding.
 
 **Warning signs:**
-- Zero solutions immediately after fragment injection (first indication of conflict)
-- Fragment confidence reported as HIGH but solution count drops to 0
-- Agent injects 3+ fragments simultaneously without individual validation
-- Fine matching threshold is > 5 ppm (too permissive)
+- pyLSD reports "Generating LSD file N..." where N exceeds 50 on first run
+- Agent omits hybridization state from any MULT line "to let pyLSD figure it out"
+- Run time exceeds 5 minutes on a molecule with < 25 atoms (normal run: < 60 seconds)
+- pyLSD output directory fills with hundreds of `.lsd` intermediate files
 
 **Phase to address:**
-Agent Integration phase — define sequential injection protocol in lsd-engineer knowledge. The CLI command must support dry-run mode: `lucy fragment search --dry-run` outputs candidate fragments without injecting, allowing manual review before agent commits.
+pyLSD integration phase — pyLSD wrapper must count generated LSD files and abort if > 50 without explicit user override. Pre-run validation gate must check: all MULT atoms have explicit hybridization.
 
 ---
 
-### Pitfall 6: Database Schema Migration from v6 — New Tables Must Not Break Existing Operations
+### Pitfall 4: 4J Combination Space Grows Faster Than Expected — Systematic Exclusion Without a Cap Becomes Intractable
 
 **What goes wrong:**
-The current database schema is at v6 with tables: `compounds`, `shifts`, `hose_stats`, `bond_pair_stats`, `schema_meta`, `operation_checkpoint`. Adding SSC tables (v7+) must NOT change the behavior of existing queries (dereplication, prediction, statistical detection). The migration risk is:
-1. Accidentally changing an index that existing queries depend on
-2. WAL mode conflicts: if SSC table is extremely large (24.5M+ rows), enabling WAL for write performance during extraction may affect read performance for concurrent prediction queries
-3. SQLite file size limits: at 24.5M SSC rows × ~100 bytes per row ≈ 2.5 GB, added to existing 2.8 GB database = 5+ GB. SQLite supports this, but macOS Dropbox sync will choke on a 5 GB file that changes frequently.
+The v8.0 design uses multiple pyLSD runs with different subsets of suspect 4J correlations included/excluded. For `n` suspect 4J correlations, the naive "try all subsets" strategy generates `2^n` runs. For ibuprofen with 3 suspect 4J correlations (`n=3`): 8 combinations — acceptable. For a compound with 6 suspects: 64 combinations — borderline. For 10 suspects: 1024 combinations — each taking 30-60 seconds = hours of runtime.
+
+More subtly, the WebCocon paper documents that allowing unlimited 4J interpretations caused a 1000x increase in calculation time. The pyLSD approach via multiple runs avoids this inside a single LSD call but the explosion reappears at the orchestration level if the combination count is uncapped.
 
 **Why it happens:**
-SSC extraction is the first time the database grows by an order of magnitude (2.8 GB → 5+ GB). The existing migration chain (v3 → v4 → v5 → v6) only added columns and a small table. Adding 24.5M rows is qualitatively different.
+Aromatic natural products commonly have 4-8 HMBC correlations through 4 bonds (ortho, meta, para substitution patterns plus benzylic positions). The heuristic 4J flagging in v6.0 flags aromatic HMBC patterns broadly. If all flagged correlations are systematically explored, the combination count grows quickly. The agent has no cap on how many 4J suspects it creates.
 
 **How to avoid:**
-1. Add SSC tables in a **separate database file** (`lucy-ng-fragments.db`) rather than `lucy-ng-derep.db`. This keeps the existing 2.8 GB database unchanged, avoids Dropbox sync issues, and allows separate backup/distribution.
-2. CLI commands take `--fragments-db path` alongside existing `--database path`
-3. Migration to separate file approach: no code migration needed (new file is new feature, not a schema change to existing file)
-4. If single-file architecture is chosen, increment SCHEMA_VERSION to 7 and follow existing migration pattern exactly (see `migrate_v5_to_v6` as template)
+1. Implement a strict cap: maximum 3 suspect 4J correlations explored per run. If nmr-chemist flags more than 3, prioritize by aromatic pattern specificity (W-pathway para-substituted benzene > generic aromatic > borderline).
+2. Use a sequential strategy (not exhaustive subset enumeration): first run all suspects excluded, then add back one at a time in order of suspicion. Stop when a run produces solutions that pass the aromatic ring sanity check.
+3. Abort after 8 pyLSD runs without a valid solution and escalate to the diagnostic agent.
 
 **Warning signs:**
-- SSC extraction writes to existing `lucy-ng-derep.db` and file grows > 5 GB
-- Dereplication queries (formula lookup) are slower after extraction (index contention)
-- Prediction accuracy changes after migration (wrong assumption: should be identical)
-- Dropbox reports sync conflict on 5 GB database file during extraction
+- nmr-chemist flags > 5 correlations as "suspect 4J"
+- Agent plans "try all combinations" without a cap
+- CASE-PROGRESS.md shows pyLSD run count > 10 on a single compound
+- 4J exploration phase of CASE takes > 15 minutes (wall time)
 
 **Phase to address:**
-Database Schema phase — FIRST decision to make before any extraction code is written. The separate-file approach is strongly recommended for this project. Commit to it early.
+4J exploration protocol phase — define the cap and strategy before agent integration. The cap must be in the lsd-engineer skill, not just the orchestrator, because lsd-engineer decides which correlations to defer.
 
 ---
 
-### Pitfall 7: Fine Matching Is O(N) per Search Over Candidate SSCs — Query Performance Degrades at Scale
+### Pitfall 5: Migrating Working LSD Files to pyLSD Breaks the Existing CASE Pipeline
 
 **What goes wrong:**
-Pre-screening with bitset fingerprints reduces candidates from 24.5M to (hopefully) < 1000. Fine matching then computes DEV and AVGDEV for each candidate. If bitset pre-screening is ineffective (wrong bin size, low bit density), fine matching must process 10,000+ candidates per search. At 1ms per candidate × 10,000 candidates = 10 seconds per fragment search call. The agent runs fragment search at the start of each CASE iteration — 10 iterations × 10 seconds = 100 seconds just for fragment search.
+The existing `lucy lsd run` command takes an LSD file and invokes the LSD binary directly via stdin. pyLSD is a different program that wraps LSD. Migrating requires:
+1. Writing pyLSD input format (with FORM, PIEC 1, DUPL 1, SHIX) not just LSD input format
+2. Invoking pyLSD executable, not the LSD binary
+3. Parsing pyLSD's output format (combined solutions from multiple LSD runs, ranked by chemical shift fit)
+
+If the v8.0 migration replaces `lucy lsd run` wholesale with a pyLSD runner, ALL existing LSD functionality — including fragment injection (DEFF/FEXP), constraint inventory, SYME, BOND, LIST/ELEM/PROP — must be verified to work correctly through pyLSD. A single incompatible command in the existing constraint toolkit causes silent zero solutions or outright pyLSD parse errors.
+
+The known migration risk from pyLSD documentation: pyLSD version a5 had a bug where two-letter atomic symbols (Cl, Br) were not accepted in MULT commands. If any test compound has chlorine or bromine atoms, this bug will surface.
 
 **Why it happens:**
-Bitset pre-screening effectiveness depends on the input spectrum's fingerprint density. A spectrum with only 6 carbons (C6 formula) has a sparse fingerprint — few bits set — so the AND operation rejects few candidates. This is the correct behavior in principle (sparse spectra have more matching fragments) but can be slow.
+LSD and pyLSD share command syntax for the core MULT/HSQC/HMBC/BOND commands but differ in file-level structure (FORM/PIEC required, solution output format differs). The existing LSDRunner assumes stdin-based invocation and stdout/stderr for results. pyLSD outputs to a directory of files and its solution format may differ from the `.sol` format that `outlsd` expects.
 
 **How to avoid:**
-1. Implement bitset pre-screening using Python's built-in bitwise AND on integer bitmasks (256-bit = 4 × 64-bit integers). SQLite's BLOB storage is efficient for this.
-2. Set a hard candidate limit: if bitset pre-screening yields > 2000 candidates, skip fine matching and return "no confident fragments" rather than spending 2+ seconds.
-3. Add result caching: same `(formula, shifts_fingerprint)` query should cache results across iterations (shifts don't change, only HMBC constraints grow).
-4. Benchmark on a real compound before agent integration: measure pre-screening candidate count and fine matching time for 5 known-structure compounds.
+1. Run a regression suite on all existing test compounds through pyLSD before replacing `lucy lsd run`. Confirm: ibuprofen.lsd → pyLSD → same solution count as direct LSD.
+2. Introduce pyLSD as a SEPARATE runner class (`PyLSDRunner`) that wraps `LSDRunner` and adds FORM/PIEC. Do NOT replace `LSDRunner` — keep the original working for non-4J cases.
+3. Verify each constraint type through pyLSD independently: DEFF NOT, DEFF/FEXP, SYME, BOND, LIST/ELEM/PROP, ELIM.
+4. Check pyLSD version — v8.0 should require pyLSD-a8 (Python 3 compatible). Earlier versions may have bugs with multi-character atom symbols.
 
 **Warning signs:**
-- Fragment search takes > 3 seconds per call on an M1 Mac
-- Pre-screening candidate count consistently > 5000 per search
-- Agent iteration time increases by 30+ seconds after fragment search integration
-- Candidate count doesn't decrease when shifts fingerprint is dense (many carbons)
+- First pyLSD run on `ibuprofen.lsd` produces a different solution count from direct LSD
+- Any command in the existing constraint inventory produces "unknown command" in pyLSD output
+- Fragment library DEFF/FEXP injection (validated in v5.0) stops working after pyLSD migration
+- `outlsd` fails to parse pyLSD's combined solution output (format differs from single-run LSD `.sol`)
 
 **Phase to address:**
-Fragment Search Engine phase — implement bitset pre-screening, measure candidate counts, add hard limit before exposing CLI command to agent.
+pyLSD runner implementation phase — regression suite (existing LSD test cases run through pyLSD) must be a BLOCKING acceptance criterion before any agent integration.
+
+---
+
+### Pitfall 6: v7.0 Lesson — Calibrate the New Approach Before Building the Full Pipeline
+
+**What goes wrong:**
+The v7.0 failure spent multiple development phases (DB schema, generator, detection engine, agent updates) before discovering at calibration that the statistical approach was fundamentally non-viable (100% false positive rate). The failure mode was not a bug — the approach itself did not work. Five phases of work were abandoned.
+
+The v8.0 pyLSD approach must not repeat this pattern. The core hypothesis is: "running pyLSD with 4J suspects excluded will produce solutions, and one of them will pass the aromatic ring sanity check." This hypothesis must be validated on ibuprofen BEFORE building pyLSD infrastructure.
+
+**Why it happens:**
+It is tempting to build the clean abstraction first (pyLSD runner, 4J combination explorer, result merger, agent integration) and validate the approach at the end. This is the wrong order. If the pyLSD-based approach also fails (e.g., excluding 4J correlations still produces zero solutions because the remaining 2J/3J correlations are still ambiguous), the entire infrastructure is wasted.
+
+**How to avoid:**
+Manual validation first, code second:
+1. Run pyLSD manually on ibuprofen.lsd with the 3 suspected 4J correlations (HMBC 4 8, HMBC 6 9, HMBC 8 4) removed from the input.
+2. Check: does this produce solutions? Do those solutions include an aromatic ring (verify with `lucy lsd rank` + aromatic ring check)?
+3. If YES → hypothesis validated → build infrastructure.
+4. If NO → diagnose before committing any code.
+
+This is a 30-minute manual test. It must be Phase 1 of the v8.0 roadmap.
+
+**Warning signs:**
+- Roadmap starts with "implement PyLSDRunner" before manual validation test
+- First phase is infrastructure, not hypothesis validation
+- The approach is justified by "it worked in Sherlock" without direct ibuprofen confirmation
+
+**Phase to address:**
+Phase 1 of v8.0 must be: "Validate 4J-removal hypothesis on ibuprofen manually." This is a non-code phase (or a 1-day phase with a single test). Gate the entire roadmap on this result.
+
+---
+
+### Pitfall 7: pyLSD Solution Ranking Uses Its Own NMRShiftDB Algorithm — Conflicts with Existing HOSE-Based Ranker
+
+**What goes wrong:**
+pyLSD has a built-in solution ranking algorithm that uses nmrshiftdb2 predictions to rank solutions by chemical shift fit. This is activated via `SHIX` commands (experimental 13C shifts) in the input file. If SHIX is present, pyLSD's ranking overrides the order of solutions in its combined output.
+
+The existing `lucy lsd rank` uses a HOSE-based ranker with:
+- Two-tier ranking (match count primary, MAE secondary)
+- Per-atom confidence from the 7.9M HOSE statistics database
+- Aromatic ring sanity check post-ranking
+
+If pyLSD's ranking is allowed to run, the combined solution file will be pre-sorted by pyLSD's nmrshiftdb ranking, which may differ from the HOSE-based ranking. Using pyLSD's ranking without understanding its algorithm risks the v4.0 failure mode returning: a wrong structure with coincidentally low MAE outranks the correct structure.
+
+**Why it happens:**
+SHIX commands are recommended by pyLSD documentation as required for solution ranking. A developer following pyLSD documentation will add SHIX commands and assume pyLSD ranking is correct. The project's existing two-tier ranking exists specifically because naive MAE ranking caused the v4.0 UAT failure (solution analyst hallucinated "rank #1 = ibuprofen" for a 7-membered ring isomer).
+
+**How to avoid:**
+Do NOT rely on pyLSD's built-in ranking. Include SHIX commands for documentation purposes (they also control SYME equivalence detection for identical-status atoms) but post-process all solutions from all pyLSD runs through the existing `lucy lsd rank` command with two-tier ranking. pyLSD's ranking output should be explicitly discarded or treated as advisory only.
+
+**Warning signs:**
+- Solution analyst references "pyLSD ranking" rather than "HOSE-based ranking" in CASE-PROGRESS.md
+- Solutions are processed in pyLSD output order without re-ranking through `lucy lsd rank`
+- Aromatic ring sanity check is not run on pyLSD solutions (it was added post-v4.0 specifically for this failure mode)
+
+**Phase to address:**
+pyLSD integration phase — specify explicitly in lsd-engineer and solution-analyst skills: "Use `lucy lsd rank` on combined pyLSD solutions. Do not use pyLSD's pre-sorting. Always run aromatic ring sanity check."
+
+---
+
+### Pitfall 8: 4J Heuristic Over-Flags — Agent Defers Too Many Correlations and Misses Correct Structure
+
+**What goes wrong:**
+The v6.0 heuristic flags aromatic HMBC correlations broadly as "suspect 4J." If lsd-engineer defers ALL flagged correlations (safe strategy), the problem becomes under-constrained: not enough HMBC correlations to uniquely determine the structure, producing hundreds of solutions. If the agent defers only "high confidence" flags but the 4J signals were genuinely 3J, the over-constrained problem persists.
+
+The WebCocon paper documents the opposite failure: "if actual 4J correlations exist but the 4J-Flag is zero, the process will fail entirely." The danger here is setting 4J-Flag too high (deferring valid 3J correlations), not too low.
+
+**Why it happens:**
+W-pathway 4J correlations through aromatic rings are visually indistinguishable from 3J correlations in HMBC spectra. The heuristic (shift range + aromatic neighborhood) cannot distinguish them from genuine 3J correlations without structural knowledge. Without the correct structure, you cannot know which correlations are 4J.
+
+**How to avoid:**
+Use a conservative deferral strategy: defer only correlations that satisfy ALL of these criteria simultaneously:
+1. Both carbons are in aromatic sp2 shift range (120-145 ppm)
+2. The HMBC spectrum shows a well-defined aromatic region
+3. The compound has a substituted benzene ring based on HSQC (2+ aromatic CH peaks with quaternary carbons)
+4. Zero solutions are obtained when the correlation is included
+
+Never pre-emptively defer correlations without first running with all correlations included. If you have 12 solutions with all correlations, there is no need to investigate 4J.
+
+**Warning signs:**
+- Agent defers 4+ correlations before any LSD run
+- First LSD run is run with correlations missing (agent didn't run with full set first)
+- Solution count explodes to > 100 after deferral (under-constrained)
+- CASE-PROGRESS.md shows "4J deferred" but no zero-solution evidence justifying the deferral
+
+**Phase to address:**
+4J exploration protocol definition phase — lsd-engineer skill must mandate: "Run with all correlations first. Defer correlations only if zero solutions. Defer minimum number."
 
 ---
 
@@ -233,74 +259,59 @@ Shortcuts that seem reasonable but create long-term problems.
 
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
 |----------|-------------------|----------------|-----------------|
-| Store SSCs in existing `lucy-ng-derep.db` | Single database, simpler code | 5+ GB file, Dropbox sync issues, index contention with existing queries | Never — use separate `lucy-ng-fragments.db` |
-| Skip bitset pre-screening (direct fine matching) | Simpler implementation, 1 algorithm instead of 2 | Fine matching 24.5M SSCs takes minutes per search | Never — bitset pre-screening is mandatory for < 1 second response |
-| Inject all matching fragments simultaneously | Simpler agent logic (one LSD run) | Conflicting fragments eliminate correct structure; 0 solutions with no diagnostic | Never — always inject sequentially with solution count check |
-| Use 5 ppm fine matching threshold (loose) | More fragments pass → fewer missed positives | Too many false positives; incorrect fragments constrain wrong structures | Acceptable only in initial discovery run, not in production |
-| Hard-code bin size (don't record in schema_meta) | Faster implementation | Bin size mismatch if database is regenerated with different tooling | Never — always record extraction parameters in schema_meta |
-| Skip self-search validation after extraction | Faster pipeline | Silent correctness failure — SSC table looks populated but matches nothing | Never — self-search is a 5-minute test that prevents days of debugging |
-| No checkpoint in SSC extraction | Simpler code | 10+ hour restart on any failure | Never — extraction MUST be resumable |
+| Replace `LSDRunner` directly with `PyLSDRunner` | Single code path | Breaks regression on non-4J compounds; no fallback if pyLSD unavailable | Never — keep both runners |
+| Use pyLSD's built-in ranking | No ranking code needed | Two-tier ranking lost; v4.0 MAE-hallucination failure mode returns | Never — always use `lucy lsd rank` |
+| Add `FORM` to existing LSD files without validation | Minimal file change | FORM/MULT mismatch causes zero LSD files generated, no diagnostic | Never — validate consistency first |
+| Try all 2^n 4J subsets | Complete coverage | Combinatorial explosion for n > 4 | Acceptable only for n ≤ 3 |
+| Rely on ELIM for 4J handling | Simple change to existing workflow | Correlations dropped rather than satisfied as 4J; aromatic connectivity silently missing | Never — use per-correlation bond ranges |
+| Run full pyLSD without checking generated file count | Simpler orchestration | 10,000+ LSD runs without notice | Never — abort if > 50 generated files |
+
+---
 
 ## Integration Gotchas
 
-Common mistakes when connecting SSC search to the existing CASE system.
+Common mistakes when connecting pyLSD to the existing CASE system.
 
 | Integration | Common Mistake | Correct Approach |
 |-------------|----------------|------------------|
-| DEFF goodlist syntax | Write DEFF with pattern in same format as DEFF NOT | DEFF (goodlist) and DEFF NOT (badlist) have opposite semantics — test each on a minimal LSD file before agent integration |
-| Fragment search CLI → agent | Agent receives SMILES pattern and writes DEFF command manually | CLI outputs the exact LSD command line ready to paste — removes agent interpretation error risk |
-| Fragment injection timing | Run fragment search before writing LSD file (no HMBC context) | Run fragment search AFTER HMBC constraints are established (iteration 2+), so fragment-HMBC conflict can be detected |
-| Fine matching DEV threshold | Copy Sherlock's 10 ppm DEV threshold without validation | 10 ppm is for ranking (lenient); fragment search needs tighter threshold (3-5 ppm) to avoid false positives |
-| SSC extraction vs. HOSE extraction | Use same `iter_compounds_with_shifts` method | SSC extraction needs SMILES to build substructure graph, not just shifts — use `iter_compounds_with_shifts` but also retrieve SMILES |
-| SQLite WAL mode during extraction | Enable WAL for write performance, leave enabled for reads | WAL is correct for extraction; switch back to DELETE journal mode for query-heavy CASE operations to avoid WAL file accumulation |
+| pyLSD executable invocation | Run pyLSD like LSD (`lsd < input.lsd`) | pyLSD is a Python script, not a binary; invoke with `python pylsd.py input.pylsd` or equivalent wrapper |
+| Solution file format | Assume pyLSD outputs single `.sol` file like LSD | pyLSD combines solutions from multiple LSD runs; the combined output format may differ from single-run `.sol` — verify `outlsd` compatibility |
+| SHIX vs. HOSE ranking | Use pyLSD's SHIX-based ranking as final answer | Run all combined solutions through `lucy lsd rank` with two-tier ranking; treat pyLSD ordering as input, not output |
+| DUPL command | Omit DUPL (default behavior) | Default DUPL 2 removes duplicates — may combine identical structures from different LSD runs. Use `DUPL 1` to preserve all solutions before ranking |
+| PIEC command | Omit PIEC | Without `PIEC 1`, pyLSD may produce solutions with disconnected fragments. Always include `PIEC 1` |
+| Fragment library DEFF/FEXP | Assume DEFF/FEXP works the same in pyLSD | Test DEFF/FEXP through pyLSD on a known compound before assuming it functions identically |
+| Constraint inventory across iterations | Rebuild pyLSD-specific lines (FORM, PIEC) from memory each iteration | Treat FORM and PIEC as fixed constants; copy them from previous iteration file like other constraints |
+
+---
 
 ## Performance Traps
 
-Patterns that work at small scale but fail at 24.5M SSC scale.
+Patterns that work at small scale but fail with pyLSD's multi-run approach.
 
 | Trap | Symptoms | Prevention | When It Breaks |
 |------|----------|------------|----------------|
-| Linear scan of SSC table (no fingerprint index) | Fragment search takes 30+ seconds per call | Index on `ssc_fingerprint_blob` with partial match using SQLite BLOB prefix operations | At > 100K SSC rows |
-| Fine matching all candidates without limit | Search time proportional to spectrum size (more carbons = more candidates = slower) | Hard candidate limit of 2000 after bitset pre-screening | Always for large databases |
-| Parallel writes to SQLite during multi-threaded extraction | Database corruption or lock timeout errors | SQLite supports WAL for concurrent readers, but single writer only — serialize writes to one thread | With any parallelism during SSC insertion |
-| Loading full SSC table into memory for bitset ops | OOM on machines with < 8 GB RAM when searching 24.5M SSCs | Stream-process candidates using SQL BLOB comparison — never load full table | At > 5M SSC rows |
-| Fragment search at every CASE iteration | 10 iterations × search time = cumulative overhead | Cache results (fingerprint → fragment list) — shifts are fixed once picked | If shifts change between iterations (they shouldn't, but validate) |
-| RDKit substructure matching in Python for 24.5M SSCs | Fine matching takes 10+ seconds per search | Pre-compute bitset fingerprints in database; fine matching only on < 2000 candidates | At > 1M SSC candidates after bitset filter |
+| Ambiguous MULT hybridization | pyLSD generates 1000+ LSD files silently | Require explicit hybridization in every MULT; abort if generated file count > 50 | Immediately with any ambiguous atom |
+| Exhaustive 4J subset search | 2^n combinations for n suspect correlations | Cap at 3 suspects max; use sequential not exhaustive strategy | n > 4 suspects (16+ combinations × 30s = 8+ minutes) |
+| Per-run timeout too short | LSD runs hit timeout before finding solutions | pyLSD runs individual LSD files sequentially; each may need up to 60s; total budget = files × 60s | Multi-file runs without cumulative timeout budget |
+| No results-merger for combined outlsd parsing | `outlsd` called once on combined `.sol` fails | Merge solutions before calling `outlsd` or call `outlsd` per-run and aggregate SMILES | Always — pyLSD multi-run needs explicit merging |
+| Diagnostic iteration continues after pyLSD structural failure | Agent escalates HMBC constraints when FORM/MULT mismatch is the real issue | Add pyLSD-specific pre-diagnostic (check generated file count before LSD run diagnostic) | Zero pyLSD-generated files (FORM/MULT mismatch) |
 
-## Data Quality Pitfalls
-
-SSC-specific data quality issues that produce wrong fragments.
-
-### DQ Pitfall 1: Missing Atom-to-Shift Mapping in Source Data
-
-**What goes wrong:**
-SSC extraction requires knowing which specific carbon atom (by index) has which experimental shift. In COCONUT, the `CNMR_SHIFTS` field maps atom index to shift. In NMRShiftDB, the mapping is in the assignment records. Some compounds in the database have shift data but no atom-to-shift mapping — only a list of shifts without atom assignments. These compounds CANNOT yield valid SSCs (you don't know which carbon atom has which shift).
-
-**How to avoid:**
-Filter compounds at the start of SSC extraction: only process compounds where `atom_index IS NOT NULL` for all shifts. Approximately 30-40% of compounds may lack atom mapping (NMRShiftDB is inconsistently assigned). This reduces the effective compound count but avoids generating invalid SSCs.
-
-**Detection:** Log the skipped compound count: if > 60% of compounds are skipped for missing atom mapping, the shift data is worse than expected and the fragment library will be smaller than Sherlock's (Sherlock reports 24.5M from 892K compounds — if lucy-ng gets 10M from 928K, atom mapping coverage is likely the cause).
-
-### DQ Pitfall 2: Hydrogen Count Mismatch Between SMILES and Atom Mapping
-
-**What goes wrong:**
-SMILES may have explicit hydrogens in some atoms but not others (mixed representation). When generating HOSE-based substructures, the hydrogen count affects the substructure graph. The shifts table stores `hydrogen_count` per atom, but this was populated from the source database's annotation, not from RDKit's hydrogen count. If a quaternary carbon in SMILES has `hydrogen_count=0` in the shifts table but RDKit computes `hydrogen_count=1` (due to valence inference), the SSC will be generated with wrong hydrogen annotation.
-
-**How to avoid:**
-Override hydrogen counts from RDKit, not from the database: `atom.GetTotalNumHs()` is authoritative. Only use the database's `hydrogen_count` as a sanity check (if they differ by more than 1, flag the compound for manual review).
+---
 
 ## "Looks Done But Isn't" Checklist
 
-Critical checks that indicate the fragment library is genuinely functional vs. appearing to work.
+Critical checks that indicate pyLSD integration is genuinely functional vs. appearing to work.
 
-- [ ] **SSC Extraction Completeness:** `SELECT COUNT(*) FROM ssc` returns a number close to 24.5M (Sherlock's count), not < 1M. If count is low, check: compounds skipped due to missing atom mapping? Extraction terminated early without checkpoint?
-- [ ] **Self-Search Validation:** For 100 randomly sampled compounds, searching with their own spectrum finds their own SSCs in the candidate set. If self-search fails, fingerprint generation is inconsistent between storage and query.
-- [ ] **Bin Size Recorded:** `SELECT value FROM schema_meta WHERE key = 'ssc_fingerprint_bin_ppm'` returns a value. If missing, bin size may differ between extraction and search.
-- [ ] **Goodlist Semantics Tested:** A known fragment injected as DEFF (goodlist) REDUCES solution count vs baseline. If count is unchanged or increases, DEFF syntax is wrong.
-- [ ] **Sequential Injection Protocol:** Agent code injects one fragment at a time and checks solution count before next. If agent injects all fragments in one LSD file, over-constraining risk is unmitigated.
-- [ ] **Conflict Detection:** When fragment conflicts with HMBC constraints (0 solutions), agent logs the conflict and moves on rather than halting. If agent halts on 0 solutions after fragment injection, it's conflating fragment conflict with LSD failure.
-- [ ] **Fine Matching Time:** `lucy fragment search --shifts "..." --formula C13H18O2` completes in < 2 seconds on M1 Mac. If slower, pre-screening is not working.
-- [ ] **Separate Database File:** SSC data lives in `lucy-ng-fragments.db`, not in `lucy-ng-derep.db`. Existing operations (dereplication, prediction) work identically without `--fragments-db` flag.
+- [ ] **Regression test passes:** `ibuprofen.lsd` through pyLSD produces same solution count as direct LSD (before 4J handling changes). If count differs, pyLSD is changing behavior on known-working files.
+- [ ] **FORM/MULT consistency verified:** For every test compound, `sum(MULT carbons) == FORM carbon count`. Failures = FORM/MULT mismatch pitfall.
+- [ ] **Aromatic ring check runs on combined output:** After pyLSD 4J exploration, `lucy lsd rank` is called on the combined SMILES, and the aromatic ring sanity check field is present in the JSON output. If missing, v4.0 failure mode is undetected.
+- [ ] **Fragment library still works:** After pyLSD migration, DEFF/FEXP goodlist (v5.0 feature) reduces solution count on a test compound. If fragment injection has no effect, pyLSD broke DEFF/FEXP handling.
+- [ ] **4J suspect deferral only after zero-solution evidence:** CASE-PROGRESS.md shows: first run included all correlations, zero solutions, THEN 4J deferral. If the first iteration already has deferred correlations, the protocol is inverted.
+- [ ] **Generated file count is bounded:** pyLSD run log shows "Generating N LSD files" where N is < 50. If N > 50, combinatorial explosion is occurring.
+- [ ] **ELIM is not used for 4J:** No `ELIM` command appears in pyLSD files for 4J handling. ELIM should only appear as a last-resort for suspected spectral artifacts. Per-correlation ranges (`HMBC C H 2 4`) are used for 4J.
+- [ ] **Two-tier ranking applied to combined output:** `lucy lsd rank` output shows `matched_count` as the primary sort criterion (not MAE). If solutions are sorted by MAE only, the v4.0 ranking regression has occurred.
+
+---
 
 ## Recovery Strategies
 
@@ -308,13 +319,15 @@ When pitfalls occur despite prevention, how to recover.
 
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|---------------|----------------|
-| Extraction failed at hour 7 without checkpoint | HIGH — restart from zero | 1. Add checkpoint code, 2. Delete partial SSC table, 3. Restart with checkpoint. Prevention is cheap; recovery is expensive. |
-| Wrong bin size — must re-extract | HIGH — full re-extraction | 1. Drop SSC table, 2. Update bin size in schema_meta, 3. Re-extract with correct bin size. Takes 10+ hours. |
-| DEFF goodlist applied as badlist | LOW — fix agent knowledge | 1. Identify all LSD files with wrong DEFF usage, 2. Update agent lsd-engineer.md with correct semantics + worked example, 3. Re-run affected compounds |
-| Fragment conflicts with HMBC — 0 solutions | LOW — discard fragment | 1. CLI output already indicates conflict, 2. Agent skips fragment per sequential injection protocol, 3. No rewrite needed |
-| SSC table in wrong database file | MEDIUM — data migration | 1. Create new separate database file, 2. Copy SSC table: `INSERT INTO fragments.ssc SELECT * FROM derep.ssc`, 3. Update CLI to use separate file |
-| Fine matching too slow | MEDIUM — add caching and limits | 1. Add hard candidate limit (2000), 2. Add result cache keyed on (formula_normalized, shifts_fingerprint), 3. Benchmark improvement |
-| Substructure aromaticity mismatch | MEDIUM — standardize and re-extract | 1. Identify aromatic compounds with 0 self-search recall, 2. Add standardization step to extraction, 3. Re-extract affected compounds (may be < 30% of total) |
+| ELIM used for 4J (correlations silently dropped) | MEDIUM | 1. Identify all LSD files where ELIM was used with 4J intent, 2. Replace ELIM with per-correlation range syntax `HMBC C H 2 4`, 3. Re-run and compare solution count |
+| FORM/MULT mismatch (0 pyLSD files) | LOW | 1. Count MULT atoms by element, 2. Compare to FORM string, 3. Fix discrepancy (usually heteroatom double-count), 4. Re-run pyLSD |
+| Combinatorial explosion (1000+ LSD files) | LOW | 1. Kill pyLSD, 2. Identify which MULT atoms have ambiguous hybridization, 3. Specify explicit sp state for each, 4. Re-run |
+| 4J combination space too large | MEDIUM | 1. Cut suspect list to top-3 by chemical evidence, 2. Switch from exhaustive subset search to sequential, 3. Re-run |
+| pyLSD migration broke fragment library | HIGH | 1. Revert to `LSDRunner` for fragment injection, 2. Use pyLSD only for 4J exploration phase, 3. Merge solutions from both runs |
+| Solution analyst uses pyLSD ranking instead of HOSE ranking | LOW | 1. Re-run `lucy lsd rank` on combined SMILES file, 2. Update solution-analyst skill with explicit instruction |
+| Regression: pyLSD changes behavior on existing cases | HIGH | 1. Identify which commands differ in pyLSD vs. LSD, 2. Maintain `LSDRunner` as fallback, 3. Route non-4J cases through LSDRunner |
+
+---
 
 ## Pitfall-to-Phase Mapping
 
@@ -322,38 +335,59 @@ How roadmap phases should address these pitfalls.
 
 | Pitfall | Prevention Phase | Verification |
 |---------|------------------|--------------|
-| No checkpoint in SSC extraction | SSC Extraction Pipeline | Run extraction to 10K compounds, kill process, verify restart from checkpoint continues correctly |
-| Wrong fingerprint bin size | SSC Extraction Pipeline (pre-extraction validation) | Self-search recall > 99% on 100-compound sample at chosen bin size |
-| Aromatic substructure mismatch | SSC Extraction Pipeline (standardization) | Self-search on aromatic compounds (benzene, naphthalene rings) returns SSC matches |
-| DEFF goodlist vs. badlist confusion | Agent Integration | Smoke test: inject known fragment as DEFF, verify solution count decreases; inject as DEFF NOT, verify different compounds filtered |
-| Fragment-HMBC conflict | Agent Integration (sequential injection protocol) | Run CASE on compound with known conflicting fragment; verify agent detects 0-solution conflict and discards fragment without halting |
-| Database size and migration | Database Schema | SSC data in separate file; existing `lucy dereplicate c13` and `lucy predict c13` work without change |
-| Fine matching performance | Fragment Search Engine | `lucy fragment search` < 2 seconds for any compound in Sherlock test set on M1 Mac |
-| Missing atom mapping | SSC Extraction Pipeline (filtering) | Log shows skipped compound count; total SSC count within 50% of Sherlock's 24.5M |
-| Simultaneous fragment injection | Agent Integration | CASE-PROGRESS.md shows one-fragment-at-a-time injection with solution counts after each |
+| ELIM semantics confusion | pyLSD input format phase — update lsd-engineer skill | Agent uses `HMBC C H 2 4` for 4J, never ELIM for bond extension |
+| FORM/MULT mismatch | pyLSD input generator phase — add consistency validator | `validate_pylsd_input()` catches discrepancy before run |
+| Combinatorial explosion from ambiguous MULT | pyLSD runner phase — add generated-file count abort | pyLSD wrapper aborts if N > 50 files |
+| 4J combination space | 4J exploration protocol phase | Cap defined in lsd-engineer skill; sequential strategy |
+| Migration regression | pyLSD runner phase — regression suite | `ibuprofen.lsd` through pyLSD matches direct LSD solution count |
+| pyLSD ranking overrides HOSE ranking | Agent integration phase | All runs go through `lucy lsd rank`; aromatic ring check present in output |
+| v7.0 recurrence — build before validate | Phase 1 gate | Manual ibuprofen test PASSES before any code is written |
+| 4J over-deferral | 4J protocol phase | First iteration always includes all correlations |
+
+---
+
+## v7.0 Lessons Applied
+
+These are directly extracted from the v7.0 post-mortem and mapped to v8.0 risks.
+
+| v7.0 Lesson | v8.0 Risk | Prevention |
+|-------------|-----------|------------|
+| 100% false positive rate from aggregate statistics | pyLSD multi-run may also fail to find correct structure (different approach, same underlying problem) | Validate on ibuprofen manually before building infrastructure |
+| Spent 5 phases building before calibrating | v8.0 could spend phases building pyLSD runner before knowing it works | Phase 1 = manual validation test; gate entire roadmap on result |
+| j5_plus dominates regardless of environment — statistics cannot discriminate | Per-correlation HMBC ranges also risk false positives if 4J/3J discrimination is wrong | The 4J identification still relies on heuristics; wrong identification = wrong deferral |
+| Schema migration was rolled back entirely | pyLSD integration risks requiring rollback if it breaks existing cases | `PyLSDRunner` is additive (new class), never replaces `LSDRunner` |
+| Agent skill updates were written for a detection CLI that turned out non-viable | Agent updates for pyLSD 4J protocol may be written before confirming pyLSD produces correct structures | Agent skill updates come AFTER successful manual test AND regression suite |
 
 ---
 
 ## Sources
 
-### Primary: Sherlock System Analysis
-- `/Users/steinbeck/Dropbox/develop/lucy-ng/background/sherlock-analysis.md` — SSC extraction details, 24.5M count, bitset fingerprint design, DEFF/FEXP injection mechanism, impact on solution counts
-- Wenk thesis (via sherlock-analysis.md): 256-bit fingerprints, 2 ppm bins, DEV/AVGDEV thresholds, compound processing scale
+### Primary: Project Post-Mortem
+- `/Users/steinbeck/Dropbox/develop/lucy-ng/.planning/milestones/v7.0-ROADMAP.md` — v7.0 failure analysis, 100% false positive rate, pyLSD as next approach
+- `/Users/steinbeck/Dropbox/develop/lucy-ng/.planning/PROJECT.md` — v4.0 UAT findings (4J root cause), v3.0 constraint-loss bugs, architecture decisions
 
-### Primary: lucy-ng Source Code
-- `/Users/steinbeck/Dropbox/develop/lucy-ng/src/lucy_ng/database/schema.py` — v6 schema, existing migration pattern, checkpoint table
-- `/Users/steinbeck/Dropbox/develop/lucy-ng/src/lucy_ng/database/manager.py` — `iter_compounds_with_shifts`, `set_checkpoint`, migration methods
-- `/Users/steinbeck/Dropbox/develop/lucy-ng/src/lucy_ng/prediction/stats_generator.py` — checkpoint pattern, Welford accumulator, HOSE extraction timing (8h39m reference)
-- `/Users/steinbeck/Dropbox/develop/lucy-ng/src/lucy_ng/prediction/hose.py` — `HOSECodeGenerator`, no explicit H policy
+### Primary: Project Memory (MEMORY.md)
+- v4.0 UAT: all 7 solutions wrong due to 4J HMBC through aromatic ring; solution analyst hallucinated correct answer
+- v7.0 abandonment at calibration after full database generation
 
-### Primary: Project Memory
-- `MEMORY.md` — v4.0 UAT findings (ibuprofen failure, 4J HMBC), v3.0 constraint-loss bugs, HOSE regeneration timing
+### Primary: Wenk Thesis
+- `background/wenk-thesis.txt` lines 4666-4744 — Caripyrin example showing 56,829 LSD files → 30 files with hybridization constraints. Demonstrates combinatorial explosion risk without explicit sp states.
 
-### Supporting: Domain Knowledge
-- RDKit documentation: aromaticity models, `SetAromaticity`, `MolToSmiles` canonicalization (training data, MEDIUM confidence)
-- SQLite documentation: WAL mode, BLOB storage, file size limits (training data, HIGH confidence for SQLite fundamentals)
-- Sherlock GitHub repository (casekit library): SSC extraction implementation reference — MEDIUM confidence (code not directly inspected, inferred from thesis)
+### Primary: LSD Manual
+- [LSD MANUAL_ENG.html](https://nuzillard.github.io/LSD/MANUAL_ENG.html) — ELIM command semantics (HIGH confidence): `ELIM P1 P2` means eliminate up to P1 correlations through up to P2 bonds. DUPL 0/1/2 semantics. SHIX/SHIH documentation.
+
+### Primary: pyLSD Documentation
+- [PyLSD official site](https://nuzillard.github.io/PyLSD/) — FORM command, PIEC 1, MULT ambiguous forms, SHIX for ranking, migration path from LSD (MEDIUM confidence: documentation sparse on edge cases)
+- [PyLSD HISTORY.html](https://nuzillard.github.io/PyLSD/HISTORY.html) — version history, a5 bug: two-letter atomic symbols (Cl, Br) not accepted in MULT
+
+### Supporting: 4J HMBC Research
+- [WebCocon paper: Incorporation of 4J-HMBC and NOE Data (PMC8398166)](https://pmc.ncbi.nlm.nih.gov/articles/PMC8398166/) — 4J-Flag semantics, 1000x explosion when unlimited 4J allowed, step-by-step addition strategy (MEDIUM confidence)
+
+### Supporting: lucy-ng Codebase
+- `/Users/steinbeck/Dropbox/develop/lucy-ng/src/lucy_ng/lsd/runner.py` — LSDRunner implementation, outlsd invocation, solution counting
+- `/Users/steinbeck/Dropbox/develop/lucy-ng/src/lucy_ng/lsd/cli/lsd.py` — `lucy lsd run` and `lucy lsd rank` CLI (existing pipeline to preserve)
+- `/Users/steinbeck/.claude/agents/lucy-lsd-engineer.md` — current ELIM usage (last-resort, not 4J), constraint inventory rules
 
 ---
-*Pitfalls research for: Fragment library and SSC search addition to lucy-ng CASE system*
-*Researched: 2026-02-19*
+*Pitfalls research for: pyLSD integration and 4J HMBC exploration — v8.0 milestone*
+*Researched: 2026-03-13*

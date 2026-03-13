@@ -1,24 +1,25 @@
-# Feature Landscape: Fragment Library and SSC Search
+# Feature Landscape: pyLSD Integration and 4J Exploration
 
-**Domain:** Substructure-subspectrum correlation (SSC) fragment library for CASE
-**Researched:** 2026-02-19
-**Confidence:** HIGH — Wenk thesis (Sherlock) provides algorithmic specification; existing lucy-ng codebase provides integration context
+**Domain:** pyLSD-based structure generation with systematic 4J HMBC coupling exploration
+**Researched:** 2026-03-13
+**Confidence:** HIGH — Wenk thesis (Sherlock) provides full pyLSD specification with concrete ibuprofen example; existing codebase provides integration context
 
 ---
 
-## Background: What SSC Search Does and Why It Matters
+## Background: What pyLSD Changes and Why It Matters
 
-The fragment library answers the question: "Given an experimental 13C spectrum, what previously characterized substructures are consistent with these chemical shifts?" Matching fragments are injected as LSD goodlist constraints (DEFF/FEXP), forcing every generated solution to contain those substructures. The effect is dramatic: in Sherlock, 34/40 cases reduced to a single solution with the first matched fragment.
+The current lucy-ng pipeline calls LSD directly. LSD requires fully-specified, unambiguous atom states: one hybridisation state and one proton count per atom. If any ambiguity exists (unknown heteroatom hybridisation, possible 4J vs 3J HMBC coupling), the user must choose one option — and a wrong choice yields zero solutions or wrong structures.
 
-The mechanism has three stages:
+pyLSD removes this limitation by accepting **ambiguous MULT declarations** and internally generating and running multiple LSD files — one per combination of ambiguous atom states. All solutions from all runs are collected into a unified result set. For 4J exploration specifically, this means marking a suspect HMBC correlation as having bond range `2 4` (instead of the default `2 3`) and using ELIM to permit the system to include or exclude it while exploring all valid configurations.
 
-1. **Offline extraction** (one-time, slow): For each of 928K compounds in the database, generate all substructures (SSCs) using breadth-first fragmentation. Store each SSC with its associated subspectrum (chemical shifts of atoms remaining after fragmentation) and a 256-bit fingerprint (2 ppm bins, 0-510 ppm range).
+The critical insight from the ibuprofen failure (v4.0 UAT): three HMBC correlations through the aromatic ring are 4J, not 3J. When written as `HMBC X Y` (default 2–3 bonds), LSD enforces them as 2–3J constraints and produces wrong ring systems. The fix is `HMBC X Y 2 4` — but this only works if ELIM is enabled to allow that extended range.
 
-2. **Online pre-screening** (fast, bitset): Given experimental shifts, build a query fingerprint. For each SSC in the library, apply Boolean AND. If `AND(query, SSC) == SSC`, the SSC's signals are all present in the experimental spectrum — candidate passes.
-
-3. **Online fine matching** (slower, per-signal): For each pre-screening survivor, compute signal pairs using minimum-distance matching (same as dereplication). Filter by DEV (max per-signal deviation, default 2 ppm) and AVGDEV (average deviation, default 1 ppm). Require multiplicity match. The surviving fragments are ranked by size (descending) then AVGDEV (ascending).
-
-The first/best fragment is injected as a DEFF goodlist file + FEXP constraint into the LSD input. In Sherlock, only the first fragment is used — this is sufficient to reduce 34/40 cases to single solutions.
+The pyLSD input format differs from LSD in five ways:
+1. FORM command declares molecular formula explicitly (LSD uses implicit formula from MULT sum)
+2. MULT supports multiple hybridisation states and proton counts: `MULT 14 O (2 3) (0 1)`
+3. ELIM command enables elimination of non-standard correlations (required for 4J HMBC)
+4. SHIX/SHIH commands assign chemical shift values to atoms, preventing equivalent-atom ambiguity during isomer generation
+5. PIEC command declares molecule must be fully connected (always 1)
 
 ---
 
@@ -26,120 +27,137 @@ The first/best fragment is injected as a DEFF goodlist file + FEXP constraint in
 
 ### Table Stakes (Users Expect These)
 
-Features that the CASE system needs for SSC search to be functional. Missing any of these means the feature does not work.
+Features the CASE system needs for pyLSD integration to be functional. Missing any of these means the migration from direct LSD to pyLSD does not work.
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| **SSC extraction from compound database** | The fragment library must be built from the existing 928K compounds | HIGH | One-time offline batch process. Fragmentation rules: preserve heteroatom bonds, preserve double/triple bonds, preserve carbon-to-multiple-heteroatom bonds, preserve ring systems as whole units. Max sphere = 3 (for atom-centered fragments), max sphere = 1 (for ring-system-centered fragments). Max ring size for ring detection = 6. |
-| **Duplicate SSC deduplication** | Different atoms in same compound or across compounds produce identical substructures | MEDIUM | SMILES-based deduplication. When duplicates found: keep record with lower AVGDEV to experimental spectrum. Sherlock produces 24.5M SSCs from 892K compounds — dedup is essential. |
-| **256-bit fingerprint per SSC** | Boolean AND pre-screening requires pre-computed bitstrings | MEDIUM | 2 ppm bins covering 0-510 ppm = 255 bins. Bit i = 1 if any SSC signal falls in [i*2, (i+1)*2) ppm. All 256 bits in a single integer or bytes object. |
-| **Fragment database table** | SSC records must be stored and indexed for efficient retrieval | HIGH | New SQLite table (schema v7). Columns: smiles, subspectrum_shifts, fingerprint, heavy_atom_count, avgdev. Index on fingerprint for bitset comparison. Estimated size: 24.5M records * ~200 bytes = ~5 GB. May require separate database file from compound/HOSE database. |
-| **Query fingerprint construction with tolerance expansion** | Query bits need ±1-bin tolerance to avoid boundary misses | LOW | Before screening, set each query bit's neighbors also to 1. Prevents misses when experimental signal at 44.9 and SSC signal at 45.1 fall in different 2 ppm bins. |
-| **Boolean AND pre-screening** | Eliminates non-matching SSCs fast without per-signal comparison | MEDIUM | `(query_fp & ssc_fp) == ssc_fp` — if true, all SSC signals are accounted for in query. Implemented as integer bitwise AND on 256-bit stored fingerprints. |
-| **Fine spectral matching** | Pre-screening passes many false positives; fine match filters by actual shift deviations | HIGH | Same algorithm as existing dereplication: minimum-distance signal pair assignment, require multiplicity match, check DEV <= 2 ppm per pair, check AVGDEV <= 1 ppm overall. Requires subspectrum stored with multiplicities per atom. |
-| **Fragment result ranking** | Multiple fragments pass fine matching; best one used as constraint | LOW | Primary: heavy atom count descending (larger fragments = stronger constraint). Secondary: AVGDEV ascending (better spectral fit). Implemented in ranker. |
-| **CLI command: `lucy fragment search`** | Agent needs to invoke fragment search from Bash | MEDIUM | `lucy fragment search --shifts "127.26,129.38,..." --formula C13H18O2 --format json`. Output: ranked list of fragments with SMILES, heavy atom count, AVGDEV, matched signal pairs. |
-| **LSD goodlist file generation** | Fragment must be written as DEFF/FEXP syntax for LSD | MEDIUM | Fragment SMILES → LSD SSTR/LINK syntax. Open sites (R groups from fragmentation) become generic atoms in LSD notation. The DEFF file contains the substructure definition; FEXP says `'F1'` to mandate it. |
-| **Agent integration: lsd-engineer writes fragment constraints** | CASE team must automatically apply the best fragment | MEDIUM | lsd-engineer runs `lucy fragment search`, takes rank #1 fragment, writes goodlist file, adds DEFF/FEXP to LSD input file. |
-| **Hybridisation check during fine matching** | Fragment atom hybridisations must match detected hybridisations for query signals | LOW | Already available from `lucy detect hybridisation`. If detected hybridisation list is non-empty for a query signal, the matching fragment atom's hybridisation must be in that list. |
+| **pyLSD input file writer** | pyLSD needs a different input format than LSD — FORM, PIEC, ambiguous MULT, SHIX/SHIH, ELIM | MEDIUM | Replaces/extends the existing LSD file writer. Must support all existing commands (MULT, HSQC, HMBC, COSY, BOND, LIST, PROP, DEFF, FEXP) plus the new ones. See ibuprofen example in Appendix A4 of Wenk thesis. CLI: `lucy lsd write-pylsd`. |
+| **FORM command generation** | pyLSD requires explicit molecular formula via FORM | LOW | Format: `FORM C 13 H 18 O 2`. Parsed from compound formula string. Not used by direct LSD — verify not written there. This is a pyLSD-only command; existing code must not accidentally include it in LSD files. |
+| **PIEC command generation** | pyLSD requires connectivity constraint | LOW | Always `PIEC 1` (fully connected molecule). Written immediately after FORM. |
+| **Ambiguous MULT declaration** | Heteroatoms (O, N, S) often have multiple valid hybridisation states and proton counts | MEDIUM | Format: `MULT 14 O (2 3) (0 1)` — hybridisation and proton count are lists in parentheses. For unambiguous carbons, format remains `MULT 1 C 3 3`. pyLSD generates one LSD file per combination: O with (sp2, 0H) + O with (sp2, 1H) + O with (sp3, 0H) + O with (sp3, 1H) = 4 combinations for one oxygen atom. Default values from Wenk thesis Table A16 must be encoded as agent knowledge. |
+| **ELIM command generation** | Required to allow HMBC correlations with bond range extending beyond LSD default (>3J) | LOW | Format: `ELIM N M` where N = number of NSCs to eliminate, M = max bond distance allowed. For one suspect 4J correlation: `ELIM 1 4`. For two suspect: `ELIM 2 4`. Must be written ONLY when at least one HMBC has max bond count > 3. Without ELIM, the `2 4` in `HMBC X Y 2 4` is silently ignored by LSD. |
+| **SHIX command generation (heavy atoms)** | Prevents pyLSD from treating atoms with identical MULT states as equivalent, which collapses the solution space incorrectly | MEDIUM | Format: `SHIX 1 18.082`. Written for every carbon atom. For heteroatoms with unknown shift, omit. Two atoms with identical MULT but different SHIX values are treated as non-interchangeable during isomer generation. Without SHIX, two CH3 groups at 22.37 and 22.37 ppm are collapsed to one assignment — correct for symmetric molecules, wrong when they differ. |
+| **SHIH command generation (protons)** | Same as SHIX but for proton chemical shifts. Prevents proton-level equivalence collapse. | MEDIUM | Format: `SHIH 2 0.896`. Written for every HSQC-assigned proton. Diastereotopic protons get separate SHIH lines. |
+| **HMBC extended bond range syntax** | 4J correlations need `HMBC X Y 2 4` instead of default `HMBC X Y` (2–3 bonds) | LOW | Already partially implemented as "possible_4J" flag. Must generate explicit min/max bond parameters. The lsd-engineer agent currently defers 4J correlations — new behavior is to write them with extended range instead. |
+| **pyLSD execution wrapper** | Replace `lucy lsd run` with a wrapper that runs pyLSD and collects solutions | MEDIUM | pyLSD internally generates and runs N LSD files, then collects all solutions into one `.smi` file. The lucy CLI wrapper needs to handle pyLSD's output format, which differs from direct LSD. Must detect both success (solutions found) and failure (zero solutions from all runs). |
+| **Multi-run solution collection** | pyLSD produces solutions from N LSD runs; all must be merged before ranking | LOW | pyLSD handles this internally — it outputs a single solution file. The wrapper just needs to parse that file correctly. Solutions may be duplicates across runs (same structure found by different atom-state combinations); dedup before ranking. |
+| **Agent knowledge: pyLSD file format** | lsd-engineer must write correct pyLSD files, not LSD files | HIGH | The lsd-engineer agent currently knows only LSD syntax. Must learn: FORM replaces implicit formula, PIEC required, MULT can have list arguments, SHIX/SHIH mandatory for non-trivial molecules, ELIM required when any HMBC uses `2 4`. This is a skill/agent update, not Python code. |
+| **Constraint inventory: 4J tracking** | Constraint inventory JSON block must track which HMBC correlations are flagged as possible 4J | MEDIUM | New inventory fields: `suspected_4j_hmbcs` (list of C–H pairs), `elim_count` (N in ELIM command). Devils-advocate must verify: if any HMBC written with `2 4`, ELIM must be present with count >= number of such HMBCs. |
 
 ### Differentiators (Competitive Advantage)
 
-Features that improve SSC search quality beyond the Sherlock baseline.
+Features that improve 4J handling beyond minimum viable.
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| **Multi-fragment injection strategy** | Use top N fragments instead of just the first when single fragment doesn't yield single solution | MEDIUM | Sherlock uses only the first fragment. Extension: if first fragment yields >5 solutions after LSD, inject second fragment via `FEXP 'F1 AND F2'`. Reduces residual multi-solution cases. |
-| **Fragment size filter** | Exclude very small fragments (1-3 heavy atoms) that provide no structural information | LOW | Threshold: minimum heavy atom count of 4. Small fragments match too broadly and waste constraint power. |
-| **Formula-aware pre-screening** | Filter SSCs by molecular formula compatibility before fingerprint comparison | MEDIUM | SSC atom composition must be a subset of the query compound formula. E.g., if query is C13H18O2, reject SSCs containing nitrogen. Eliminates chemically impossible fragments early. |
-| **Incremental fragment application** | Start with largest fragment; add smaller ones only if solution count remains high | MEDIUM | After applying fragment 1, if solutions > 10, apply fragment 2 as additional FEXP constraint. This avoids over-constraining when a good fragment already solves the problem. |
-| **Fragment display in CASE-PROGRESS.md** | Report which fragment was found and applied, with matched signals highlighted | LOW | Shows chemist what structural subunit was confirmed. Helps diagnose why fragment didn't reduce to single solution (wrong fragment, 4J issue, etc.). |
-| **Resumable extraction pipeline** | SSC extraction runs for hours; must survive interruption | MEDIUM | Checkpoint table already exists in schema. Track last processed compound_id. Resume from checkpoint on restart. |
-| **Fragment search statistics in CLI output** | Report pre-screening count, fine-match count, and final count | LOW | Diagnostic information. Helps tune DEV/AVGDEV thresholds. E.g., "24.5M SSCs → 2,341 passed pre-screen → 47 passed fine match → 5 after dedup". |
+| **Multi-file 4J exploration strategy** | When unsure which HMBCs are 4J (the common case), generate multiple pyLSD input files with different HMBC configurations and union the results | HIGH | Strategy: for K suspect HMBC correlations, test 2^K combinations (each suspect either included as 2–3J or excluded/extended to 4J). Union all solution sets. For K=3 (ibuprofen case), this is 8 runs. Wenk thesis §4.3.1 mentions this as planned improvement: "Multiple pyLSD input files with different configurations could be produced and executed." Not yet in Sherlock — lucy-ng could be first to implement. |
+| **Atom exchange for grouped signals** | When two atoms share nearly identical shifts (grouped), use HMBC `(C1 C2) H` syntax to allow either atom as the correlation source — handles peak assignment ambiguity without re-running | MEDIUM | Already in pyLSD format: `HMBC (5 6) 7 2 3`. Wenk thesis §4.3.1 confirms this resolved a case where the candidate list was empty without it. Agent currently uses this syntax for grouped atoms (v4.0 bug fixed). Verify it's still working correctly after pyLSD migration. |
+| **Aromatic 4J heuristic + extended range** | nmr-chemist heuristic identifies which HMBCs are probably 4J; lsd-engineer writes them with `2 4` instead of deferring them | MEDIUM | Currently (v6.0): nmr-chemist flags, lsd-engineer defers. New behavior: flagged correlations get `2 4` + ELIM rather than being dropped. This is the minimal fix for ibuprofen. Depends on: ELIM command generation, extended HMBC syntax. |
+| **PROP constraints from neighbourhood detection** | Statistical neighbour detection produces forbidden/mandatory bonds — these should become PROP constraints in the pyLSD file | MEDIUM | Already detected via `lucy detect neighbours`. Currently only C=O is turned into BOND. PROP generalizes this: `LIST L3 14 15` + `PROP 1 0 L3 -` forbids atom 1 from bonding to anything in L3 (heteroatom list). The ibuprofen example shows systematic PROP usage for all non-O-bearing carbons. This is agent skill knowledge, not Python code. |
+| **HETE/PROP heteroatom isolation** | Heteroatom-heteroatom bonds are usually absent in natural products; PROP can forbid them by default | LOW | `HETE L1; hetero atoms` + `PROP L1 0 L1 -; no hetero-hetero bonds`. Already detected by `lucy detect hhb`. Agent must translate the hhb result into HETE/PROP constraints, not just advisory notes. See ibuprofen example lines 5591–5592. |
+| **UAT with pyLSD on ibuprofen** | Confirm pyLSD + ELIM + 4J extended range actually finds the correct ibuprofen structure | HIGH | The definitive validation that the approach works. Must produce ibuprofen (or a set containing ibuprofen) as a solution. Expected: 3 HMBCs flagged as 4J, written as `HMBC X Y 2 4`, ELIM 3 4 (or ELIM with appropriate count), SHIX/SHIH for all atoms, correct aromatic ring in top-ranked solution. This is the v4.0 failure case that started this whole track. |
 
 ### Anti-Features (Commonly Requested, Often Problematic)
 
 | Feature | Why Requested | Why Problematic | Alternative |
 |---------|---------------|-----------------|-------------|
-| **Storing all 24.5M fragments in the main compound database** | Single database is simpler | Main database is already 2.8 GB. Adding 24.5M SSC records (~5 GB) makes the file unmanageable and slows all existing queries (dereplication, prediction) due to SQLite page cache pressure. | Separate database file `lucy-ng-fragments.db` with symlink or config-based path. Fragment search CLI opens this file independently. |
-| **Real-time SSC extraction on each CASE run** | Avoids separate extraction step | 24.5M fragments from 928K compounds takes hours. Completely impractical per-run. Sherlock pre-builds this offline. | Pre-built fragment database shipped alongside compound database (Figshare). One-time extraction for users who build from source. |
-| **Using HOSE codes instead of fragmentation** | HOSE codes already exist in database | HOSE codes are atom-level descriptors (one HOSE per atom, single chemical shift). SSCs are substructure-level (a SMILES fragment + multiple shifts). They answer fundamentally different questions: HOSE says "what shift does this atom type have?" while SSC says "does this known substructure match my spectrum?" Cannot substitute. | Keep HOSE codes for prediction/ranking; add SSC library for fragment search. These are complementary, not competing. |
-| **Injecting many fragments simultaneously** | More constraints = fewer solutions | Injecting 3+ fragments simultaneously with FEXP 'F1 AND F2 AND F3' often over-constrains and produces zero solutions, particularly when one fragment has a borderline spectral match. | Use fragments sequentially: apply first, run LSD, count solutions. If still multiple, apply second. |
-| **Using fragment library for initial hypothesis** | Fragment search can provide structural hints | At the start of CASE (before any LSD run), the experimental spectrum fingerprint matches too many SSCs to be useful. Fragment constraints only become powerful in combination with MULT/HSQC/HMBC constraints. | Fragment search runs AFTER initial LSD to reduce multi-solution sets, not INSTEAD of initial setup. |
-| **Custom user-uploaded fragments** | Advanced users may want to add known substructures | Increases system complexity (upload, storage, validation), fragment format is non-trivial (SSTR/LINK syntax), and the workflow is manual. | Agent can write DEFF/FEXP manually if chemist provides a known substructure. Fragment library is for automatic discovery, not manual entry. |
+| **Statistical pre-filtering of 4J correlations** | Simpler than running multiple LSD files | v7.0 proved this is fundamentally non-viable: HOSE pair distance statistics produce 100% false positive rate because j5_plus dominates every atom type universally. Cannot distinguish 2J from 4J statistically. | Use pyLSD's ELIM + extended bond range. The constraint solver explores all bond configurations directly — no pre-filtering needed. |
+| **Running all 2^K HMBC configurations in parallel** | Faster than sequential exploration | For K=3 suspect correlations, 8 runs is fine. For K=8 (larger molecules), 256 runs may overwhelm the system. Parallelism also complicates solution deduplication and progress tracking. | Run pyLSD once per configuration sequentially; stop early if correct structure found via ranking. Cap K at 4 (max 16 configurations). |
+| **Writing LSD files for all molecules** | Some users may prefer direct LSD over pyLSD | pyLSD is a superset of LSD — any valid LSD file is also valid pyLSD input. If all atom states are unambiguous and no ELIM is needed, pyLSD produces exactly one LSD file and runs it. No need to maintain two writers. | Produce pyLSD files always. The format degrades gracefully to LSD behavior when no ambiguity exists. |
+| **Exposing pyLSD's internal LSD files to the agent** | Transparency into which LSD files were generated | pyLSD's internal files are temp files, not intended for inspection. Exposing them adds debugging complexity with little benefit for CASE workflow. | Report solution count per run in CASE-PROGRESS.md. If all runs return zero, diagnostic specialist investigates. |
+| **Replacing HOSE-based ranking with pyLSD's built-in ranking** | pyLSD can rank solutions internally | pyLSD's built-in ranking is disabled in Sherlock and replaced with HOSE-based prediction (Wenk thesis §3.1.4.2.4). The existing lucy-ng ranking (two-tier: match count + MAE) is better calibrated for this database. | Keep existing `lucy lsd rank`. pyLSD provides solutions; lucy-ng ranks them. |
+| **Using ELIM for all HMBC correlations by default** | ELIM allows "invalid" correlations to be pruned, which seems useful as a general tool | ELIM is specifically for correlations that extend BEYOND LSD's default bond limits. Using it on normal 2–3J correlations does nothing useful but may mislead the agent into thinking those correlations are questionable. | Apply ELIM only when at least one HMBC has max bond distance > 3. Track this explicitly in the ELIM count (N in `ELIM N M`). |
 
 ---
 
 ## Feature Dependencies
 
 ```
-SSC extraction pipeline
-    └── requires --> Compound database (928K compounds) [EXISTING]
-    └── requires --> RDKit fragmentation with bond-preservation rules [NEW]
-    └── requires --> Fragment database schema (v7) [NEW]
-    └── produces --> 24.5M SSC records with subspectra + fingerprints
+pyLSD input file writer
+    └── requires --> FORM command generation [NEW]
+    └── requires --> PIEC command generation [NEW]
+    └── requires --> Ambiguous MULT syntax [NEW]
+    └── requires --> SHIX/SHIH generation [NEW]
+    └── requires --> ELIM command generation [NEW]
+    └── requires --> Extended HMBC bond range syntax [NEW — builds on existing `2 4` flag]
+    └── replaces --> Existing LSD file writer [EXISTING]
 
-CLI: lucy fragment search
-    └── requires --> Fragment database [NEW, from extraction]
-    └── requires --> Bitset fingerprint computation [NEW]
-    └── requires --> Fine spectral matching algorithm [NEW, similar to dereplication]
-    └── requires --> Experimental shifts (from existing lucy pick 1d / CASE workflow)
+ELIM command generation
+    └── requires --> HMBC extended bond range syntax [NEW — must know which HMBCs need 2 4]
+    └── requires --> nmr-chemist 4J flagging [EXISTING — v6.0 heuristic]
 
-LSD goodlist file generation
-    └── requires --> Fragment SMILES [from CLI search]
-    └── requires --> SSTR/LINK syntax knowledge [in agent skill]
-    └── produces --> goodlist .def file for DEFF/FEXP in LSD
+pyLSD execution wrapper
+    └── requires --> pyLSD installed on system [EXISTING requirement, same as LSD]
+    └── requires --> pyLSD input file writer [NEW]
+    └── replaces --> lucy lsd run [EXISTING]
+    └── produces --> unified solution file (same format as direct LSD)
 
-Agent integration (lsd-engineer)
-    └── requires --> CLI: lucy fragment search [NEW]
-    └── requires --> LSD goodlist file generation [NEW]
-    └── requires --> lsd-engineer agent skill update [NEW]
-    └── enhances --> Constraint inventory (DEFF/FEXP now tracked) [EXISTING]
+Agent knowledge: pyLSD file format
+    └── requires --> pyLSD input file writer [NEW — must know what to request]
+    └── requires --> lsd-engineer skill update [NEW]
+    └── enhances --> Constraint inventory: 4J tracking [NEW, below]
 
-Multi-fragment injection
-    └── requires --> Agent integration working [NEW, above]
-    └── requires --> Coordinator knowing current solution count [EXISTING]
-    └── enhances --> Fragment search (uses top-N result) [NEW, above]
+Constraint inventory: 4J tracking
+    └── requires --> Existing constraint inventory JSON block [EXISTING — v4.0]
+    └── requires --> Agent knowledge: pyLSD file format [NEW, above]
+    └── enhances --> Devils-advocate verification [EXISTING]
+
+Multi-file 4J exploration
+    └── requires --> pyLSD input file writer [NEW]
+    └── requires --> pyLSD execution wrapper [NEW]
+    └── requires --> nmr-chemist 4J flagging [EXISTING — v6.0 heuristic]
+    └── requires --> Coordinator multi-run orchestration [NEW agent skill]
+    └── enhances --> aromatic ring sanity check [EXISTING — v4.0]
+
+PROP constraints from neighbourhood detection
+    └── requires --> lucy detect neighbours [EXISTING — v3.0]
+    └── requires --> Agent knowledge: pyLSD file format (LIST/PROP syntax) [NEW]
+    └── requires --> lsd-engineer skill update [NEW]
+    └── enhances --> Solution quality (fewer wrong candidates)
+
+UAT: ibuprofen with pyLSD
+    └── requires --> pyLSD input file writer [NEW]
+    └── requires --> ELIM + extended HMBC [NEW]
+    └── requires --> SHIX/SHIH [NEW]
+    └── requires --> Agent knowledge update [NEW]
+    └── validates --> All table stakes features above
 ```
 
 ### Dependency Notes
 
-- **SSC extraction requires formula-aware pre-screening:** During fine matching, the fragment's atom composition (from SMILES) must be checked against the query formula. This check needs compound formula data, already in the compounds table.
-- **Fragment database is a prerequisite for all search features:** No fragment search CLI, no agent integration, no multi-fragment injection works without the pre-built database. Extraction is phase 1 blocker.
-- **Agent integration depends on SSTR/LINK syntax knowledge:** The lsd-engineer agent must know how to convert a fragment SMILES with R groups to LSD SSTR/LINK notation. This is agent skill knowledge (similar to how LSD commands are currently inlined), not Python code.
-- **Checkpoint system enhances but does not block extraction:** Resumable extraction is a robustness feature for the extraction pipeline. Non-resumable extraction still works but wastes compute on failure.
-- **Multi-fragment injection conflicts with over-constraining:** Must only apply second fragment if solution count after first fragment is still above threshold. Coordinator checks `lucy lsd rank` output before deciding.
+- **ELIM requires knowing which HMBCs are 4J:** The count N in `ELIM N M` equals the number of HMBC lines with max bond distance > 3. The lsd-engineer must count these when constructing the ELIM line, not guess. If N is wrong (too low), some extended-range correlations are silently treated as standard correlations.
+- **SHIX/SHIH are required for correct isomer enumeration:** Without them, pyLSD treats all CH3 groups with the same MULT as interchangeable, which can collapse real structural distinctions. For the ibuprofen case: two CH3 groups at 22.37 ppm ARE equivalent (the isobutyl CH3s) — but they must still have SHIH/SHIX lines so pyLSD correctly handles their cross-assignment.
+- **Multi-file 4J exploration depends on the coordinator:** The coordinator (case.md orchestrator) must decide how many pyLSD runs to execute and which HMBC configurations to try. This is new orchestration logic that does not exist in any current agent.
+- **PROP constraints are a skill update, not Python code:** The LIST/PROP generation from `lucy detect neighbours` output is agent reasoning — the agent reads the JSON output and decides which atoms go in which lists. No new CLI commands needed.
 
 ---
 
 ## MVP Definition
 
-### Launch With (v5.0 core)
+### Launch With (v8.0 core)
 
-Minimum viable feature set to validate that SSC search reduces solution counts.
+Minimum viable feature set to unblock ibuprofen CASE and validate pyLSD approach.
 
-- [x] **SSC extraction pipeline** — Without the library, nothing else works. Extract from all 928K compounds, store in separate fragment database.
-- [x] **256-bit fingerprint generation and Boolean AND pre-screening** — Core speed advantage. Without this, fine matching 24.5M SSCs per CASE run is computationally infeasible.
-- [x] **Fine spectral matching (DEV/AVGDEV)** — Pre-screening alone has too many false positives. Fine matching required to find the actually useful fragment.
-- [x] **CLI: `lucy fragment search`** — Agent-accessible interface. Required for lsd-engineer integration.
-- [x] **LSD goodlist file generation** — Fragment is only useful if it can be expressed in LSD syntax and applied as a constraint.
-- [x] **Agent integration: lsd-engineer applies first fragment** — The end-to-end workflow payoff. Agent runs fragment search, applies best fragment, sees reduced solution count.
-- [x] **Multi-compound UAT** — Validate impact on at least 5 compounds (ibuprofen + 4 others from Sherlock's test set). Confirm solution count reduction matches expected pattern.
+- [ ] **pyLSD input file writer** — Without this, nothing else works. Must produce correct FORM, PIEC, MULT, SHIX, SHIH, HSQC, HMBC (with explicit bond range), COSY, BOND, LIST, PROP, DEFF, FEXP, ELIM.
+- [ ] **ELIM command generation** — Required for any HMBC correlation extended beyond 3J. Count = number of extended-range HMBCs in the file.
+- [ ] **SHIX/SHIH generation** — Required for correct isomer enumeration. All carbons get SHIX; all HSQC-assigned protons get SHIH.
+- [ ] **pyLSD execution wrapper** — Replace `lucy lsd run` or provide `lucy lsd run-pylsd`. Must collect solutions from pyLSD's unified output.
+- [ ] **Agent knowledge: pyLSD file format** — lsd-engineer must know the full syntax. Update agent skill with FORM, PIEC, ambiguous MULT, SHIX/SHIH, ELIM, extended HMBC. This is the highest-leverage update: one skill change enables all the above.
+- [ ] **Constraint inventory: 4J tracking** — Add `suspected_4j_hmbcs` and `elim_count` to JSON block. Devils-advocate verifies ELIM present when extended HMBCs exist.
+- [ ] **UAT: ibuprofen with pyLSD** — Confirm correct structure found. Accept as milestone-complete only when ibuprofen is top-ranked solution.
 
-### Add After Validation (v5.x)
+### Add After Validation (v8.x)
 
-- [ ] **Multi-fragment injection strategy** — Trigger: UAT shows cases where first fragment insufficient (solution count still > 5 after first fragment).
-- [ ] **Fragment search statistics in CLI output** — Trigger: debugging needs during UAT (thresholds need tuning).
-- [ ] **Formula-aware pre-screening** — Trigger: fragment search performance is slow (>5 seconds per search).
-- [ ] **Fragment display in CASE-PROGRESS.md** — Trigger: agent review of what fragment was used.
-- [ ] **Resumable extraction pipeline** — Trigger: extraction fails on interrupted run. Add checkpoint support then re-run.
+- [ ] **PROP constraints from neighbourhood detection** — Trigger: ibuprofen solved, multi-compound UAT still fails on heteroatom-heavy compounds.
+- [ ] **HETE/PROP for heteroatom isolation** — Trigger: UAT compounds with O-O or O-N bonds being incorrectly proposed.
+- [ ] **Multi-file 4J exploration** — Trigger: cases where nmr-chemist cannot determine which HMBCs are 4J (uncertainty > 1 candidate).
+- [ ] **Atom exchange for grouped signals** — Trigger: cases where peak grouping causes empty solution set; existing grouped HMBC syntax may already handle this.
 
-### Future Consideration (v5.2+)
+### Future Consideration (v9+)
 
-- [ ] **Fragment size filter (min 4 heavy atoms)** — May not be needed if fine matching already filters small fragments by AVGDEV.
-- [ ] **Solvent-aware fragment search** — Requires solvent-tracking infrastructure (separate milestone). Not needed for core fragment library.
-- [ ] **Custom user-uploaded fragments** — Low value, high complexity. Deferred indefinitely.
-- [ ] **Fragment database regeneration from updated compound database** — Only needed when compound database is updated (rare).
+- [ ] **Multi-fragment injection + pyLSD** — Combine fragment library with pyLSD's ambiguous atom handling. Not blocking anything in v8.
+- [ ] **Multi-compound UAT** — Six test compounds have 4J risk. After ibuprofen confirmed working, run all six.
+- [ ] **Parallel multi-run execution** — Subprocess pool for 2^K configurations. Only needed for K > 4 (>16 runs).
 
 ---
 
@@ -147,197 +165,113 @@ Minimum viable feature set to validate that SSC search reduces solution counts.
 
 | Feature | User Value | Implementation Cost | Priority |
 |---------|------------|---------------------|----------|
-| SSC extraction pipeline | HIGH | HIGH | P1 — must-have |
-| 256-bit fingerprint + Boolean AND | HIGH | MEDIUM | P1 — enables feasible search |
-| Fine spectral matching | HIGH | MEDIUM | P1 — eliminates false positives |
-| CLI: `lucy fragment search` | HIGH | MEDIUM | P1 — agent interface |
-| LSD goodlist file generation | HIGH | MEDIUM | P1 — constraint application |
-| Agent integration (lsd-engineer) | HIGH | MEDIUM | P1 — end-to-end workflow |
-| Fragment database schema (v7) | HIGH | LOW | P1 — infrastructure |
-| Resumable extraction | MEDIUM | LOW | P2 — robustness |
-| Fragment stats in CLI | MEDIUM | LOW | P2 — observability |
-| Multi-fragment injection | MEDIUM | MEDIUM | P2 — edge case improvement |
-| Formula-aware pre-screening | MEDIUM | MEDIUM | P2 — performance optimization |
-| Fragment display in progress log | LOW | LOW | P2 — transparency |
-| Fragment size filter | LOW | LOW | P3 — marginal quality |
-| Custom user fragments | LOW | HIGH | P3 — don't build |
+| pyLSD input file writer | HIGH | MEDIUM | P1 — foundation |
+| ELIM command generation | HIGH | LOW | P1 — unblocks 4J |
+| SHIX/SHIH generation | HIGH | LOW | P1 — required by format |
+| pyLSD execution wrapper | HIGH | MEDIUM | P1 — replaces direct LSD |
+| Agent knowledge: pyLSD format | HIGH | MEDIUM | P1 — lsd-engineer must know this |
+| Constraint inventory: 4J tracking | HIGH | LOW | P1 — DA gate |
+| UAT: ibuprofen with pyLSD | HIGH | LOW | P1 — validation |
+| PROP from neighbourhood detection | MEDIUM | LOW | P2 — quality improvement |
+| HETE/PROP heteroatom isolation | MEDIUM | LOW | P2 — reduces wrong candidates |
+| Atom exchange for grouped signals | MEDIUM | LOW | P2 — edge case |
+| Multi-file 4J exploration | HIGH | HIGH | P2 — powerful but complex |
+| Parallel multi-run execution | LOW | MEDIUM | P3 — performance only |
+
+**Priority key:**
+- P1: Must have for v8.0 launch — unblocks ibuprofen CASE
+- P2: Should have, add when core is validated
+- P3: Nice to have, defer to v9+
 
 ---
 
-## Workflow Steps (Concrete)
+## Concrete Format Reference
 
-The complete SSC workflow from experimental spectrum to LSD constraint:
+### pyLSD File Differences from Direct LSD
 
-### Step 1: Pre-build (One-time, Offline)
-```bash
-# New CLI command — extracts all SSCs from compound database
-lucy fragment build --database data/reference/lucy-ng-derep.db \
-                   --output data/reference/lucy-ng-fragments.db
-# Expected runtime: several hours for 928K compounds
-# Expected output: ~24.5M SSC records
-```
+| Aspect | Direct LSD | pyLSD |
+|--------|-----------|-------|
+| Molecular formula | Implicit (sum of MULT atoms) | `FORM C 13 H 18 O 2` (explicit, first command) |
+| Connectivity | Not declared | `PIEC 1` (always present) |
+| Atom state | `MULT 1 C 3 3` (single value each) | `MULT 14 O (2 3) (0 1)` (list allowed) |
+| Shift assignment | Not used | `SHIX 1 18.082` (heavy atom), `SHIH 2 0.896` (proton) |
+| Extended correlations | Not supported | `ELIM 1 4` enables; `HMBC X Y 2 4` uses |
+| Multiple runs | One LSD run | N runs (one per ambiguous state combo) |
+| Output | `.sol` binary, convert with `outlsd` | Unified SMILES output (pyLSD handles conversion) |
 
-### Step 2: Fragment Search (Per CASE Iteration, After Initial LSD)
-```bash
-# lsd-engineer calls this after initial LSD yields multiple solutions
-lucy fragment search \
-  --shifts "18.08,22.37,30.14,44.90,45.03,127.26,129.38,136.96,140.84,180.56" \
-  --formula C13H18O2 \
-  --database data/reference/lucy-ng-fragments.db \
-  --top 5 \
-  --format json
-```
+### ELIM Semantics (from Wenk thesis §3.1.4.2.3)
 
-Expected JSON output:
-```json
-{
-  "query_shifts": [18.08, 22.37, ...],
-  "prescreening_count": 2341,
-  "fine_match_count": 47,
-  "result_count": 5,
-  "fragments": [
-    {
-      "rank": 1,
-      "smiles": "c1cc(CC(C)C(=O)O)ccc1CC(C)C",
-      "heavy_atom_count": 13,
-      "avgdev": 0.17,
-      "matched_signals": [
-        {"query_shift": 18.08, "fragment_shift": 18.55, "deviation": 0.47},
-        ...
-      ]
-    },
-    ...
-  ]
-}
-```
+`ELIM N M` means: "allow elimination of N correlations that have bond distance up to M." The two parameters are:
+- N: maximum number of extended-range correlations the solver is allowed to treat as invalid
+- M: maximum bond distance for those correlations (4 for 4J exploration)
 
-### Step 3: Goodlist File Generation
-```bash
-# lsd-engineer generates the LSD fragment definition file
-lucy fragment to-lsd \
-  --smiles "c1cc(CC(C)C(=O)O)ccc1CC(C)C" \
-  --output analysis/iteration_02/fragment.def
-```
+Critical rule: ELIM only activates for HMBC/COSY lines where the declared max bond distance exceeds LSD defaults (>3 for HMBC, >4 for COSY). A standard `HMBC X Y` (no bond range) is never eligible for elimination.
 
-Fragment .def file format (SSTR/LINK notation):
-```
-; Fragment: ibuprofen-like skeleton (rank 1, AVGDEV 0.17 ppm)
-; SMILES: c1cc(CC(C)C(=O)O)ccc1CC(C)C
-SSTR S1 C* (2 3) (1 2)    ; aromatic C
-SSTR S2 C* (2 3) (1 2)    ; aromatic C
-...
-LINK S1 S2
-...
-```
+For ibuprofen with 3 suspect 4J correlations: `ELIM 3 4`. This permits pyLSD to explore configurations where 0, 1, 2, or 3 of the suspect correlations are treated as too long to be valid.
 
-### Step 4: LSD Integration
-lsd-engineer adds to compound.lsd:
-```
-; === Fragment constraints ===
-DEFF F1 'analysis/iteration_02/fragment.def'
-FEXP 'F1'
-```
+### Ambiguous MULT for Common Heteroatoms (Wenk thesis Table A16)
 
-Then runs LSD. Solution count drops from 7 to 1 (in the Sherlock ibuprofen example).
-
-### Step 5: Constraint Inventory Update
-lsd-engineer adds to the JSON inventory block in the LSD header:
-```json
-{
-  "fragments": [
-    {"rank": 1, "smiles": "...", "avgdev": 0.17, "heavy_atoms": 13, "iteration_applied": 2}
-  ]
-}
-```
-
-Devils-advocate verifies DEFF/FEXP present in current iteration before each LSD run.
+| Atom | Possible Valencies | Possible Hybridisations | Possible H Counts |
+|------|--------------------|------------------------|-------------------|
+| O (unknown) | 2 | sp2, sp3 | 0, 1 |
+| O (known carbonyl) | 2 | sp2 | 0 |
+| O (known ether/hydroxyl) | 2 | sp3 | 0, 1 |
+| N (unknown) | 3, 5 | sp1, sp2, sp3 | 0, 1, 2, 3 |
+| C (sp2, quaternary) | 4 | sp2 | 0 |
+| C (sp3, CH3) | 4 | sp3 | 3 |
 
 ---
 
-## Search Algorithm Parameters (Defaults from Sherlock)
+## 4J Exploration Strategy (Concrete)
 
-| Parameter | Default | Description | Source |
-|-----------|---------|-------------|--------|
-| Max fragment sphere (atom-centered) | 3 | Breadth-first radius from each non-H atom | Wenk thesis §3.1.4.1.4 |
-| Max fragment sphere (ring-centered) | 1 | Radius around complete ring systems | Wenk thesis §3.1.4.1.4 |
-| Max ring size for ring detection | 6 | Only rings with ≤6 heavy atoms kept whole | Wenk thesis §3.1.4.1.4 |
-| Fingerprint bit width | 2 ppm | Each bit covers a 2 ppm bin | Wenk thesis §3.1.4.1.4 |
-| Fingerprint range | 0-510 ppm | Covers all practical 13C shifts | Wenk thesis Fig. 26-27 |
-| Fingerprint bits total | 256 | 510/2 = 255 bins, round to 256 | Wenk thesis §3.1.4.1.4 |
-| Tolerance expansion | ±1 bin | Each set query bit expands to neighbors | Wenk thesis §3.1.4.1.4 |
-| Fine match DEV | 2 ppm | Max per-signal deviation | Wenk thesis §3.1.4.1.4 |
-| Fine match AVGDEV | 1 ppm | Max average deviation across matched signals | Wenk thesis §3.1.4.1.4 |
-| Multiplicity match required | true | Query and fragment atom must have same H count | Wenk thesis §3.1.4.1.4 |
-| Equivalence match required | true | Equivalence count must match | Wenk thesis §3.1.4.1.4 |
-| Fragment ranking primary | heavy atom count desc | Larger fragments = stronger constraint | Wenk thesis Table 5 |
-| Fragment ranking secondary | AVGDEV asc | Better spectral fit preferred | Wenk thesis Table 5 |
-| Fragments used per LSD run | 1 (first) | Only first fragment injected by default | Wenk thesis §4.2.2 |
+The problem: agent has a list of HMBC correlations where some are flagged as "possibly 4J" by nmr-chemist. The agent must decide how to handle them.
 
----
+**Recommended strategy for v8.0 (minimal):**
+1. nmr-chemist identifies suspect 4J correlations (aromatic W-pathway pattern, currently heuristic)
+2. lsd-engineer writes them as `HMBC X Y 2 4` (extended range) instead of standard `HMBC X Y`
+3. lsd-engineer counts N = number of extended HMBCs, writes `ELIM N 4`
+4. Run once with pyLSD — the solver explores all valid bond distance configurations internally
+5. If solutions include correct structure, done. If zero solutions, diagnostic specialist investigates.
 
-## Bond-Preservation Rules (Fragmentation Algorithm)
+**Extended strategy for v8.x (multi-file):**
+For K suspect correlations where confidence is low:
+1. Generate K+1 pyLSD input files: base file (all K as standard 2–3J) + one file per suspect excluded
+2. Run each file separately, collect solution sets
+3. Union all solutions, deduplicate by SMILES, re-rank by HOSE prediction
+4. Report combined solution set to solution-analyst
 
-These rules determine which bonds are NOT cut during breadth-first fragmentation. A bond is preserved (atom kept, not replaced by R) when ANY of the following holds:
-
-1. **Heteroatom-heteroatom bond:** Both endpoint atoms are non-carbon (e.g., O-N, O-P). These encode functional group connectivity that must be preserved.
-
-2. **Bond order > 1:** Double or triple bonds encode hybridisation information. Always preserved.
-
-3. **Carbon bonded to multiple heteroatoms:** If a carbon connects to more than one non-carbon heavy atom (e.g., carboxyl carbon C(=O)O, which bonds to two oxygens), those bonds are preserved. This retains functional group context.
-
-4. **Ring atoms:** Any atom in a ring (detected using SSSR) is treated as part of the complete ring system. The entire ring (including all ring atoms and ring bonds) becomes a single starting point with radius 1 sphere, not just an individual atom with radius 3.
-
-When none of these conditions holds, the connected atom is replaced by R (an open-site pseudo-atom indicating an attachment point). Bond type to R is preserved (single R, double R=, etc.).
-
-Note: lucy-ng currently uses implicit hydrogens throughout HOSE code generation (no `AddHs()`). The same approach must be applied consistently during SSC extraction — work with RDKit molecules without explicit hydrogens.
-
----
-
-## Expected Impact
-
-Based on Sherlock's published results (HIGH confidence — from Wenk thesis §4.2.2):
-
-| Metric | Sherlock Result | lucy-ng Baseline | Expected After v5.0 |
-|--------|-----------------|------------------|---------------------|
-| Cases reduced by first fragment | 27/40 had multiple solutions; 27 reduced | N/A | Similar reduction expected |
-| Cases reduced to single solution | 34/40 | 1/1 tested (ibuprofen failed — not fragmented) | Target: 34/40 parity |
-| Ibuprofen solution count | 2 → 1 (with fragment) | 7 (all wrong due to 4J) | Unknown — depends on whether correct structure is in solution set |
-| Fragment search time (per CASE run) | <2 seconds (Java/MongoDB) | TBD (Python/SQLite) | Likely 10-30 seconds (acceptable) |
-| Library size | 24.5M SSCs (892K compounds) | N/A | ~26M SSCs expected (928K compounds) |
-
-**Important caveat:** Ibuprofen specifically may not benefit from fragment search if the 4J HMBC constraint problem persists. Fragment constraints only help select among valid solutions — if the correct structure is excluded by wrong HMBC constraints (4J problem), no fragment can fix that. Fragment library (v5.0) and 4J detection (v5.1) are complementary.
+The multi-file strategy is the approach Wenk thesis describes as "planned improvement" — it is not yet in Sherlock (as of thesis writing). Lucy-ng implementing it would exceed Sherlock's current capability.
 
 ---
 
 ## Competitor Feature Analysis
 
-| Feature | Sherlock | ACD/Structure Elucidator | lucy-ng v5.0 |
-|---------|----------|--------------------------|--------------|
-| Fragment library size | 24.5M SSCs | Large (proprietary, commercial) | ~26M SSCs (from 928K compounds) |
-| Fragment pre-screening | 256-bit bitsets, Boolean AND | Unknown (commercial) | 256-bit bitsets, Boolean AND (matching Sherlock) |
-| Fine matching | DEV/AVGDEV + multiplicity | Unknown | DEV/AVGDEV + multiplicity (matching Sherlock) |
-| Fragment injection | DEFF/FEXP goodlist | Automated goodlist | DEFF/FEXP goodlist (same LSD mechanism) |
-| Fragments per run | 1 (first) | Multiple (automated) | 1 default, N optional |
-| Impact (single solution) | 34/40 (85%) | High (commercial, not benchmarked) | Target 34/40 parity |
-| Autonomous operation | No (manual GUI) | No (requires user interaction) | Yes (agent-driven) — lucy-ng advantage |
-| Speed | <2 seconds (Java/MongoDB) | Fast (commercial) | Slower (Python/SQLite) but acceptable |
+| Feature | Sherlock | Lucy-ng v6.0 (current) | Lucy-ng v8.0 (target) |
+|---------|----------|------------------------|------------------------|
+| pyLSD integration | Yes — primary solver | No — direct LSD only | Yes — primary solver |
+| Ambiguous atom states (MULT lists) | Yes | No | Yes |
+| ELIM for 4J exploration | Yes | No | Yes |
+| SHIX/SHIH for atom differentiation | Yes — used always | No | Yes |
+| FORM/PIEC commands | Yes | No | Yes |
+| Multi-run for ambiguous states | Yes — automatic via pyLSD | No | Yes — via pyLSD |
+| Multi-file 4J configurations | Partial (test impl.) | No | Planned (v8.x) |
+| Autonomous 4J detection | No (heuristic only) | Heuristic (v6.0) | Heuristic + solver-based |
+| PROP from neighbourhood stats | Yes | No (advisory only) | Yes (v8.x) |
 
 ---
 
 ## Sources
 
 **HIGH confidence (authoritative):**
-- Wenk, M. (2023). *Development of a System for Computer-Assisted Structure Elucidation of Small Organic Compounds.* PhD Thesis, Friedrich-Schiller-Universitat Jena. (`background/wenk-thesis.txt` and `background/Dissertation Michael Wenk.pdf`) — Primary specification source for all SSC algorithm parameters, bond-preservation rules, fingerprint dimensions, thresholds, and impact statistics.
-- `background/sherlock-analysis.md` — Project-specific synthesis of Sherlock capabilities vs. lucy-ng gaps, updated 2026-02-19.
-- `src/lucy_ng/database/schema.py` — Existing v6 schema; v7 extension point for fragment table.
-- `src/lucy_ng/dereplication/` — Existing fine-matching algorithm (reusable for fragment fine matching).
-- `.planning/PROJECT.md` — Current milestone definition and deferred feature list.
+- Wenk, M. (2023). *Development of a System for Computer-Assisted Structure Elucidation of Small Organic Compounds.* PhD Thesis. (`background/wenk-thesis.txt` lines 2069–2268, 4640–4664, 5491–5625) — Complete pyLSD command reference, ibuprofen example, atom exchange feature, ELIM semantics, default heteroatom MULT values.
+- `.planning/PROJECT.md` — v8.0 milestone definition, deferred features, v7.0 post-mortem (statistical 4J abandoned).
+- `.planning/research/FEATURES.md` (v5.0) — Fragment library features; pattern for this document.
+- Memory: v4.0 UAT findings — concrete 4J failure analysis for ibuprofen (three 4J HMBC correlations identified: C4a↔C6, C5a↔C7, with atom indices documented).
 
 **MEDIUM confidence:**
-- Sherlock casekit library (GitHub: github.com/michaelwenk/casekit) — Java implementation of fragmentation and fragment search. Provides implementation reference but requires translation to Python/RDKit.
-- Elyashberg, M. et al. — Referenced in thesis (Chapter 7.4.1) as inspiration for SSC approach. Not directly accessed.
+- Wenk thesis §4.3.1 on atom exchange / multi-file approach: "Casekit and Sherlock already have a test implementation" — not yet in production. Confidence MEDIUM because exact behavior of test implementation is not described in detail.
 
 ---
 
-*Feature research for: v5.0 Fragment Library and SSC Search*
-*Researched: 2026-02-19*
+*Feature research for: v8.0 pyLSD Integration and 4J Exploration*
+*Researched: 2026-03-13*

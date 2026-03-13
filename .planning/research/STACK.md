@@ -1,288 +1,303 @@
-# Technology Stack: Fragment Library and SSC Search
+# Technology Stack: pyLSD Integration and 4J HMBC Exploration
 
 **Project:** lucy-ng
-**Milestone:** v5.0 Fragment Library (SSC extraction, fingerprint indexing, spectral search)
-**Researched:** 2026-02-19
-**Confidence:** HIGH
+**Milestone:** v8.0 pyLSD Integration
+**Researched:** 2026-03-13
+**Confidence:** HIGH for pyLSD mechanics (thesis + official docs + manual). MEDIUM for version currency (latest release is a8, no 2024/2025 updates found).
 
 ---
 
 ## Context: What Already Exists
 
-The existing stack (do not re-evaluate these):
+The existing stack is locked. Do not re-evaluate these components:
 
 | Component | Version | Status |
 |-----------|---------|--------|
 | Python | 3.10+ | Locked |
-| RDKit | 2025.9.4 | Installed, in use |
-| NumPy | 2.2.1 | Installed, in use |
-| SciPy | 1.17.0 | Installed, in use |
-| Pydantic v2 | 2.12.5 | Installed, in use |
-| Click | 8.1.8 | Installed, in use |
-| SQLite | stdlib | In use (schema v6, 928K compounds) |
-| tqdm | 4.67.3 | Installed, in use |
-| hosegen | git | Installed, in use |
+| RDKit | 2025.9.4 | In use |
+| NumPy | 2.2.1 | In use |
+| SciPy | 1.17.0 | In use |
+| Pydantic v2 | 2.12.5 | In use |
+| Click | 8.1.8 | In use |
+| SQLite | stdlib | In use (schema v6) |
+| tqdm | 4.67.3 | In use |
+| LSD binary | 3.5.3 | Installed (via PATH) |
+| outlsd binary | 3.5.3 | Installed (via PATH) |
 
-The fragment library milestone adds capabilities on top of this stack. **No existing dependencies are changed or removed.**
+The v8.0 milestone adds pyLSD on top of this stack. **No existing dependencies are removed.**
 
 ---
 
 ## New Capabilities Required
 
-The fragment library milestone needs to:
+The pyLSD integration milestone needs to:
 
-1. **Extract SSCs** — enumerate atom-environment fragments from 928K compounds, pair each fragment with its observed 13C subspectrum
-2. **Build fingerprints** — encode each SSC's subspectrum as a 256-bit bitset (2 ppm bins)
-3. **Index fingerprints** — store 24M+ SSC records in SQLite with binary fingerprints for fast retrieval
-4. **Screen fragments** — match experimental spectrum against SSC library via Boolean AND bitset pre-screening
-5. **Fine matching** — score surviving SSCs by DEV/AVGDEV spectral deviation
-6. **Convert to LSD constraints** — translate matching fragments to DEFF/FEXP goodlist commands
-
----
-
-## Recommended Stack Additions
-
-### Core: No New Python Dependencies
-
-**Finding:** All required operations are achievable with the existing stack. No new `pip install` required.
-
-| Operation | Implementation | Why No New Dependency |
-|-----------|---------------|----------------------|
-| Fragment extraction (atom environments) | `rdkit.Chem.FindAtomEnvironmentOfRadiusN` + `PathToSubmol` | Already in RDKit 2025.9.4 |
-| Bitset fingerprints (256-bit) | `numpy.ndarray` of `uint8[32]` with bitwise ops | NumPy 2.2.1 supports vectorized bitwise AND |
-| SSC storage | SQLite BLOB column for fingerprint bytes | Existing schema extension |
-| Bitset screening | `numpy.bitwise_and` on (N, 32) array | Vectorized, no extra lib needed |
-| DEFF fragment file generation | Python string formatting + file I/O | No new dependency |
-| Parallel extraction pipeline | `concurrent.futures.ProcessPoolExecutor` | Python stdlib |
-
-**Confidence:** HIGH — RDKit 2025.9.4 includes `FindAtomEnvironmentOfRadiusN`, `PathToSubmol`, `MolToSmiles`, all verified in official docs. NumPy 2.2.1 bitwise operations confirmed in official NumPy documentation.
+1. **Install pyLSD** — download and configure the pyLSD-a8 distribution so `python lsd.py` can be called
+2. **Call pyLSD from lucy-ng** — invoke pyLSD via subprocess, same pattern as existing LSD runner
+3. **Generate pyLSD input files** — extend `LSDInputGenerator` to emit `FORM`, `PIEC`, `ELIM`, and multi-state `MULT` syntax
+4. **Collect multi-run solutions** — pyLSD runs LSD multiple times internally; collect merged SMILES output
+5. **4J exploration** — write HMBC commands with explicit bond range `HMBC C H 2 4` plus `ELIM N 4` to enable solver-level 4J handling
 
 ---
 
-### Schema Extension: SQLite Fragment Library Tables
+## pyLSD: Obtaining and Installing
 
-The existing SQLite database (schema v6) gets two new tables. Schema version bumps to v7.
+### Source
 
-#### Table: `ssc_fragments`
+**Repository:** https://github.com/nuzillard/PyLSD
 
-Stores the substructure side of each SSC — the atom-environment subgraph as SMILES.
+pyLSD is **not on PyPI**. The PyPI packages named `pylsd` and `pylsd-nova` are unrelated (Python bindings for an image line-segment detector — completely different project, same name collision).
 
-```sql
-CREATE TABLE ssc_fragments (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    compound_id INTEGER NOT NULL,     -- FK to compounds.id
-    center_atom_idx INTEGER NOT NULL, -- atom index in parent compound
-    radius INTEGER NOT NULL,          -- sphere radius (1-4)
-    fragment_smiles TEXT NOT NULL,    -- canonical SMILES of fragment (no explicit H)
-    atom_count INTEGER NOT NULL,      -- number of heavy atoms in fragment
-    FOREIGN KEY (compound_id) REFERENCES compounds(id) ON DELETE CASCADE
-);
+**Download:** Pre-built archive from GitHub releases:
+- Linux: `pylsd-linux-a8.tar.gz`
+- Windows: `pylsd-windows-a8.zip`
 
-CREATE INDEX idx_ssc_fragments_smiles ON ssc_fragments(fragment_smiles);
-CREATE INDEX idx_ssc_fragments_compound ON ssc_fragments(compound_id);
+**Current version:** PyLSD-a8 (alpha 8). No releases found from 2024/2025 — this appears to be the latest stable version. Confidence: MEDIUM (checked GitHub; no newer release visible).
+
+### Installation Procedure
+
+```bash
+# 1. Download and extract (Linux)
+wget https://github.com/nuzillard/PyLSD/raw/master/pylsd-linux-a8.tar.gz
+tar -xzf pylsd-linux-a8.tar.gz
+# Creates three directories: Variant/, Predict/, LSD/
+
+# 2. Configure defaults.py in Variant/ — must edit these paths:
+#   lsdbin     = "../LSD"          (path to LSD/outlsd executables)
+#   datafolder = "../LSD/Data"     (where pyLSD writes temp files)
+#   java       = "java"            (Java executable path, for built-in ranking)
+#   predictorspath = "../Predict"  (only needed for built-in ranking — NOT used in lucy-ng)
+
+# 3. Test installation
+cd Variant
+python lsd.py breg57.lsd   # should produce solutions for built-in example
 ```
 
-**Rationale:** `fragment_smiles` as the lookup key allows deduplication — identical substructures from different compounds map to the same fragment. Indexing on SMILES enables grouping all SSCs by substructure.
+### Python Version Requirement
 
-#### Table: `ssc_spectra`
+Python 3 required from pyLSD-a8 onward. Compatible with lucy-ng's Python 3.10+ constraint. No version conflict.
 
-Stores the subspectrum side — the observed 13C shifts for each SSC, plus the 256-bit bitset fingerprint for fast screening.
+### Dependencies
 
-```sql
-CREATE TABLE ssc_spectra (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    fragment_id INTEGER NOT NULL,     -- FK to ssc_fragments.id
-    shift_ppm REAL NOT NULL,          -- 13C shift for this carbon in the fragment
-    fingerprint BLOB NOT NULL,        -- 32 bytes = 256 bits, 2 ppm bins, 0-511 ppm
-    signal_count INTEGER NOT NULL,    -- number of 13C signals in this subspectrum
-    FOREIGN KEY (fragment_id) REFERENCES ssc_fragments(id) ON DELETE CASCADE
-);
+| Dependency | Required For | Status |
+|------------|-------------|--------|
+| Python 3 | Running `lsd.py` | Already satisfied |
+| Java Runtime ≥ 6 | pyLSD's built-in ranking (nmrshiftdb2-based) | **NOT needed** — lucy-ng uses HOSE-based ranking instead |
+| LSD binary (lsd) | pyLSD calls lsd internally | Already installed |
+| outlsd binary | SMILES conversion (already used by lucy-ng) | Already installed |
 
-CREATE INDEX idx_ssc_spectra_fragment ON ssc_spectra(fragment_id);
-```
-
-**Alternative design considered:** Single denormalized `ssc` table with all shifts comma-joined. Rejected because normalized schema enables:
-- Efficient per-signal queries for DEV/AVGDEV scoring
-- Easier schema migration if more spectral dimensions added (multiplicity, 1H shifts)
-- Standard relational integrity
-
-**Fingerprint encoding:** 256 bits = 32 bytes stored as BLOB. Each bit corresponds to a 2 ppm bin covering the 13C range 0-511 ppm (256 bins x 2 ppm/bin). Bit N is set if the subspectrum has a signal within bin N. Construction: `bin_idx = int(shift_ppm / 2.0); fingerprint[bin_idx // 8] |= (1 << (bin_idx % 8))`.
-
-**Confidence:** HIGH — 256-bit / 2 ppm bin design is from Sherlock paper (PMC9920390), confirmed: "each fragment has a bit string representation to indicate whether a given chemical shift in the assigned subspectrum exists."
+**Key finding:** Java is only needed for pyLSD's built-in ranking, which Sherlock (and lucy-ng) explicitly disable in favour of HOSE-based ranking. No Java dependency required for lucy-ng integration.
 
 ---
 
-## Implementation Patterns
+## How pyLSD Differs from Direct LSD Execution
 
-### Pattern 1: Fragment Extraction (SSC Construction)
+### What pyLSD Is
 
-**Tool:** `rdkit.Chem.FindAtomEnvironmentOfRadiusN` + `Chem.PathToSubmol`
+pyLSD is a Python script (`Variant/lsd.py`) that acts as an orchestrator over the LSD binary. It:
 
-```python
-from rdkit import Chem
+1. Reads an enhanced `.lsd` input file containing pyLSD-specific commands (FORM, PIEC, ELIM, multi-state MULT)
+2. Enumerates all combinations of variable atom states (hybridisation, multiplicity, valency)
+3. Generates one plain LSD input file per combination
+4. Runs the LSD binary on each generated file (potentially many runs)
+5. Merges all solution files into a single output
+6. Optionally ranks merged solutions using nmrshiftdb2 (disabled in lucy-ng)
 
-def extract_ssc_for_atom(mol: Chem.Mol, atom_idx: int, radius: int) -> str | None:
-    """Extract atom-environment fragment SMILES at given radius."""
-    env = Chem.FindAtomEnvironmentOfRadiusN(mol, radius, atom_idx)
-    if not env:
-        return None
-    amap: dict[int, int] = {}
-    submol = Chem.PathToSubmol(mol, env, atomMap=amap)
-    if atom_idx not in amap:
-        return None
-    return Chem.MolToSmiles(submol, rootedAtAtom=amap[atom_idx], canonical=True)
-```
+**Invocation:** `python lsd.py myfile.lsd` from the `Variant/` directory.
 
-**Why this approach over BRICS or other fragmentation:** BRICS breaks retrosynthetic bonds to produce synthetically accessible fragments. SSC extraction needs atom-environment spheres centered on each NMR-observed carbon — structurally correlated with HOSE codes, not synthetic accessibility. `FindAtomEnvironmentOfRadiusN` produces exactly the radius-N neighborhood needed.
+**Current lucy-ng invocation:** `subprocess.run([lsd_path], input=file_content, ...)` — pipes the file to the lsd binary directly.
 
-**Key constraint:** Use molecules WITHOUT explicit hydrogens (same rule as HOSE code generation — see CLAUDE.md "Critical Architecture Decisions"). Consistent with existing database generation.
+**pyLSD invocation:** `subprocess.run(["python", "lsd.py", str(input_file)], cwd=variant_dir, ...)` — passes filename as argument, must run from Variant/.
 
-### Pattern 2: Bitset Fingerprint Construction
+This is the primary integration change: the runner calls `python lsd.py FILE` rather than `lsd < FILE`.
 
-**Tool:** NumPy uint8 array, 32 bytes = 256 bits
+### File Format Differences
 
-```python
-import numpy as np
+The pyLSD input format is a **superset** of the LSD input format. Every valid LSD file is a valid pyLSD file. pyLSD adds these commands that do not exist in native LSD:
 
-def shifts_to_fingerprint(shifts: list[float]) -> bytes:
-    """Encode list of 13C shifts as 256-bit fingerprint (2 ppm bins)."""
-    fp = np.zeros(32, dtype=np.uint8)
-    for shift in shifts:
-        if 0.0 <= shift < 512.0:
-            bin_idx = int(shift / 2.0)   # bin 0 = 0-2 ppm, bin 255 = 510-512 ppm
-            fp[bin_idx // 8] |= np.uint8(1 << (bin_idx % 8))
-    return fp.tobytes()
+| Command | pyLSD | Native LSD | Notes |
+|---------|-------|------------|-------|
+| `FORM` | YES | NO | Molecular formula as text string |
+| `PIEC` | YES | NO | Connected piece count (always 1) |
+| `ELIM` | Both | YES (native) | ELIM exists in native LSD too — pyLSD passes it through |
+| `MULT` multi-state | YES | NO | Multiple hybridisation/multiplicity options as tuples |
+| `SHIX` | Both | YES (native) | 13C shift assignment — exists in LSD 3.5.x |
+| `SHIH` | Both | YES (native) | 1H shift assignment — exists in LSD 3.5.x |
+| `MOMA` | pyLSD only | NO | Molecular mass constraint (not needed for CASE) |
+| `DEMU` | pyLSD only | NO | Default parameters for supplementary atoms |
 
-def fingerprint_matches_query(fragment_fp: bytes, query_fp: bytes) -> bool:
-    """Boolean AND screening: all fragment bits must be set in query."""
-    fp_array = np.frombuffer(fragment_fp, dtype=np.uint8)
-    q_array = np.frombuffer(query_fp, dtype=np.uint8)
-    # Fragment is candidate if ALL its set bits are present in query
-    return bool(np.all((fp_array & q_array) == fp_array))
-```
-
-**Vectorized screening over all SSCs:**
-
-```python
-def screen_fragments(db_fingerprints: np.ndarray, query_fp: bytes) -> np.ndarray:
-    """
-    Vectorized Boolean AND screening.
-    db_fingerprints: shape (N, 32) uint8 — all N SSC fingerprints loaded into memory
-    query_fp: 32 bytes — experimental spectrum fingerprint
-    Returns: boolean mask of candidates that pass screening
-    """
-    q_array = np.frombuffer(query_fp, dtype=np.uint8)  # shape (32,)
-    # Broadcasting: for each row, check (row & query) == row
-    screened = (db_fingerprints & q_array) == db_fingerprints  # (N, 32) bool
-    return screened.all(axis=1)  # (N,) bool — True means candidate passed
-```
-
-**Memory estimate:** 24.5M SSCs x 32 bytes = 784 MB for in-memory screening array. Acceptable for a one-time `lucy fragment build` operation; for `lucy fragment search`, load only SSCs matching atom count <= query carbon count first to reduce the array size, then screen.
-
-**Confidence:** HIGH — NumPy 2.2.1 bitwise operations on uint8 arrays verified in official NumPy documentation. Vectorized broadcasting pattern is standard NumPy practice.
-
-### Pattern 3: Fine Matching (DEV/AVGDEV)
-
-After Boolean AND screening eliminates non-candidates, score survivors by spectral deviation.
-
-**DEV threshold (default: 3.0 ppm):** Maximum allowed deviation for any individual signal.
-**AVGDEV threshold (default: 2.0 ppm):** Average deviation across all matched signals.
-
-```python
-def fine_match_ssc(fragment_shifts: list[float], query_shifts: list[float],
-                   dev_threshold: float = 3.0, avgdev_threshold: float = 2.0) -> float | None:
-    """
-    Match fragment subspectrum against query spectrum.
-    Returns AVGDEV if within thresholds, None if rejected.
-    """
-    deviations = []
-    for frag_shift in fragment_shifts:
-        # Find closest query shift
-        closest_dev = min(abs(frag_shift - q) for q in query_shifts)
-        if closest_dev > dev_threshold:
-            return None  # Individual signal exceeds DEV threshold
-        deviations.append(closest_dev)
-    avg_dev = sum(deviations) / len(deviations)
-    if avg_dev > avgdev_threshold:
-        return None
-    return avg_dev
-```
-
-**Source:** DEV/AVGDEV thresholds from Sherlock paper examples (PMC9920390): "DEV: 3 ppm, AVGDEV: 2 ppm" as working defaults. These match the +/- 2 ppm detection window used throughout existing detection code.
-
-### Pattern 4: DEFF/FEXP LSD Constraint Generation
-
-LSD uses external fragment files. `DEFF` maps a fragment number to a file path. `FEXP` combines fragments with Boolean logic. Confirmed from LSD manual (nuzillard.github.io/LSD/MANUAL_ENG.html).
-
-```
-; LSD goodlist fragment constraints
-DEFF F1 "fragments/frag_001.lsd"
-DEFF F2 "fragments/frag_002.lsd"
-FEXP "F1 AND F2"
-```
-
-Fragment files use standard LSD atom notation. For each matching SSC, the fragment substructure is serialized as an LSD atom definition using the existing MULT/BOND notation the lsd-engineer agent already knows.
-
-**Implementation strategy:** Generate fragment files alongside the main LSD file in the iteration directory. The `lucy fragment search` command outputs both the fragment files and the DEFF/FEXP lines to add to the LSD input.
-
-**Confidence:** MEDIUM — DEFF/FEXP syntax confirmed from LSD manual. Fragment file format (atom notation inside fragment files) requires verification against LSD manual appendix or test case before implementation.
+**Critical note:** The existing lucy-ng `LSDInputGenerator` already generates `SHIX` and `SHIH` commands — these work identically in both LSD and pyLSD. No format migration needed for existing output.
 
 ---
 
-## Extraction Pipeline Architecture
+## Command Reference for New File Format
 
-### Build Pipeline (`lucy fragment build`)
-
-One-time operation to populate `ssc_fragments` and `ssc_spectra` tables from existing 928K compounds.
-
-**Verified prerequisite:** Database query confirms 23,994,980 of 24,063,169 shifts (99.7%) have `atom_index` populated. All 928,443 compounds have at least one indexed shift. SSC extraction from the full database is feasible without any data gaps.
-
-**Approach:** Batch processing with `concurrent.futures.ProcessPoolExecutor`
+### FORM — Molecular Formula (pyLSD only)
 
 ```
-Stage 1: Read compounds from SQLite (id, smiles, shifts with atom_index)
-  | 928K compounds, 23.9M atom-indexed shifts
-Stage 2: [Parallel, 8 workers] For each compound:
-  a. Parse SMILES -> RDKit Mol (no explicit H)
-  b. For each carbon atom with known shift, extract fragment at radii 1-4
-  c. Build subspectrum: collect all shifts for atoms within the fragment
-  d. Compute 256-bit fingerprint from subspectrum shifts
-  e. Yield (compound_id, atom_idx, radius, fragment_smiles, shift_ppm, fingerprint)
-  | ~24M SSC records
-Stage 3: Deduplicate fragment_smiles (group SSCs by substructure)
-  | N unique fragments
-Stage 4: Batch INSERT to SQLite (executemany, 10K rows/batch)
-  | Populated ssc_fragments + ssc_spectra tables
+FORM C 13 H 18 O 2
 ```
 
-**Parallelism:** Use `ProcessPoolExecutor` (not `ThreadPoolExecutor`) because RDKit SMILES parsing and fragment extraction are CPU-bound. `tqdm` already used in existing pipeline (stats_generator.py) — same pattern applies here.
+Defines the molecular formula. Serves as upper boundary on solution space. pyLSD uses this to determine what supplementary atoms to add when MULT states are ambiguous.
 
-**Estimated runtime:** Existing HOSE stats generation processes 928K compounds in ~8 hours single-threaded. Parallel SSC extraction with 8 workers should complete in 2-3 hours. Acceptable for one-time build.
+**Usage in lucy-ng:** Always add FORM as first command in pyLSD input files. The formula is already available in the workflow (required for LSD constraint generation in existing code).
 
-**Radius strategy:** Extract radii 1-4 (not 1-6). Reasoning: radius 5-6 fragments are large enough that few compounds in the query will contain them — low search utility, high storage cost. This matches Sherlock's fragment library design (Wenk thesis confirms maximum radius was empirically tuned).
-
-**Confidence:** MEDIUM for radius cutoff — inferred from Sherlock's 24.5M SSC count. With 928K compounds x ~7 carbons/compound x 4 radii ~ 26M raw SSCs before deduplication, landing at Sherlock's 24.5M is plausible. Exact radius cutoff should be validated empirically.
-
-### Search Pipeline (`lucy fragment search`)
-
-Per-compound search during CASE workflow.
+### PIEC — Connected Pieces (pyLSD only)
 
 ```
-Input: experimental 13C shifts (list), molecular formula
-  |
-Step 1: Build query fingerprint from experimental shifts (256-bit)
-Step 2: Load candidate SSCs from SQLite
-  - Filter by atom_count <= compound carbon count (smaller fragments only)
-  - Load fingerprint BLOBs into numpy array (N, 32)
-Step 3: Vectorized Boolean AND pre-screening
-  - Result: candidates where (fragment_fp & query_fp) == fragment_fp
-Step 4: Load full subspectrum shifts for surviving candidates
-Step 5: Fine matching (DEV/AVGDEV) for each candidate
-Step 6: Rank survivors by AVGDEV ascending
-Step 7: Select top-K matching fragments (default K=5)
-Step 8: Generate DEFF fragment files + FEXP expression
-Output: fragment files + LSD constraint lines
+PIEC 1
 ```
+
+Restricts output to fully connected molecules. Always set to 1. No variation needed.
+
+### ELIM — Eliminate Long-Range Correlations
+
+```
+ELIM N_correlations N_bonds
+```
+
+ELIM exists in **native LSD** and passes through to pyLSD unchanged. Semantics:
+
+- `ELIM 1 4` — allow up to 1 HMBC correlation to be interpreted as a 4J (up to 4 bonds). The solver will try eliminating that correlation if it prevents solution assembly.
+- `ELIM 3 4` — allow up to 3 correlations to be 4J.
+- ELIM is **disabled by default** (Sherlock disables it too). Only enable when suspect 4J correlations are present.
+
+**For 4J exploration in lucy-ng:** When nmr-chemist flags suspect 4J HMBC correlations, enable ELIM with count = number of suspect correlations. This lets the solver decide which correlations are 4J rather than forcing the agent to manually exclude them.
+
+**Interaction with HMBC bond range:** When a HMBC line specifies explicit bond range `HMBC C H 2 4`, the correlation is treated as possibly 4J. ELIM must be active (with `N_bonds >= 4`) for such extended-range HMBC commands to take effect. Without ELIM, extended bond ranges have no effect.
+
+Example for ibuprofen 4J case (3 suspect correlations through aromatic ring):
+```
+ELIM 3 4
+HMBC 4 8 2 4   ; suspect 4J: C4a -> H6 through para-substituted benzene
+HMBC 6 9 2 4   ; suspect 4J: C5a -> H7
+HMBC 8 4 2 4   ; suspect 4J: same pair reversed
+```
+
+### MULT — Multi-State Atom Definition (extended in pyLSD)
+
+**Native LSD (single state only):**
+```
+MULT atom_num element hybridisation multiplicity
+MULT 1 C 2 0    ; atom 1 is sp2 carbon with 0 attached H (quaternary sp2)
+```
+
+**pyLSD (multiple states as tuples):**
+```
+MULT atom_num element[(valencies)] (hybridisations) (multiplicities)
+MULT 14 O (2 3) (0 1)     ; oxygen, sp2 or sp3, 0 or 1 attached H
+MULT 19 N35 (1 2 3) (0 1 2 3)  ; nitrogen, valence 3 or 5, sp1/sp2/sp3, 0-3 H
+```
+
+**Impact:** pyLSD enumerates all state combinations and runs LSD once per combination. For ibuprofen's 2 oxygens with ambiguous states, this produces `2*2 = 4` LSD runs. For typical natural products with 2-4 ambiguous heteroatoms, expect 4-16 LSD runs — manageable.
+
+**For lucy-ng:** Unambiguous carbons (known from DEPT) continue using single-state MULT. Only heteroatoms with unknown hybridisation use tuple notation. The lsd-engineer agent writes tuple MULT for heteroatoms when hybridisation is not directly observable (O, N without direct spectral evidence).
+
+### SHIX / SHIH — Chemical Shift Assignment
+
+Already supported in existing LSDInputGenerator. No changes needed. Included here for completeness:
+
+```
+SHIX atom_index shift_ppm    ; 13C shift for heavy atom
+SHIH H_index shift_ppm       ; 1H shift for hydrogen
+```
+
+---
+
+## Integration Architecture
+
+### Option A: pyLSD as Subprocess (Recommended)
+
+The existing `LSDRunner` calls `lsd < file`. The new `PyLSDRunner` calls `python lsd.py file`:
+
+```python
+class PyLSDRunner:
+    def __init__(self, pylsd_dir: Path):
+        # pylsd_dir = path to Variant/ directory
+        self.variant_dir = pylsd_dir
+        self.lsd_py = pylsd_dir / "lsd.py"
+
+    def run_file(self, input_file: Path, timeout: int = 300) -> LSDResult:
+        proc = subprocess.run(
+            ["python", str(self.lsd_py), str(input_file)],
+            cwd=self.variant_dir,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+        # pyLSD writes solutions in input_file directory as *.smi or *.sol
+        # Parse solutions, collect SMILES, return LSDResult
+        ...
+```
+
+**Why subprocess over importing `lsd.py`:** pyLSD's `lsd.py` is a standalone script, not a Python package. It uses `sys.exit()` calls and global state that make direct import unsafe. Subprocess is cleaner and consistent with the existing LSD runner architecture.
+
+**Working directory:** pyLSD must be invoked from `Variant/` (it uses relative paths in `defaults.py` to locate LSD binaries and data folders). Pass the absolute input file path as argument; pyLSD writes output to the input file's directory.
+
+### Option B: Direct LSD Calls with Manual ELIM (Fallback)
+
+For 4J exploration specifically, the existing `LSDRunner` can use ELIM directly — ELIM is a native LSD command, not pyLSD-only. If the only goal is 4J handling (not ambiguous atom states), the agent can write an LSD file with ELIM enabled and call `lsd` directly.
+
+**When to use Option B:** If pyLSD installation proves problematic (path configuration, cross-platform issues). All 4J exploration functionality works without pyLSD — pyLSD's value is specifically for ambiguous heteroatom states (the MULT multi-state feature).
+
+**Recommendation:** Implement pyLSD integration (Option A) for full capability, but design the 4J exploration workflow to work via Option B (direct LSD + ELIM) as a fallback. The CLI command `lucy lsd run-pylsd` wraps pyLSD; `lucy lsd run` continues to call LSD directly.
+
+---
+
+## LSDInputGenerator Extension
+
+The existing `LSDInputGenerator` needs a new mode to emit pyLSD syntax. **Do not change existing LSD output** — maintain backward compatibility.
+
+New method: `LSDInputGenerator.generate_pylsd(problem, elim_count=0, elim_max_bonds=4)`:
+
+```python
+# Additions to generate_pylsd() output vs generate():
+
+# 1. FORM command at top (before PIEC)
+lines.append(f"FORM {format_formula(problem.molecular_formula)}")
+lines.append("PIEC 1")
+
+# 2. ELIM (conditional — only when agent requests it)
+if elim_count > 0:
+    lines.append(f"ELIM {elim_count} {elim_max_bonds}")
+
+# 3. MULT with tuple notation for ambiguous atoms
+# Single-state carbon: "MULT 1 C 2 0"  (unchanged)
+# Multi-state oxygen: "MULT 14 O (2 3) (0 1)"
+for atom in problem.atoms:
+    if atom.has_multiple_states:
+        lines.append(atom.to_pylsd_mult_line())  # tuple notation
+    else:
+        lines.append(atom.to_mult_line())  # existing LSD notation (unchanged)
+
+# 4. HMBC with optional bond range
+# Default: "HMBC 1 3"  (unchanged, 2-3 bonds implied)
+# Explicit range: "HMBC 1 3 2 4"  (for flagged 4J suspects)
+```
+
+The `LSDCorrelation` model gets an optional `bond_range: tuple[int, int] | None` field. When set to `(2, 4)`, the correlation is written with explicit range. The agent sets this field when flagging suspect 4J correlations.
+
+---
+
+## Configuration Management
+
+pyLSD requires `defaults.py` to be configured for the local system. This is a one-time setup analogous to configuring the LSD binary path. Options:
+
+1. **Environment variable** `PYLSD_DIR` pointing to the Variant/ directory — simplest, consistent with existing PATH-based LSD discovery.
+2. **lucy status** check — extend `lucy lsd check` to also verify pyLSD is found and configured.
+
+**Recommended:** Add `PYLSD_DIR` environment variable support to `PyLSDRunner`. The `lucy status` skill already checks for LSD; add pyLSD check to the same command.
+
+---
+
+## New CLI Command
+
+```bash
+lucy lsd run-pylsd compound.lsd      # Run pyLSD on a file
+lucy lsd run-pylsd compound.lsd --elim 3 4  # With ELIM enabled
+```
+
+This parallels the existing `lucy lsd run` command. The agent chooses which command to use based on whether pyLSD features are needed.
 
 ---
 
@@ -290,13 +305,12 @@ Output: fragment files + LSD constraint lines
 
 | Avoid | Why | Use Instead |
 |-------|-----|-------------|
-| FPSim2 | HDF5-based tool for Tanimoto similarity search. Overkill for Boolean AND screening; adds HDF5 dependency, changes storage format from SQLite. The SSC screening is Boolean AND (containment), not Tanimoto. | NumPy bitwise AND over SQLite-loaded arrays |
-| h5py / HDF5 | Separate binary storage for fingerprints adds complexity without benefit at 24M record scale. SQLite BLOB is sufficient and keeps single-file database architecture. | SQLite BLOB column in existing database |
-| BRICS fragmentation | Breaks retrosynthetic bonds. SSC extraction needs atom-environment spheres (radius-N neighborhoods), not synthetically motivated cuts. | `FindAtomEnvironmentOfRadiusN` + `PathToSubmol` |
-| scikit-fingerprints | General fingerprint library (Morgan, ECFP, etc.). SSC fingerprints are custom spectral bitsets (2 ppm bins), not molecular topological fingerprints. RDKit is already available. | Custom bitset construction with NumPy |
-| rdSubstructLibrary | Designed for SMARTS-based substructure screening of molecule libraries. The SSC search is spectral-match screening (not substructure queries). The library adds complexity without fitting the use case. | Direct SQLite queries + numpy bitset screening |
-| PostgreSQL or MongoDB | Sherlock uses these (MongoDB for SSC fragments, PostgreSQL for compounds). Lucy-ng is a single-user CLI tool. SQLite handles 24M+ rows efficiently with proper indexing. | SQLite with schema extension |
-| Numba / Cython | Premature optimization. NumPy vectorized bitwise AND on (N, 32) arrays is already SIMD-accelerated in numpy 2.2+. Profile first before adding compilation dependencies. | NumPy 2.2.1 vectorized bitwise ops |
+| Java runtime as lucy-ng dependency | Only needed for pyLSD's built-in ranking, which is disabled in favour of HOSE-based ranking | No change — existing HOSE ranking is sufficient |
+| pylsd-nova or ocrd-fork-pylsd from PyPI | Completely different project — Python bindings for an image processing library, not NMR CASE | Download nuzillard/PyLSD from GitHub |
+| casekit (Java) | Sherlock uses this Java library for pyLSD file generation. Lucy-ng is Python and already has LSDInputGenerator. | Extend existing Python LSDInputGenerator |
+| Sherlock web services | Full Java/Spring microservice stack. Lucy-ng is a CLI tool. | Direct subprocess invocation of pyLSD |
+| WebCocon 4J-Flag approach | WebCocon's 4J-Flag parameter varies the count of allowed 4J correlations iteratively. LSD's ELIM achieves the same result directly. Different tool, not applicable. | LSD ELIM command |
+| Parallel LSD runs (manual orchestration) | pyLSD already handles parallelism internally for variable atom states. Lucy-ng does not need to re-implement this. | Let pyLSD orchestrate its own LSD runs |
 
 ---
 
@@ -304,37 +318,44 @@ Output: fragment files + LSD constraint lines
 
 | Category | Recommended | Alternative | Why Not |
 |----------|-------------|-------------|---------|
-| Fragment extraction | `FindAtomEnvironmentOfRadiusN` | BRICS decomposition | BRICS produces retrosynthetic fragments, not NMR-correlated atom environments. Wrong semantic for SSC. |
-| Fingerprint storage | SQLite BLOB (32 bytes per SSC) | HDF5 + FPSim2 | Adds h5py dependency, breaks single-file database architecture. SQLite BLOB performs well for sub-100MB fingerprint loads. |
-| Bitset screening | NumPy uint8 array bitwise AND | Python integer `&` operator | Python int bitwise AND is 100x slower than vectorized NumPy for N=24M records. NumPy avoids per-row Python overhead. |
-| Fine matching | AVGDEV over all fragment signals | Cosine similarity | AVGDEV is domain-appropriate (NMR shift comparison), interpretable, and matches Sherlock's validated approach. Cosine requires normalization that loses shift-position meaning. |
-| Parallelism | `ProcessPoolExecutor` (stdlib) | `joblib`, `ray`, `dask` | Build pipeline is embarrassingly parallel with no inter-worker state. stdlib `ProcessPoolExecutor` + tqdm is sufficient. No extra dependencies. |
-| Fragment file format for DEFF | LSD atom notation files | SMILES-only | DEFF requires LSD-format fragment files. SMILES is insufficient — LSD needs MULT/BOND notation to define atom types and connectivity. |
+| pyLSD invocation | Subprocess `python lsd.py FILE` | Import `lsd.py` as module | lsd.py uses `sys.exit()` and global mutable state; not designed for import. Subprocess is safe and consistent with existing LSD runner. |
+| 4J handling | LSD ELIM (works in both LSD and pyLSD) | Remove 4J suspect correlations entirely | Removal was v4.0 approach — caused empty solution set. ELIM lets solver decide which correlations are 4J, preserving all correlations in the constraint set. |
+| 4J handling | LSD ELIM | WebCocon 4J-Flag iterative approach | WebCocon is a different CASE tool (COCON-based). Lucy-ng uses LSD/pyLSD. ELIM is the LSD-native mechanism for exactly this problem. |
+| File format extension | Extend LSDInputGenerator with `generate_pylsd()` | New PyLSDInputGenerator class | Minor functional addition; same model types. Adding a method maintains DRY and avoids duplicating all the existing MULT/HSQC/HMBC/BOND generation logic. |
 
 ---
 
 ## Version Compatibility
 
-| Component | Required Version | Installed | Notes |
-|-----------|-----------------|-----------|-------|
-| RDKit | >=2023.09 | 2025.9.4 | `FindAtomEnvironmentOfRadiusN` stable since 2021. `PathToSubmol` stable. |
-| NumPy | >=1.24 | 2.2.1 | Bitwise ops on uint8 arrays stable since 1.x. NumPy 2.x is backward compatible. |
-| Python | >=3.10 | project requirement | `ProcessPoolExecutor` available since 3.2. |
-| SQLite | >=3.31 | system | BLOB support available since SQLite 1.0. No version concern. |
+| Component | Required | Notes |
+|-----------|----------|-------|
+| PyLSD | a8 (latest) | Python 3 required from a8. No newer version found. |
+| LSD binary | 3.5.2 or 3.5.3 | pyLSD-a8 is based on LSD 3.5.2. LSD 3.5.3 is identical to 3.5.2. Both work. |
+| Python | 3.10+ | pyLSD a8 requires Python 3; no upper bound issue seen. |
+| Java | NOT required | Only for built-in ranking — disable in defaults.py |
 
 ---
 
 ## Installation
 
-No new packages required. The fragment library milestone uses only the existing lucy-ng dependencies.
+No new Python packages required. pyLSD is a standalone Python script, not a pip-installable package.
 
 ```bash
-# Verify existing stack covers all needs
-python3 -c "from rdkit.Chem import FindAtomEnvironmentOfRadiusN, PathToSubmol; print('RDKit OK')"
-python3 -c "import numpy as np; fp = np.zeros(32, dtype=np.uint8); print('NumPy OK')"
-python3 -c "from concurrent.futures import ProcessPoolExecutor; print('ProcessPoolExecutor OK')"
+# Download and install pyLSD (one-time setup)
+wget https://github.com/nuzillard/PyLSD/raw/master/pylsd-linux-a8.tar.gz
+tar -xzf pylsd-linux-a8.tar.gz -C ~/PyLSD/
+# Edit ~/PyLSD/Variant/defaults.py:
+#   lsdbin = os.path.expanduser("~/PyLSD/LSD")  (or wherever LSD binaries are)
+#   datafolder = os.path.expanduser("~/PyLSD/LSD/Data")
 
-# All three should print OK with existing installation
+# Verify pyLSD works
+cd ~/PyLSD/Variant && python lsd.py breg57.lsd
+
+# Set environment variable for lucy-ng
+export PYLSD_DIR=~/PyLSD/Variant
+
+# Verify lucy-ng can find pyLSD (after v8.0 ships)
+lucy lsd check
 ```
 
 ---
@@ -342,29 +363,19 @@ python3 -c "from concurrent.futures import ProcessPoolExecutor; print('ProcessPo
 ## Sources
 
 **PRIMARY SOURCES (HIGH confidence):**
-- [RDKit 2025.09.5 rdFingerprintGenerator docs](https://www.rdkit.org/docs/source/rdkit.Chem.rdFingerprintGenerator.html) — fingerprint generation API verified
-- [RDKit Getting Started in Python](https://www.rdkit.org/docs/GettingStartedInPython.html) — `FindAtomEnvironmentOfRadiusN`, `PathToSubmol` usage pattern confirmed
-- [NumPy 2.4 Manual: packbits](https://numpy.org/doc/stable/reference/generated/numpy.packbits.html) — bitset encoding approach verified
-- [LSD Manual (nuzillard.github.io)](https://nuzillard.github.io/LSD/MANUAL_ENG.html) — DEFF/FEXP syntax confirmed: `DEFF F_n_ <path>`, `FEXP "F1 AND F2"` pattern
-- [RDKit rdSubstructLibrary docs](https://www.rdkit.org/docs/source/rdkit.Chem.rdSubstructLibrary.html) — evaluated and rejected for this use case (spectral match, not SMARTS search)
-- lucy-ng SQLite database query — atom_index coverage: 99.7% (23,994,980 / 24,063,169 shifts), all 928,443 compounds covered
+- [PyLSD official site](https://nuzillard.github.io/PyLSD/) — confirmed download method (GitHub archive), Python 3 requirement from a8, invocation as `python lsd.py FILE`
+- [PyLSD Installation](https://nuzillard.github.io/PyLSD/INSTALL.html) — confirmed: Java optional (ranking only), defaults.py configuration, three-directory structure (Variant/, LSD/, Predict/)
+- [LSD Manual (nuzillard.github.io)](https://nuzillard.github.io/LSD/MANUAL_ENG.html) — ELIM command confirmed: `ELIM P1 P2` where P1=max correlations eliminated, P2=max bond count; SHIX/SHIH confirmed as native LSD commands
+- [GitHub: nuzillard/PyLSD](https://github.com/nuzillard/PyLSD) — confirmed available distributions: pylsd-linux-a8.tar.gz, pylsd-windows-a8.zip, pylsd-nmrbox-a7.tar.gz
+- `background/wenk-thesis.txt` lines 2069–2247, 5491–5600 — FORM/PIEC/ELIM/MULT/SHIX/SHIH command semantics, complete ibuprofen pyLSD example, pyLSD execution description, Sherlock's Java ranking explicitly disabled
 
 **SECONDARY SOURCES (MEDIUM confidence):**
-- [Sherlock PMC paper (PMC9920390)](https://pmc.ncbi.nlm.nih.gov/articles/PMC9920390/) — 256-bit fingerprint bitstring confirmed: "each fragment has a bit string representation to indicate whether a given chemical shift in the assigned subspectrum exists... screened via a bit string comparison where all set bits of a fragment have to be present in the query bitset"
-- [background/sherlock-analysis.md](/Users/steinbeck/Dropbox/develop/lucy-ng/background/sherlock-analysis.md) — 24.5M SSC count, 256-bit/2ppm fingerprint, DEV/AVGDEV thresholds (3 ppm DEV, 2 ppm AVGDEV), DEFF/FEXP application
-- [FPSim2 docs (chembl.github.io)](https://chembl.github.io/FPSim2/) — evaluated and rejected for this use case
-- [RDKit BRICS tutorial (greglandrum.github.io)](https://greglandrum.github.io/rdkit-blog/posts/2025-08-15-BRICS-tutorial.html) — evaluated and rejected for this use case
+- [Sherlock PMC paper (PMC9920390)](https://pmc.ncbi.nlm.nih.gov/articles/PMC9920390/) — pyLSD used for structure generation, built-in ranking disabled in Sherlock
+- [WebCocon 4J paper (PMC8398166)](https://pmc.ncbi.nlm.nih.gov/articles/PMC8398166/) — alternative 4J approach (WebCocon 4J-Flag); reviewed and not adopted
+- `src/lucy_ng/lsd/runner.py` — existing runner architecture; subprocess pattern confirmed for pyLSD adaptation
 
 ---
 
-## Open Questions Requiring Validation
-
-1. **Fragment file format for DEFF:** The LSD manual describes `DEFF F_n_ <path>` where the file contains a fragment definition. The exact internal format of these fragment files (how MULT/BOND notation is used inside a fragment file vs. the main LSD input) needs verification against LSD manual appendix or test cases before implementing `lucy fragment generate-lsd`. This is the highest-risk open question — get it wrong and DEFF files will be syntactically invalid.
-
-2. **Radius cutoff empirics:** Radius 1-4 is inferred from SSC count math (928K x ~7 carbons/compound x 4 radii ~ 26M before dedup). Should be validated by building a small-scale fragment library (1% sample of compounds) at radii 1-6 and checking hit rates and storage overhead. Radii 5-6 may add too few useful fragments to justify the storage cost.
-
----
-
-*Stack research for: Fragment library (SSC extraction, bitset fingerprinting, spectral search)*
-*Researched: 2026-02-19*
-*Confidence: HIGH for core implementation choices. MEDIUM for Sherlock-specific design parameters (radius cutoff, threshold values) and DEFF fragment file internal format.*
+*Stack research for: pyLSD integration enabling ambiguous atom states and ELIM-based 4J exploration*
+*Researched: 2026-03-13*
+*Confidence: HIGH for command semantics, integration architecture, and ELIM usage. MEDIUM for pyLSD version currency (a8 appears to be latest, no updates since ~2022 visible).*
