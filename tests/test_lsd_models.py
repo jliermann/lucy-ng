@@ -182,6 +182,29 @@ class TestLSDCorrelation:
         corr = LSDCorrelation(atom1_index=2, atom2_index=5, correlation_type="COSY")
         assert corr.to_lsd_line() == "COSY 2 5"
 
+    def test_to_lsd_line_hmbc_extended(self):
+        """Test HMBC extended bond range emits 4-parameter form."""
+        # max_bonds=4 triggers extended syntax
+        corr = LSDCorrelation(atom1_index=1, atom2_index=2, correlation_type="HMBC",
+                              min_bonds=2, max_bonds=4)
+        assert corr.to_lsd_line() == "HMBC 1 2 2 4"
+
+    def test_to_lsd_line_hmbc_extended_non_standard_min(self):
+        """Test HMBC with non-standard min_bonds also emits 4-parameter form."""
+        corr = LSDCorrelation(atom1_index=5, atom2_index=8, correlation_type="HMBC",
+                              min_bonds=3, max_bonds=4)
+        assert corr.to_lsd_line() == "HMBC 5 8 3 4"
+
+    def test_to_lsd_line_hsqc_unaffected_by_bond_range(self):
+        """Test HSQC is unaffected by bond range parameters."""
+        corr = LSDCorrelation(atom1_index=1, atom2_index=1, correlation_type="HSQC")
+        assert corr.to_lsd_line() == "HSQC 1 1"
+
+    def test_to_lsd_line_cosy_unaffected_by_bond_range(self):
+        """Test COSY is unaffected by bond range parameters."""
+        corr = LSDCorrelation(atom1_index=2, atom2_index=5, correlation_type="COSY")
+        assert corr.to_lsd_line() == "COSY 2 5"
+
 
 class TestLSDProblem:
     """Tests for LSDProblem dataclass."""
@@ -285,6 +308,35 @@ class TestLSDProblem:
 
         issues = problem.validate()
         assert any("non-existent" in issue for issue in issues)
+
+    def test_pylsd_mode_default_false(self):
+        """Test that LSDProblem.pylsd_mode defaults to False."""
+        problem = LSDProblem()
+        assert problem.pylsd_mode is False
+
+    def test_pylsd_mode_can_be_set_true(self):
+        """Test that LSDProblem.pylsd_mode can be set to True."""
+        problem = LSDProblem(pylsd_mode=True)
+        assert problem.pylsd_mode is True
+
+    def test_elim_commands_default_empty(self):
+        """Test that LSDProblem.elim_commands defaults to empty list."""
+        problem = LSDProblem()
+        assert problem.elim_commands == []
+
+    def test_elim_commands_can_be_populated(self):
+        """Test that LSDProblem.elim_commands accepts (N, M) tuples."""
+        problem = LSDProblem(elim_commands=[(1, 2), (3, 5)])
+        assert len(problem.elim_commands) == 2
+        assert problem.elim_commands[0] == (1, 2)
+        assert problem.elim_commands[1] == (3, 5)
+
+    def test_elim_commands_independent_across_instances(self):
+        """Test that elim_commands lists are not shared across instances."""
+        p1 = LSDProblem()
+        p2 = LSDProblem()
+        p1.elim_commands.append((1, 2))
+        assert p2.elim_commands == []
 
     def test_summary_with_constraints(self):
         """Test problem summary includes constraints."""

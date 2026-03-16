@@ -148,6 +148,9 @@ class LSDCorrelation:
         if self.correlation_type in ("HSQC", "HMQC"):
             return f"HSQC {self.atom1_index} {self.atom2_index}"
         elif self.correlation_type == "HMBC":
+            # Emit extended bond range syntax when non-default range is specified
+            if self.min_bonds != 2 or self.max_bonds != 3:
+                return f"HMBC {self.atom1_index} {self.atom2_index} {self.min_bonds} {self.max_bonds}"
             # LSD HMBC format: just the two atom indices
             # Bond distance defaults to 2-3 in LSD
             return f"HMBC {self.atom1_index} {self.atom2_index}"
@@ -178,6 +181,8 @@ class LSDProblem:
     molecular_formula: str | None = None
     name: str = "problem"
     comments: list[str] = field(default_factory=list)
+    pylsd_mode: bool = False
+    elim_commands: list[tuple[int, int]] = field(default_factory=list)
 
     def add_atom(self, atom: LSDAtom) -> None:
         """Add an atom to the problem."""
