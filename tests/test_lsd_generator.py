@@ -386,6 +386,156 @@ class TestCarbonylDetection:
         assert len(problem.constraints) == 0
 
 
+class TestPyLSDExtensions:
+    """Tests for pyLSD-specific emission methods and generate() integration."""
+
+    # --- emit_form tests ---
+
+    def test_emit_form_ibuprofen(self):
+        """emit_form returns 'FORM C13H18O2' for ibuprofen formula."""
+        assert LSDInputGenerator.emit_form("C13H18O2") == "FORM C13H18O2"
+
+    def test_emit_form_glucose(self):
+        """emit_form returns 'FORM C6H12O6' for glucose formula."""
+        assert LSDInputGenerator.emit_form("C6H12O6") == "FORM C6H12O6"
+
+    # --- emit_elim tests ---
+
+    def test_emit_elim_same_atoms(self):
+        """emit_elim(4, 4) returns 'ELIM 4 4'."""
+        assert LSDInputGenerator.emit_elim(4, 4) == "ELIM 4 4"
+
+    def test_emit_elim_different_atoms(self):
+        """emit_elim(2, 3) returns 'ELIM 2 3'."""
+        assert LSDInputGenerator.emit_elim(2, 3) == "ELIM 2 3"
+
+    # --- emit_shih tests ---
+
+    def test_emit_shih_decimal(self):
+        """emit_shih(10, 3.71) returns 'SHIH 10 3.71'."""
+        assert LSDInputGenerator.emit_shih(10, 3.71) == "SHIH 10 3.71"
+
+    def test_emit_shih_aromatic(self):
+        """emit_shih(1, 7.25) returns 'SHIH 1 7.25'."""
+        assert LSDInputGenerator.emit_shih(1, 7.25) == "SHIH 1 7.25"
+
+    # --- generate() integration tests ---
+
+    def test_generate_pylsd_form_in_header(self):
+        """FORM line appears in output when pylsd_mode=True and molecular_formula set."""
+        problem = LSDProblem(
+            pylsd_mode=True,
+            molecular_formula="C13H18O2",
+        )
+        problem.add_atom(LSDAtom(1, "C", Hybridization.SP2, 0))
+        content = LSDInputGenerator.generate(problem)
+        assert "FORM C13H18O2" in content
+        # FORM must appear before first MULT line
+        form_pos = content.index("FORM C13H18O2")
+        mult_pos = content.index("MULT")
+        assert form_pos < mult_pos
+
+    def test_generate_no_form_without_pylsd_mode(self):
+        """FORM line does NOT appear when pylsd_mode=False, even if formula is set."""
+        problem = LSDProblem(
+            pylsd_mode=False,
+            molecular_formula="C13H18O2",
+        )
+        problem.add_atom(LSDAtom(1, "C", Hybridization.SP2, 0))
+        content = LSDInputGenerator.generate(problem)
+        # Only the comment version should appear, not the FORM command
+        assert "FORM C13H18O2" not in content
+        assert "; Molecular formula: C13H18O2" in content
+
+    def test_generate_pylsd_elim_commands(self):
+        """ELIM lines appear after FORM but before MULT when pylsd_mode=True."""
+        problem = LSDProblem(
+            pylsd_mode=True,
+            molecular_formula="C13H18O2",
+            elim_commands=[(4, 4)],
+        )
+        problem.add_atom(LSDAtom(1, "C", Hybridization.SP2, 0))
+        content = LSDInputGenerator.generate(problem)
+        assert "ELIM 4 4" in content
+        # ELIM must appear after FORM and before first MULT
+        form_pos = content.index("FORM C13H18O2")
+        elim_pos = content.index("ELIM 4 4")
+        mult_pos = content.index("MULT")
+        assert form_pos < elim_pos < mult_pos
+
+    def test_generate_shih_for_proton_shift(self):
+        """SHIH line appears for atom with proton_shift set."""
+        problem = LSDProblem()
+        problem.add_atom(LSDAtom(1, "C", Hybridization.SP3, 1, proton_shift=3.71))
+        content = LSDInputGenerator.generate(problem)
+        assert "SHIH 1 3.71" in content
+
+    def test_generate_no_shih_for_none_proton_shift(self):
+        """No SHIH line when atom proton_shift is None."""
+        problem = LSDProblem()
+        problem.add_atom(LSDAtom(1, "C", Hybridization.SP3, 1, proton_shift=None))
+        content = LSDInputGenerator.generate(problem)
+        assert "SHIH 1" not in content
+
+    def test_generate_hmbc_bond_range_in_output(self):
+        """HMBC correlation with max_bonds=4 produces 'HMBC X Y 2 4' in output."""
+        problem = LSDProblem()
+        problem.add_atom(LSDAtom(1, "C", Hybridization.SP2, 0))
+        problem.add_atom(LSDAtom(2, "C", Hybridization.SP3, 1))
+        problem.add_correlation(LSDCorrelation(1, 2, "HMBC", min_bonds=2, max_bonds=4))
+        content = LSDInputGenerator.generate(problem)
+        assert "HMBC 1 2 2 4" in content
+
+    def test_generate_hmbc_default_range_no_trailing_numbers(self):
+        """Default HMBC (2-3J) emits 'HMBC X Y' without trailing bond numbers."""
+        problem = LSDProblem()
+        problem.add_atom(LSDAtom(1, "C", Hybridization.SP2, 0))
+        problem.add_atom(LSDAtom(2, "C", Hybridization.SP3, 1))
+        problem.add_correlation(LSDCorrelation(1, 2, "HMBC", min_bonds=2, max_bonds=3))
+        content = LSDInputGenerator.generate(problem)
+        assert "HMBC 1 2\n" in content or content.endswith("HMBC 1 2")
+        assert "HMBC 1 2 2 3" not in content
+
+
+class TestPyLSDValidator:
+    """Tests for validate_pylsd_input() consistency checker."""
+
+    def test_validate_pylsd_carbon_mismatch(self):
+        """Raises ValueError when FORM declares 13 carbons but MULT defines 12."""
+        from lucy_ng.lsd.generator import validate_pylsd_input
+        problem = LSDProblem(molecular_formula="C13H18O2")
+        # Add only 12 carbon atoms
+        for i in range(1, 13):
+            problem.add_atom(LSDAtom(i, "C", Hybridization.SP3, 0))
+        with pytest.raises(ValueError, match="FORM/MULT mismatch"):
+            validate_pylsd_input(problem)
+
+    def test_validate_pylsd_carbon_match(self):
+        """No error when FORM carbon count matches MULT carbon count."""
+        from lucy_ng.lsd.generator import validate_pylsd_input
+        problem = LSDProblem(molecular_formula="C2H4O2")
+        problem.add_atom(LSDAtom(1, "C", Hybridization.SP2, 0))
+        problem.add_atom(LSDAtom(2, "C", Hybridization.SP3, 2))
+        validate_pylsd_input(problem)  # Should not raise
+
+    def test_validate_pylsd_no_formula(self):
+        """No error when molecular_formula is None."""
+        from lucy_ng.lsd.generator import validate_pylsd_input
+        problem = LSDProblem(molecular_formula=None)
+        problem.add_atom(LSDAtom(1, "C", Hybridization.SP3, 0))
+        validate_pylsd_input(problem)  # Should not raise
+
+    def test_validate_pylsd_ignores_heteroatom_count(self):
+        """Only carbon count is checked — mismatched oxygen count does not raise."""
+        from lucy_ng.lsd.generator import validate_pylsd_input
+        problem = LSDProblem(molecular_formula="C2H4O2")
+        problem.add_atom(LSDAtom(1, "C", Hybridization.SP2, 0))
+        problem.add_atom(LSDAtom(2, "C", Hybridization.SP3, 2))
+        # Only 1 oxygen, formula says 2 — should not raise
+        problem.add_atom(LSDAtom(3, "O", Hybridization.SP3, 0))
+        validate_pylsd_input(problem)  # Should not raise
+
+
 class TestHydrogenAssignment:
     """Tests for missing hydrogen detection and assignment to oxygen."""
 
