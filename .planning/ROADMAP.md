@@ -43,7 +43,7 @@
   4. Go decision is recorded in `.planning/phases/65-hypothesis-gate/` before any Phase 66+ work begins
 **Plans:** 1/1 plans complete
 Plans:
-- [ ] 65-01-PLAN.md — Remove 3 known 4J HMBC correlations from ibuprofen LSD, run solver, confirm aromatic ring solutions, record GO/NO-GO decision
+- [x] 65-01-PLAN.md — Remove 3 known 4J HMBC correlations from ibuprofen LSD, run solver, confirm aromatic ring solutions, record GO/NO-GO decision
 
 ### Phase 66: LSDInputGenerator Extensions
 **Goal:** LSDInputGenerator can emit all pyLSD-format commands needed for multi-run orchestration — FORM, ELIM header, SHIX/SHIH, and per-correlation extended HMBC bond range
@@ -55,7 +55,10 @@ Plans:
   3. `LSDInputGenerator.emit_shix(atom_idx, shift)` and `emit_shih` produce `SHIX`/`SHIH` lines; existing output unchanged
   4. An HMBC correlation with `min_bonds=2, max_bonds=4` produces `HMBC X Y 2 4` in the output file (not the default `HMBC X Y`)
   5. `validate_pylsd_input()` raises a clear error when FORM atom count does not match MULT atom count; all existing tests pass
-**Plans:** TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 66-01-PLAN.md — Extend LSDCorrelation.to_lsd_line() for HMBC bond range; add pylsd_mode/elim_commands to LSDProblem
+- [ ] 66-02-PLAN.md — Add emit_form/emit_elim/emit_shih methods; integrate into generate(); add validate_pylsd_input()
 
 ### Phase 67: PyLSDOrchestrator and SolutionMerger
 **Goal:** A Python orchestrator generates permutation LSD files for suspect 4J correlations, runs the LSD binary once per permutation, and merges deduplicated solutions with provenance tracking
@@ -117,7 +120,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 65. Hypothesis Validation Gate | 1/1 | Complete    | 2026-03-16 |
-| 66. LSDInputGenerator Extensions | 0/1 | Not started | - |
+| 66. LSDInputGenerator Extensions | 0/2 | Not started | - |
 | 67. PyLSDOrchestrator and SolutionMerger | 0/1 | Not started | - |
 | 68. Constraint Inventory v2 Schema | 0/1 | Not started | - |
 | 69. CLI Command and Regression Suite | 0/1 | Not started | - |
@@ -125,4 +128,4 @@ Plans:
 | 71. Ibuprofen CASE UAT | 0/1 | Not started | - |
 
 ---
-*Last updated: 2026-03-16 — Phase 65 planned (1 plan)*
+*Last updated: 2026-03-16 — Phase 66 planned (2 plans)*
