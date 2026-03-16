@@ -39,6 +39,47 @@ class LSDInputGenerator:
     """
 
     @staticmethod
+    def emit_form(formula: str) -> str:
+        """Emit a pyLSD FORM command line.
+
+        Args:
+            formula: Molecular formula string, e.g. "C13H18O2"
+
+        Returns:
+            String like "FORM C13H18O2"
+        """
+        return f"FORM {formula}"
+
+    @staticmethod
+    def emit_elim(n: int, m: int) -> str:
+        """Emit a pyLSD ELIM command line.
+
+        ELIM drops the correlation entirely. For 4J handling, use
+        HMBC X Y 2 4 (set max_bonds=4 on LSDCorrelation).
+
+        Args:
+            n: First atom index
+            m: Second atom index
+
+        Returns:
+            String like "ELIM 4 4"
+        """
+        return f"ELIM {n} {m}"
+
+    @staticmethod
+    def emit_shih(atom_idx: int, shift: float) -> str:
+        """Emit a pyLSD SHIH command line for a 1H chemical shift.
+
+        Args:
+            atom_idx: Atom index (1-based)
+            shift: 1H chemical shift in ppm
+
+        Returns:
+            String like "SHIH 10 3.71"
+        """
+        return f"SHIH {atom_idx} {shift:.2f}"
+
+    @staticmethod
     def generate(problem: LSDProblem) -> str:
         """Generate LSD input file content from problem definition.
 
@@ -59,6 +100,15 @@ class LSDInputGenerator:
             lines.append(f"; {comment}")
         lines.append("")
 
+        # pyLSD header commands (FORM, ELIM) — only when pylsd_mode enabled
+        if problem.pylsd_mode:
+            if problem.molecular_formula:
+                lines.append(LSDInputGenerator.emit_form(problem.molecular_formula))
+            for n, m in problem.elim_commands:
+                lines.append(LSDInputGenerator.emit_elim(n, m))
+            if problem.molecular_formula or problem.elim_commands:
+                lines.append("")
+
         # Atom definitions (MULT commands)
         if problem.atoms:
             lines.append("; Atom definitions")
@@ -74,6 +124,13 @@ class LSDInputGenerator:
                     lines.append("; Chemical shifts")
                     shifts_added = True
                 lines.append(f"SHIX {atom.index} {atom.carbon_shift:.2f}")
+        # SHIH: 1H shifts for atoms with proton_shift set
+        for atom in sorted(problem.atoms, key=lambda a: a.index):
+            if atom.proton_shift is not None:
+                if not shifts_added:
+                    lines.append("; Chemical shifts")
+                    shifts_added = True
+                lines.append(LSDInputGenerator.emit_shih(atom.index, atom.proton_shift))
         if shifts_added:
             lines.append("")
 
@@ -475,4 +532,28 @@ class LSDInputGenerator:
             molecular_formula=molecular_formula,
             name=name,
             tolerance=tolerance,
+        )
+
+
+def validate_pylsd_input(problem: LSDProblem) -> None:
+    """Validate pyLSD-format problem for FORM/MULT consistency.
+
+    Only checks carbon count (not heteroatoms — oxygen count is
+    deliberately ambiguous due to hydroxyl/ether flexibility).
+
+    Args:
+        problem: LSD problem to validate
+
+    Raises:
+        ValueError: If FORM carbon count does not match MULT carbon count.
+    """
+    if problem.molecular_formula is None:
+        return
+    formula_counts = parse_molecular_formula(problem.molecular_formula)
+    form_c = formula_counts.get("C", 0)
+    mult_c = sum(1 for a in problem.atoms if a.element == "C")
+    if form_c != mult_c:
+        raise ValueError(
+            f"FORM/MULT mismatch: FORM declares {form_c} carbons "
+            f"but MULT defines {mult_c} carbons in '{problem.molecular_formula}'"
         )
