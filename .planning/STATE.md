@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v8.0
 milestone_name: pyLSD Integration
 status: completed
-stopped_at: Completed 65-01-PLAN.md — GO decision for v8.0
-last_updated: "2026-03-16T10:40:51.336Z"
+stopped_at: Completed 66-01-PLAN.md — LSDCorrelation extended HMBC syntax, LSDProblem pyLSD fields
+last_updated: "2026-03-16T16:33:34.775Z"
 last_activity: 2026-03-16 — Phase 65 hypothesis gate CONFIRMED, GO decision
 progress:
   total_phases: 7
   completed_phases: 1
-  total_plans: 1
-  completed_plans: 1
+  total_plans: 3
+  completed_plans: 2
 ---
 
 # lucy-ng State
@@ -82,6 +82,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [v8.0 Research]: Phase 65 is a manual validation gate (30 minutes, no code) — hypothesis must be confirmed before coding begins
 - [Phase 65-hypothesis-gate]: GO: 4J HMBC removal hypothesis confirmed — ibuprofen (aromatic) found at rank 219/392 after removing 3 W-pathway correlations
 - [Phase 65-hypothesis-gate]: LSD runner bug: _run_outlsd missing mode argument; direct outlsd 5 < file.sol is workaround — deferred fix for Phase 66/69
+- [Phase 66-lsdinputgenerator-extensions]: OR condition for HMBC extended syntax: emit 'HMBC X Y min max' if min_bonds \!= 2 OR max_bonds \!= 3 — catches any single-field deviation from default 2-3 range
 
 ### Pending Todos
 
@@ -99,8 +100,8 @@ See `background/sherlock-analysis.md` for full Sherlock vs lucy-ng comparison. F
 
 ## Session Continuity
 
-Last session: 2026-03-16T10:37:49.494Z
-Stopped at: Completed 65-01-PLAN.md — GO decision for v8.0
+Last session: 2026-03-16T16:33:34.772Z
+Stopped at: Completed 66-01-PLAN.md — LSDCorrelation extended HMBC syntax, LSDProblem pyLSD fields
 Resume with: `/gsd:plan-phase 66` and `/gsd:plan-phase 68` (Wave 1 — parallel)
 
 ---
