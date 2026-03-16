@@ -2,16 +2,15 @@
 gsd_state_version: 1.0
 milestone: v8.0
 milestone_name: pyLSD Integration
-status: "Roadmap defined"
-stopped_at: null
-last_updated: "2026-03-13"
-last_activity: 2026-03-13 — v8.0 roadmap created (7 phases, 65-71)
+status: planning
+stopped_at: Completed 65-01-PLAN.md — GO decision for v8.0
+last_updated: "2026-03-16T10:37:49.496Z"
+last_activity: 2026-03-13 — v8.0 roadmap created
 progress:
-  total_phases: 65
-  completed_phases: 58
-  total_plans: 97
-  completed_plans: 95
-  percent: 98
+  total_phases: 7
+  completed_phases: 1
+  total_plans: 1
+  completed_plans: 1
 ---
 
 # lucy-ng State
@@ -21,22 +20,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-13)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a collaborative team architecture that self-corrects through peer review
-**Current focus:** v8.0 pyLSD Integration — Phase 65 (Hypothesis Validation Gate) ready to start
+**Current focus:** v8.0 pyLSD Integration — Phase 65 COMPLETE (GO), Phases 66/68 ready to start in parallel
 
 ## Current Position
 
-Phase: 65 — Hypothesis Validation Gate
+Phase: 66/68 — LSDInputGenerator Extensions / Constraint Inventory v2 (Wave 1, parallel)
 Plan: — (not yet planned)
-Status: Roadmap defined, ready to plan Phase 65
-Last activity: 2026-03-13 — v8.0 roadmap created
+Status: Phase 65 complete — GO decision issued. Wave 1 unblocked.
+Last activity: 2026-03-16 — Phase 65 hypothesis gate CONFIRMED, GO decision
 
 ## Phase Map (v8.0)
 
 ```
-Phase 65: Hypothesis Validation Gate    [ ] Not started
-Phase 66: LSDInputGenerator Extensions  [ ] Not started  (depends on 65)
+Phase 65: Hypothesis Validation Gate    [x] COMPLETE — GO decision 2026-03-16
+Phase 66: LSDInputGenerator Extensions  [ ] Not started  (depends on 65 — UNBLOCKED)
 Phase 67: PyLSDOrchestrator/Merger      [ ] Not started  (depends on 66)
-Phase 68: Constraint Inventory v2       [ ] Not started  (depends on 65)
+Phase 68: Constraint Inventory v2       [ ] Not started  (depends on 65 — UNBLOCKED)
 Phase 69: CLI and Regression Suite      [ ] Not started  (depends on 66, 67)
 Phase 70: Agent Skill Updates           [ ] Not started  (depends on 68, 69)
 Phase 71: Ibuprofen CASE UAT            [ ] Not started  (depends on 70)
@@ -81,6 +80,8 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [v8.0 Research]: ELIM does NOT extend bond ranges — it drops correlations entirely. Use `HMBC X Y 2 4` for 4J handling.
 - [v8.0 Research]: pyLSD should NOT be installed as an external tool — implement PyLSDOrchestrator directly in Python (~230 lines)
 - [v8.0 Research]: Phase 65 is a manual validation gate (30 minutes, no code) — hypothesis must be confirmed before coding begins
+- [Phase 65-hypothesis-gate]: GO: 4J HMBC removal hypothesis confirmed — ibuprofen (aromatic) found at rank 219/392 after removing 3 W-pathway correlations
+- [Phase 65-hypothesis-gate]: LSD runner bug: _run_outlsd missing mode argument; direct outlsd 5 < file.sol is workaround — deferred fix for Phase 66/69
 
 ### Pending Todos
 
@@ -90,7 +91,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 
 ### Blockers/Concerns
 
-None. Phase 65 (hypothesis gate) is the first action — if it fails, roadmap is revised before any code is written.
+None. Phase 65 hypothesis gate PASSED — GO decision issued. Wave 1 (Phases 66, 68) may proceed in parallel.
 
 ### Strategic Reference
 
@@ -98,9 +99,9 @@ See `background/sherlock-analysis.md` for full Sherlock vs lucy-ng comparison. F
 
 ## Session Continuity
 
-Last session: 2026-03-13
-Stopped at: v8.0 roadmap created
-Resume with: `/gsd:plan-phase 65` — manual hypothesis validation (30-minute test, no code)
+Last session: 2026-03-16T10:37:49.494Z
+Stopped at: Completed 65-01-PLAN.md — GO decision for v8.0
+Resume with: `/gsd:plan-phase 66` and `/gsd:plan-phase 68` (Wave 1 — parallel)
 
 ---
-*Last updated: 2026-03-13 — v8.0 roadmap created (7 phases, 65-71)*
+*Last updated: 2026-03-16 — Phase 65 complete, GO decision, Wave 1 unblocked*

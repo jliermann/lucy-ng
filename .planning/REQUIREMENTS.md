@@ -9,7 +9,7 @@ Requirements for v8.0 release. Each maps to roadmap phases.
 
 ### Validation Gate
 
-- [ ] **GATE-01**: Manual hypothesis test — run ibuprofen LSD with 3 known 4J HMBC correlations removed, confirm solutions with aromatic rings appear (30-minute test, gates entire roadmap)
+- [x] **GATE-01**: Manual hypothesis test — run ibuprofen LSD with 3 known 4J HMBC correlations removed, confirm solutions with aromatic rings appear (30-minute test, gates entire roadmap)
 
 ### LSD Input Generation
 
@@ -72,7 +72,7 @@ Deferred to future release. Tracked but not in current roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| GATE-01 | Phase 65 | Pending |
+| GATE-01 | Phase 65 | Complete |
 | INPUT-01 | Phase 66 | Pending |
 | INPUT-02 | Phase 66 | Pending |
 | INPUT-03 | Phase 66 | Pending |

@@ -22,7 +22,7 @@
 
 ## Phases
 
-- [ ] **Phase 65: Hypothesis Validation Gate** - Manual 30-minute test: run ibuprofen LSD with 3 known 4J correlations removed; confirm aromatic ring solutions appear. Gates entire milestone.
+- [x] **Phase 65: Hypothesis Validation Gate** - Manual 30-minute test: run ibuprofen LSD with 3 known 4J correlations removed; confirm aromatic ring solutions appear. Gates entire milestone. (completed 2026-03-16)
 - [ ] **Phase 66: LSDInputGenerator Extensions** - Add FORM, ELIM, SHIX/SHIH, and extended HMBC bond range emission to LSDInputGenerator; FORM/MULT consistency validator.
 - [ ] **Phase 67: PyLSDOrchestrator and SolutionMerger** - New Python classes: permutation file generation, N-fold LSD runner invocation, InChI-key deduplication of merged solutions.
 - [ ] **Phase 68: Constraint Inventory v2 Schema** - Extend constraint inventory JSON schema with pylsd_mode, deferred_4j metadata; extend devils-advocate checklist with ELIM/FORM/MULT validation rules.
@@ -41,7 +41,7 @@
   2. At least one solution in the output contains an aromatic ring (6-membered sp2 system), confirmed by `outlsd` + RDKit aromatic atom count
   3. A `validation_result.md` file exists documenting: which correlations were removed, solution count, aromatic ring presence, decision to proceed
   4. Go decision is recorded in `.planning/phases/65-hypothesis-gate/` before any Phase 66+ work begins
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 Plans:
 - [ ] 65-01-PLAN.md — Remove 3 known 4J HMBC correlations from ibuprofen LSD, run solver, confirm aromatic ring solutions, record GO/NO-GO decision
 
@@ -116,7 +116,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 65. Hypothesis Validation Gate | 0/1 | Planned | - |
+| 65. Hypothesis Validation Gate | 1/1 | Complete   | 2026-03-16 |
 | 66. LSDInputGenerator Extensions | 0/1 | Not started | - |
 | 67. PyLSDOrchestrator and SolutionMerger | 0/1 | Not started | - |
 | 68. Constraint Inventory v2 Schema | 0/1 | Not started | - |
