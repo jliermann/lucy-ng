@@ -38,29 +38,29 @@ created: 2026-03-16
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 66-01-01 | 01 | 1 | INPUT-04 | unit | `pytest tests/test_lsd_models.py -k "hmbc_extended" -x` | ❌ W0 | ⬜ pending |
-| 66-01-02 | 01 | 1 | INPUT-04 | regression | `pytest tests/test_lsd_models.py::TestLSDCorrelation::test_to_lsd_line_hmbc -x` | ✅ | ⬜ pending |
-| 66-01-03 | 01 | 1 | INPUT-01 | unit | `pytest tests/test_lsd_generator.py -k "form" -x` | ❌ W0 | ⬜ pending |
-| 66-01-04 | 01 | 1 | INPUT-02 | unit | `pytest tests/test_lsd_generator.py -k "elim" -x` | ❌ W0 | ⬜ pending |
-| 66-01-05 | 01 | 1 | INPUT-03 | unit | `pytest tests/test_lsd_generator.py -k "shih" -x` | ❌ W0 | ⬜ pending |
-| 66-01-06 | 01 | 1 | INPUT-03 | regression | `pytest tests/test_lsd_generator.py::TestLSDInputGeneratorBasic::test_generate_with_chemical_shifts -x` | ✅ | ⬜ pending |
-| 66-02-01 | 02 | 1 | INPUT-01 | unit | `pytest tests/test_lsd_generator.py -k "pylsd_form" -x` | ❌ W0 | ⬜ pending |
-| 66-02-02 | 02 | 1 | INPUT-02 | unit | `pytest tests/test_lsd_generator.py -k "elim_commands" -x` | ❌ W0 | ⬜ pending |
-| 66-02-03 | 02 | 1 | INPUT-03 | unit | `pytest tests/test_lsd_generator.py -k "proton_shift" -x` | ❌ W0 | ⬜ pending |
-| 66-02-04 | 02 | 1 | INPUT-04 | unit | `pytest tests/test_lsd_generator.py -k "hmbc_bond_range" -x` | ❌ W0 | ⬜ pending |
-| 66-03-01 | 03 | 2 | INPUT-01 | unit | `pytest tests/test_lsd_generator.py -k "validate_pylsd" -x` | ❌ W0 | ⬜ pending |
+| 66-01-01 | 01 | 1 | INPUT-04 | unit | `pytest tests/test_lsd_models.py -k "hmbc_extended" -x` | W0 | pending |
+| 66-01-02 | 01 | 1 | INPUT-04 | regression | `pytest tests/test_lsd_models.py::TestLSDCorrelation::test_to_lsd_line_hmbc -x` | yes | pending |
+| 66-02-01 | 02 | 2 | INPUT-01 | unit | `pytest tests/test_lsd_generator.py -k "form" -x` | W0 | pending |
+| 66-02-02 | 02 | 2 | INPUT-02 | unit | `pytest tests/test_lsd_generator.py -k "elim" -x` | W0 | pending |
+| 66-02-03 | 02 | 2 | INPUT-03 | unit | `pytest tests/test_lsd_generator.py -k "shih" -x` | W0 | pending |
+| 66-02-04 | 02 | 2 | INPUT-03 | regression | `pytest tests/test_lsd_generator.py::TestLSDInputGeneratorBasic::test_generate_with_chemical_shifts -x` | yes | pending |
+| 66-02-05 | 02 | 2 | INPUT-01 | unit | `pytest tests/test_lsd_generator.py -k "pylsd_form" -x` | W0 | pending |
+| 66-02-06 | 02 | 2 | INPUT-02 | unit | `pytest tests/test_lsd_generator.py -k "elim_commands" -x` | W0 | pending |
+| 66-02-07 | 02 | 2 | INPUT-03 | unit | `pytest tests/test_lsd_generator.py -k "proton_shift" -x` | W0 | pending |
+| 66-02-08 | 02 | 2 | INPUT-04 | unit | `pytest tests/test_lsd_generator.py -k "hmbc_bond_range" -x` | W0 | pending |
+| 66-02-09 | 02 | 2 | INPUT-01 | unit | `pytest tests/test_lsd_generator.py -k "validate_pylsd" -x` | W0 | pending |
 
-*Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
+*Status: pending / green / red / flaky*
 
 ---
 
 ## Wave 0 Requirements
 
-- [ ] New test class `TestPyLSDExtensions` in `tests/test_lsd_generator.py` — covers INPUT-01, INPUT-02, INPUT-03, INPUT-04 emitter methods
-- [ ] New test class `TestPyLSDValidator` in `tests/test_lsd_generator.py` — covers `validate_pylsd_input()` error and pass cases
-- [ ] New test method `TestLSDCorrelation::test_to_lsd_line_hmbc_extended` in `tests/test_lsd_models.py` — covers INPUT-04 `to_lsd_line()` change
+- [ ] New test method `TestLSDCorrelation::test_to_lsd_line_hmbc_extended` in `tests/test_lsd_models.py` -- covers INPUT-04 `to_lsd_line()` change
+- [ ] New test class `TestPyLSDExtensions` in `tests/test_lsd_generator.py` -- covers INPUT-01, INPUT-02, INPUT-03, INPUT-04 emitter methods
+- [ ] New test class `TestPyLSDValidator` in `tests/test_lsd_generator.py` -- covers `validate_pylsd_input()` error and pass cases
 
-*No new test files needed — extend existing files.*
+*No new test files needed -- extend existing files.*
 
 ---
 
