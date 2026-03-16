@@ -23,7 +23,7 @@
 ## Phases
 
 - [x] **Phase 65: Hypothesis Validation Gate** - Manual 30-minute test: run ibuprofen LSD with 3 known 4J correlations removed; confirm aromatic ring solutions appear. Gates entire milestone. (completed 2026-03-16)
-- [ ] **Phase 66: LSDInputGenerator Extensions** - Add FORM, ELIM, SHIX/SHIH, and extended HMBC bond range emission to LSDInputGenerator; FORM/MULT consistency validator.
+- [x] **Phase 66: LSDInputGenerator Extensions** - Add FORM, ELIM, SHIX/SHIH, and extended HMBC bond range emission to LSDInputGenerator; FORM/MULT consistency validator. (completed 2026-03-16)
 - [ ] **Phase 67: PyLSDOrchestrator and SolutionMerger** - New Python classes: permutation file generation, N-fold LSD runner invocation, InChI-key deduplication of merged solutions.
 - [ ] **Phase 68: Constraint Inventory v2 Schema** - Extend constraint inventory JSON schema with pylsd_mode, deferred_4j metadata; extend devils-advocate checklist with ELIM/FORM/MULT validation rules.
 - [ ] **Phase 69: CLI Command and Regression Suite** - `lucy pylsd run` CLI subcommand; regression suite confirming existing `lucy lsd run` unchanged; FORM/LSD binary tolerance confirmed.
@@ -55,7 +55,7 @@ Plans:
   3. `LSDInputGenerator.emit_shix(atom_idx, shift)` and `emit_shih` produce `SHIX`/`SHIH` lines; existing output unchanged
   4. An HMBC correlation with `min_bonds=2, max_bonds=4` produces `HMBC X Y 2 4` in the output file (not the default `HMBC X Y`)
   5. `validate_pylsd_input()` raises a clear error when FORM atom count does not match MULT atom count; all existing tests pass
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 Plans:
 - [ ] 66-01-PLAN.md — Extend LSDCorrelation.to_lsd_line() for HMBC bond range; add pylsd_mode/elim_commands to LSDProblem
 - [ ] 66-02-PLAN.md — Add emit_form/emit_elim/emit_shih methods; integrate into generate(); add validate_pylsd_input()
@@ -120,7 +120,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 65. Hypothesis Validation Gate | 1/1 | Complete    | 2026-03-16 |
-| 66. LSDInputGenerator Extensions | 1/2 | In Progress|  |
+| 66. LSDInputGenerator Extensions | 2/2 | Complete   | 2026-03-16 |
 | 67. PyLSDOrchestrator and SolutionMerger | 0/1 | Not started | - |
 | 68. Constraint Inventory v2 Schema | 0/1 | Not started | - |
 | 69. CLI Command and Regression Suite | 0/1 | Not started | - |

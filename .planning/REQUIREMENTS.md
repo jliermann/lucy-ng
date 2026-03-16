@@ -13,9 +13,9 @@ Requirements for v8.0 release. Each maps to roadmap phases.
 
 ### LSD Input Generation
 
-- [ ] **INPUT-01**: LSDInputGenerator supports FORM command for molecular formula declaration in pyLSD-format files
-- [ ] **INPUT-02**: LSDInputGenerator supports ELIM header command (`ELIM N M` for correlation elimination)
-- [ ] **INPUT-03**: LSDInputGenerator supports SHIX/SHIH commands for chemical shift assignment to atoms
+- [x] **INPUT-01**: LSDInputGenerator supports FORM command for molecular formula declaration in pyLSD-format files
+- [x] **INPUT-02**: LSDInputGenerator supports ELIM header command (`ELIM N M` for correlation elimination)
+- [x] **INPUT-03**: LSDInputGenerator supports SHIX/SHIH commands for chemical shift assignment to atoms
 - [x] **INPUT-04**: LSDInputGenerator supports extended HMBC bond range syntax (`HMBC X Y 2 4` for 2-4 bond correlations)
 - [ ] **INPUT-05**: Constraint inventory schema v2 tracks 4J suspect correlations with `pylsd_mode`, `deferred_4j` metadata
 
@@ -73,9 +73,9 @@ Deferred to future release. Tracked but not in current roadmap.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | GATE-01 | Phase 65 | Complete |
-| INPUT-01 | Phase 66 | Pending |
-| INPUT-02 | Phase 66 | Pending |
-| INPUT-03 | Phase 66 | Pending |
+| INPUT-01 | Phase 66 | Complete |
+| INPUT-02 | Phase 66 | Complete |
+| INPUT-03 | Phase 66 | Complete |
 | INPUT-04 | Phase 66 | Complete |
 | INPUT-05 | Phase 68 | Pending |
 | ORCH-01 | Phase 67 | Pending |
