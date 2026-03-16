@@ -41,7 +41,9 @@
   2. At least one solution in the output contains an aromatic ring (6-membered sp2 system), confirmed by `outlsd` + RDKit aromatic atom count
   3. A `validation_result.md` file exists documenting: which correlations were removed, solution count, aromatic ring presence, decision to proceed
   4. Go decision is recorded in `.planning/phases/65-hypothesis-gate/` before any Phase 66+ work begins
-**Plans:** TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 65-01-PLAN.md — Remove 3 known 4J HMBC correlations from ibuprofen LSD, run solver, confirm aromatic ring solutions, record GO/NO-GO decision
 
 ### Phase 66: LSDInputGenerator Extensions
 **Goal:** LSDInputGenerator can emit all pyLSD-format commands needed for multi-run orchestration — FORM, ELIM header, SHIX/SHIH, and per-correlation extended HMBC bond range
@@ -114,7 +116,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 65. Hypothesis Validation Gate | 0/1 | Not started | - |
+| 65. Hypothesis Validation Gate | 0/1 | Planned | - |
 | 66. LSDInputGenerator Extensions | 0/1 | Not started | - |
 | 67. PyLSDOrchestrator and SolutionMerger | 0/1 | Not started | - |
 | 68. Constraint Inventory v2 Schema | 0/1 | Not started | - |
@@ -123,4 +125,4 @@
 | 71. Ibuprofen CASE UAT | 0/1 | Not started | - |
 
 ---
-*Last updated: 2026-03-13 — v8.0 roadmap created*
+*Last updated: 2026-03-16 — Phase 65 planned (1 plan)*
