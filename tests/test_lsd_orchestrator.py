@@ -655,3 +655,78 @@ class TestRunReportProvenance:
         report = json.loads(merge_result.run_report.read_text())
         assert len(report["solutions"]) == 1
         assert len(report["solutions"][0]["provenance"]) == 3
+
+
+# ---------------------------------------------------------------------------
+# Test: SolutionMerger — invalid SMILES and empty file handling
+# ---------------------------------------------------------------------------
+
+
+class TestSolutionMergerEdgeCases:
+    """SolutionMerger handles invalid SMILES and missing files gracefully."""
+
+    def _make_perm_result(
+        self,
+        perm_index: int,
+        smiles_file: Path | None,
+        include_flags: list[bool],
+    ) -> PermutationResult:
+        suspects = _make_suspects(len(include_flags))
+        return PermutationResult(
+            perm_index=perm_index,
+            include_flags=include_flags,
+            suspect_correlations=suspects,
+            lsd_result=_make_lsd_result(),
+            smiles_file=smiles_file,
+            perm_dir=Path("/fake"),
+        )
+
+    def test_invalid_smiles_skipped(self, tmp_path: Path) -> None:
+        """SMILES file containing an invalid SMILES string is skipped without error."""
+        from lucy_ng.lsd.orchestrator import SolutionMerger
+
+        # Write a file with one invalid SMILES and one valid SMILES
+        smi_file_invalid = tmp_path / "perm_00" / "solutions.smi"
+        smi_file_invalid.parent.mkdir()
+        smi_file_invalid.write_text("INVALID_XYZ\n")
+
+        smi_file_valid = tmp_path / "perm_01" / "solutions.smi"
+        smi_file_valid.parent.mkdir()
+        smi_file_valid.write_text("CCO\n")
+
+        perm_results = [
+            self._make_perm_result(0, smi_file_invalid, [True]),
+            self._make_perm_result(1, smi_file_valid, [False]),
+        ]
+
+        merger = SolutionMerger()
+        # Should not raise — invalid SMILES is silently skipped
+        merge_result = merger.merge(perm_results, output_dir=tmp_path / "merged")
+
+        # Only valid ethanol should appear in output
+        assert len(merge_result.merged_solutions) == 1
+        # merged.smi must not contain "INVALID_XYZ"
+        merged_content = merge_result.merged_smi.read_text()
+        assert "INVALID_XYZ" not in merged_content
+
+    def test_empty_smiles_file(self, tmp_path: Path) -> None:
+        """Permutation with smiles_file=None is skipped gracefully."""
+        from lucy_ng.lsd.orchestrator import SolutionMerger
+
+        smi_file = tmp_path / "perm_00" / "solutions.smi"
+        smi_file.parent.mkdir()
+        smi_file.write_text("CCO\n")
+
+        perm_results = [
+            self._make_perm_result(0, smi_file, [True]),
+            self._make_perm_result(1, None, [False]),  # No SMILES file
+        ]
+
+        merger = SolutionMerger()
+        merge_result = merger.merge(perm_results, output_dir=tmp_path / "merged")
+
+        # Only ethanol from perm 0 should appear
+        assert len(merge_result.merged_solutions) == 1
+        # Report must still account for both permutations
+        report = json.loads(merge_result.run_report.read_text())
+        assert report["total_permutations"] == 2
