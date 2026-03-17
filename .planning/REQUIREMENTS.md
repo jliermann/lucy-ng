@@ -21,10 +21,10 @@ Requirements for v8.0 release. Each maps to roadmap phases.
 
 ### Multi-Run Orchestration
 
-- [ ] **ORCH-01**: PyLSDOrchestrator generates permutations of LSD input files with different 4J correlation configurations (include/exclude suspect HMBCs)
-- [ ] **ORCH-02**: PyLSDOrchestrator caps permutation count (K≤3 excluded correlations) to prevent combinatorial explosion
-- [ ] **ORCH-03**: SolutionMerger deduplicates solutions from multiple LSD runs using InChI canonicalization
-- [ ] **ORCH-04**: SolutionMerger preserves provenance (which correlation configuration produced each solution)
+- [x] **ORCH-01**: PyLSDOrchestrator generates permutations of LSD input files with different 4J correlation configurations (include/exclude suspect HMBCs)
+- [x] **ORCH-02**: PyLSDOrchestrator caps permutation count (K≤3 excluded correlations) to prevent combinatorial explosion
+- [x] **ORCH-03**: SolutionMerger deduplicates solutions from multiple LSD runs using InChI canonicalization
+- [x] **ORCH-04**: SolutionMerger preserves provenance (which correlation configuration produced each solution)
 
 ### CLI
 
@@ -78,10 +78,10 @@ Deferred to future release. Tracked but not in current roadmap.
 | INPUT-03 | Phase 66 | Complete |
 | INPUT-04 | Phase 66 | Complete |
 | INPUT-05 | Phase 68 | Pending |
-| ORCH-01 | Phase 67 | Pending |
-| ORCH-02 | Phase 67 | Pending |
-| ORCH-03 | Phase 67 | Pending |
-| ORCH-04 | Phase 67 | Pending |
+| ORCH-01 | Phase 67 | Complete |
+| ORCH-02 | Phase 67 | Complete |
+| ORCH-03 | Phase 67 | Complete |
+| ORCH-04 | Phase 67 | Complete |
 | CLI-01 | Phase 69 | Pending |
 | CLI-02 | Phase 69 | Pending |
 | CLI-03 | Phase 69 | Pending |

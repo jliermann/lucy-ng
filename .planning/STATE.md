@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v8.0
 milestone_name: pyLSD Integration
 status: completed
-stopped_at: Completed 66-02-PLAN.md — emit_form/emit_elim/emit_shih, generate() pyLSD integration, validate_pylsd_input()
-last_updated: "2026-03-16T16:56:33.444Z"
+stopped_at: Completed 67-01-PLAN.md — PyLSDOrchestrator, SolutionMerger, permutation engine
+last_updated: "2026-03-17T13:13:22.097Z"
 last_activity: 2026-03-16 — Phase 65 hypothesis gate CONFIRMED, GO decision
 progress:
   total_phases: 7
   completed_phases: 2
-  total_plans: 3
-  completed_plans: 3
+  total_plans: 5
+  completed_plans: 4
 ---
 
 # lucy-ng State
@@ -84,6 +84,9 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Phase 65-hypothesis-gate]: LSD runner bug: _run_outlsd missing mode argument; direct outlsd 5 < file.sol is workaround — deferred fix for Phase 66/69
 - [Phase 66-lsdinputgenerator-extensions]: OR condition for HMBC extended syntax: emit 'HMBC X Y min max' if min_bonds \!= 2 OR max_bonds \!= 3 — catches any single-field deviation from default 2-3 range
 - [Phase 66-lsdinputgenerator-extensions]: SHIH placed after SHIX in same Chemical shifts section; generate() unchanged for pylsd_mode=False; validate_pylsd_input checks carbon count only
+- [Phase 67-pylsdorchestrator-and-solutionmerger]: K-cap guard (K>3 raises ValueError) placed as FIRST statement in run(), before any I/O
+- [Phase 67-pylsdorchestrator-and-solutionmerger]: Suspect correlations identified by (atom1_index, atom2_index, correlation_type) tuple — not id() — because deepcopy invalidates identity
+- [Phase 67-pylsdorchestrator-and-solutionmerger]: outlsd invoked directly via subprocess bypassing LSDRunner._run_outlsd (known bug: missing mode argument)
 
 ### Pending Todos
 
@@ -101,8 +104,8 @@ See `background/sherlock-analysis.md` for full Sherlock vs lucy-ng comparison. F
 
 ## Session Continuity
 
-Last session: 2026-03-16T16:47:21.516Z
-Stopped at: Completed 66-02-PLAN.md — emit_form/emit_elim/emit_shih, generate() pyLSD integration, validate_pylsd_input()
+Last session: 2026-03-17T13:13:22.094Z
+Stopped at: Completed 67-01-PLAN.md — PyLSDOrchestrator, SolutionMerger, permutation engine
 Resume with: `/gsd:plan-phase 66` and `/gsd:plan-phase 68` (Wave 1 — parallel)
 
 ---

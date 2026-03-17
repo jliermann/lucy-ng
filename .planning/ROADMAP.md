@@ -69,7 +69,7 @@ Plans:
   2. `PyLSDOrchestrator` aborts with a clear error if K>3 suspect correlations are identified (combinatorial explosion guard)
   3. `SolutionMerger` reading solutions from 3 separate runs deduplicates by InChI key — a structure appearing in runs 1, 2, and 3 appears once in `merged.smi`
   4. `run_report.json` records for each solution: which permutation produced it and which correlations were active in that run
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 Plans:
 - [ ] 67-01-PLAN.md — PyLSDOrchestrator: permutation generation, K-cap guard, LSD execution with outlsd bypass (TDD)
 - [ ] 67-02-PLAN.md — SolutionMerger: InChI deduplication, provenance tracking, merged.smi + run_report.json, package exports (TDD)
@@ -124,7 +124,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 65. Hypothesis Validation Gate | 1/1 | Complete    | 2026-03-16 |
 | 66. LSDInputGenerator Extensions | 2/2 | Complete    | 2026-03-16 |
-| 67. PyLSDOrchestrator and SolutionMerger | 0/2 | Not started | - |
+| 67. PyLSDOrchestrator and SolutionMerger | 1/2 | In Progress|  |
 | 68. Constraint Inventory v2 Schema | 0/1 | Not started | - |
 | 69. CLI Command and Regression Suite | 0/1 | Not started | - |
 | 70. Agent Skill Updates | 0/1 | Not started | - |
