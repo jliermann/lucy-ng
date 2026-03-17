@@ -24,7 +24,7 @@
 
 - [x] **Phase 65: Hypothesis Validation Gate** - Manual 30-minute test: run ibuprofen LSD with 3 known 4J correlations removed; confirm aromatic ring solutions appear. Gates entire milestone. (completed 2026-03-16)
 - [x] **Phase 66: LSDInputGenerator Extensions** - Add FORM, ELIM, SHIX/SHIH, and extended HMBC bond range emission to LSDInputGenerator; FORM/MULT consistency validator. (completed 2026-03-16)
-- [ ] **Phase 67: PyLSDOrchestrator and SolutionMerger** - New Python classes: permutation file generation, N-fold LSD runner invocation, InChI-key deduplication of merged solutions.
+- [x] **Phase 67: PyLSDOrchestrator and SolutionMerger** - New Python classes: permutation file generation, N-fold LSD runner invocation, InChI-key deduplication of merged solutions. (completed 2026-03-17)
 - [ ] **Phase 68: Constraint Inventory v2 Schema** - Extend constraint inventory JSON schema with pylsd_mode, deferred_4j metadata; extend devils-advocate checklist with ELIM/FORM/MULT validation rules.
 - [ ] **Phase 69: CLI Command and Regression Suite** - `lucy pylsd run` CLI subcommand; regression suite confirming existing `lucy lsd run` unchanged; FORM/LSD binary tolerance confirmed.
 - [ ] **Phase 70: Agent Skill Updates** - lsd-engineer and case.md orchestrator skill updates with full pyLSD command reference, `; ELIM` annotation protocol, routing logic for pylsd_mode.
@@ -69,7 +69,7 @@ Plans:
   2. `PyLSDOrchestrator` aborts with a clear error if K>3 suspect correlations are identified (combinatorial explosion guard)
   3. `SolutionMerger` reading solutions from 3 separate runs deduplicates by InChI key — a structure appearing in runs 1, 2, and 3 appears once in `merged.smi`
   4. `run_report.json` records for each solution: which permutation produced it and which correlations were active in that run
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 Plans:
 - [ ] 67-01-PLAN.md — PyLSDOrchestrator: permutation generation, K-cap guard, LSD execution with outlsd bypass (TDD)
 - [ ] 67-02-PLAN.md — SolutionMerger: InChI deduplication, provenance tracking, merged.smi + run_report.json, package exports (TDD)
@@ -124,7 +124,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 65. Hypothesis Validation Gate | 1/1 | Complete    | 2026-03-16 |
 | 66. LSDInputGenerator Extensions | 2/2 | Complete    | 2026-03-16 |
-| 67. PyLSDOrchestrator and SolutionMerger | 1/2 | In Progress|  |
+| 67. PyLSDOrchestrator and SolutionMerger | 2/2 | Complete   | 2026-03-17 |
 | 68. Constraint Inventory v2 Schema | 0/1 | Not started | - |
 | 69. CLI Command and Regression Suite | 0/1 | Not started | - |
 | 70. Agent Skill Updates | 0/1 | Not started | - |

@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v8.0
 milestone_name: pyLSD Integration
 status: completed
-stopped_at: Completed 67-01-PLAN.md — PyLSDOrchestrator, SolutionMerger, permutation engine
-last_updated: "2026-03-17T13:13:22.097Z"
+stopped_at: Completed 67-02-PLAN.md — SolutionMerger edge case tests
+last_updated: "2026-03-17T13:27:33.633Z"
 last_activity: 2026-03-16 — Phase 65 hypothesis gate CONFIRMED, GO decision
 progress:
   total_phases: 7
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 5
-  completed_plans: 4
+  completed_plans: 5
 ---
 
 # lucy-ng State
@@ -87,6 +87,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Phase 67-pylsdorchestrator-and-solutionmerger]: K-cap guard (K>3 raises ValueError) placed as FIRST statement in run(), before any I/O
 - [Phase 67-pylsdorchestrator-and-solutionmerger]: Suspect correlations identified by (atom1_index, atom2_index, correlation_type) tuple — not id() — because deepcopy invalidates identity
 - [Phase 67-pylsdorchestrator-and-solutionmerger]: outlsd invoked directly via subprocess bypassing LSDRunner._run_outlsd (known bug: missing mode argument)
+- [Phase 67-02]: Plan 67-01 had already implemented SolutionMerger fully — Plan 67-02 adds only the 2 missing edge-case tests (invalid SMILES skipped, None smiles_file graceful)
 
 ### Pending Todos
 
@@ -104,8 +105,8 @@ See `background/sherlock-analysis.md` for full Sherlock vs lucy-ng comparison. F
 
 ## Session Continuity
 
-Last session: 2026-03-17T13:13:22.094Z
-Stopped at: Completed 67-01-PLAN.md — PyLSDOrchestrator, SolutionMerger, permutation engine
+Last session: 2026-03-17T13:27:29.645Z
+Stopped at: Completed 67-02-PLAN.md — SolutionMerger edge case tests
 Resume with: `/gsd:plan-phase 66` and `/gsd:plan-phase 68` (Wave 1 — parallel)
 
 ---
