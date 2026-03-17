@@ -43,6 +43,14 @@ from lucy_ng.lsd.analyzer import (
 )
 from lucy_ng.lsd.generator import LSDInputGenerator
 from lucy_ng.lsd.models import Hybridization, LSDAtom, LSDConstraint, LSDCorrelation, LSDProblem
+from lucy_ng.lsd.orchestrator import (
+    MergeResult,
+    MergedSolution,
+    OrchestrationResult,
+    PermutationResult,
+    PyLSDOrchestrator,
+    SolutionMerger,
+)
 from lucy_ng.lsd.parser import LSDInputParser, LSDOutputParser, LSDSolution
 from lucy_ng.lsd.runner import LSDResult, LSDRunner
 
@@ -67,4 +75,11 @@ __all__ = [
     "SolutionGraph",
     "HMBCCorrelation",
     "AnalysisResult",
+    # Orchestrator
+    "PyLSDOrchestrator",
+    "PermutationResult",
+    "OrchestrationResult",
+    "SolutionMerger",
+    "MergedSolution",
+    "MergeResult",
 ]
