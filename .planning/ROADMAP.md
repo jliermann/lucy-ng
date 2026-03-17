@@ -57,8 +57,8 @@ Plans:
   5. `validate_pylsd_input()` raises a clear error when FORM atom count does not match MULT atom count; all existing tests pass
 **Plans:** 2/2 plans complete
 Plans:
-- [ ] 66-01-PLAN.md — Extend LSDCorrelation.to_lsd_line() for HMBC bond range; add pylsd_mode/elim_commands to LSDProblem
-- [ ] 66-02-PLAN.md — Add emit_form/emit_elim/emit_shih methods; integrate into generate(); add validate_pylsd_input()
+- [x] 66-01-PLAN.md — Extend LSDCorrelation.to_lsd_line() for HMBC bond range; add pylsd_mode/elim_commands to LSDProblem
+- [x] 66-02-PLAN.md — Add emit_form/emit_elim/emit_shih methods; integrate into generate(); add validate_pylsd_input()
 
 ### Phase 67: PyLSDOrchestrator and SolutionMerger
 **Goal:** A Python orchestrator generates permutation LSD files for suspect 4J correlations, runs the LSD binary once per permutation, and merges deduplicated solutions with provenance tracking
@@ -69,7 +69,10 @@ Plans:
   2. `PyLSDOrchestrator` aborts with a clear error if K>3 suspect correlations are identified (combinatorial explosion guard)
   3. `SolutionMerger` reading solutions from 3 separate runs deduplicates by InChI key — a structure appearing in runs 1, 2, and 3 appears once in `merged.smi`
   4. `run_report.json` records for each solution: which permutation produced it and which correlations were active in that run
-**Plans:** TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 67-01-PLAN.md — PyLSDOrchestrator: permutation generation, K-cap guard, LSD execution with outlsd bypass (TDD)
+- [ ] 67-02-PLAN.md — SolutionMerger: InChI deduplication, provenance tracking, merged.smi + run_report.json, package exports (TDD)
 
 ### Phase 68: Constraint Inventory v2 Schema
 **Goal:** The constraint inventory JSON schema in agent skill files is extended with pyLSD-specific fields; devils-advocate validation gates cover FORM/MULT consistency and ELIM-vs-bond-range semantics
@@ -121,11 +124,11 @@ Plans:
 |-------|----------------|--------|-----------|
 | 65. Hypothesis Validation Gate | 1/1 | Complete    | 2026-03-16 |
 | 66. LSDInputGenerator Extensions | 2/2 | Complete    | 2026-03-16 |
-| 67. PyLSDOrchestrator and SolutionMerger | 0/1 | Not started | - |
+| 67. PyLSDOrchestrator and SolutionMerger | 0/2 | Not started | - |
 | 68. Constraint Inventory v2 Schema | 0/1 | Not started | - |
 | 69. CLI Command and Regression Suite | 0/1 | Not started | - |
 | 70. Agent Skill Updates | 0/1 | Not started | - |
 | 71. Ibuprofen CASE UAT | 0/1 | Not started | - |
 
 ---
-*Last updated: 2026-03-16 — Phase 66 planned (2 plans)*
+*Last updated: 2026-03-17 — Phase 67 planned (2 plans)*
