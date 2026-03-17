@@ -124,7 +124,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 65. Hypothesis Validation Gate | 1/1 | Complete    | 2026-03-16 |
 | 66. LSDInputGenerator Extensions | 2/2 | Complete    | 2026-03-16 |
-| 67. PyLSDOrchestrator and SolutionMerger | 2/2 | Complete   | 2026-03-17 |
+| 67. PyLSDOrchestrator and SolutionMerger | 2/2 | Complete    | 2026-03-17 |
 | 68. Constraint Inventory v2 Schema | 0/1 | Not started | - |
 | 69. CLI Command and Regression Suite | 0/1 | Not started | - |
 | 70. Agent Skill Updates | 0/1 | Not started | - |
