@@ -351,14 +351,111 @@ class TestSchemaOptionalFields:
         assert errors == [], f"Expected no errors with elim_value=null, got: {[e.message for e in errors]}"
 
     def test_accepts_elim_value_integer(self):
-        """elim_value as integer must be valid (last-resort zero-solution recovery)."""
+        """elim_value as integer must be valid when pylsd_mode=false (last-resort zero-solution recovery)."""
         schema = _load_schema()
         validator = Draft202012Validator(schema)
         instance = _minimal_valid_v2()
+        instance["elim_value"] = 4  # pylsd_mode is False in _minimal_valid_v2
+        errors = list(validator.iter_errors(instance))
+        # Should not raise — elim_value integer only forbidden when pylsd_mode=true (G2 invariant)
+        assert errors == [], f"Expected no errors with pylsd_mode=false+elim_value=4, got: {[e.message for e in errors]}"
+
+    def test_rejects_hmbc_batch_zero(self):
+        """hmbc_batches item with batch=0 must fail minimum=1 constraint (WR-02 regression test)."""
+        schema = _load_schema()
+        validator = Draft202012Validator(schema)
+        instance = _minimal_valid_v2()
+        instance["hmbc_batches"] = [{"batch": 0, "count": 3, "correlations": ["4 8", "6 9", "1 13"]}]
+        errors = list(validator.iter_errors(instance))
+        assert len(errors) >= 1, "Expected error for hmbc_batches[].batch=0 (minimum is 1)"
+
+
+# ---------------------------------------------------------------------------
+# TestSchemaInvariants
+# ---------------------------------------------------------------------------
+
+
+class TestSchemaInvariants:
+    """Tests for schema-enforced cross-field invariants (WR-01, WR-02)."""
+
+    def test_g2_invariant_rejects_pylsd_mode_true_with_nonnull_elim_value(self):
+        """pylsd_mode=true with elim_value as integer must fail (G2 schema invariant).
+
+        In pylsd_mode, bare ELIM commands are forbidden (v8.0 convention). The schema
+        enforces elim_value must be null when pylsd_mode is true.
+        """
+        schema = _load_schema()
+        validator = Draft202012Validator(schema)
+        instance = _minimal_valid_v2()
+        instance["pylsd_mode"] = True
         instance["elim_value"] = 4
         errors = list(validator.iter_errors(instance))
-        # Should not raise
-        assert errors == [], f"Expected no errors with elim_value=4, got: {[e.message for e in errors]}"
+        assert len(errors) >= 1, (
+            "Expected G2 invariant error for pylsd_mode=true + elim_value=4 (must be null)"
+        )
+
+    def test_g2_invariant_accepts_pylsd_mode_true_with_null_elim_value(self):
+        """pylsd_mode=true with elim_value=null must be valid (G2 schema invariant, passing case)."""
+        schema = _load_schema()
+        validator = Draft202012Validator(schema)
+        instance = _minimal_valid_v2()
+        instance["pylsd_mode"] = True
+        instance["elim_value"] = None
+        errors = list(validator.iter_errors(instance))
+        assert errors == [], f"Expected no errors for pylsd_mode=true + elim_value=null, got: {[e.message for e in errors]}"
+
+    def test_g3_invariant_rejects_elim_annotated_true_with_empty_deferred_4j(self):
+        """elim_annotated=true with deferred_4j=[] must fail (G3 schema invariant).
+
+        When elim_annotated is true, HMBC lines carry '; ELIM' annotations, which
+        means deferred_4j MUST have at least one entry. Empty deferred_4j is inconsistent.
+        """
+        schema = _load_schema()
+        validator = Draft202012Validator(schema)
+        instance = _minimal_valid_v2()
+        instance["elim_annotated"] = True
+        instance["deferred_4j"] = []
+        errors = list(validator.iter_errors(instance))
+        assert len(errors) >= 1, (
+            "Expected G3 invariant error for elim_annotated=true + deferred_4j=[]"
+        )
+
+    def test_g3_invariant_rejects_elim_annotated_true_with_pylsd_mode_false(self):
+        """elim_annotated=true with pylsd_mode=false must fail (G3 schema invariant).
+
+        elim_annotated=true is only valid when pylsd_mode is also true.
+        """
+        schema = _load_schema()
+        validator = Draft202012Validator(schema)
+        instance = _minimal_valid_v2()
+        instance["elim_annotated"] = True
+        instance["pylsd_mode"] = False
+        instance["deferred_4j"] = [_valid_deferred_4j_item()]
+        errors = list(validator.iter_errors(instance))
+        assert len(errors) >= 1, (
+            "Expected G3 invariant error for elim_annotated=true + pylsd_mode=false"
+        )
+
+    def test_g3_invariant_accepts_consistent_pylsd_mode_elim_annotated(self):
+        """pylsd_mode=true + elim_annotated=true + non-empty deferred_4j must be valid."""
+        schema = _load_schema()
+        validator = Draft202012Validator(schema)
+        instance = _minimal_valid_v2()
+        instance["pylsd_mode"] = True
+        instance["elim_annotated"] = True
+        instance["deferred_4j"] = [_valid_deferred_4j_item()]
+        errors = list(validator.iter_errors(instance))
+        assert errors == [], (
+            f"Expected no errors for consistent pylsd_mode+elim_annotated, got: {[e.message for e in errors]}"
+        )
+
+    def test_wr02_hmbc_batch_number_minimum_1(self):
+        """hmbc_batches[].batch must have minimum: 1 (WR-02 regression test)."""
+        schema = _load_schema()
+        batch_schema = schema["properties"]["hmbc_batches"]["items"]["properties"]["batch"]
+        assert batch_schema.get("minimum") == 1, (
+            f"hmbc_batches[].batch schema must have 'minimum': 1, got: {batch_schema}"
+        )
 
 
 # ---------------------------------------------------------------------------
