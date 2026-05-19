@@ -142,20 +142,32 @@ def _get_default_table_path() -> Path:
 def _get_schema_path() -> Path:
     """Get the constraint inventory v2 JSON Schema path.
 
-    Resolves schemas/constraint_inventory_v2.json relative to the package location,
-    not the process CWD. This ensures the CLI works when invoked from any directory
-    (e.g. analysis/iteration_NN/).
+    Resolution order:
+    1. Bundled within the installed package (src/lucy_ng/data/schemas/) — works for
+       regular pip installs where the schemas/ repo-root directory is not present.
+    2. Repo root schemas/ directory — works for editable installs and development.
+
+    This ensures the CLI works when invoked from any directory (e.g. analysis/iteration_NN/)
+    and for any install mode.
     """
     import lucy_ng
 
     package_dir = Path(lucy_ng.__file__).parent
+
+    # 1. Bundled within the installed package (pip install)
+    bundled = package_dir / "data" / "schemas" / "constraint_inventory_v2.json"
+    if bundled.exists():
+        return bundled
+
+    # 2. Repo root (editable install / development)
     # src/lucy_ng -> src -> repo_root
     project_root = package_dir.parent.parent
-    schema_path = project_root / "schemas" / "constraint_inventory_v2.json"
-    if schema_path.exists():
-        return schema_path
+    repo_schema = project_root / "schemas" / "constraint_inventory_v2.json"
+    if repo_schema.exists():
+        return repo_schema
+
     raise FileNotFoundError(
-        "Schema not found: schemas/constraint_inventory_v2.json — ensure repo root is accessible."
+        "Schema not found. Re-install the package or check the schemas/ directory."
     )
 
 

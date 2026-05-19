@@ -55,6 +55,7 @@ allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/lucy_ng"]
+artifacts = ["src/lucy_ng/data/schemas/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

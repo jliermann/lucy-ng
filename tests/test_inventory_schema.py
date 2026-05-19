@@ -98,6 +98,22 @@ class TestSchemaLoading:
         for field in expected_required:
             assert field in required, f"Required field '{field}' missing from schema.required"
 
+    def test_schema_readable_via_get_schema_path(self):
+        """_get_schema_path() must return a readable file (packaging regression test).
+
+        This test verifies that the schema is accessible via the same path-resolution
+        function used by the CLI, catching any future packaging regressions where the
+        schema file is not bundled in the wheel (CR-01).
+        """
+        from lucy_ng.cli.lsd import _get_schema_path
+        schema_path = _get_schema_path()
+        assert schema_path.exists(), f"_get_schema_path() returned non-existent path: {schema_path}"
+        content = schema_path.read_text()
+        schema = json.loads(content)
+        assert schema.get("title") == "Constraint Inventory v2", (
+            f"Schema title mismatch — expected 'Constraint Inventory v2', got: {schema.get('title')}"
+        )
+
 
 # ---------------------------------------------------------------------------
 # TestSchemaValidation
