@@ -626,6 +626,47 @@ class TestValidateInventoryCLI:
         assert len(inventory["deferred_4j"]) == 1
         assert inventory["deferred_4j"][0]["atom1"] == 4
 
+    def test_missing_end_delimiter_exits_1(self, tmp_path):
+        """LSD file with START but no END delimiter must cause validate-inventory to exit 1 (WR-04).
+
+        _extract_inventory_block must treat a missing END delimiter as malformed rather
+        than silently returning partial JSON from the comment-stripped LSD commands.
+        """
+        # Build a malformed LSD file: START present, END missing
+        lines = [
+            "; === CONSTRAINT INVENTORY v2 ===",
+            "; {",
+            ';   "version": 2,',
+            ';   "iteration": 1,',
+            "; ... inventory content ...",
+            "; (END delimiter is intentionally missing)",
+            "; Followed by LSD commands that would be silently ignored if bug was present",
+            "MULT 1 C 2 0",
+            "MULT 2 C 2 1",
+        ]
+        lsd_file = tmp_path / "compound.lsd"
+        lsd_file.write_text("\n".join(lines) + "\n")
+        runner = CliRunner()
+        result = runner.invoke(lsd, ["validate-inventory", str(lsd_file)])
+        assert result.exit_code == 1, (
+            f"Expected exit 1 for missing END delimiter, got {result.exit_code}. Output: {result.output}"
+        )
+
+    def test_missing_end_delimiter_format_json_returns_error(self, tmp_path):
+        """LSD file with START but no END delimiter must return valid:false in JSON mode (WR-04)."""
+        lines = [
+            "; === CONSTRAINT INVENTORY v2 ===",
+            "; valid-looking JSON here but no end delimiter",
+            "MULT 1 C 2 0",
+        ]
+        lsd_file = tmp_path / "compound.lsd"
+        lsd_file.write_text("\n".join(lines) + "\n")
+        runner = CliRunner()
+        result = runner.invoke(lsd, ["validate-inventory", str(lsd_file), "--format", "json"])
+        assert result.exit_code == 1
+        data = json.loads(result.output)
+        assert data["valid"] is False, f"Expected valid:false for missing END delimiter, got: {data}"
+
 
 # ---------------------------------------------------------------------------
 # TestGateLogic

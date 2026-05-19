@@ -174,24 +174,34 @@ def _get_schema_path() -> Path:
 def _extract_inventory_block(content: str) -> str | None:
     """Extract JSON from between v2 inventory delimiters, stripping '; ' prefix.
 
-    Returns the extracted JSON string, or None if no v2 inventory block is found.
+    Returns the extracted JSON string, or None if no v2 inventory block is found
+    or if the block is malformed (START delimiter present but END delimiter missing).
+
     Lines that are exactly ';' (blank comment lines) are mapped to empty strings.
     """
     lines = content.splitlines()
     in_block = False
+    found_end = False
     json_lines: list[str] = []
     for line in lines:
         if "=== CONSTRAINT INVENTORY v2 ===" in line:
             in_block = True
             continue
         if "=== END CONSTRAINT INVENTORY ===" in line and in_block:
+            found_end = True
             break
         if in_block:
             if line.startswith("; "):
                 json_lines.append(line[2:])  # strip "; " prefix (exactly 2 chars)
             elif line == ";":
                 json_lines.append("")
-    return "\n".join(json_lines) if json_lines else None
+    if not json_lines:
+        return None
+    if not found_end:
+        # START delimiter was present but END was never found — malformed block.
+        # Returning partial content would mask structural corruption of the LSD file.
+        return None
+    return "\n".join(json_lines)
 
 
 @lsd.command("validate-inventory")
