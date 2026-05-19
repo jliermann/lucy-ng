@@ -150,7 +150,12 @@ Plans:
   3. case.md orchestrator skill includes routing decision: when constraint inventory contains `pylsd_mode: true`, use `lucy pylsd run`; when false, use `lucy lsd run`
   4. devils-advocate checklist includes: verify `pylsd_mode` flag is set when any `; ELIM` annotations exist, verify permutation count <= 8 before approving run
 
-**Plans:** TBD
+**Plans:** 2 plans
+
+Plans:
+
+- [ ] 70-01-PLAN.md — lsd-engineer §1 pyLSD vocabulary subsection, §"Run LSD" conditional routing block, ITERATION-COMPLETE pylsd_mode extension
+- [ ] 70-02-PLAN.md — devils-advocate G4 permutation cap check, summary line update, VALIDATION-PASSED template extension
 
 ### Phase 71: Ibuprofen CASE UAT
 
