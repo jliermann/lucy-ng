@@ -546,22 +546,13 @@ CLI call needed for G4.
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **ITERATION-COMPLETE per-permutation solution count source**
-   - What we know: run_report.json has per-solution provenance with `perm_index`. The per-permutation solution count must be derived by counting `perm_NN/solutions.smi` lines.
-   - What's unclear: should lsd-engineer inline a python script in the ITERATION-COMPLETE section of its skill, or just document the two-step procedure (count lines from .smi files, extract top-3 from JSON stdout)?
-   - Recommendation: Document procedure prose + show the python extraction for top-3 from `--format json` output. Keep it simple; per-permutation counts from line counting are straightforward enough to describe without a code block.
+1. **ITERATION-COMPLETE per-permutation solution count source** — RESOLVED: Plan 70-01 Task 2 documents both procedures inline — `wc -l perm_NN/solutions.smi` for per-permutation counts and `jq '.ranked_solutions[:3]'` for top-3 SMILES extraction from `--format json` stdout. No inlined Python script needed; bash one-liners suffice.
 
-2. **`quality` field name in `_perform_ranking()` JSON output**
-   - What we know: `lucy pylsd run --format json` wraps `_perform_ranking()` output as `ranked_solutions` array. The `quality` field is referenced in CONTEXT.md D-20 as `top_rank_quality`.
-   - What's unclear: The exact key name in the per-solution JSON object from `_perform_ranking()`.
-   - Recommendation: Planner should run `grep -n "quality\|rank_quality" src/lucy_ng/cli/lsd.py` to confirm field name before writing the ITERATION-COMPLETE documentation.
+2. **`quality` field name in `_perform_ranking()` JSON output** — RESOLVED: Confirmed `"quality"` (from `sol.quality_label`, `src/lucy_ng/cli/lsd.py:295`). Plan 70-01 `<interfaces>` block documents this and the ITERATION-COMPLETE table column `top_rank_quality` populates from `ranked_solutions[0].quality`.
 
-3. **Line 268 vs line 481 — documentation vs executable**
-   - What we know: Line 268 is in a documentation/rules block; line 481 is an executable workflow step.
-   - What's unclear: Should line 268 be replaced with the routing block, or updated to say "see workflow step 11"?
-   - Recommendation: Update line 268 to a prose note ("Run via solver-mode routing block — see workflow step 11 below"); replace line 481 with the full routing bash block. This keeps §3 as documentation-style and §workflow as executable-style, consistent with the file's existing structure.
+3. **Line 268 vs line 481 — documentation vs executable** — RESOLVED: Plan 70-01 Task 2 handles both atomically — line 268 becomes a prose pointer ("Run via solver-mode routing block — see workflow step 11"); line 481 is replaced with the full conditional bash block. Documented as Pitfall 2 (non-separable change) in §Common Pitfalls below.
 
 ---
 
