@@ -83,7 +83,12 @@ Plans:
   2. The devils-advocate checklist explicitly distinguishes `ELIM N M` (artifact removal) from `HMBC X Y 2 4` (4J bond range) — the single most dangerous semantic confusion in v8.0
   3. A devils-advocate checklist item verifies FORM atom count matches MULT atom sum before approving any LSD run in pylsd_mode
   4. The schema definition is testable: an agent writing a correct v2 inventory can be verified against the schema documentation without ambiguity
-**Plans:** TBD
+**Plans:** 4 plans
+Plans:
+- [ ] 68-01-PLAN.md — schemas/constraint_inventory_v2.json JSON Schema Draft 2020-12 + jsonschema dependency + schema validation tests
+- [ ] 68-02-PLAN.md — lucy lsd validate-inventory CLI subcommand + CLI integration tests (TestValidateInventoryCLI, TestGateLogic)
+- [ ] 68-03-PLAN.md — lucy-lsd-engineer.md Section 5 v1→v2 rewrite (delimiters, schema table, inline example, procedures)
+- [ ] 68-04-PLAN.md — lucy-devils-advocate.md Section 5A/5B update (CLI extraction, G1/G2/G3 gates)
 
 ### Phase 69: CLI Command and Regression Suite
 **Goal:** `lucy pylsd run` is a working CLI command the agent can invoke; existing `lucy lsd run` behavior is regression-tested and confirmed unchanged; FORM/LSD binary compatibility is empirically confirmed
@@ -125,10 +130,10 @@ Plans:
 | 65. Hypothesis Validation Gate | 1/1 | Complete    | 2026-03-16 |
 | 66. LSDInputGenerator Extensions | 2/2 | Complete    | 2026-03-16 |
 | 67. PyLSDOrchestrator and SolutionMerger | 2/2 | Complete    | 2026-03-17 |
-| 68. Constraint Inventory v2 Schema | 0/1 | Not started | - |
+| 68. Constraint Inventory v2 Schema | 0/4 | Not started | - |
 | 69. CLI Command and Regression Suite | 0/1 | Not started | - |
 | 70. Agent Skill Updates | 0/1 | Not started | - |
 | 71. Ibuprofen CASE UAT | 0/1 | Not started | - |
 
 ---
-*Last updated: 2026-03-17 — Phase 67 planned (2 plans)*
+*Last updated: 2026-05-19 — Phase 68 planned (4 plans)*
