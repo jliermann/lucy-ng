@@ -118,6 +118,9 @@ class TestLSDRegression:
 
         This test is intentionally always-on (no skipif).  It will FAIL until
         the developer generates and commits the baseline (plan Task 2 / checkpoint).
+
+        # Baseline: 392 InChIs from LSD-3.4.9 run of ibuprofen_no_4j.lsd (Phase 65).
+        # Manually verified 2026-05-19: all 392 are C13H18O2 isomers (D-16a).
         """
         baseline_path = FIXTURE_DIR / "ibuprofen_no_4j.expected_inchis.txt"
         assert baseline_path.exists(), (
