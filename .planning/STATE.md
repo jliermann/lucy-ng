@@ -4,8 +4,8 @@ milestone: v8.0
 milestone_name: pyLSD Integration
 status: executing
 stopped_at: Phase 69 context gathered
-last_updated: "2026-05-19T12:42:27.681Z"
-last_activity: 2026-05-19 -- Phase 69 planning complete
+last_updated: "2026-05-19T12:46:31.008Z"
+last_activity: 2026-05-19 -- Phase 69 execution started
 progress:
   total_phases: 7
   completed_phases: 4
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-13)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a collaborative team architecture that self-corrects through peer review
-**Current focus:** Phase 68 — constraint-inventory-v2-schema
+**Current focus:** Phase 69 — cli-command-and-regression-suite
 
 ## Current Position
 
-Phase: 68 (constraint-inventory-v2-schema) — EXECUTING
+Phase: 69 (cli-command-and-regression-suite) — EXECUTING
 Plan: 1 of 4
-Status: Ready to execute
-Last activity: 2026-05-19 -- Phase 69 planning complete
+Status: Executing Phase 69
+Last activity: 2026-05-19 -- Phase 69 execution started
 
 ## Phase Map (v8.0)
 
