@@ -628,22 +628,13 @@ grep -n "^ELIM" analysis/iteration_NN/compound.lsd
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Schema file loading from installed package**
-   - What we know: development installs use the repo directory structure; `pip install` would not include `schemas/` unless added to wheel manifest
-   - What's unclear: does Phase 68 need to add `schemas/` to `[tool.hatch.build.targets.wheel] packages` or similar?
-   - Recommendation: For Phase 68, load schema from package-relative path using `Path(__file__)` navigation; add a note that `schemas/` should be included in the wheel in a future phase if needed. The CLI is primarily used in development/CASE contexts where the repo is present.
+1. **Schema file loading from installed package** — RESOLVED: Deferred to future phase. Phase 68 loads schema via package-relative `Path(__file__)` navigation per development/CASE context. Wheel-manifest inclusion is out of scope here; flag for a future packaging phase if pip-install distribution is added.
 
-2. **Test file placement: new file or extend existing?**
-   - What we know: `tests/test_lsd_generator.py` has `TestPyLSDExtensions` and `TestPyLSDValidator` for generator tests; no existing CLI test file was found in the test directory
-   - What's unclear: whether CLI tests should go in a new `tests/test_lsd_cli.py` or a new `tests/test_inventory_schema.py`
-   - Recommendation: Create `tests/test_inventory_schema.py` for (a) schema loading, (b) schema validation happy/error paths, and (c) CLI `validate-inventory` via Click's `CliRunner`. Keep separate from generator tests.
+2. **Test file placement: new file or extend existing?** — RESOLVED: Create `tests/test_inventory_schema.py` for (a) schema loading, (b) schema validation happy/error paths, and (c) CLI `validate-inventory` via Click's `CliRunner`. Plans 01 and 02 both target this file (01 creates schema test classes, 02 appends CLI test classes; Plan 02 depends on Plan 01 per checker Blocker 1 fix).
 
-3. **v1 WARNING behavior: exit code**
-   - What we know: D-10 says exit 1 = invalid. A v1 block is not v2-valid.
-   - What's unclear: should `--format json` output for a v1 block use `{"valid": false, "errors": [{"message": "Legacy v1 inventory — use v2 format"}]}` or a distinct `{"valid": false, "legacy_v1": true, "message": "..."}`?
-   - Recommendation: Use `{"valid": false, "errors": [{"message": "Legacy v1 inventory detected — upgrade to v2 format", "validator": "version"}]}`. This is consistent with the error object structure and allows the devils-advocate bash pipeline to handle it uniformly.
+3. **v1 WARNING behavior: exit code** — RESOLVED: `--format json` for v1 blocks emits `{"valid": false, "errors": [{"message": "Legacy v1 inventory detected — upgrade to v2 format", "validator": "version"}]}` and CLI exit code 1. Consistent error-object structure lets devils-advocate's bash pipeline handle it uniformly.
 
 ---
 

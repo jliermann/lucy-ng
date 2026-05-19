@@ -2,8 +2,8 @@
 phase: 68
 slug: constraint-inventory-v2-schema
 status: draft
-nyquist_compliant: false
-wave_0_complete: false
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-05-19
 ---
 
@@ -19,7 +19,7 @@ created: 2026-05-19
 |----------|-------|
 | **Framework** | pytest 7.x |
 | **Config file** | pyproject.toml `[tool.pytest.ini_options]` |
-| **Quick run command** | `pytest tests/test_lsd_inventory_schema.py tests/test_cli_validate_inventory.py` |
+| **Quick run command** | `pytest tests/test_inventory_schema.py` |
 | **Full suite command** | `pytest` |
 | **Estimated runtime** | ~30 seconds (full suite) |
 
@@ -38,9 +38,9 @@ created: 2026-05-19
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| TBD     | TBD  | TBD  | INPUT-05    | —          | JSON Schema validation rejects malformed inventories | unit | `pytest tests/test_lsd_inventory_schema.py` | ❌ W0 | ⬜ pending |
-| TBD     | TBD  | TBD  | INPUT-05    | —          | CLI exits non-zero on invalid inventory | integration | `pytest tests/test_cli_validate_inventory.py` | ❌ W0 | ⬜ pending |
-| TBD     | TBD  | TBD  | INPUT-05    | —          | G2 detects bare `ELIM N M` (not `; ELIM` annotation) | unit | `pytest tests/test_cli_validate_inventory.py -k elim_anchor` | ❌ W0 | ⬜ pending |
+| TBD     | TBD  | TBD  | INPUT-05    | —          | JSON Schema validation rejects malformed inventories | unit | `pytest tests/test_inventory_schema.py` | ❌ W0 | ⬜ pending |
+| TBD     | TBD  | TBD  | INPUT-05    | —          | CLI exits non-zero on invalid inventory | integration | `pytest tests/test_inventory_schema.py` | ❌ W0 | ⬜ pending |
+| TBD     | TBD  | TBD  | INPUT-05    | —          | G2 detects bare `ELIM N M` (not `; ELIM` annotation) | unit | `pytest tests/test_inventory_schema.py -k elim_anchor` | ❌ W0 | ⬜ pending |
 
 *Final task IDs filled in by planner. Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -48,8 +48,7 @@ created: 2026-05-19
 
 ## Wave 0 Requirements
 
-- [ ] `tests/test_lsd_inventory_schema.py` — JSON Schema loading + validation cases for INPUT-05
-- [ ] `tests/test_cli_validate_inventory.py` — `lucy lsd validate-inventory` exit codes + `--format json` output
+- [ ] `tests/test_inventory_schema.py` — JSON Schema loading + validation cases + CLI integration cases for INPUT-05
 - [ ] `schemas/constraint_inventory_v2.json` — JSON Schema Draft 2020-12 source of truth
 - [ ] `pyproject.toml` — `jsonschema>=4.18.0` dependency declared
 
