@@ -22,6 +22,21 @@ from lucy_ng.lsd.orchestrator import (
 # ---------------------------------------------------------------------------
 
 
+def _make_deferred_4j_entry(atom1: int, atom2: int) -> dict:
+    """Return a minimal valid deferred_4j entry with required schema fields.
+
+    The annotation field MUST be "; ELIM" (const in schema).
+    """
+    return {
+        "atom1": atom1,
+        "atom2": atom2,
+        "shift1": 130.0,
+        "shift2": 45.0,
+        "correlation_type": "HMBC",
+        "annotation": "; ELIM",
+    }
+
+
 def _minimal_v2_inventory_json(deferred_4j: list | None = None) -> str:
     """Return a minimal valid v2 inventory JSON string."""
     return json.dumps(
@@ -98,7 +113,12 @@ class TestPylsdRunCLI:
         lsd_file = tmp_path / "compound.lsd"
         lsd_file.write_text("; minimal\nEXIT\n")
 
-        mock_orch_result, mock_merge_result = _make_mock_results(tmp_path)
+        # Provide a non-empty solution so the no-rank path is taken (not the empty-set path)
+        merged_solution = MagicMock(spec=MergedSolution)
+        merged_solution.canonical_smiles = "CC"
+        mock_orch_result, mock_merge_result = _make_mock_results(
+            tmp_path, merged_solutions=[merged_solution]
+        )
 
         with (
             patch("lucy_ng.cli.pylsd.PyLSDOrchestrator") as MockOrch,
@@ -179,7 +199,8 @@ class TestPylsdRunCLI:
             MockOrch.return_value.run.return_value = mock_orch_result
             MockMerger.return_value.merge.return_value = mock_merge_result
 
-            runner = CliRunner()
+            # Use mix_stderr=False so stderr (warnings) don't corrupt stdout JSON
+            runner = CliRunner(mix_stderr=False)
             result = runner.invoke(
                 pylsd,
                 ["run", str(lsd_file), "--shifts", "25.0", "--format", "json"],
@@ -271,7 +292,10 @@ class TestSuspectExtraction:
     def test_inventory_primary_used(self, tmp_path):
         """LSD file with v2 block with deferred_4j must extract suspects from inventory (D-13)."""
         inventory_json = _minimal_v2_inventory_json(
-            deferred_4j=[{"atom1": 4, "atom2": 8}, {"atom1": 6, "atom2": 9}]
+            deferred_4j=[
+                _make_deferred_4j_entry(4, 8),
+                _make_deferred_4j_entry(6, 9),
+            ]
         )
         lsd_content = _make_v2_lsd_content(
             inventory_json,
@@ -290,7 +314,7 @@ class TestSuspectExtraction:
     def test_elim_annotation_mismatch_exits_1(self, tmp_path):
         """Mismatch between inventory deferred_4j and ; ELIM annotations must exit 1 (D-13a)."""
         inventory_json = _minimal_v2_inventory_json(
-            deferred_4j=[{"atom1": 4, "atom2": 8}]
+            deferred_4j=[_make_deferred_4j_entry(4, 8)]
         )
         # Inventory says (4,8) but the ; ELIM annotation says (5,9)
         lsd_content = _make_v2_lsd_content(
