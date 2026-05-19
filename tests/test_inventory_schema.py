@@ -1,10 +1,14 @@
 """Tests for constraint inventory v2 JSON schema."""
 
 import json
+import re
 import pytest
 from pathlib import Path
 
+from click.testing import CliRunner
 from jsonschema import Draft202012Validator
+
+from lucy_ng.cli.lsd import lsd
 
 
 # ---------------------------------------------------------------------------
@@ -339,3 +343,134 @@ class TestSchemaOptionalFields:
         errors = list(validator.iter_errors(instance))
         # Should not raise
         assert errors == [], f"Expected no errors with elim_value=4, got: {[e.message for e in errors]}"
+
+
+# ---------------------------------------------------------------------------
+# Helpers for CLI tests
+# ---------------------------------------------------------------------------
+
+
+def _make_v2_lsd_content(inventory_json: str) -> str:
+    """Wrap a JSON string as a v2 inventory block inside a minimal LSD file."""
+    lines = []
+    lines.append("; === CONSTRAINT INVENTORY v2 ===")
+    for line in inventory_json.splitlines():
+        lines.append(f"; {line}" if line else ";")
+    lines.append("; === END CONSTRAINT INVENTORY ===")
+    lines.append("; End of inventory")
+    return "\n".join(lines) + "\n"
+
+
+def _minimal_v2_inventory_json() -> str:
+    """Return JSON string for a minimal valid v2 inventory."""
+    return json.dumps({
+        "version": 2,
+        "iteration": 1,
+        "formula": "C6H6",
+        "timestamp": "2026-01-01T00:00:00Z",
+        "mult_count": 6,
+        "hsqc_count": 6,
+        "hmbc_batches": [],
+        "hmbc_total": 0,
+        "pylsd_mode": False,
+        "elim_annotated": False,
+        "deferred_4j": [],
+    }, indent=2)
+
+
+# ---------------------------------------------------------------------------
+# TestValidateInventoryCLI
+# ---------------------------------------------------------------------------
+
+
+class TestValidateInventoryCLI:
+    """Integration tests for lucy lsd validate-inventory via CliRunner."""
+
+    def test_valid_v2_file_exits_0(self, tmp_path):
+        """Valid v2 LSD file must cause validate-inventory to exit with code 0."""
+        lsd_file = tmp_path / "compound.lsd"
+        lsd_file.write_text(_make_v2_lsd_content(_minimal_v2_inventory_json()))
+        runner = CliRunner()
+        result = runner.invoke(lsd, ["validate-inventory", str(lsd_file)], catch_exceptions=False)
+        assert result.exit_code == 0, f"Expected exit 0, got {result.exit_code}. Output: {result.output}"
+
+    def test_valid_v2_file_format_json(self, tmp_path):
+        """Valid v2 LSD file with --format json must exit 0 and return valid:true JSON."""
+        lsd_file = tmp_path / "compound.lsd"
+        lsd_file.write_text(_make_v2_lsd_content(_minimal_v2_inventory_json()))
+        runner = CliRunner()
+        result = runner.invoke(lsd, ["validate-inventory", str(lsd_file), "--format", "json"], catch_exceptions=False)
+        assert result.exit_code == 0, f"Expected exit 0, got {result.exit_code}. Output: {result.output}"
+        data = json.loads(result.output)
+        assert data["valid"] is True, f"Expected valid=true, got: {data}"
+
+    def test_v1_block_exits_1(self, tmp_path):
+        """LSD file with v1 inventory delimiter must cause validate-inventory to exit 1."""
+        v1_content = "; === CONSTRAINT INVENTORY v1 ===\n; {}\n; === END CONSTRAINT INVENTORY ===\n"
+        lsd_file = tmp_path / "compound.lsd"
+        lsd_file.write_text(v1_content)
+        runner = CliRunner()
+        result = runner.invoke(lsd, ["validate-inventory", str(lsd_file)])
+        assert result.exit_code == 1, f"Expected exit 1 for v1 block, got {result.exit_code}. Output: {result.output}"
+
+    def test_v1_block_format_json_legacy_message(self, tmp_path):
+        """v1 LSD file with --format json must exit 1 and include legacy error message."""
+        v1_content = "; === CONSTRAINT INVENTORY v1 ===\n; {}\n; === END CONSTRAINT INVENTORY ===\n"
+        lsd_file = tmp_path / "compound.lsd"
+        lsd_file.write_text(v1_content)
+        runner = CliRunner()
+        result = runner.invoke(lsd, ["validate-inventory", str(lsd_file), "--format", "json"])
+        assert result.exit_code == 1, f"Expected exit 1, got {result.exit_code}. Output: {result.output}"
+        data = json.loads(result.output)
+        assert data["valid"] is False
+        assert "Legacy v1 inventory detected" in data["errors"][0]["message"]
+
+    def test_no_inventory_block_exits_1(self, tmp_path):
+        """LSD file with no inventory block at all must cause validate-inventory to exit 1."""
+        lsd_file = tmp_path / "compound.lsd"
+        lsd_file.write_text("; Plain LSD file without any inventory block\nMULT 1 C 2 0\n")
+        runner = CliRunner()
+        result = runner.invoke(lsd, ["validate-inventory", str(lsd_file)])
+        assert result.exit_code == 1, f"Expected exit 1 for missing block, got {result.exit_code}. Output: {result.output}"
+
+    def test_invalid_schema_exits_1(self, tmp_path):
+        """v2 LSD file with version:1 inside inventory block must cause validate-inventory to exit 1."""
+        bad_json = json.dumps({
+            "version": 1,
+            "iteration": 1,
+            "formula": "C6H6",
+            "timestamp": "2026-01-01T00:00:00Z",
+            "mult_count": 6,
+            "hsqc_count": 6,
+            "hmbc_batches": [],
+            "hmbc_total": 0,
+            "pylsd_mode": False,
+            "elim_annotated": False,
+            "deferred_4j": [],
+        }, indent=2)
+        lsd_file = tmp_path / "compound.lsd"
+        lsd_file.write_text(_make_v2_lsd_content(bad_json))
+        runner = CliRunner()
+        result = runner.invoke(lsd, ["validate-inventory", str(lsd_file)])
+        assert result.exit_code == 1, f"Expected exit 1 for schema violation, got {result.exit_code}. Output: {result.output}"
+
+
+# ---------------------------------------------------------------------------
+# TestGateLogic
+# ---------------------------------------------------------------------------
+
+
+class TestGateLogic:
+    """Unit tests for G2 gate: bare ELIM command detection vs ; ELIM annotation."""
+
+    def test_g2_bare_elim_detected(self):
+        """G2 grep pattern ^ELIM must match a bare ELIM command line."""
+        assert re.match(r"^ELIM", "ELIM 4 4") is not None
+
+    def test_g2_hmbc_elim_annotation_not_matched(self):
+        """G2 grep pattern ^ELIM must NOT match an HMBC line with trailing ; ELIM comment."""
+        assert re.match(r"^ELIM", "HMBC 4 8 2 4 ; ELIM") is None
+
+    def test_g2_comment_line_not_matched(self):
+        """G2 grep pattern ^ELIM must NOT match a comment line starting with semicolon."""
+        assert re.match(r"^ELIM", "; ELIM") is None
