@@ -58,6 +58,7 @@ packages = ["src/lucy_ng"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-v --tb=short"
+pythonpath = ["src"]
 
 [tool.mypy]
 python_version = "3.10"
