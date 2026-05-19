@@ -4,8 +4,8 @@ milestone: v8.0
 milestone_name: pyLSD Integration
 status: executing
 stopped_at: Phase 68 context gathered
-last_updated: "2026-05-19T10:05:33.585Z"
-last_activity: 2026-05-19 -- Phase 68 planning complete
+last_updated: "2026-05-19T10:06:42.962Z"
+last_activity: 2026-05-19 -- Phase 68 execution started
 progress:
   total_phases: 7
   completed_phases: 3
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-13)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a collaborative team architecture that self-corrects through peer review
-**Current focus:** v8.0 pyLSD Integration — Phase 65 COMPLETE (GO), Phases 66/68 ready to start in parallel
+**Current focus:** Phase 68 — constraint-inventory-v2-schema
 
 ## Current Position
 
-Phase: 66/68 — LSDInputGenerator Extensions / Constraint Inventory v2 (Wave 1, parallel)
-Plan: — (not yet planned)
-Status: Ready to execute
-Last activity: 2026-05-19 -- Phase 68 planning complete
+Phase: 68 (constraint-inventory-v2-schema) — EXECUTING
+Plan: 1 of 4
+Status: Executing Phase 68
+Last activity: 2026-05-19 -- Phase 68 execution started
 
 ## Phase Map (v8.0)
 
