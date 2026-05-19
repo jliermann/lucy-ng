@@ -536,7 +536,7 @@ class TestValidateInventoryCLI:
 
 
 class TestGateLogic:
-    """Unit tests for G2 gate: bare ELIM command detection vs ; ELIM annotation."""
+    """Unit tests for G2/G3 gate: bare ELIM command detection vs ; ELIM annotation."""
 
     def test_g2_bare_elim_detected(self):
         """G2 grep pattern ^ELIM must match a bare ELIM command line."""
@@ -549,3 +549,27 @@ class TestGateLogic:
     def test_g2_comment_line_not_matched(self):
         """G2 grep pattern ^ELIM must NOT match a comment line starting with semicolon."""
         assert re.match(r"^ELIM", "; ELIM") is None
+
+    # G3 anchoring tests (CR-03 regression)
+
+    def test_g3_hmbc_elim_annotation_matched(self):
+        """G3 grep pattern ^HMBC.*; ELIM must match an HMBC line with trailing ; ELIM comment."""
+        assert re.search(r"^HMBC.*; ELIM", "HMBC 4 8 2 4 ; ELIM") is not None
+
+    def test_g3_inventory_json_annotation_not_matched(self):
+        """G3 grep pattern ^HMBC.*; ELIM must NOT match inventory JSON comment lines.
+
+        Inventory JSON contains lines like:
+          ; "annotation": "; ELIM"
+        An unanchored pattern '; ELIM' would match this, causing false positives (CR-03).
+        """
+        inventory_comment_line = ';     "annotation": "; ELIM"'
+        assert re.search(r"^HMBC.*; ELIM", inventory_comment_line) is None
+
+    def test_g3_bare_comment_not_matched(self):
+        """G3 grep pattern ^HMBC.*; ELIM must NOT match a standalone comment line."""
+        assert re.search(r"^HMBC.*; ELIM", "; note: this file uses ; ELIM") is None
+
+    def test_g3_bare_elim_command_not_matched(self):
+        """G3 grep pattern ^HMBC.*; ELIM must NOT match a bare ELIM command line."""
+        assert re.search(r"^HMBC.*; ELIM", "ELIM 4 4") is None
