@@ -96,7 +96,7 @@ This contradicts the Phase 69 plan hypothesis. The living regression test (`test
 
 1. **Task 1: Create fixture files and test_lsd_form_tolerance.py** - `b77e0bc` (test)
 2. **Task 2 (checkpoint): human-verify — FORM-tolerance result** - developer confirmed "failed: form-rejected"
-3. **Task 3: Finalize findings document with mitigation decision** - `[see final commit]` (docs)
+3. **Task 3: Finalize findings document with mitigation decision** - `238919f` (docs)
 
 ## Files Created/Modified
 
@@ -179,6 +179,8 @@ FOUND: .planning/findings/form-tolerance.md
 ```
 b77e0bc  test(69-03): add FORM-tolerance test and minimal ethane fixtures
 4fe1233  docs(69-03): add FORM-tolerance findings document (draft — awaiting checkpoint)
+4a43adc  docs(69-03): complete plan 03 SUMMARY (partial — paused at checkpoint)
+238919f  docs(69-03): finalize form-tolerance findings and SUMMARY (plan complete)
 ```
 
-### Self-Check: PASSED (partial plan)
+### Self-Check: PASSED
