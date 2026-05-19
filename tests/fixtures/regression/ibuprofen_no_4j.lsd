@@ -1,0 +1,101 @@
+; LSD input for Ibuprofen C13H18O2
+; Phase 26-05 thin CLI validation
+; MODIFIED for Phase 65 hypothesis gate: 3 known 4J W-pathway HMBC correlations removed
+
+; From 13C spectrum (10 observed signals, 13 expected carbons):
+; 1. 180.56 ppm - C=O carbonyl
+; 2. 140.84 ppm - Aromatic quaternary
+; 3. 136.96 ppm - Aromatic quaternary
+; 4. 129.38 ppm - Aromatic CH (likely 2 equivalent carbons)
+; 5. 127.26 ppm - Aromatic CH (likely 2 equivalent carbons)
+; 6. 45.03 ppm - CH aliphatic
+; 7. 44.90 ppm - CH2 aliphatic
+; 8. 30.14 ppm - CH aliphatic
+; 9. 22.37 ppm - CH3 (likely 2 equivalent carbons)
+; 10. 18.09 ppm - CH3
+
+; 10 signals → 13 carbons means 3 are symmetry-equivalent
+; Para-benzene gives 2 pairs of equivalent CH (2×2 = 4 from 2 signals)
+; That accounts for 2 of the 3 missing carbons
+; The third must be an equivalent CH3
+
+; ============================================
+; MULT: Atom definitions (13 carbons total)
+; ============================================
+
+; Carboxylic acid
+MULT 1 C 2 0    ; 180.56 - C=O (quaternary, sp2)
+MULT 2 O 2 0    ; Carbonyl O (sp2)
+MULT 3 O 3 1    ; Hydroxyl OH (sp3, 1H)
+
+; Aromatic ring (para-substituted)
+MULT 4 C 2 0    ; 140.84 - Aromatic C (quaternary, sp2)
+MULT 5 C 2 0    ; 136.96 - Aromatic C (quaternary, sp2)
+MULT 6 C 2 1    ; 129.38 - Aromatic CH (sp2, 1H)
+MULT 7 C 2 1    ; 129.38 - Aromatic CH equivalent (sp2, 1H)
+MULT 8 C 2 1    ; 127.26 - Aromatic CH (sp2, 1H)
+MULT 9 C 2 1    ; 127.26 - Aromatic CH equivalent (sp2, 1H)
+
+; Aliphatic carbons
+MULT 10 C 3 1   ; 45.03 - CH (sp3, 1H)
+MULT 11 C 3 2   ; 44.90 - CH2 (sp3, 2H)
+MULT 12 C 3 1   ; 30.14 - CH (sp3, 1H)
+MULT 13 C 3 3   ; 22.37 - CH3 (sp3, 3H)
+MULT 14 C 3 3   ; 22.37 - CH3 equivalent (sp3, 3H) - isopropyl
+MULT 15 C 3 3   ; 18.09 - CH3 (sp3, 3H)
+
+; ============================================
+; Validation:
+; C atoms: 1+4+5+6+7+8+9+10+11+12+13+14+15 = 13 C ✓
+; O atoms: 2+3 = 2 O ✓
+; sp2: 1+2+4+5+6+7+8+9 = 8 (EVEN) ✓
+; H: 0+0+1+0+0+1+1+1+1+1+2+1+3+3+3 = 18 ✓
+; Formula: C13H18O2 ✓
+; ============================================
+
+; ============================================
+; HSQC: Direct C-H correlations
+; ============================================
+; These must come BEFORE HMBC!
+
+HSQC 6 6        ; C6 (129.38) has H6
+HSQC 7 7        ; C7 (129.38 equiv) has H7
+HSQC 8 8        ; C8 (127.26) has H8
+HSQC 9 9        ; C9 (127.26 equiv) has H9
+HSQC 10 10      ; C10 (45.03) has H10
+HSQC 11 11      ; C11 (44.90 CH2) has H11
+HSQC 12 12      ; C12 (30.14) has H12
+HSQC 13 13      ; C13 (22.37 CH3) has H13
+HSQC 14 14      ; C14 (22.37 CH3 equiv) has H14
+HSQC 15 15      ; C15 (18.09 CH3) has H15
+
+; ============================================
+; HMBC: Long-range C-H correlations (4J W-pathway correlations REMOVED)
+; ============================================
+; Removed correlations (4J W-pathway through para-substituted benzene ring):
+;   HMBC 6 8   - ArCH 129.38 → H on ArCH 127.26 (4J cross-ring W-path)
+;   HMBC 10 6  - CH 45.03 → H on ArCH 129.38 (4J benzylic W-path)
+;   HMBC 10 8  - CH 45.03 → H on ArCH 127.26 (4J benzylic W-path)
+
+; Carbonyl correlations (180.97 → 180.56 ppm C=O)
+HMBC 1 10       ; C=O → H10 (45.03 → 3.71, ~2.45)
+HMBC 1 15       ; C=O → H15 (18.09 → 1.50)
+
+; Aromatic quaternary at 140.84 (connects to isopropyl side)
+HMBC 4 6        ; C140.84 → Ar-H (~7.23)
+HMBC 4 11       ; C140.84 → CH2 (~2.45)
+
+; Aromatic quaternary at 136.96 (connects to COOH side)
+HMBC 5 8        ; C136.96 → Ar-H (~7.11)
+HMBC 5 10       ; C136.96 → CH (~3.71)
+HMBC 5 15       ; C136.96 → CH3 (~1.50)
+
+; Aromatic CH correlations (kept: genuine 3J to aliphatic)
+HMBC 6 11       ; Ar-CH 129.38 → CH2 44.90
+
+; Aliphatic CH to other aliphatic (kept: genuine 2-3J)
+HMBC 10 15      ; CH 45.03 → CH3 18.09
+
+; Heteroatom constraints
+BOND 1 2        ; C=O bonded to carbonyl oxygen
+BOND 1 3        ; COOH bonded to hydroxyl oxygen
