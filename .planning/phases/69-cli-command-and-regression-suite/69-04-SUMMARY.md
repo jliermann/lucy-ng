@@ -36,27 +36,26 @@ key-files:
 key-decisions:
   - "D-16 baseline generated from Phase 65 LSD-3.4.9 sol file (not a new LSD run) — shortcut valid because same LSD version"
   - "outlsd .sol reconstruction pattern: LSD stdin-mode writes OUTLSD data to stdout; prepend # header + lsd content + # delimiter to satisfy outlsd's input format"
-  - "Baseline auto-verified via RDKit CalcMolFormula: all 392 InChIs are C13H18O2 — developer confirmation of chemical plausibility still required (D-16a)"
+  - "Baseline auto-verified via RDKit CalcMolFormula: all 392 InChIs are C13H18O2 — developer confirmed D-16a 2026-05-19"
 
 metrics:
-  duration: "~10 min"
-  tasks_completed: 2
+  duration: "~15 min"
+  tasks_completed: 3
   tasks_total: 3
-  completed: "2026-05-19T18:10Z"
+  completed: "2026-05-19T18:15Z"
   checkpoint_reached: true
   checkpoint_type: "human-verify"
+  checkpoint_resolved: true
 ---
 
 # Phase 69 Plan 04: LSD Regression Test + Ibuprofen Baseline Summary
 
-**Status: CHECKPOINT REACHED — awaiting developer confirmation of InChI baseline plausibility (D-16a)**
-
-**Ibuprofen LSD regression test framework created; 392-InChI baseline generated and auto-verified as C13H18O2. Integration test passes on LSD-equipped machine.**
+**Ibuprofen LSD regression test created with 392-InChI baseline; developer confirmed D-16a; all 3 tests pass.**
 
 ## Performance
 
-- **Duration:** ~10 min
-- **Completed:** 2026-05-19T18:10Z
+- **Duration:** ~15 min
+- **Completed:** 2026-05-19T18:15Z
 
 ## Tasks Completed
 
@@ -65,25 +64,13 @@ metrics:
 | 1 | Create fixture files and test_lsd_regression.py | 99a725c | tests/test_lsd_regression.py, tests/fixtures/regression/ibuprofen_no_4j.lsd |
 | 2 | Generate InChI baseline from Phase 65 smi shortcut | bae83b6 | tests/fixtures/regression/ibuprofen_no_4j.expected_inchis.txt |
 | Fix | Auto-fix outlsd SMILES extraction (Rule 1) | 9ec5da6 | tests/test_lsd_regression.py |
+| 3 | Finalize test — add D-16a verification comment | 3118820 | tests/test_lsd_regression.py |
 
-## Checkpoint Status
+## Checkpoint
 
-**Checkpoint type:** human-verify  
-**Waiting for:** developer confirmation that 392 InChIs are chemically plausible C13H18O2 isomers (D-16a)
-
-**Captured:**
-- LSD version: 3.4.9 (same as Phase 65 run that produced the source .smi)
-- Solution count: 392
-- Baseline InChIs (first 3):
-  1. `InChI=1S/C13H18O2/c1-4-10(5-2)12-7-6-11(8-12)9(3)13(14)15/h4,6-9,12H,5H2,1-3H3,(H,14,15)`
-  2. `InChI=1S/C13H18O2/c1-4-10(5-2)12-8-6-7-11(12)9(3)13(14)15/h4,6-9,12H,5H2,1-3H3,(H,14,15)`
-  3. `InChI=1S/C13H18O2/c1-4-10(5-2)6-7-11-8-12(11)9(3)13(14)15/h4,6-9,11H,5H2,1-3H3,(H,14,15)`
-- Auto-verification: RDKit CalcMolFormula = C13H18O2 for all 392 InChIs (100% hit)
-- Integration test result: **3/3 PASSED** when LSD binary is present
-
-**Baseline file:** `tests/fixtures/regression/ibuprofen_no_4j.expected_inchis.txt`
-
-**Resume signal:** "baseline-committed: 392 InChIs" — then Task 3 will add the count comment and finalize.
+**Checkpoint type:** human-verify (resolved)
+**D-16a:** Developer confirmed 2026-05-19: 392 InChIs are chemically plausible C13H18O2 isomers.
+**Evidence:** LSD-3.4.9, Phase 65 sol file. RDKit CalcMolFormula = C13H18O2 for all 392 (100%).
 
 ## Deviations from Plan
 
@@ -112,4 +99,4 @@ None. No new network endpoints, auth paths, or trust-boundary changes introduced
 - `tests/test_lsd_regression.py` exists and contains `shutil.which` skipif
 - `tests/fixtures/regression/ibuprofen_no_4j.lsd` exists, has MULT lines, no inventory/ELIM
 - `tests/fixtures/regression/ibuprofen_no_4j.expected_inchis.txt` exists, 392 lines
-- Commits 99a725c, bae83b6, 9ec5da6 present in git log
+- Commits 99a725c, bae83b6, 9ec5da6, 3118820 all present in git log
