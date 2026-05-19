@@ -1,0 +1,6 @@
+; Minimal LSD test: ethane C2H6
+MULT 1 C 3 3
+MULT 2 C 3 3
+HSQC 1 1
+HSQC 2 2
+EXIT
