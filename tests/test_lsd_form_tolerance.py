@@ -67,13 +67,24 @@ class TestLSDFormTolerance:
         shutil.which("LSD") is None,
         reason="LSD binary not installed",
     )
+    @pytest.mark.xfail(
+        reason=(
+            "LSD-3.4.9 rejects bare 'FORM' command with error 102 "
+            "(see .planning/findings/form-tolerance.md). The test asserts "
+            "tolerance — it remains as a living regression: if a future LSD "
+            "version starts accepting FORM, this test will unexpectedly PASS "
+            "and xfail will become xpass, alerting us to revisit the "
+            "'; FORM' comment-form mitigation in src/lucy_ng/lsd/generator.py."
+        ),
+        strict=False,
+    )
     def test_form_line_produces_identical_solutions(self, tmp_path: Path) -> None:
-        """LSD must produce the same solution count with and without a FORM line.
+        """LSD-binary tolerance check for bare FORM command (currently expected to fail).
 
         Ethane (C2H6) has exactly one valid structure — one C-C bond.
-        Both fixture files must yield solution_count == 1, confirming
-        FORM is silently ignored rather than causing an error or
-        changing the solution set.
+        If LSD ignored a bare `FORM` line, both fixtures would yield
+        solution_count == 1. LSD-3.4.9 instead rejects FORM (error 102),
+        so this test is marked xfail; see findings doc for mitigation.
         """
         minimal_lsd = FIXTURE_DIR / "minimal.lsd"
         minimal_with_form_lsd = FIXTURE_DIR / "minimal_with_form.lsd"

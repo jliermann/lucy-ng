@@ -40,15 +40,21 @@ class LSDInputGenerator:
 
     @staticmethod
     def emit_form(formula: str) -> str:
-        """Emit a pyLSD FORM command line.
+        """Emit a molecular-formula declaration as an LSD comment.
+
+        LSD-3.4.9 rejects a bare `FORM` command with `error 102 - Unknown
+        command name: FORM` (see .planning/findings/form-tolerance.md). The
+        formula is therefore emitted as a comment (`; FORM <formula>`) which
+        LSD silently ignores while remaining visible to human readers and
+        inventory-block consumers.
 
         Args:
             formula: Molecular formula string, e.g. "C13H18O2"
 
         Returns:
-            String like "FORM C13H18O2"
+            String like "; FORM C13H18O2" (LSD comment)
         """
-        return f"FORM {formula}"
+        return f"; FORM {formula}"
 
     @staticmethod
     def emit_elim(n: int, m: int) -> str:

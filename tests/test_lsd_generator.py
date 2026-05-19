@@ -392,12 +392,22 @@ class TestPyLSDExtensions:
     # --- emit_form tests ---
 
     def test_emit_form_ibuprofen(self):
-        """emit_form returns 'FORM C13H18O2' for ibuprofen formula."""
-        assert LSDInputGenerator.emit_form("C13H18O2") == "FORM C13H18O2"
+        """emit_form returns '; FORM C13H18O2' (LSD comment) for ibuprofen formula."""
+        assert LSDInputGenerator.emit_form("C13H18O2") == "; FORM C13H18O2"
 
     def test_emit_form_glucose(self):
-        """emit_form returns 'FORM C6H12O6' for glucose formula."""
-        assert LSDInputGenerator.emit_form("C6H12O6") == "FORM C6H12O6"
+        """emit_form returns '; FORM C6H12O6' (LSD comment) for glucose formula."""
+        assert LSDInputGenerator.emit_form("C6H12O6") == "; FORM C6H12O6"
+
+    def test_emit_form_is_lsd_comment(self):
+        """emit_form output starts with '; ' so LSD silently ignores the line.
+
+        LSD-3.4.9 rejects bare FORM command (error 102); the comment form
+        documents the formula for humans without breaking the solver.
+        See .planning/findings/form-tolerance.md.
+        """
+        result = LSDInputGenerator.emit_form("C13H18O2")
+        assert result.startswith("; "), f"FORM must be a comment, got: {result}"
 
     # --- emit_elim tests ---
 
@@ -422,33 +432,33 @@ class TestPyLSDExtensions:
     # --- generate() integration tests ---
 
     def test_generate_pylsd_form_in_header(self):
-        """FORM line appears in output when pylsd_mode=True and molecular_formula set."""
+        """FORM comment line appears in output when pylsd_mode=True and molecular_formula set."""
         problem = LSDProblem(
             pylsd_mode=True,
             molecular_formula="C13H18O2",
         )
         problem.add_atom(LSDAtom(1, "C", Hybridization.SP2, 0))
         content = LSDInputGenerator.generate(problem)
-        assert "FORM C13H18O2" in content
-        # FORM must appear before first MULT line
-        form_pos = content.index("FORM C13H18O2")
+        assert "; FORM C13H18O2" in content
+        # FORM comment must appear before first MULT line
+        form_pos = content.index("; FORM C13H18O2")
         mult_pos = content.index("MULT")
         assert form_pos < mult_pos
 
     def test_generate_no_form_without_pylsd_mode(self):
-        """FORM line does NOT appear when pylsd_mode=False, even if formula is set."""
+        """Bare FORM line does NOT appear when pylsd_mode=False (only generic molecular-formula comment)."""
         problem = LSDProblem(
             pylsd_mode=False,
             molecular_formula="C13H18O2",
         )
         problem.add_atom(LSDAtom(1, "C", Hybridization.SP2, 0))
         content = LSDInputGenerator.generate(problem)
-        # Only the comment version should appear, not the FORM command
-        assert "FORM C13H18O2" not in content
+        # The pylsd-mode "; FORM" comment should not appear; only the generic header comment
+        assert "; FORM C13H18O2" not in content
         assert "; Molecular formula: C13H18O2" in content
 
     def test_generate_pylsd_elim_commands(self):
-        """ELIM lines appear after FORM but before MULT when pylsd_mode=True."""
+        """ELIM lines appear after FORM comment but before MULT when pylsd_mode=True."""
         problem = LSDProblem(
             pylsd_mode=True,
             molecular_formula="C13H18O2",
@@ -457,8 +467,8 @@ class TestPyLSDExtensions:
         problem.add_atom(LSDAtom(1, "C", Hybridization.SP2, 0))
         content = LSDInputGenerator.generate(problem)
         assert "ELIM 4 4" in content
-        # ELIM must appear after FORM and before first MULT
-        form_pos = content.index("FORM C13H18O2")
+        # ELIM must appear after FORM comment and before first MULT
+        form_pos = content.index("; FORM C13H18O2")
         elim_pos = content.index("ELIM 4 4")
         mult_pos = content.index("MULT")
         assert form_pos < elim_pos < mult_pos
