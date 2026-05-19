@@ -98,11 +98,11 @@ Plans:
   3. A devils-advocate checklist item verifies FORM atom count matches MULT atom sum before approving any LSD run in pylsd_mode
   4. The schema definition is testable: an agent writing a correct v2 inventory can be verified against the schema documentation without ambiguity
 
-**Plans:** 4 plans
+**Plans:** 1/4 plans executed
 Plans:
 **Wave 1**
 
-- [ ] 68-01-PLAN.md — schemas/constraint_inventory_v2.json JSON Schema Draft 2020-12 + jsonschema dependency + schema validation tests
+- [x] 68-01-PLAN.md — schemas/constraint_inventory_v2.json JSON Schema Draft 2020-12 + jsonschema dependency + schema validation tests
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -162,7 +162,7 @@ Plans:
 | 65. Hypothesis Validation Gate | 1/1 | Complete    | 2026-03-16 |
 | 66. LSDInputGenerator Extensions | 2/2 | Complete    | 2026-03-16 |
 | 67. PyLSDOrchestrator and SolutionMerger | 2/2 | Complete    | 2026-03-17 |
-| 68. Constraint Inventory v2 Schema | 0/4 | Not started | - |
+| 68. Constraint Inventory v2 Schema | 1/4 | In Progress|  |
 | 69. CLI Command and Regression Suite | 0/1 | Not started | - |
 | 70. Agent Skill Updates | 0/1 | Not started | - |
 | 71. Ibuprofen CASE UAT | 0/1 | Not started | - |
