@@ -11,6 +11,7 @@ from lucy_ng.cli.fetch import fetch
 from lucy_ng.cli.fragment import fragment
 from lucy_ng.cli.lsd import lsd
 from lucy_ng.cli.pick import pick
+from lucy_ng.cli.pylsd import pylsd
 from lucy_ng.cli.predict import predict
 from lucy_ng.cli.read import read
 from lucy_ng.cli.visualize import visualize
@@ -50,6 +51,7 @@ cli.add_command(dereplicate)
 cli.add_command(predict)
 cli.add_command(detect)
 cli.add_command(lsd)
+cli.add_command(pylsd)
 cli.add_command(visualize)
 cli.add_command(fetch)
 cli.add_command(database)
