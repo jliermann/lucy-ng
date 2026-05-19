@@ -356,8 +356,6 @@ def _validate_and_parse_inventory(lsd_file: str | Path) -> dict | None:
             failure, or schema validation failure. Prints appropriate error
             to stderr via click.echo(err=True) before raising.
     """
-    lsd_file_str = str(lsd_file)
-
     try:
         content = Path(lsd_file).read_text(encoding="utf-8")
     except (PermissionError, OSError) as e:
