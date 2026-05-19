@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 import click
+import jsonschema
 
 from lucy_ng.lsd import LSDRunner, LSDSolutionAnalyzer
 from lucy_ng.lsd.parser import LSDOutputParser
@@ -136,6 +137,162 @@ def _get_default_table_path() -> Path:
         "HOSE lookup table not found. "
         "Build with: lucy predict build-table --source nmrshiftdb"
     )
+
+
+def _get_schema_path() -> Path:
+    """Get the constraint inventory v2 JSON Schema path.
+
+    Resolves schemas/constraint_inventory_v2.json relative to the package location,
+    not the process CWD. This ensures the CLI works when invoked from any directory
+    (e.g. analysis/iteration_NN/).
+    """
+    import lucy_ng
+
+    package_dir = Path(lucy_ng.__file__).parent
+    # src/lucy_ng -> src -> repo_root
+    project_root = package_dir.parent.parent
+    schema_path = project_root / "schemas" / "constraint_inventory_v2.json"
+    if schema_path.exists():
+        return schema_path
+    raise FileNotFoundError(
+        "Schema not found: schemas/constraint_inventory_v2.json — ensure repo root is accessible."
+    )
+
+
+def _extract_inventory_block(content: str) -> str | None:
+    """Extract JSON from between v2 inventory delimiters, stripping '; ' prefix.
+
+    Returns the extracted JSON string, or None if no v2 inventory block is found.
+    Lines that are exactly ';' (blank comment lines) are mapped to empty strings.
+    """
+    lines = content.splitlines()
+    in_block = False
+    json_lines: list[str] = []
+    for line in lines:
+        if "=== CONSTRAINT INVENTORY v2 ===" in line:
+            in_block = True
+            continue
+        if "=== END CONSTRAINT INVENTORY ===" in line and in_block:
+            break
+        if in_block:
+            if line.startswith("; "):
+                json_lines.append(line[2:])  # strip "; " prefix (exactly 2 chars)
+            elif line == ";":
+                json_lines.append("")
+    return "\n".join(json_lines) if json_lines else None
+
+
+@lsd.command("validate-inventory")
+@click.argument("lsd_file", type=click.Path(exists=True))
+@click.option(
+    "--format",
+    "output_format",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format (json for machine-readable, used by devils-advocate).",
+)
+def lsd_validate_inventory(lsd_file: str, output_format: str) -> None:
+    """Validate the constraint inventory block in an LSD file.
+
+    LSD_FILE is the path to the LSD input file containing a v2 inventory block.
+    Exits 0 if valid, 1 if invalid or no inventory found.
+    """
+    content = Path(lsd_file).read_text()
+
+    # Check for v1 block (per D-02 — emit error and exit 1)
+    if "=== CONSTRAINT INVENTORY v1 ===" in content:
+        if output_format == "json":
+            click.echo(json.dumps({
+                "valid": False,
+                "file": lsd_file,
+                "errors": [
+                    {
+                        "message": "Legacy v1 inventory detected — upgrade to v2 format",
+                        "validator": "version",
+                    }
+                ],
+            }, indent=2))
+        else:
+            click.echo(
+                "Invalid: Legacy v1 inventory detected — upgrade to v2 format"
+            )
+        raise SystemExit(1)
+
+    # Extract the v2 inventory block
+    raw_json = _extract_inventory_block(content)
+    if raw_json is None:
+        if output_format == "json":
+            click.echo(json.dumps({
+                "valid": False,
+                "file": lsd_file,
+                "errors": [
+                    {
+                        "message": f"No v2 inventory block found in {lsd_file}",
+                        "validator": "block_presence",
+                    }
+                ],
+            }, indent=2))
+        else:
+            click.echo(f"Invalid: No v2 inventory block found in {lsd_file}")
+        raise SystemExit(1)
+
+    # Parse JSON
+    try:
+        instance = json.loads(raw_json)
+    except json.JSONDecodeError as e:
+        if output_format == "json":
+            click.echo(json.dumps({
+                "valid": False,
+                "file": lsd_file,
+                "errors": [
+                    {
+                        "message": f"Invalid JSON in inventory block: {e}",
+                        "validator": "json_parse",
+                    }
+                ],
+            }, indent=2))
+        else:
+            click.echo(f"Invalid: JSON parse failure in inventory block: {e}")
+        raise SystemExit(1)
+
+    # Load schema and validate
+    try:
+        schema_path = _get_schema_path()
+        with open(schema_path) as f:
+            schema = json.load(f)
+    except FileNotFoundError as e:
+        click.echo(f"Error: {e}", err=True)
+        raise SystemExit(1)
+
+    validator = jsonschema.Draft202012Validator(schema)
+    errors = list(validator.iter_errors(instance))
+
+    if not errors:
+        if output_format == "json":
+            click.echo(json.dumps({"valid": True, "file": lsd_file, "version": 2}, indent=2))
+        else:
+            click.echo("Valid constraint inventory v2")
+    else:
+        error_dicts = [
+            {
+                "message": e.message,
+                "path": list(e.absolute_path),
+                "validator": e.validator,
+            }
+            for e in errors
+        ]
+        if output_format == "json":
+            click.echo(json.dumps({
+                "valid": False,
+                "file": lsd_file,
+                "errors": error_dicts,
+            }, indent=2))
+        else:
+            click.echo(f"Invalid constraint inventory v2 ({len(errors)} error(s)):")
+            for err in error_dicts:
+                path_str = " > ".join(str(p) for p in err["path"]) if err["path"] else "root"
+                click.echo(f"  [{path_str}] {err['message']}")
+        raise SystemExit(1)
 
 
 @lsd.command("rank")
