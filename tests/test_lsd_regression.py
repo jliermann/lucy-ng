@@ -150,23 +150,72 @@ class TestLSDRegression:
             f"LSD run failed:\n  stdout: {result.stdout[:500]}\n  stderr: {result.stderr[:500]}"
         )
 
-        # Locate SMILES output produced by run_file.
-        # LSDRunner._run_outlsd writes outlsd.out — but it passes input_file content
-        # via stdin to the bare `outlsd` binary (no numeric argument), which differs
-        # from the Phase 67 pattern `outlsd 5 < compound.sol`.  If outlsd.out is empty
-        # or absent, fall back to running outlsd manually against the .sol file.
-        smiles_path = tmp_path / "outlsd.out"
-        if not smiles_path.exists() or smiles_path.stat().st_size == 0:
-            # Fallback: run outlsd 5 < compound.sol > solutions.smi
+        # Locate SMILES output.
+        #
+        # LSDRunner._run_outlsd has a known bug (Phase 65 SUMMARY key-decisions):
+        # it calls outlsd WITHOUT the mode argument, so outlsd.out contains usage text,
+        # not SMILES.  The workaround:
+        #
+        # LSD-3.4.9 (stdin mode) writes OUTLSD-format solution data to stdout.
+        # outlsd expects a .sol file with the header:
+        #   "# From file: path.lsd\n<lsd_content>\n#\nOUTLSD\n<data>"
+        # We reconstruct this from result.stdout and run outlsd 5.
+        #
+        # Fallback B: if .sol file exists on disk (older LSD versions with filename
+        # invocation), read it directly.
+        outlsd_bin = shutil.which("outlsd")
+        assert outlsd_bin is not None, "outlsd binary not found on PATH"
+        fallback_smi = tmp_path / "solutions.smi"
+
+        if result.stdout.strip():
+            # Reconstruct .sol from LSD stdin-mode stdout + fixture content
+            stdout_lines = result.stdout.splitlines(keepends=True)
+            try:
+                outlsd_idx = next(
+                    i for i, ln in enumerate(stdout_lines) if ln.strip() == "OUTLSD"
+                )
+            except StopIteration:
+                outlsd_idx = None
+
+            if outlsd_idx is not None:
+                outlsd_data = "".join(stdout_lines[outlsd_idx:])
+                sol_content = (
+                    f"# From file: {lsd_fixture}\n"
+                    + lsd_fixture.read_text()
+                    + "\n#\n"
+                    + outlsd_data
+                )
+                sol_file = tmp_path / "compound.sol"
+                sol_file.write_text(sol_content)
+                proc = subprocess.run(
+                    [outlsd_bin, "5"],
+                    stdin=sol_file.open("r"),
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
+                )
+                fallback_smi.write_text(proc.stdout)
+                smiles_path = fallback_smi
+            else:
+                # stdout doesn't contain OUTLSD marker — try raw pipe
+                proc = subprocess.run(
+                    [outlsd_bin, "5"],
+                    input=result.stdout,
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
+                )
+                fallback_smi.write_text(proc.stdout)
+                smiles_path = fallback_smi
+        else:
+            # Fallback B: .sol file from LSD filename-invocation (older LSD versions)
             sol_files = list(tmp_path.glob("*.sol"))
             assert sol_files, (
-                "No .sol file found in tmp_path after successful LSD run"
+                "No usable SMILES output found: result.stdout is empty "
+                "and no .sol files found in tmp_path"
             )
             sol_file = sol_files[0]
-            fallback_smi = tmp_path / "solutions.smi"
-            outlsd_bin = shutil.which("outlsd")
-            assert outlsd_bin is not None, "outlsd binary not found on PATH"
-            with sol_file.open("rb") as stdin_fh, fallback_smi.open("w") as stdout_fh:
+            with sol_file.open("r") as stdin_fh, fallback_smi.open("w") as stdout_fh:
                 subprocess.run(
                     [outlsd_bin, "5"],
                     stdin=stdin_fh,
