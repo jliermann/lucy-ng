@@ -125,12 +125,12 @@ Plans:
   3. `lucy lsd run` with a file containing a `FORM` line behaves the same as without it — LSD binary tolerance of unknown commands confirmed; result documented in a findings note
   4. `lucy lsd rank` operates unchanged on `merged.smi` output — two-tier ranking (match count primary, MAE secondary) is the post-merge ranker
 
-**Plans:** 4 plans
+**Plans:** 1/4 plans executed
 Plans:
 
 **Wave 1**
 
-- [ ] 69-01-PLAN.md — Extract _perform_ranking() and _validate_and_parse_inventory() helpers from cli/lsd.py (pure refactor, Wave 1)
+- [x] 69-01-PLAN.md — Extract _perform_ranking() and _validate_and_parse_inventory() helpers from cli/lsd.py (pure refactor, Wave 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -174,7 +174,7 @@ Plans:
 | 66. LSDInputGenerator Extensions | 2/2 | Complete    | 2026-03-16 |
 | 67. PyLSDOrchestrator and SolutionMerger | 2/2 | Complete    | 2026-03-17 |
 | 68. Constraint Inventory v2 Schema | 4/4 | Complete   | 2026-05-19 |
-| 69. CLI Command and Regression Suite | 0/4 | Not started | - |
+| 69. CLI Command and Regression Suite | 1/4 | In Progress|  |
 | 70. Agent Skill Updates | 0/1 | Not started | - |
 | 71. Ibuprofen CASE UAT | 0/1 | Not started | - |
 
