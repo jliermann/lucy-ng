@@ -204,6 +204,218 @@ def _extract_inventory_block(content: str) -> str | None:
     return "\n".join(json_lines)
 
 
+def _perform_ranking(
+    smiles_file: str | Path,
+    experimental_shifts: list[float],
+    top: int = 10,
+    tolerance: float = 3.0,
+    table: str | Path | None = None,
+    output_format: str = "text",
+) -> dict | None:
+    """Rank LSD solutions by 13C spectrum similarity.
+
+    Module-private helper extracted from lsd_rank so that the pylsd run
+    command (Plan 02) can call ranking logic as a direct Python function call
+    without spawning a subprocess (D-14).
+
+    Args:
+        smiles_file: Path to a file containing SMILES strings (one per line).
+        experimental_shifts: List of experimental 13C shift values in ppm.
+        top: Number of top solutions to return.
+        tolerance: Tolerance in ppm for shift matching.
+        table: Path to HOSE lookup table; auto-detected when None.
+        output_format: 'text' (echo to stdout, return None) or 'json'
+            (echo JSON to stdout AND return the data dict for callers).
+
+    Returns:
+        When output_format == 'json': the data dict (for pylsd_run embedding).
+        When output_format == 'text': None.
+
+    Raises:
+        SystemExit(1): On file not found, parse failure, empty solutions,
+            table not found, or ranker init failure.
+    """
+    # Load solutions from SMILES file
+    try:
+        solutions = LSDOutputParser.parse_smiles_file(smiles_file)
+    except FileNotFoundError as e:
+        click.echo(f"Error: {e}", err=True)
+        raise SystemExit(1)
+    except Exception as e:
+        click.echo(f"Error loading SMILES file: {e}", err=True)
+        raise SystemExit(1)
+
+    if not solutions:
+        click.echo("Error: No SMILES found in file", err=True)
+        raise SystemExit(1)
+
+    # Get table path
+    table_path: Path
+    if table:
+        table_path = Path(table)
+    else:
+        try:
+            table_path = _get_default_table_path()
+        except FileNotFoundError as e:
+            click.echo(f"Error: {e}", err=True)
+            raise SystemExit(1)
+
+    # Create ranker and rank solutions
+    try:
+        ranker = SolutionRanker.from_table_file(
+            table_path=str(table_path),
+            tolerance=tolerance,
+        )
+    except Exception as e:
+        click.echo(f"Error loading HOSE table: {e}", err=True)
+        raise SystemExit(1)
+
+    result = ranker.rank(solutions, experimental_shifts, top_n=top)
+
+    # Output results
+    if output_format == "json":
+        data = {
+            "total_solutions": result.total_solutions,
+            "ranked_count": result.ranked_count,
+            "skipped_count": result.skipped_count,
+            "experimental_shifts": result.experimental_shifts,
+            "tolerance": result.tolerance,
+            "solutions": [
+                {
+                    "rank": i + 1,
+                    "solution_index": sol.solution_index,
+                    "smiles": sol.smiles,
+                    "mae": round(sol.mae, 3),
+                    "quality": sol.quality_label,
+                    "deviations": [round(d, 2) for d in sol.all_deviations],
+                    "within_3ppm": sol.within_tolerance(3.0),
+                    "within_5ppm": sol.within_tolerance(5.0),
+                    "total_carbons": sol.total_carbons,
+                    "max_deviation": round(sol.max_deviation, 2),
+                    "prediction_rate": round(sol.prediction_rate, 3),
+                    # Keep matched_count for backward compatibility
+                    "matched_count": sol.matched_count,
+                    "has_aromatic_ring": sol.has_aromatic_ring,
+                }
+                for i, sol in enumerate(result.solutions)
+            ],
+            "warnings": result.warnings,
+        }
+        click.echo(json.dumps(data, indent=2))
+        return data
+    else:
+        click.echo(f"Ranking {result.total_solutions} LSD solutions")
+        click.echo(f"  Successfully ranked: {result.ranked_count}")
+        click.echo(f"  Skipped (no SMILES): {result.skipped_count}")
+        click.echo(f"  Experimental peaks: {len(experimental_shifts)}")
+        click.echo()
+
+        if result.solutions:
+            click.echo(f"Top {len(result.solutions)} solutions:")
+            click.echo("-" * 70)
+            for i, sol in enumerate(result.solutions):
+                # Primary line: rank, solution index, match count, MAE with quality label
+                click.echo(
+                    f"{i+1:3}. Solution {sol.solution_index}: "
+                    f"Matched={sol.matched_count}/{sol.total_carbons} "
+                    f"MAE={sol.mae:.2f} ppm ({sol.quality_label})"
+                )
+                # SMILES on second line
+                click.echo(f"     {sol.smiles}")
+                # Tolerance summary on third line
+                click.echo(f"     {sol.tolerance_summary()}")
+        else:
+            click.echo("No solutions could be ranked.")
+
+        # Print warnings
+        if result.warnings:
+            click.echo()
+            for warning in result.warnings:
+                click.echo(f"WARNING: {warning}")
+
+        return None
+
+
+def _validate_and_parse_inventory(lsd_file: str | Path) -> dict | None:
+    """Parse and validate the constraint inventory block in an LSD file.
+
+    Module-private helper extracted from lsd_validate_inventory so that the
+    pylsd run command (Plan 02) can call inventory validation as a direct
+    Python function call (D-13).
+
+    Args:
+        lsd_file: Path to the LSD input file containing a v2 inventory block.
+
+    Returns:
+        The parsed inventory instance dict when a valid v2 block is present.
+        None when no v2 inventory block is found (not an error — caller decides
+        how to handle the no-block case, e.g. pylsd_run treats it as a fallback).
+
+    Raises:
+        SystemExit(1): On file read error, v1 block detected, JSON parse
+            failure, or schema validation failure. Prints appropriate error
+            to stderr via click.echo(err=True) before raising.
+    """
+    lsd_file_str = str(lsd_file)
+
+    try:
+        content = Path(lsd_file).read_text(encoding="utf-8")
+    except (PermissionError, OSError) as e:
+        click.echo(f"Error: Cannot read file: {e}", err=True)
+        raise SystemExit(1)
+
+    # Check for v1 block (per D-02 — emit error and exit 1)
+    if "=== CONSTRAINT INVENTORY v1 ===" in content:
+        click.echo(
+            "Invalid: Legacy v1 inventory detected — upgrade to v2 format",
+            err=True,
+        )
+        raise SystemExit(1)
+
+    # Extract the v2 inventory block
+    raw_json = _extract_inventory_block(content)
+    if raw_json is None:
+        # No block present — not an error at this level; caller decides
+        return None
+
+    # Parse JSON
+    try:
+        instance = json.loads(raw_json)
+    except json.JSONDecodeError as e:
+        click.echo(f"Error: JSON parse failure in inventory block: {e}", err=True)
+        raise SystemExit(1)
+
+    # Load schema and validate
+    try:
+        schema_path = _get_schema_path()
+        with open(schema_path) as f:
+            schema = json.load(f)
+    except FileNotFoundError as e:
+        click.echo(f"Error: {e}", err=True)
+        raise SystemExit(1)
+
+    validator = jsonschema.Draft202012Validator(schema)
+    errors = list(validator.iter_errors(instance))
+
+    if errors:
+        error_dicts = [
+            {
+                "message": e.message,
+                "path": list(e.absolute_path),
+                "validator": e.validator,
+            }
+            for e in errors
+        ]
+        click.echo(
+            f"Error: Invalid constraint inventory v2 ({len(errors)} error(s)): "
+            + "; ".join(d["message"] for d in error_dicts),
+            err=True,
+        )
+        raise SystemExit(1)
+
+    return instance
+
+
 @lsd.command("validate-inventory")
 @click.argument("lsd_file", type=click.Path(exists=True))
 @click.option(
@@ -219,6 +431,7 @@ def lsd_validate_inventory(lsd_file: str, output_format: str) -> None:
     LSD_FILE is the path to the LSD input file containing a v2 inventory block.
     Exits 0 if valid, 1 if invalid or no inventory found.
     """
+    # --- File read (needed for format-aware error output on read failures) ---
     try:
         content = Path(lsd_file).read_text(encoding="utf-8")
     except (PermissionError, OSError) as e:
@@ -237,7 +450,7 @@ def lsd_validate_inventory(lsd_file: str, output_format: str) -> None:
             click.echo(f"Error: Cannot read file: {e}", err=True)
         raise SystemExit(1)
 
-    # Check for v1 block (per D-02 — emit error and exit 1)
+    # --- v1 block check (format-aware output) ---
     if "=== CONSTRAINT INVENTORY v1 ===" in content:
         if output_format == "json":
             click.echo(json.dumps({
@@ -256,7 +469,13 @@ def lsd_validate_inventory(lsd_file: str, output_format: str) -> None:
             )
         raise SystemExit(1)
 
-    # Extract the v2 inventory block
+    # --- Delegate parsing + validation to helper ---
+    # We re-use _validate_and_parse_inventory for the core logic but must handle
+    # the "no block" and "schema error" cases with format-aware CLI output.
+    # To avoid duplicating the file-read / v1-check already done above, we call
+    # the helper and map its behaviour to the CLI's output contract.
+
+    # Extract block directly (avoid re-reading the file)
     raw_json = _extract_inventory_block(content)
     if raw_json is None:
         if output_format == "json":
@@ -438,102 +657,7 @@ def lsd_rank(
         click.echo("Error: No experimental shifts found", err=True)
         raise SystemExit(1)
 
-    # Load solutions from SMILES file
-    try:
-        solutions = LSDOutputParser.parse_smiles_file(smiles_file)
-    except FileNotFoundError as e:
-        click.echo(f"Error: {e}", err=True)
-        raise SystemExit(1)
-    except Exception as e:
-        click.echo(f"Error loading SMILES file: {e}", err=True)
-        raise SystemExit(1)
-
-    if not solutions:
-        click.echo("Error: No SMILES found in file", err=True)
-        raise SystemExit(1)
-
-    # Get table path
-    table_path: Path
-    if table:
-        table_path = Path(table)
-    else:
-        try:
-            table_path = _get_default_table_path()
-        except FileNotFoundError as e:
-            click.echo(f"Error: {e}", err=True)
-            raise SystemExit(1)
-
-    # Create ranker and rank solutions
-    try:
-        ranker = SolutionRanker.from_table_file(
-            table_path=str(table_path),
-            tolerance=tolerance,
-        )
-    except Exception as e:
-        click.echo(f"Error loading HOSE table: {e}", err=True)
-        raise SystemExit(1)
-
-    result = ranker.rank(solutions, experimental_shifts, top_n=top)
-
-    # Output results
-    if output_format == "json":
-        data = {
-            "total_solutions": result.total_solutions,
-            "ranked_count": result.ranked_count,
-            "skipped_count": result.skipped_count,
-            "experimental_shifts": result.experimental_shifts,
-            "tolerance": result.tolerance,
-            "solutions": [
-                {
-                    "rank": i + 1,
-                    "solution_index": sol.solution_index,
-                    "smiles": sol.smiles,
-                    "mae": round(sol.mae, 3),
-                    "quality": sol.quality_label,
-                    "deviations": [round(d, 2) for d in sol.all_deviations],
-                    "within_3ppm": sol.within_tolerance(3.0),
-                    "within_5ppm": sol.within_tolerance(5.0),
-                    "total_carbons": sol.total_carbons,
-                    "max_deviation": round(sol.max_deviation, 2),
-                    "prediction_rate": round(sol.prediction_rate, 3),
-                    # Keep matched_count for backward compatibility
-                    "matched_count": sol.matched_count,
-                    "has_aromatic_ring": sol.has_aromatic_ring,
-                }
-                for i, sol in enumerate(result.solutions)
-            ],
-            "warnings": result.warnings,
-        }
-        click.echo(json.dumps(data, indent=2))
-    else:
-        click.echo(f"Ranking {result.total_solutions} LSD solutions")
-        click.echo(f"  Successfully ranked: {result.ranked_count}")
-        click.echo(f"  Skipped (no SMILES): {result.skipped_count}")
-        click.echo(f"  Experimental peaks: {len(experimental_shifts)}")
-        click.echo()
-
-        if result.solutions:
-            click.echo(f"Top {len(result.solutions)} solutions:")
-            click.echo("-" * 70)
-            for i, sol in enumerate(result.solutions):
-                # Primary line: rank, solution index, match count, MAE with quality label
-                click.echo(
-                    f"{i+1:3}. Solution {sol.solution_index}: "
-                    f"Matched={sol.matched_count}/{sol.total_carbons} "
-                    f"MAE={sol.mae:.2f} ppm ({sol.quality_label})"
-                )
-                # SMILES on second line
-                click.echo(f"     {sol.smiles}")
-                # Tolerance summary on third line
-                click.echo(f"     {sol.tolerance_summary()}")
-        else:
-            click.echo("No solutions could be ranked.")
-
-        # Print warnings
-        if result.warnings:
-            click.echo()
-            for warning in result.warnings:
-                click.echo(f"WARNING: {warning}")
+    _perform_ranking(smiles_file, experimental_shifts, top, tolerance, table, output_format)
 
 
 @lsd.command("analyze")

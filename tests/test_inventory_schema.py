@@ -745,3 +745,80 @@ class TestGateLogic:
     def test_g3_bare_elim_command_not_matched(self):
         """G3 grep pattern ^HMBC.*; ELIM must NOT match a bare ELIM command line."""
         assert re.search(r"^HMBC.*; ELIM", "ELIM 4 4") is None
+
+
+# ---------------------------------------------------------------------------
+# TestValidateAndParseInventory — direct import tests (no Click context needed)
+# ---------------------------------------------------------------------------
+
+
+class TestValidateAndParseInventory:
+    """Tests for the _validate_and_parse_inventory module-private helper."""
+
+    def test_importable_without_click_context(self) -> None:
+        """_validate_and_parse_inventory must be importable directly from lucy_ng.cli.lsd."""
+        from lucy_ng.cli.lsd import _validate_and_parse_inventory  # noqa: F401
+        assert callable(_validate_and_parse_inventory)
+
+    def test_valid_v2_file_returns_dict_with_deferred_4j(self, tmp_path: Path) -> None:
+        """Valid v2 LSD file must return a dict containing the deferred_4j key."""
+        from lucy_ng.cli.lsd import _validate_and_parse_inventory
+
+        lsd_file = tmp_path / "compound.lsd"
+        lsd_file.write_text(_make_v2_lsd_content(_minimal_v2_inventory_json()))
+
+        result = _validate_and_parse_inventory(lsd_file)
+
+        assert isinstance(result, dict), f"Expected dict, got {type(result)}"
+        assert "deferred_4j" in result, "Result dict must contain 'deferred_4j' key"
+        assert "version" in result, "Result dict must contain 'version' key"
+        assert result["version"] == 2
+
+    def test_no_block_returns_none(self, tmp_path: Path) -> None:
+        """LSD file with no inventory block must return None (not raise SystemExit)."""
+        from lucy_ng.cli.lsd import _validate_and_parse_inventory
+
+        lsd_file = tmp_path / "compound.lsd"
+        lsd_file.write_text("; Plain LSD file without any inventory block\nMULT 1 C 2 0\n")
+
+        result = _validate_and_parse_inventory(lsd_file)
+
+        assert result is None, f"Expected None for file with no block, got {result}"
+
+    def test_v1_block_raises_system_exit(self, tmp_path: Path) -> None:
+        """LSD file with v1 inventory block must raise SystemExit(1)."""
+        from lucy_ng.cli.lsd import _validate_and_parse_inventory
+        import pytest
+
+        v1_content = "; === CONSTRAINT INVENTORY v1 ===\n; {}\n; === END CONSTRAINT INVENTORY ===\n"
+        lsd_file = tmp_path / "compound.lsd"
+        lsd_file.write_text(v1_content)
+
+        with pytest.raises(SystemExit) as exc_info:
+            _validate_and_parse_inventory(lsd_file)
+        assert exc_info.value.code == 1
+
+    def test_schema_invalid_raises_system_exit(self, tmp_path: Path) -> None:
+        """v2 LSD file with schema-violating content must raise SystemExit(1)."""
+        from lucy_ng.cli.lsd import _validate_and_parse_inventory
+        import pytest
+
+        bad_json = json.dumps({
+            "version": 1,  # schema requires version=2
+            "iteration": 1,
+            "formula": "C6H6",
+            "timestamp": "2026-01-01T00:00:00Z",
+            "mult_count": 6,
+            "hsqc_count": 6,
+            "hmbc_batches": [],
+            "hmbc_total": 0,
+            "pylsd_mode": False,
+            "elim_annotated": False,
+            "deferred_4j": [],
+        }, indent=2)
+        lsd_file = tmp_path / "compound.lsd"
+        lsd_file.write_text(_make_v2_lsd_content(bad_json))
+
+        with pytest.raises(SystemExit) as exc_info:
+            _validate_and_parse_inventory(lsd_file)
+        assert exc_info.value.code == 1

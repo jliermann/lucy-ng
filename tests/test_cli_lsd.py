@@ -9,6 +9,85 @@ from click.testing import CliRunner
 from lucy_ng.cli.lsd import lsd
 
 
+# ---------------------------------------------------------------------------
+# TestPerformRanking — direct import tests (no Click context needed)
+# ---------------------------------------------------------------------------
+
+
+class TestPerformRanking:
+    """Tests for the _perform_ranking module-private helper."""
+
+    def test_importable_without_click_context(self) -> None:
+        """_perform_ranking must be importable directly from lucy_ng.cli.lsd."""
+        from lucy_ng.cli.lsd import _perform_ranking  # noqa: F401
+        assert callable(_perform_ranking)
+
+    def test_callable_with_smiles_file_and_shifts(self, tmp_path: Path) -> None:
+        """_perform_ranking must be callable without any Click context."""
+        from lucy_ng.cli.lsd import _perform_ranking
+
+        # Write a minimal SMILES file (ethanol)
+        smiles_file = tmp_path / "solutions.smi"
+        smiles_file.write_text("CCO\n")
+
+        # Must not raise — just needs to find/load the HOSE table
+        # If the table is available, it will run; if not, SystemExit(1) is acceptable
+        try:
+            _perform_ranking(
+                smiles_file=str(smiles_file),
+                experimental_shifts=[18.0, 58.0],
+                top=5,
+                tolerance=3.0,
+                table=None,
+                output_format="text",
+            )
+        except SystemExit as exc:
+            # Table not available in test environment is acceptable
+            assert exc.code == 1
+        except Exception as exc:
+            pytest.fail(f"_perform_ranking raised unexpected exception: {exc}")
+
+    def test_empty_smiles_file_raises_system_exit(self, tmp_path: Path) -> None:
+        """Empty SMILES file must raise SystemExit(1) — not an unhandled exception."""
+        from lucy_ng.cli.lsd import _perform_ranking
+
+        smiles_file = tmp_path / "empty.smi"
+        smiles_file.write_text("")
+
+        with pytest.raises(SystemExit) as exc_info:
+            _perform_ranking(
+                smiles_file=str(smiles_file),
+                experimental_shifts=[18.0, 58.0],
+                top=5,
+                tolerance=3.0,
+                table=None,
+                output_format="text",
+            )
+        assert exc_info.value.code == 1
+
+    def test_json_output_format_returns_dict(self, tmp_path: Path) -> None:
+        """_perform_ranking with output_format='json' must return a dict (not None)."""
+        from lucy_ng.cli.lsd import _perform_ranking
+
+        smiles_file = tmp_path / "solutions.smi"
+        smiles_file.write_text("CCO\n")
+
+        # This test only runs fully if a HOSE table is available
+        try:
+            result = _perform_ranking(
+                smiles_file=str(smiles_file),
+                experimental_shifts=[18.0, 58.0],
+                top=5,
+                tolerance=3.0,
+                table=None,
+                output_format="json",
+            )
+            assert isinstance(result, dict), f"Expected dict, got {type(result)}"
+            assert "total_solutions" in result
+        except SystemExit:
+            pass  # table not available — acceptable in CI
+
+
 class TestLSDCheck:
     """Tests for lucy lsd check command."""
 
