@@ -281,7 +281,12 @@ def lsd_validate_inventory(lsd_file: str, output_format: str) -> None:
 
     if not errors:
         if output_format == "json":
-            click.echo(json.dumps({"valid": True, "file": lsd_file, "version": 2}, indent=2))
+            click.echo(json.dumps({
+                "valid": True,
+                "file": lsd_file,
+                "version": 2,
+                "inventory": instance,  # full parsed inventory for devils-advocate G2/G3 gates
+            }, indent=2))
         else:
             click.echo("Valid constraint inventory v2")
     else:

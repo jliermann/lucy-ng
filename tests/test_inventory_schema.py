@@ -470,6 +470,65 @@ class TestValidateInventoryCLI:
         result = runner.invoke(lsd, ["validate-inventory", str(lsd_file)])
         assert result.exit_code == 1, f"Expected exit 1 for schema violation, got {result.exit_code}. Output: {result.output}"
 
+    def test_valid_v2_format_json_includes_inventory_key(self, tmp_path):
+        """Success JSON response must include an 'inventory' key (CR-02 regression test).
+
+        The devils-advocate agent's bash pipeline relies on parsing pylsd_mode,
+        elim_annotated, and deferred_4j from the validate-inventory output directly.
+        These fields must be present in the 'inventory' sub-object on success.
+        """
+        lsd_file = tmp_path / "compound.lsd"
+        lsd_file.write_text(_make_v2_lsd_content(_minimal_v2_inventory_json()))
+        runner = CliRunner()
+        result = runner.invoke(
+            lsd, ["validate-inventory", str(lsd_file), "--format", "json"],
+            catch_exceptions=False
+        )
+        assert result.exit_code == 0, f"Expected exit 0, got {result.exit_code}. Output: {result.output}"
+        data = json.loads(result.output)
+        assert "inventory" in data, (
+            f"Success JSON must contain 'inventory' key for agent G2/G3 gates. Got keys: {list(data.keys())}"
+        )
+        inventory = data["inventory"]
+        assert "pylsd_mode" in inventory, "inventory must contain 'pylsd_mode'"
+        assert "elim_annotated" in inventory, "inventory must contain 'elim_annotated'"
+        assert "deferred_4j" in inventory, "inventory must contain 'deferred_4j'"
+
+    def test_valid_v2_format_json_inventory_values_correct(self, tmp_path):
+        """Inventory values in the success JSON must reflect the actual parsed inventory."""
+        inv = {
+            "version": 2,
+            "iteration": 2,
+            "formula": "C13H18O2",
+            "timestamp": "2026-05-19T10:00:00Z",
+            "mult_count": 13,
+            "hsqc_count": 9,
+            "hmbc_batches": [{"batch": 1, "count": 3, "correlations": ["4 8", "6 9", "1 13"]}],
+            "hmbc_total": 3,
+            "pylsd_mode": True,
+            "elim_annotated": True,
+            "deferred_4j": [
+                {
+                    "atom1": 4, "atom2": 8, "shift1": 129.38, "shift2": 45.03,
+                    "correlation_type": "HMBC", "annotation": "; ELIM",
+                }
+            ],
+        }
+        lsd_file = tmp_path / "compound.lsd"
+        lsd_file.write_text(_make_v2_lsd_content(json.dumps(inv, indent=2)))
+        runner = CliRunner()
+        result = runner.invoke(
+            lsd, ["validate-inventory", str(lsd_file), "--format", "json"],
+            catch_exceptions=False
+        )
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        inventory = data["inventory"]
+        assert inventory["pylsd_mode"] is True
+        assert inventory["elim_annotated"] is True
+        assert len(inventory["deferred_4j"]) == 1
+        assert inventory["deferred_4j"][0]["atom1"] == 4
+
 
 # ---------------------------------------------------------------------------
 # TestGateLogic
