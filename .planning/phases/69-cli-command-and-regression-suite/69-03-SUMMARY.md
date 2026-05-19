@@ -38,7 +38,7 @@ key-files:
 
 key-decisions:
   - "LSD-3.4.9 rejects FORM with 'error 102 - Unknown command name: FORM' (exit code 255)"
-  - "Phase 66 emit_form() is a Phase 66 compatibility concern — FORM must be stripped before LSD invocation"
+  - "Mitigation chosen (Option 3): emit_form() will be changed to emit '; FORM C13H18O2' (comment) in Phase 66 backport"
   - "Test is correct as written: it fails when FORM is NOT tolerated, alerting developers"
   - "findings/form-tolerance.md documents the negative result with full reproduction steps"
 
@@ -55,18 +55,16 @@ completed: 2026-05-19
 
 # Phase 69 Plan 03: FORM-Tolerance Test and Findings Summary
 
-**LSD-3.4.9 empirically rejects FORM with error 102 — Phase 66 emit_form() is a compatibility concern requiring FORM-stripping before LSD invocation**
+**LSD-3.4.9 empirically rejects FORM with error 102 — Phase 66 emit_form() will be amended to emit '; FORM' comment instead (confirmed by developer)**
 
-## Status: PARTIAL — Paused at checkpoint:human-verify
-
-This plan paused at the `checkpoint:human-verify` gate after running the FORM-tolerance test. The test ran successfully and captured a critical finding. The checkpoint captures the result for developer confirmation before Task 3 (finalizing the findings document) is considered complete.
+## Status: COMPLETE
 
 ## Performance
 
-- **Duration:** ~15 min
+- **Duration:** ~20 min
 - **Started:** 2026-05-19T00:00:00Z
-- **Completed:** 2026-05-19 (partial — checkpoint paused)
-- **Tasks:** 1 of 3 complete (Task 2 is checkpoint, Task 3 follows)
+- **Completed:** 2026-05-19
+- **Tasks:** 3 of 3 complete (Task 2 was checkpoint:human-verify, resumed after developer confirmation)
 - **Files created:** 4
 
 ## Key Finding (CRITICAL)
@@ -82,7 +80,7 @@ Exit code: 255. No solutions produced.
 
 This contradicts the Phase 69 plan hypothesis. The living regression test (`test_form_line_produces_identical_solutions`) correctly **FAILS**, which is the correct behavior — it catches that FORM breaks LSD.
 
-**Phase 66 compatibility concern:** `LSDInputGenerator.emit_form()` (added in Phase 66 for pylsd_mode files) would cause `lucy lsd run` to fail on any file generated in pylsd_mode. The Phase 69 `lucy pylsd run` CLI must strip FORM lines before passing files to the LSD binary.
+**Mitigation chosen (Option 3 — developer confirmed):** Phase 66's `emit_form()` will be amended post-Phase-69 to emit `; FORM C13H18O2` (LSD comment) instead of the bare `FORM C13H18O2` command. No stripping logic needed in the CLI. The formula remains documented in the file for human readers.
 
 ## Accomplishments
 
@@ -97,14 +95,15 @@ This contradicts the Phase 69 plan hypothesis. The living regression test (`test
 ## Task Commits
 
 1. **Task 1: Create fixture files and test_lsd_form_tolerance.py** - `b77e0bc` (test)
-2. **Task 2 (draft findings): Create .planning/findings/form-tolerance.md** - `4fe1233` (docs)
+2. **Task 2 (checkpoint): human-verify — FORM-tolerance result** - developer confirmed "failed: form-rejected"
+3. **Task 3: Finalize findings document with mitigation decision** - `[see final commit]` (docs)
 
 ## Files Created/Modified
 
 - `tests/test_lsd_form_tolerance.py` - Living regression test for FORM tolerance
 - `tests/fixtures/form_tolerance/minimal.lsd` - Minimal ethane LSD (no FORM)
 - `tests/fixtures/form_tolerance/minimal_with_form.lsd` - Ethane LSD with FORM C2H6
-- `.planning/findings/form-tolerance.md` - Reproducible-research audit trail (draft)
+- `.planning/findings/form-tolerance.md` - Reproducible-research audit trail (finalized with mitigation decision)
 
 ## Verification Results
 
@@ -136,8 +135,8 @@ All plan artifact checks pass:
 
 - Test is correct as written — the FAIL correctly alerts developers that FORM is rejected
 - Findings document documents the negative result (FORM NOT tolerated) as required by D-15a
-- Phase 66 compatibility concern flagged in findings document with three mitigation options
-- Test will PASS once a future LSD version accepts FORM (living regression)
+- Mitigation chosen (Option 3): emit_form() amended to emit `; FORM` comment in Phase 66 backport
+- Test will PASS once a future LSD version accepts FORM (living regression behavior as designed)
 
 ## Deviations from Plan
 
@@ -155,13 +154,13 @@ None identified. LSD binary invocation is on trusted local PATH; tests run in tm
 
 ## Next Phase Readiness
 
-- Task 3 (finalize findings document) pending checkpoint human-verify resume
-- **Blocker for Phase 70:** Before `lucy pylsd run` ships, Phase 69 Plan 01/02 must strip FORM lines from LSD input before invoking the binary. This plan's finding provides the evidence.
 - Living regression test is in place — will detect future LSD version changes
+- Phase 66 backport (emit_form() → '; FORM' comment) is out of scope for 69-03 but confirmed by developer; orchestrator will handle post-Phase-69
+- No blockers for Phase 70: the mitigation (Option 3) requires only a one-line change in Phase 66 code; no CLI stripping logic needed
 
 ---
 *Phase: 69-cli-command-and-regression-suite*
-*Plan: 03 (partial — paused at checkpoint)*
+*Plan: 03*
 *Completed: 2026-05-19*
 
 ## Self-Check

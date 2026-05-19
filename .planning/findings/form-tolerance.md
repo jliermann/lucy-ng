@@ -1,7 +1,7 @@
 # FORM-Tolerance Finding: LSD Binary Does NOT Ignore FORM
 
-**Status: FINDING — FORM is NOT tolerated by LSD-3.4.9**
-**Phase 66 compatibility concern: HIGH**
+**Status: CONFIRMED — FORM is NOT tolerated by LSD-3.4.9 (developer confirmed 2026-05-19)**
+**Phase 66 compatibility concern: RESOLVED — emit_form() will emit `; FORM` comment (Option 3)**
 **Date: 2026-05-19**
 **Test: `pytest tests/test_lsd_form_tolerance.py::TestLSDFormTolerance::test_form_line_produces_identical_solutions`**
 
@@ -122,6 +122,14 @@ One of the following mitigations must be implemented:
 3. **Use `FORM` only in comments**: Replace `FORM C2H6` with `; FORM C2H6` (comment) so the formula is documented but not parsed by LSD.
 
 Option 1 is least disruptive to Phase 66. Option 3 preserves readability.
+
+---
+
+## Mitigation Chosen
+
+Mitigation: Phase 66's `emit_form()` will be amended (post-Phase-69) to emit `; FORM C13H18O2` (LSD comment) instead of `FORM C13H18O2` (rejected LSD command). The formula remains documented in the file for human readers and inventory-block consumers while LSD silently ignores the line. See Phase 66 backport commit.
+
+This corresponds to Option 3 from the mitigation list above. It is the least invasive change: the formula information is preserved as a human-readable comment, the inventory block JSON continues to carry the formula as structured data, and no stripping logic is needed in the CLI or LSDRunner.
 
 ---
 
