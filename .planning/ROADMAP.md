@@ -128,7 +128,12 @@ Plans:
 **Plans:** 4 plans
 Plans:
 
+**Wave 1**
+
 - [ ] 69-01-PLAN.md — Extract _perform_ranking() and _validate_and_parse_inventory() helpers from cli/lsd.py (pure refactor, Wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 69-02-PLAN.md — Implement lucy pylsd run command in cli/pylsd.py, register in main.py, CLI integration tests
 - [ ] 69-03-PLAN.md — FORM tolerance test + .planning/findings/form-tolerance.md audit trail
 - [ ] 69-04-PLAN.md — Ibuprofen regression test + baseline fixture (InChI-set comparison)

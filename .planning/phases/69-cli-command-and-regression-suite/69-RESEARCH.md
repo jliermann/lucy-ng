@@ -687,17 +687,11 @@ This matches the pattern used for other CLI modules in the project (`detect.py`,
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **LSD input file parsing for suspect reconstruction**
-   - What we know: `deferred_4j` gives `(atom1, atom2)` integer pairs. `PyLSDOrchestrator.run()` requires `list[LSDCorrelation]` objects.
-   - What's unclear: Does `LSDInputParser.parse_file()` exist and produce `LSDCorrelation` objects? Or does the CLI need to grep the LSD file and construct them manually?
-   - Recommendation: Check `src/lucy_ng/lsd/parser.py` for `LSDInputParser.parse_file()` before planning. If it exists and returns an `LSDProblem`, use `problem.correlations` to find matching correlations. If not, grep + manual `LSDCorrelation(atom1_index=..., atom2_index=..., correlation_type="HMBC")` construction is safe since `_build_permutation()` only uses these three fields for identity matching.
+1. **LSD input file parsing for suspect reconstruction** — RESOLVED: `LSDInputParser.parse_file()` is the canonical mechanism; CLI imports it and uses `problem.correlations` to find matching `LSDCorrelation` objects by `(atom1_index, atom2_index, correlation_type)` tuple. If the parser is unavailable for a given LSD-file shape, fall back to manual `LSDCorrelation(atom1_index=..., atom2_index=..., correlation_type="HMBC")` construction — `_build_permutation()` only uses these three fields for identity matching. Plan 02 interfaces block confirms this approach.
 
-2. **Should `pylsd run --no-rank` create a temp dir or use the input file's directory?**
-   - What we know: D-14a says output is `merged.smi + run_report.json in Working-Dir; stdout zeigt Pfade`.
-   - What's unclear: Whether `working-dir` defaults to `dirname(lsd_file)` or a tempdir. Agent use case prefers `dirname(lsd_file)` (files are in the iteration dir, colocation is expected). Tempdir is cleaner but requires agent to track the path.
-   - Recommendation: Default to `dirname(lsd_file) / "pylsd_run"`. This keeps outputs near the input file, matching agent workflow. Make it configurable via `--working-dir`.
+2. **Default working-dir for `pylsd run --no-rank`** — RESOLVED: Default is `Path(lsd_file).parent / "pylsd_run"`, configurable via `--working-dir`. Confirmed by Plan 02 Task 1 action block. Rationale: agent workflow keeps outputs colocated with input file (iteration directory pattern); avoids tempdir tracking.
 
 ---
 
