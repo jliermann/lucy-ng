@@ -25,7 +25,7 @@
 - [x] **Phase 65: Hypothesis Validation Gate** - Manual 30-minute test: run ibuprofen LSD with 3 known 4J correlations removed; confirm aromatic ring solutions appear. Gates entire milestone. (completed 2026-03-16)
 - [x] **Phase 66: LSDInputGenerator Extensions** - Add FORM, ELIM, SHIX/SHIH, and extended HMBC bond range emission to LSDInputGenerator; FORM/MULT consistency validator. (completed 2026-03-16)
 - [x] **Phase 67: PyLSDOrchestrator and SolutionMerger** - New Python classes: permutation file generation, N-fold LSD runner invocation, InChI-key deduplication of merged solutions. (completed 2026-03-17)
-- [ ] **Phase 68: Constraint Inventory v2 Schema** - Extend constraint inventory JSON schema with pylsd_mode, deferred_4j metadata; extend devils-advocate checklist with ELIM/FORM/MULT validation rules.
+- [x] **Phase 68: Constraint Inventory v2 Schema** - Extend constraint inventory JSON schema with pylsd_mode, deferred_4j metadata; extend devils-advocate checklist with ELIM/FORM/MULT validation rules. (completed 2026-05-19)
 - [ ] **Phase 69: CLI Command and Regression Suite** - `lucy pylsd run` CLI subcommand; regression suite confirming existing `lucy lsd run` unchanged; FORM/LSD binary tolerance confirmed.
 - [ ] **Phase 70: Agent Skill Updates** - lsd-engineer and case.md orchestrator skill updates with full pyLSD command reference, `; ELIM` annotation protocol, routing logic for pylsd_mode.
 - [ ] **Phase 71: Ibuprofen CASE UAT** - End-to-end CASE run with pyLSD multi-run orchestration; ibuprofen aromatic ring structure at rank 1; milestone-complete gate.
@@ -98,7 +98,7 @@ Plans:
   3. A devils-advocate checklist item verifies FORM atom count matches MULT atom sum before approving any LSD run in pylsd_mode
   4. The schema definition is testable: an agent writing a correct v2 inventory can be verified against the schema documentation without ambiguity
 
-**Plans:** 2/4 plans executed
+**Plans:** 4/4 plans complete
 Plans:
 **Wave 1**
 
@@ -110,8 +110,8 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 68-03-PLAN.md — lucy-lsd-engineer.md Section 5 v1→v2 rewrite (delimiters, schema table, inline example, procedures)
-- [ ] 68-04-PLAN.md — lucy-devils-advocate.md Section 5A/5B update (CLI extraction, G1/G2/G3 gates)
+- [x] 68-03-PLAN.md — lucy-lsd-engineer.md Section 5 v1→v2 rewrite (delimiters, schema table, inline example, procedures)
+- [x] 68-04-PLAN.md — lucy-devils-advocate.md Section 5A/5B update (CLI extraction, G1/G2/G3 gates)
 
 ### Phase 69: CLI Command and Regression Suite
 
@@ -162,7 +162,7 @@ Plans:
 | 65. Hypothesis Validation Gate | 1/1 | Complete    | 2026-03-16 |
 | 66. LSDInputGenerator Extensions | 2/2 | Complete    | 2026-03-16 |
 | 67. PyLSDOrchestrator and SolutionMerger | 2/2 | Complete    | 2026-03-17 |
-| 68. Constraint Inventory v2 Schema | 2/4 | In Progress|  |
+| 68. Constraint Inventory v2 Schema | 4/4 | Complete   | 2026-05-19 |
 | 69. CLI Command and Regression Suite | 0/1 | Not started | - |
 | 70. Agent Skill Updates | 0/1 | Not started | - |
 | 71. Ibuprofen CASE UAT | 0/1 | Not started | - |
