@@ -27,7 +27,7 @@
 - [x] **Phase 67: PyLSDOrchestrator and SolutionMerger** - New Python classes: permutation file generation, N-fold LSD runner invocation, InChI-key deduplication of merged solutions. (completed 2026-03-17)
 - [x] **Phase 68: Constraint Inventory v2 Schema** - Extend constraint inventory JSON schema with pylsd_mode, deferred_4j metadata; extend devils-advocate checklist with ELIM/FORM/MULT validation rules. (completed 2026-05-19)
 - [x] **Phase 69: CLI Command and Regression Suite** - `lucy pylsd run` CLI subcommand; regression suite confirming existing `lucy lsd run` unchanged; FORM/LSD binary tolerance confirmed. (completed 2026-05-19)
-- [ ] **Phase 70: Agent Skill Updates** - lsd-engineer and case.md orchestrator skill updates with full pyLSD command reference, `; ELIM` annotation protocol, routing logic for pylsd_mode.
+- [x] **Phase 70: Agent Skill Updates** - lsd-engineer and case.md orchestrator skill updates with full pyLSD command reference, `; ELIM` annotation protocol, routing logic for pylsd_mode. (completed 2026-05-19)
 - [ ] **Phase 71: Ibuprofen CASE UAT** - End-to-end CASE run with pyLSD multi-run orchestration; ibuprofen aromatic ring structure at rank 1; milestone-complete gate.
 
 ## Phase Details
@@ -150,12 +150,12 @@ Plans:
   3. case.md orchestrator skill includes routing decision: when constraint inventory contains `pylsd_mode: true`, use `lucy pylsd run`; when false, use `lucy lsd run`
   4. devils-advocate checklist includes: verify `pylsd_mode` flag is set when any `; ELIM` annotations exist, verify permutation count <= 8 before approving run
 
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
 
-- [ ] 70-01-PLAN.md — lsd-engineer §1 pyLSD vocabulary subsection, §"Run LSD" conditional routing block, ITERATION-COMPLETE pylsd_mode extension
-- [ ] 70-02-PLAN.md — devils-advocate G4 permutation cap check, summary line update, VALIDATION-PASSED template extension
+- [x] 70-01-PLAN.md — lsd-engineer §1 pyLSD vocabulary subsection, §"Run LSD" conditional routing block, ITERATION-COMPLETE pylsd_mode extension
+- [x] 70-02-PLAN.md — devils-advocate G4 permutation cap check, summary line update, VALIDATION-PASSED template extension
 
 ### Phase 71: Ibuprofen CASE UAT
 
@@ -180,7 +180,7 @@ Plans:
 | 67. PyLSDOrchestrator and SolutionMerger | 2/2 | Complete    | 2026-03-17 |
 | 68. Constraint Inventory v2 Schema | 4/4 | Complete   | 2026-05-19 |
 | 69. CLI Command and Regression Suite | 4/4 | Complete   | 2026-05-19 |
-| 70. Agent Skill Updates | 0/1 | Not started | - |
+| 70. Agent Skill Updates | 2/2 | Complete   | 2026-05-19 |
 | 71. Ibuprofen CASE UAT | 0/1 | Not started | - |
 
 ---
