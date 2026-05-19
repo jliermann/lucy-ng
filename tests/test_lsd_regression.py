@@ -190,23 +190,32 @@ class TestLSDRegression:
                 )
                 sol_file = tmp_path / "compound.sol"
                 sol_file.write_text(sol_content)
-                proc = subprocess.run(
-                    [outlsd_bin, "5"],
-                    stdin=sol_file.open("r"),
-                    capture_output=True,
-                    text=True,
-                    timeout=30,
-                )
+                # WR-04: use context manager to ensure file handle is closed.
+                # WR-03: check=True raises CalledProcessError on non-zero exit
+                # so a failing outlsd is reported clearly rather than silently
+                # writing garbage to fallback_smi and causing a misleading
+                # "InChI set changed" assertion failure.
+                with sol_file.open("r") as stdin_fh:
+                    proc = subprocess.run(
+                        [outlsd_bin, "5"],
+                        stdin=stdin_fh,
+                        capture_output=True,
+                        text=True,
+                        timeout=30,
+                        check=True,
+                    )
                 fallback_smi.write_text(proc.stdout)
                 smiles_path = fallback_smi
             else:
-                # stdout doesn't contain OUTLSD marker — try raw pipe
+                # stdout doesn't contain OUTLSD marker — try raw pipe.
+                # WR-03: check=True so an outlsd failure is reported clearly.
                 proc = subprocess.run(
                     [outlsd_bin, "5"],
                     input=result.stdout,
                     capture_output=True,
                     text=True,
                     timeout=30,
+                    check=True,
                 )
                 fallback_smi.write_text(proc.stdout)
                 smiles_path = fallback_smi
@@ -229,6 +238,14 @@ class TestLSDRegression:
             smiles_path = fallback_smi
 
         actual_inchis = _smiles_to_inchis(smiles_path)
+        # WR-03: guard against empty InChI set from a silently-failed outlsd run.
+        # If check=True raised CalledProcessError we never reach here; this guard
+        # catches the edge case where outlsd exited 0 but produced no parseable SMILES.
+        assert actual_inchis, (
+            f"No InChIs parsed from {smiles_path} — outlsd may have produced empty or "
+            f"unparseable output. SMILES file content (first 200 chars): "
+            f"{smiles_path.read_text()[:200]!r}"
+        )
         baseline_inchis = _read_baseline(baseline_path)
 
         added = actual_inchis - baseline_inchis
