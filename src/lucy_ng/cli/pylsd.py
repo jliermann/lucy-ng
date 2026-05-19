@@ -256,11 +256,13 @@ def pylsd_run(
     N = len(merge_result.merged_solutions)
 
     if output_format == "json":
-        # _perform_ranking with output_format="json" echoes JSON + returns dict
+        # Pass _silent=True to suppress the inner click.echo from _perform_ranking;
+        # we echo the outer D-14c wrapper below instead (CR-01 fix).
         rank_data = _perform_ranking(
             merge_result.merged_smi,
             experimental_shifts,
             output_format="json",
+            _silent=True,
         )
         # Wrap in outer D-14c shape
         outer: dict = {

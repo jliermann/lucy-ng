@@ -401,3 +401,112 @@ class TestRankingIntegration:
         assert call_args[0][0] == mock_merge_result.merged_smi
         # Verify experimental shifts were parsed correctly
         assert call_args[0][1] == [180.5, 140.8]
+
+    def test_format_json_passes_silent_true(self, tmp_path):
+        """With --format json, _perform_ranking must be called with _silent=True (CR-01 fix).
+
+        Verifies the fix that prevents double-JSON echo: pylsd_run suppresses
+        the inner click.echo from _perform_ranking by passing _silent=True, then
+        echoes a single outer wrapper JSON itself.
+        """
+        lsd_file = tmp_path / "compound.lsd"
+        lsd_file.write_text("; minimal\nEXIT\n")
+
+        merged_solution = MagicMock(spec=MergedSolution)
+        merged_solution.canonical_smiles = "CC"
+        mock_orch_result, mock_merge_result = _make_mock_results(
+            tmp_path, merged_solutions=[merged_solution]
+        )
+        mock_orch_result.permutation_results = [MagicMock()]
+
+        ranking_data = {
+            "total_solutions": 1,
+            "ranked_count": 1,
+            "skipped_count": 0,
+            "experimental_shifts": [25.0],
+            "tolerance": 3.0,
+            "solutions": [],
+            "warnings": [],
+        }
+
+        with (
+            patch("lucy_ng.cli.pylsd.PyLSDOrchestrator") as MockOrch,
+            patch("lucy_ng.cli.pylsd.SolutionMerger") as MockMerger,
+            patch("lucy_ng.cli.pylsd.LSDRunner.is_available", return_value=True),
+            patch("lucy_ng.cli.pylsd._perform_ranking", return_value=ranking_data) as mock_rank,
+        ):
+            MockOrch.return_value.run.return_value = mock_orch_result
+            MockMerger.return_value.merge.return_value = mock_merge_result
+
+            runner = CliRunner(mix_stderr=False)
+            result = runner.invoke(
+                pylsd,
+                ["run", str(lsd_file), "--shifts", "25.0", "--format", "json"],
+                catch_exceptions=False,
+            )
+
+        assert result.exit_code == 0
+        mock_rank.assert_called_once()
+        call_kwargs = mock_rank.call_args.kwargs
+        assert call_kwargs.get("_silent") is True, (
+            f"_perform_ranking must be called with _silent=True when --format json. "
+            f"Actual kwargs: {call_kwargs}"
+        )
+
+        # stdout must be exactly one parseable JSON document (not two concatenated)
+        data = json.loads(result.output)
+        assert "permutations" in data
+        assert "ranked_solutions" in data
+
+
+# ---------------------------------------------------------------------------
+# TestMalformedInventory: WR-01 — START without END exits 1
+# ---------------------------------------------------------------------------
+
+
+class TestMalformedInventory:
+    """Tests for _extract_suspects and _validate_and_parse_inventory with malformed inventory."""
+
+    def test_malformed_inventory_start_without_end_exits_1(self, tmp_path):
+        """LSD file with START delimiter but no END delimiter must exit 1 (WR-01 fix)."""
+        from lucy_ng.cli.lsd import _validate_and_parse_inventory
+
+        # Construct a file that has the START delimiter but no END delimiter
+        lsd_content = (
+            "; === CONSTRAINT INVENTORY v2 ===\n"
+            '; { "version": 2,\n'
+            ';   "truncated": true\n'
+            "; -- file was truncated before END delimiter --\n"
+            "MULT 1 C 2 0\n"
+        )
+        lsd_file = tmp_path / "truncated.lsd"
+        lsd_file.write_text(lsd_content)
+
+        with pytest.raises(SystemExit) as exc_info:
+            _validate_and_parse_inventory(lsd_file)
+        assert exc_info.value.code == 1
+
+    def test_absent_inventory_returns_none(self, tmp_path):
+        """LSD file with no inventory block at all must return None (not an error)."""
+        from lucy_ng.cli.lsd import _validate_and_parse_inventory
+
+        lsd_content = "; Plain LSD file without any inventory\nMULT 1 C 2 0\n"
+        lsd_file = tmp_path / "no_inventory.lsd"
+        lsd_file.write_text(lsd_content)
+
+        result = _validate_and_parse_inventory(lsd_file)
+        assert result is None
+
+    def test_extract_suspects_propagates_malformed_exit(self, tmp_path):
+        """_extract_suspects must propagate SystemExit(1) for malformed inventory (WR-01)."""
+        lsd_content = (
+            "; === CONSTRAINT INVENTORY v2 ===\n"
+            '; { "version": 2, "truncated": true\n'
+            "MULT 1 C 2 0\n"
+        )
+        lsd_file = tmp_path / "truncated.lsd"
+        lsd_file.write_text(lsd_content)
+
+        with pytest.raises(SystemExit) as exc_info:
+            _extract_suspects(lsd_file)
+        assert exc_info.value.code == 1

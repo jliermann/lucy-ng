@@ -211,6 +211,7 @@ def _perform_ranking(
     tolerance: float = 3.0,
     table: str | Path | None = None,
     output_format: str = "text",
+    _silent: bool = False,
 ) -> dict | None:
     """Rank LSD solutions by 13C spectrum similarity.
 
@@ -226,6 +227,11 @@ def _perform_ranking(
         table: Path to HOSE lookup table; auto-detected when None.
         output_format: 'text' (echo to stdout, return None) or 'json'
             (echo JSON to stdout AND return the data dict for callers).
+        _silent: When True, suppress click.echo output (used by pylsd_run to
+            avoid the double-JSON-echo bug: _perform_ranking normally echoes
+            JSON to stdout when output_format='json', and pylsd_run would then
+            echo a second outer wrapper — passing _silent=True prevents the
+            inner echo so only the outer wrapper is written).
 
     Returns:
         When output_format == 'json': the data dict (for pylsd_run embedding).
@@ -301,7 +307,8 @@ def _perform_ranking(
             ],
             "warnings": result.warnings,
         }
-        click.echo(json.dumps(data, indent=2))
+        if not _silent:
+            click.echo(json.dumps(data, indent=2))
         return data
     else:
         click.echo(f"Ranking {result.total_solutions} LSD solutions")
@@ -373,7 +380,17 @@ def _validate_and_parse_inventory(lsd_file: str | Path) -> dict | None:
     # Extract the v2 inventory block
     raw_json = _extract_inventory_block(content)
     if raw_json is None:
-        # No block present — not an error at this level; caller decides
+        # Distinguish ABSENT (no block at all) from PRESENT-MALFORMED (START without END).
+        # MALFORMED is a hard error: a truncated LSD file should not silently fall through
+        # to the D-13b grep fallback (D-13a/WR-01 fix).
+        if "=== CONSTRAINT INVENTORY v2 ===" in content:
+            click.echo(
+                "Error: Malformed inventory block — START delimiter found but END "
+                "delimiter is missing. Reconcile the LSD file before running pylsd.",
+                err=True,
+            )
+            raise SystemExit(1)
+        # No block at all — not an error at this level; caller decides
         return None
 
     # Parse JSON
