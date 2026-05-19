@@ -2,8 +2,8 @@
 
 import json
 import re
-import pytest
 from pathlib import Path
+from unittest.mock import patch
 
 from click.testing import CliRunner
 from jsonschema import Draft202012Validator
@@ -666,6 +666,40 @@ class TestValidateInventoryCLI:
         assert result.exit_code == 1
         data = json.loads(result.output)
         assert data["valid"] is False, f"Expected valid:false for missing END delimiter, got: {data}"
+
+    def test_permission_error_on_file_read_exits_1(self, tmp_path):
+        """PermissionError on file read must exit 1 with clean JSON error (WR-05 regression test).
+
+        click.Path(exists=True) only validates existence, not readability. If the file
+        exists but is unreadable (mode 0o000, wrong owner), a PermissionError must be
+        caught and returned as a clean JSON error rather than an unhandled exception
+        that would corrupt the agent's bash pipeline parsing.
+        """
+        lsd_file = tmp_path / "compound.lsd"
+        lsd_file.write_text(_make_v2_lsd_content(_minimal_v2_inventory_json()))
+        runner = CliRunner()
+        with patch("lucy_ng.cli.lsd.Path.read_text", side_effect=PermissionError("Permission denied: compound.lsd")):
+            result = runner.invoke(
+                lsd, ["validate-inventory", str(lsd_file), "--format", "json"],
+                catch_exceptions=False
+            )
+        assert result.exit_code == 1, f"Expected exit 1 on PermissionError, got {result.exit_code}. Output: {result.output}"
+        data = json.loads(result.output)
+        assert data["valid"] is False
+        assert len(data.get("errors", [])) >= 1
+        assert "Cannot read file" in data["errors"][0]["message"]
+
+    def test_permission_error_text_format_exits_1(self, tmp_path):
+        """PermissionError in text output mode must exit 1 with human-readable error (WR-05)."""
+        lsd_file = tmp_path / "compound.lsd"
+        lsd_file.write_text(_make_v2_lsd_content(_minimal_v2_inventory_json()))
+        runner = CliRunner()
+        with patch("lucy_ng.cli.lsd.Path.read_text", side_effect=PermissionError("Permission denied")):
+            result = runner.invoke(
+                lsd, ["validate-inventory", str(lsd_file)],
+                catch_exceptions=False
+            )
+        assert result.exit_code == 1, f"Expected exit 1 on PermissionError, got {result.exit_code}"
 
 
 # ---------------------------------------------------------------------------

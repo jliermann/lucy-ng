@@ -219,7 +219,23 @@ def lsd_validate_inventory(lsd_file: str, output_format: str) -> None:
     LSD_FILE is the path to the LSD input file containing a v2 inventory block.
     Exits 0 if valid, 1 if invalid or no inventory found.
     """
-    content = Path(lsd_file).read_text()
+    try:
+        content = Path(lsd_file).read_text(encoding="utf-8")
+    except (PermissionError, OSError) as e:
+        if output_format == "json":
+            click.echo(json.dumps({
+                "valid": False,
+                "file": lsd_file,
+                "errors": [
+                    {
+                        "message": f"Cannot read file: {e}",
+                        "validator": "file_access",
+                    }
+                ],
+            }, indent=2))
+        else:
+            click.echo(f"Error: Cannot read file: {e}", err=True)
+        raise SystemExit(1)
 
     # Check for v1 block (per D-02 — emit error and exit 1)
     if "=== CONSTRAINT INVENTORY v1 ===" in content:
