@@ -216,7 +216,10 @@ Plans:
   3. The DESIGN-02 decision on solver path explicitly addresses why the agent reverted to normal-LSD during the v8.0 run (documentation imbalance hypothesis confirmed or refuted) and specifies a concrete remedy
   4. Each decision records the rationale and its direct implication for Phases 73-75 (i.e., the decision is actionable, not aspirational)
 
-**Plans:** TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 72-01-PLAN.md — Build 3-arm LSD experiment files + run_experiment.py, execute controlled LSD runs, record per-arm results.json
+- [ ] 72-02-PLAN.md — Write 72-DECISIONS.md answering Q1-Q4 with experiment evidence; human approval checkpoint
 **UI hint**: no
 
 ### Phase 73: Solution Plumbing Fix
