@@ -196,7 +196,7 @@ Plans:
 
 ## Phases
 
-- [ ] **Phase 72: Design Re-Validation** - Answer the 4 open design questions from the postmortem before any fix is built: is pyLSD multi-run the right 4J approach? single vs dual solver path? where does constraint translation live? how is the aromatic ring established? (first phase; gates all fixes)
+- [x] **Phase 72: Design Re-Validation** - Answer the 4 open design questions from the postmortem before any fix is built: is pyLSD multi-run the right 4J approach? single vs dual solver path? where does constraint translation live? how is the aromatic ring established? (first phase; gates all fixes) (completed 2026-05-20)
 - [ ] **Phase 73: Solution Plumbing Fix** - Fix `lucy lsd run` / outlsd conversion so LSD solutions reliably become SMILES: the exit-255 / header-only bug means nothing downstream works. (depends on Phase 72)
 - [ ] **Phase 74: Constraint Preservation and Merge** - Fix permutation file generation to carry the full constraint set (BOND/SYME/DEFF NOT/grouped), and fix SolutionMerger to collect non-empty results from per-permutation runs. (depends on Phase 73)
 - [ ] **Phase 75: Skill Consolidation** - Audit all agent skills against actual LSD-3.4.9 behavior; eliminate the normal-LSD vs pyLSD documentation imbalance; encode the DESIGN-02 solver-path decision as unambiguous single-path guidance; update devils-advocate gates to catch the v8.0 failure modes. (depends on Phase 72, Phase 74)
@@ -216,7 +216,7 @@ Plans:
   3. The DESIGN-02 decision on solver path explicitly addresses why the agent reverted to normal-LSD during the v8.0 run (documentation imbalance hypothesis confirmed or refuted) and specifies a concrete remedy
   4. Each decision records the rationale and its direct implication for Phases 73-75 (i.e., the decision is actionable, not aspirational)
 
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 Plans:
 **Wave 1**
 
@@ -224,7 +224,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 72-02-PLAN.md — Write 72-DECISIONS.md answering Q1-Q4 with experiment evidence; human approval checkpoint
+- [x] 72-02-PLAN.md — Write 72-DECISIONS.md answering Q1-Q4 with experiment evidence; human approval checkpoint
 
 **UI hint**: no
 
@@ -292,7 +292,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 72. Design Re-Validation | 1/2 | In Progress|  |
+| 72. Design Re-Validation | 2/2 | Complete   | 2026-05-20 |
 | 73. Solution Plumbing Fix | 0/TBD | Not started | - |
 | 74. Constraint Preservation and Merge | 0/TBD | Not started | - |
 | 75. Skill Consolidation | 0/TBD | Not started | - |
