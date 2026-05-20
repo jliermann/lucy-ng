@@ -218,8 +218,14 @@ Plans:
 
 **Plans:** 2 plans
 Plans:
+**Wave 1**
+
 - [ ] 72-01-PLAN.md — Build 3-arm LSD experiment files + run_experiment.py, execute controlled LSD runs, record per-arm results.json
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 72-02-PLAN.md — Write 72-DECISIONS.md answering Q1-Q4 with experiment evidence; human approval checkpoint
+
 **UI hint**: no
 
 ### Phase 73: Solution Plumbing Fix

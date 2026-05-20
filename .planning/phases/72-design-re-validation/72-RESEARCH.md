@@ -750,22 +750,13 @@ No authentication, persistence, or network access involved. Security domain does
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Is DUPL the correct native translation of SYME?**
-   - What we know: DUPL is native and controls deduplication; SYME does not exist natively
-   - What's unclear: Whether LSD uses SYME semantics (atom interchangeability) internally to prune the search space, or just for deduplication
-   - Recommendation: The decision document should note "SYME translation is open — Phase 74 implements and tests"
+1. **Is DUPL the correct native translation of SYME?** — RESOLVED: NO. DUPL is output deduplication, not atom equivalence (see Pitfall 5). The native equivalence mechanism is structural BOND/COSY constraints (as iter3 used: BOND for gem-dimethyl, COSY for aromatic equivalence). The Phase 72 decision document (72-DECISIONS.md, Q3) corrects D-03's "SYME→DUPL" wording accordingly; the concrete generator implementation is a Phase 74 detail.
 
-2. **Does Arm A produce aromatic solutions? (D-04 empirical question)**
-   - What we know: iter2 (without SKEL but also without SYME/DEFF NOT) → 5/90 aromatic; the confound was constraint loss
-   - What's unclear: With SYME-equivalent BOND constraints + COSY aromatic constraints present, does LSD find the aromatic solution naturally?
-   - Recommendation: This is exactly what the experiment settles. Run Arm A first.
+2. **Does Arm A produce aromatic solutions? (D-04)** — RESOLVED BY EXPERIMENT: this is the empirical core of Phase 72. Arm A (native constraints incl. BOND/COSY equivalence + DEFF F ring exclusion, NO forced SKEL) is run at execution time; the result drives the Q4 verdict in 72-DECISIONS.md. Not pre-resolvable.
 
-3. **What file path strategy should Phase 74 generator use for DEFF filter files?**
-   - What we know: iter3 used absolute paths; this works but is not portable
-   - What's unclear: Whether Phase 74 should bundle filter files with the package or reference the LSD installation
-   - Recommendation: Defer to Phase 74; the decision document should note this as an implementation detail for Phase 74.
+3. **DEFF filter file path strategy for the Phase 74 generator?** — DEFERRED TO PHASE 74 (implementation detail): bundle filter files with the package vs reference the LSD install. The decision document notes it; Phase 74 decides. Not a Phase 72 blocker.
 
 ---
 
