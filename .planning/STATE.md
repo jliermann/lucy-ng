@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v8.0
-milestone_name: pyLSD Integration
-status: executing
-stopped_at: Phase 70 context gathered
-last_updated: "2026-05-20T07:25:14.932Z"
-last_activity: 2026-05-20 -- Phase 71 planning complete
+milestone: v9.0
+milestone_name: CASE Reliability & Skill Consolidation
+status: planning
+last_updated: "2026-05-20T12:27:58.978Z"
+last_activity: 2026-05-20
 progress:
-  total_phases: 7
-  completed_phases: 6
-  total_plans: 16
-  completed_plans: 15
-  percent: 86
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # lucy-ng State
@@ -25,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-03-13)
 
 ## Current Position
 
-Phase: 70 (agent-skill-updates) — EXECUTING
-Plan: 1 of 2
-Status: Ready to execute
-Last activity: 2026-05-20 -- Phase 71 planning complete
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-05-20 — Milestone v9.0 started
 
 ## Phase Map (v8.0)
 

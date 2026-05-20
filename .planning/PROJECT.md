@@ -10,15 +10,21 @@ Lucy-ng is an AI-agent skill for Computer-Assisted Structure Elucidation (CASE) 
 
 An AI agent can autonomously determine the structure of an unknown organic compound from its NMR spectra, with a multi-agent architecture that prevents unproductive loops and keeps the elucidation on track.
 
-## Current Milestone: v8.0 pyLSD Integration
+## Current Milestone: v9.0 CASE Reliability & Skill Consolidation
 
-**Goal:** Migrate from direct LSD calls to pyLSD orchestration, enabling systematic exploration of 4J HMBC coupling possibilities through multiple solver runs with different constraint configurations.
+**Goal:** Make the pyLSD CASE system actually work end-to-end — fix the tooling bugs the v8.0 UAT exposed, consolidate the skill/tool architecture, and re-answer the open 4J/aromatic design question — verified by a passing blind UAT on CASE1 **and** CASE9.
 
-**Target features:**
-- Replace `lucy lsd run` with pyLSD-based solving (handles ambiguous atom states, multiple LSD runs)
-- 4J exploration: systematically test suspect HMBC correlations as 2-4J using ELIM/extended bond ranges
-- Agent team integration: teach agents to use pyLSD's multi-run capabilities for 4J handling
-- pyLSD input file generation (FORM, ELIM, SHIX/SHIH commands not currently used)
+**Driver:** v8.0 UAT found the correct structure (ibuprofen) but BYPASSED the entire pyLSD system — merge collected 0 despite thousands of per-permutation solutions, permutation files dropped BOND/SYME/DEFF NOT, and the answer came via direct lsd + forced benzene fragment + ~7 coordinator interventions. Full forensics: `.planning/v8.0-UAT-POSTMORTEM.md`. v9.0 must prove the *mechanism* works, not just the result.
+
+**Target areas:**
+- **Design re-validation (FIRST):** is pyLSD multi-run the right 4J approach? single vs dual solver path? where does constraint translation live? how is the aromatic ring established? (Phase 65 hypothesis was contradicted — ring had to be forced.)
+- **R1 — tooling foundation:** `lucy lsd run` / outlsd conversion (exit 255; solutions never become SMILES)
+- **R2 — pyLSD constraint preservation + merge:** permutation files must not drop BOND/SYME/DEFF NOT; SolutionMerger must collect solutions
+- **R3 — architecture:** lossless native translation across all solver paths (SYME/DEFF NOT are NOT native LSD commands)
+- **R4 — skill consolidation:** review ALL agent skills; resolve normal-LSD-vs-pyLSD documentation imbalance (hypothesis: agent reverts to the better-documented path)
+- **Gate:** blind UAT re-run on CASE1 + CASE9
+
+**v8.0 status:** shipped infrastructure but UAT failed as validation; superseded/repaired by v9.0 (not archived — artifacts retained as v9.0 reference).
 
 ## Current State
 
@@ -226,4 +232,4 @@ Minimum viable spectral data for v1:
 - 2 minor integration gaps from v6.0 audit (INTL-03 aromatic expectation relay, INTL-04 4J status field validation) — cosmetic
 
 ---
-*Last updated: 2026-03-13 after v8.0 milestone started*
+*Last updated: 2026-05-20 — v9.0 milestone started (driven by v8.0-UAT-POSTMORTEM.md)*
