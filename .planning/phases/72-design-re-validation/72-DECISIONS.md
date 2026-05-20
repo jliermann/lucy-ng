@@ -3,7 +3,7 @@
 **Experiment run:** 2026-05-20
 **Compound:** CASE1 / Ibuprofen / C13H18O2
 **LSD version:** 3.4.9
-**Status:** DRAFT — pending human approval
+**Status:** APPROVED — 2026-05-20
 
 > Arm A (full native constraints, no forced benzene) produced 2 solutions — both aromatic, including ibuprofen itself — proving that the aromatic ring emerges from constraints alone; the v8.0 failure was the constraint-loss bug, not an inherent LSD limitation.
 
@@ -148,4 +148,4 @@ The following CONTEXT.md wording must be treated as superseded by this document:
 
 ---
 
-*Status: DRAFT — pending human approval. Type "approved" to lock these decisions and close Phase 72.*
+*Status: APPROVED 2026-05-20. Decisions locked. Phase 72 complete.*

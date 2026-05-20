@@ -3,7 +3,7 @@ phase: 72-design-re-validation
 plan: "02"
 subsystem: planning
 tags: [architecture-decisions, design, lsd, 4j-handling, aromatic-ring, constraint-translation]
-status: awaiting-checkpoint
+status: complete
 completed_date: "2026-05-20"
 
 dependency_graph:
@@ -40,7 +40,7 @@ metrics:
   tasks_total: 2
   files_created: 1
   files_modified: 0
-  note: "Plan 02 is autonomous=false; stops at checkpoint:human-verify after Task 1"
+  note: "Plan 02 is autonomous=false; checkpoint approved by user 2026-05-20"
 ---
 
 # Phase 72 Plan 02: Architecture Decisions Document Summary
@@ -54,7 +54,7 @@ metrics:
 | Task | Name | Commit | Files |
 |------|------|--------|-------|
 | 1 | Write 72-DECISIONS.md from experiment results | 1bd4607 | .planning/phases/72-design-re-validation/72-DECISIONS.md |
-| 2 | checkpoint:human-verify | — | Awaiting sign-off |
+| 2 | checkpoint:human-verify | approved 2026-05-20 | — |
 
 ## Decisions Made
 
@@ -101,4 +101,4 @@ None. 72-DECISIONS.md is a planning document. No new network endpoints, auth pat
 
 ---
 
-*Plan status: AWAITING CHECKPOINT — Task 2 (human-verify) pending user sign-off*
+*Plan status: COMPLETE — all tasks done, decisions locked 2026-05-20.*
