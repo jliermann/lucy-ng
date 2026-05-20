@@ -240,7 +240,11 @@ Plans:
   3. `SolutionMerger` receiving per-permutation outlsd output from a run that produced 2584 raw solutions (the documented ibuprofen perm_00 case) assembles a non-empty `merged.smi` — zero solutions is no longer possible when the solver found solutions
   4. All existing `lucy lsd run` regression tests pass (no behavioral regression on working paths)
 
-**Plans:** TBD
+**Plans:** 1 plan
+Plans:
+
+- [ ] 73-01-PLAN.md — Fix _execute_lsd (file-arg), _run_outlsd (shared _invoke_outlsd helper), success semantics; TestLSDRunnerFixed tests
+
 **UI hint**: no
 
 ### Phase 74: Constraint Preservation and Merge
@@ -293,10 +297,10 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 72. Design Re-Validation | 2/2 | Complete   | 2026-05-20 |
-| 73. Solution Plumbing Fix | 0/TBD | Not started | - |
+| 73. Solution Plumbing Fix | 0/1 | Not started | - |
 | 74. Constraint Preservation and Merge | 0/TBD | Not started | - |
 | 75. Skill Consolidation | 0/TBD | Not started | - |
 | 76. Milestone UAT Gate | 0/TBD | Not started | - |
 
 ---
-*Last updated: 2026-05-20 — v9.0 roadmap created (5 phases, 72-76)*
+*Last updated: 2026-05-20 — Phase 73 planned (1 plan)*
