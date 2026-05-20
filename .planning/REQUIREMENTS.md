@@ -1,102 +1,77 @@
-# Requirements: v8.0 pyLSD Integration
+# Requirements: v9.0 CASE Reliability & Skill Consolidation
 
-**Defined:** 2026-03-13
-**Core Value:** AI agent autonomously determines compound structures from NMR, with systematic 4J HMBC exploration via multi-run solver orchestration
+**Defined:** 2026-05-20
+**Core Value:** AI agent autonomously determines compound structures from NMR — and the pipeline that produces the answer is reliable and uses the intended mechanism, not a manual bypass.
+**Driver:** `.planning/v8.0-UAT-POSTMORTEM.md` (v8.0 found ibuprofen but bypassed its own pyLSD system).
 
 ## v1 Requirements
 
-Requirements for v8.0 release. Each maps to roadmap phases.
+Requirements for v9.0 release. Outcome-level where possible so they survive the Phase-1 design decisions. Each maps to roadmap phases.
 
-### Validation Gate
+### Design Re-Validation (FIRST — gates all fixes)
 
-- [x] **GATE-01**: Manual hypothesis test — run ibuprofen LSD with 3 known 4J HMBC correlations removed, confirm solutions with aromatic rings appear (30-minute test, gates entire roadmap)
+- [ ] **DESIGN-01**: 4J-handling and aromatic-ring approach is decided and documented, with the Phase-65 hypothesis ("removing 4J HMBC makes the aromatic ring appear") re-evaluated against actual CASE evidence (ring had to be force-fragmented in the v8.0 UAT)
+- [ ] **DESIGN-02**: Solver-path architecture is decided (single path vs normal-LSD + pyLSD dual path) together with a skill-documentation strategy that prevents the agent reverting to the better-documented path
 
-### LSD Input Generation
+### Reliability (design-agnostic, outcome-level)
 
-- [x] **INPUT-01**: LSDInputGenerator supports FORM command for molecular formula declaration in pyLSD-format files
-- [x] **INPUT-02**: LSDInputGenerator supports ELIM header command (`ELIM N M` for correlation elimination)
-- [x] **INPUT-03**: LSDInputGenerator supports SHIX/SHIH commands for chemical shift assignment to atoms
-- [x] **INPUT-04**: LSDInputGenerator supports extended HMBC bond range syntax (`HMBC X Y 2 4` for 2-4 bond correlations)
-- [ ] **INPUT-05**: Constraint inventory schema v2 tracks 4J suspect correlations with `pylsd_mode`, `deferred_4j` metadata
+- [ ] **RELI-01**: LSD solutions reliably convert to ranked SMILES with no silent solution loss — when the solver finds N solutions, the pipeline ranks them (covers the outlsd conversion / `lucy lsd run` exit-255 / empty-merge failures)
+- [ ] **RELI-02**: Every solver invocation runs with the COMPLETE validated constraint set — no silent constraint loss on any solver path (covers permutation-file constraint drop and the non-native-translation gap)
+- [ ] **RELI-03**: Aromatic compounds reliably yield aromatic-ring solutions in the ranked output (per the DESIGN-01 decision)
 
-### Multi-Run Orchestration
+### Skill Consolidation
 
-- [x] **ORCH-01**: PyLSDOrchestrator generates permutations of LSD input files with different 4J correlation configurations (include/exclude suspect HMBCs)
-- [x] **ORCH-02**: PyLSDOrchestrator caps permutation count (K≤3 excluded correlations) to prevent combinatorial explosion
-- [x] **ORCH-03**: SolutionMerger deduplicates solutions from multiple LSD runs using InChI canonicalization
-- [x] **ORCH-04**: SolutionMerger preserves provenance (which correlation configuration produced each solution)
+- [ ] **SKILL-01**: All agent skills are correct against actual LSD-3.4.9 behavior — no commands taught that the binary rejects (e.g., SYME / DEFF NOT are non-native); native equivalents documented
+- [ ] **SKILL-02**: Skills give unambiguous single-solver-path guidance per DESIGN-02 (resolve the normal-LSD-vs-pyLSD documentation imbalance)
+- [ ] **SKILL-03**: devils-advocate gates detect the v8.0 failure modes — silent constraint loss, empty/zero merge despite per-run solutions, and post-validation file edits
 
-### CLI
+### UAT (milestone gate)
 
-- [ ] **CLI-01**: `lucy pylsd run <file>` command executes multi-run orchestration and returns merged solutions
-- [ ] **CLI-02**: `lucy pylsd run` reuses existing `lucy lsd rank` for two-tier ranking (match count primary, MAE secondary)
-- [ ] **CLI-03**: Regression: all existing `lucy lsd run` commands work unchanged (coexist, not replace)
-
-### Agent Integration
-
-- [ ] **AGT-01**: lsd-engineer writes extended HMBC bond range (`HMBC X Y 2 4`) for suspect 4J correlations identified by nmr-chemist
-- [ ] **AGT-02**: lsd-engineer uses `lucy pylsd run` when constraint inventory has `pylsd_mode: true` (4J suspects present)
-- [ ] **AGT-03**: case.md orchestrator routes to multi-run path when nmr-chemist flags aromatic 4J risk
-- [ ] **AGT-04**: devils-advocate validates 4J deferral decisions (checks which correlations deferred, permutation count reasonable)
-
-### UAT
-
-- [ ] **UAT-01**: Ibuprofen CASE run using pyLSD multi-run orchestration finds correct structure with aromatic ring in top-ranked solutions
-- [ ] **UAT-02**: Ibuprofen 3 known 4J correlations (ArCH 129.38↔CH2 45.03, ArCH 127.26↔CH 44.90) correctly handled via extended bond range or exclusion permutations
+- [ ] **UAT-03**: CASE1 blind re-run solves ibuprofen via the intended mechanism (not a manual bypass); all four Phase-71 success criteria pass against on-disk artifacts (independent RDKit verification)
+- [ ] **UAT-04**: CASE9 blind run (4-(1-hydroxyethyl)benzoic acid isopropylester, C12H16O3 — different molecule, same para-aromatic 4J failure mode) solves correctly via the intended mechanism
 
 ## v2 Requirements
 
 Deferred to future release. Tracked but not in current roadmap.
 
-### Heteroatom Ambiguity
+### Performance
 
-- **HETERO-01**: Multi-state MULT for ambiguous heteroatoms (e.g., `MULT 14 O (2 3) (0 1)`) with combinatorial LSD runs
+- **PERF-01**: Parallel LSD binary execution across permutations (sequential is acceptable for ≤8 permutations; revisit only if UAT shows it is too slow)
+
+### Heteroatom Ambiguity (carried from v8.0 deferral)
+
+- **HETERO-01**: Multi-state MULT for ambiguous heteroatoms with combinatorial LSD runs
 - **HETERO-02**: Automatic default state insertion for undefined heteroatom hybridisation/multiplicity
-
-### Multi-Compound UAT
-
-- **MUAT-01**: Multi-compound CASE comparison UAT with non-aromatic test compounds
-- **MUAT-02**: COSY correlation integration in LSD constraints
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
 | Statistical 4J detection | v7.0 proved non-viable (100% false positive rate) |
-| pyLSD as external dependency | Implement orchestration directly in Python — pyLSD is just an LSD driver |
-| Multi-state MULT for heteroatoms | Deferred to v9.0 — focus v8.0 purely on 4J |
-| pyLSD's built-in nmrshiftdb ranking | Bypass — use existing two-tier HOSE ranking |
-| Parallel LSD binary execution | Nice-to-have but sequential runs are sufficient for ≤8 permutations |
+| pyLSD as external dependency | Orchestration is implemented directly in Python |
+| New domain features | v9.0 is reliability + consolidation of existing capabilities, not new functionality |
+| Re-deriving v8.0 infrastructure from scratch | Repair/consolidate the shipped v8.0 code, do not rewrite wholesale |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| GATE-01 | Phase 65 | Complete |
-| INPUT-01 | Phase 66 | Complete |
-| INPUT-02 | Phase 66 | Complete |
-| INPUT-03 | Phase 66 | Complete |
-| INPUT-04 | Phase 66 | Complete |
-| INPUT-05 | Phase 68 | Pending |
-| ORCH-01 | Phase 67 | Complete |
-| ORCH-02 | Phase 67 | Complete |
-| ORCH-03 | Phase 67 | Complete |
-| ORCH-04 | Phase 67 | Complete |
-| CLI-01 | Phase 69 | Pending |
-| CLI-02 | Phase 69 | Pending |
-| CLI-03 | Phase 69 | Pending |
-| AGT-01 | Phase 70 | Pending |
-| AGT-02 | Phase 70 | Pending |
-| AGT-03 | Phase 70 | Pending |
-| AGT-04 | Phase 70 | Pending |
-| UAT-01 | Phase 71 | Pending |
-| UAT-02 | Phase 71 | Pending |
+| DESIGN-01 | TBD | Pending |
+| DESIGN-02 | TBD | Pending |
+| RELI-01 | TBD | Pending |
+| RELI-02 | TBD | Pending |
+| RELI-03 | TBD | Pending |
+| SKILL-01 | TBD | Pending |
+| SKILL-02 | TBD | Pending |
+| SKILL-03 | TBD | Pending |
+| UAT-03 | TBD | Pending |
+| UAT-04 | TBD | Pending |
 
 **Coverage:**
-- v1 requirements: 19 total
-- Mapped to phases: 19
-- Unmapped: 0
+- v1 requirements: 10 total
+- Mapped to phases: 0 (roadmapper fills this)
+- Unmapped: 10
 
 ---
-*Requirements defined: 2026-03-13*
-*Last updated: 2026-03-13 — traceability complete after roadmap creation*
+*Requirements defined: 2026-05-20*
+*v8.0 requirements (GATE/INPUT/ORCH/CLI/AGT/UAT-01/02) preserved in git history + ROADMAP.md phase sections + v8.0-UAT-POSTMORTEM.md*
