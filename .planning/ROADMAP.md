@@ -12,7 +12,8 @@
 - [v5.0 Fragment Library](milestones/v5.0-ROADMAP.md) - Phases 49-54 (shipped 2026-02-21)
 - [v6.0 Skill Quality Overhaul](milestones/v6.0-ROADMAP.md) - Phases 55-58 (shipped 2026-03-10)
 - [v7.0 Statistical 4J Detection](milestones/v7.0-ROADMAP.md) - Phases 59-64 (ABANDONED 2026-03-12)
-- **v8.0 pyLSD Integration** - Phases 65-71 (in progress)
+- **v8.0 pyLSD Integration** - Phases 65-71 (superseded by v9.0 before UAT passed)
+- **v9.0 CASE Reliability & Skill Consolidation** - Phases 72-76 (in progress)
 
 ---
 
@@ -28,7 +29,7 @@
 - [x] **Phase 68: Constraint Inventory v2 Schema** - Extend constraint inventory JSON schema with pylsd_mode, deferred_4j metadata; extend devils-advocate checklist with ELIM/FORM/MULT validation rules. (completed 2026-05-19)
 - [x] **Phase 69: CLI Command and Regression Suite** - `lucy pylsd run` CLI subcommand; regression suite confirming existing `lucy lsd run` unchanged; FORM/LSD binary tolerance confirmed. (completed 2026-05-19)
 - [x] **Phase 70: Agent Skill Updates** - lsd-engineer and case.md orchestrator skill updates with full pyLSD command reference, `; ELIM` annotation protocol, routing logic for pylsd_mode. (completed 2026-05-19)
-- [ ] **Phase 71: Ibuprofen CASE UAT** - End-to-end CASE run with pyLSD multi-run orchestration; ibuprofen aromatic ring structure at rank 1; milestone-complete gate.
+- [ ] **Phase 71: Ibuprofen CASE UAT** - End-to-end CASE run with pyLSD multi-run orchestration; ibuprofen aromatic ring structure at rank 1; milestone-complete gate. (superseded — UAT revealed systemic bugs, v9.0 repairs before re-running)
 
 ## Phase Details
 
@@ -171,7 +172,7 @@ Plans:
 
 **Plans:** TBD
 
-## Progress Table
+## Progress Table (v8.0)
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -181,7 +182,112 @@ Plans:
 | 68. Constraint Inventory v2 Schema | 4/4 | Complete   | 2026-05-19 |
 | 69. CLI Command and Regression Suite | 4/4 | Complete   | 2026-05-19 |
 | 70. Agent Skill Updates | 2/2 | Complete   | 2026-05-19 |
-| 71. Ibuprofen CASE UAT | 0/1 | Not started | - |
+| 71. Ibuprofen CASE UAT | 0/1 | Superseded (v9.0) | - |
 
 ---
-*Last updated: 2026-05-19 — Phase 68 planned (4 plans), Phase 69 planned (4 plans)*
+
+## v9.0 CASE Reliability & Skill Consolidation
+
+**Goal:** Make the pyLSD CASE system actually work end-to-end — fix the tooling bugs exposed by the v8.0 UAT postmortem, consolidate the skill/tool architecture, and re-answer the open 4J/aromatic design question — verified by passing blind UAT on CASE1 and CASE9 via the intended mechanism, not a manual bypass.
+
+**Driver:** v8.0 UAT found ibuprofen but bypassed the entire pyLSD system. Per-permutation outlsd conversion emits only a 10-line header (no SMILES), SolutionMerger collects 0, permutation files drop BOND/SYME/DEFF NOT, and the correct answer came from direct lsd binary + forced benzene fragment + ~7 manual coordinator interventions. Full forensics: `.planning/v8.0-UAT-POSTMORTEM.md`.
+
+**Root causes to address:** R1 (outlsd conversion / `lucy lsd run` plumbing), R2 (permutation constraint loss + empty merge), R3 (SYME/DEFF NOT are lucy-ng abstractions not native LSD — translation must be lossless across all paths), R4 (skill/architecture — normal-LSD vs pyLSD documentation imbalance causes agent regression to the better-documented path).
+
+## Phases
+
+- [ ] **Phase 72: Design Re-Validation** - Answer the 4 open design questions from the postmortem before any fix is built: is pyLSD multi-run the right 4J approach? single vs dual solver path? where does constraint translation live? how is the aromatic ring established? (first phase; gates all fixes)
+- [ ] **Phase 73: Solution Plumbing Fix** - Fix `lucy lsd run` / outlsd conversion so LSD solutions reliably become SMILES: the exit-255 / header-only bug means nothing downstream works. (depends on Phase 72)
+- [ ] **Phase 74: Constraint Preservation and Merge** - Fix permutation file generation to carry the full constraint set (BOND/SYME/DEFF NOT/grouped), and fix SolutionMerger to collect non-empty results from per-permutation runs. (depends on Phase 73)
+- [ ] **Phase 75: Skill Consolidation** - Audit all agent skills against actual LSD-3.4.9 behavior; eliminate the normal-LSD vs pyLSD documentation imbalance; encode the DESIGN-02 solver-path decision as unambiguous single-path guidance; update devils-advocate gates to catch the v8.0 failure modes. (depends on Phase 72, Phase 74)
+- [ ] **Phase 76: Milestone UAT Gate** - Blind CASE re-run on CASE1 (ibuprofen) AND CASE9 (4-(1-hydroxyethyl)benzoic acid isopropylester, C12H16O3) via the intended mechanism; all Phase-71 criteria verified against on-disk artifacts by independent RDKit check. (depends on Phase 75)
+
+## Phase Details
+
+### Phase 72: Design Re-Validation
+
+**Goal:** The 4 open design questions from the v8.0 postmortem are answered and documented before any code is written, so downstream phases build the right thing
+**Depends on:** Nothing (first v9.0 phase; gates all fix phases)
+**Requirements:** DESIGN-01, DESIGN-02
+**Success Criteria** (what must be TRUE):
+
+  1. A decision document exists in `.planning/phases/72-design-revalidation/` with explicit YES/NO answers to all four open design questions (is pyLSD multi-run the right 4J approach? single vs dual solver path? where does constraint translation live? how is the aromatic ring established?)
+  2. The Phase-65 hypothesis ("removing 4J HMBC makes aromatic ring appear") is re-evaluated against the v8.0 UAT evidence — specifically the fact that iteration-2 (4J handled, SYME/DEFF NOT dropped) produced 0 aromatic solutions out of 90, and the ring only appeared when forced via SKEL fragment in iteration-3
+  3. The DESIGN-02 decision on solver path explicitly addresses why the agent reverted to normal-LSD during the v8.0 run (documentation imbalance hypothesis confirmed or refuted) and specifies a concrete remedy
+  4. Each decision records the rationale and its direct implication for Phases 73-75 (i.e., the decision is actionable, not aspirational)
+
+**Plans:** TBD
+**UI hint**: no
+
+### Phase 73: Solution Plumbing Fix
+
+**Goal:** When the LSD solver finds N solutions, those solutions reliably convert to ranked SMILES — the outlsd exit-255 / header-only conversion bug that caused every per-permutation run to produce an empty output is fixed
+**Depends on:** Phase 72 (solver-path architecture decision determines what gets fixed and what gets discarded)
+**Requirements:** RELI-01
+**Success Criteria** (what must be TRUE):
+
+  1. `lucy lsd run` on a valid LSD input file completes without exit code 255 and writes a `.sol` file to disk
+  2. Running outlsd against a `.sol` file that contains N LSD solutions produces a SMILES output with exactly N entries (not a 10-line header with 0 SMILES)
+  3. `SolutionMerger` receiving per-permutation outlsd output from a run that produced 2584 raw solutions (the documented ibuprofen perm_00 case) assembles a non-empty `merged.smi` — zero solutions is no longer possible when the solver found solutions
+  4. All existing `lucy lsd run` regression tests pass (no behavioral regression on working paths)
+
+**Plans:** TBD
+**UI hint**: no
+
+### Phase 74: Constraint Preservation and Merge
+
+**Goal:** Every solver invocation runs with the complete validated constraint set, and the merge step collects all per-permutation results — no silent loss of BOND/SYME/DEFF NOT/grouped constraints, no empty merge despite per-run solutions
+**Depends on:** Phase 73 (outlsd conversion must work before merge correctness can be verified end-to-end)
+**Requirements:** RELI-02, RELI-03
+**Success Criteria** (what must be TRUE):
+
+  1. Each permutation LSD file generated by `PyLSDOrchestrator` contains the full non-HMBC constraint set from the master file — BOND, DEFF NOT, grouped HMBC notation, and the losslessly-translated native equivalents of SYME and DEFF NOT (i.e., no permutation file is HMBC-only, which was the v8.0 failure: perm_00/compound.lsd = 542 B)
+  2. SYME and DEFF NOT in the master constraint inventory are translated to native LSD-3.4.9 commands (MULT/LIST/PROP/ELEM as appropriate per DESIGN-01 decision) before any permutation file is written, so no permutation relies on non-native commands
+  3. After a multi-run with permutations that each produce solutions, `merged.smi` is non-empty and `run_report.json` records per-permutation solution counts that sum to at least the count from the most-productive permutation
+  4. An aromatic compound processed through the full pyLSD pipeline (or the DESIGN-01-decided mechanism) produces at least one aromatic-ring solution in the ranked output — the benzene ring emerges from constraints, not from a forced SKEL fragment
+
+**Plans:** TBD
+**UI hint**: no
+
+### Phase 75: Skill Consolidation
+
+**Goal:** All agent skills reflect actual LSD-3.4.9 behavior, give unambiguous single-path guidance per the DESIGN-02 decision, and encode devils-advocate gates that would have caught the v8.0 failure modes before the run
+**Depends on:** Phase 72 (design decisions determine which commands to teach and which path to document), Phase 74 (fixed tooling must be reflected in skill documentation)
+**Requirements:** SKILL-01, SKILL-02, SKILL-03
+**Success Criteria** (what must be TRUE):
+
+  1. All agent skills (lsd-engineer, devils-advocate, nmr-chemist, solution-analyst, case.md, diagnostic) are audited against native LSD-3.4.9 commands (MULT/LIST/PROP/BOND/COSY/HMBC/ELIM/DEFF/FEXP/HSQC/ELEM); SYME and DEFF NOT are documented as lucy-ng abstractions that require native translation — no skill teaches them as directly passable to the LSD binary
+  2. Skills give unambiguous single-solver-path guidance per DESIGN-02: the path that the agent reverted to in the v8.0 UAT is either removed from skills (if DESIGN-02 decides single path) or documented with equally-specific routing conditions (if dual path)
+  3. The devils-advocate checklist includes gates that would have failed the v8.0 run early: (a) detect that permutation files drop non-HMBC constraints, (b) detect empty `merged.smi` despite non-zero `solncounter` files, (c) flag any LSD file modification after DA approval (the post-validation edit violation documented in the v8.0 postmortem)
+  4. A developer reading the agent skills can determine, for any given solver invocation, exactly which constraints will be passed to the LSD binary and via which CLI command — no ambiguity about native vs abstraction layer
+
+**Plans:** TBD
+**UI hint**: no
+
+### Phase 76: Milestone UAT Gate
+
+**Goal:** The complete v9.0 system (fixed tooling + consolidated skills) solves two different aromatic compounds via the intended mechanism, verified against on-disk artifacts by independent RDKit check — not by agent self-report
+**Depends on:** Phase 75 (all tooling fixes and skill updates must be complete before UAT)
+**Requirements:** UAT-03, UAT-04
+**Success Criteria** (what must be TRUE):
+
+  1. CASE1 (ibuprofen, C13H18O2) re-run produces a solution via `lucy pylsd run` (or the DESIGN-02-decided solver path) with at least 2 permutations; the correct structure or a RDKit-verified aromatic-ring C13H18O2 isomer is in the top-3 of `merged.smi`; all four Phase-71 success criteria pass against on-disk artifacts (not agent self-report)
+  2. CASE9 (4-(1-hydroxyethyl)benzoic acid isopropylester, C12H16O3) first-ever blind run completes via the intended mechanism; the correct structure or a RDKit-verified aromatic-ring C12H16O3 isomer is in the top-3 ranked solutions; `merged.smi` is non-empty
+  3. Neither run required manual coordinator intervention to bypass the pipeline — the 7-intervention rescue pattern from the v8.0 UAT is absent from `CASE-PROGRESS.md`
+  4. `run_report.json` for both runs documents per-permutation solution counts; at least one permutation per compound produces solutions that include an aromatic ring (independently verified by RDKit aromatic atom count, not relying on agent annotation)
+
+**Plans:** TBD
+**UI hint**: no
+
+## Progress Table (v9.0)
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 72. Design Re-Validation | 0/TBD | Not started | - |
+| 73. Solution Plumbing Fix | 0/TBD | Not started | - |
+| 74. Constraint Preservation and Merge | 0/TBD | Not started | - |
+| 75. Skill Consolidation | 0/TBD | Not started | - |
+| 76. Milestone UAT Gate | 0/TBD | Not started | - |
+
+---
+*Last updated: 2026-05-20 — v9.0 roadmap created (5 phases, 72-76)*

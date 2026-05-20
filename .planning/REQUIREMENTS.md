@@ -56,22 +56,23 @@ Deferred to future release. Tracked but not in current roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DESIGN-01 | TBD | Pending |
-| DESIGN-02 | TBD | Pending |
-| RELI-01 | TBD | Pending |
-| RELI-02 | TBD | Pending |
-| RELI-03 | TBD | Pending |
-| SKILL-01 | TBD | Pending |
-| SKILL-02 | TBD | Pending |
-| SKILL-03 | TBD | Pending |
-| UAT-03 | TBD | Pending |
-| UAT-04 | TBD | Pending |
+| DESIGN-01 | Phase 72 | Pending |
+| DESIGN-02 | Phase 72 | Pending |
+| RELI-01 | Phase 73 | Pending |
+| RELI-02 | Phase 74 | Pending |
+| RELI-03 | Phase 74 | Pending |
+| SKILL-01 | Phase 75 | Pending |
+| SKILL-02 | Phase 75 | Pending |
+| SKILL-03 | Phase 75 | Pending |
+| UAT-03 | Phase 76 | Pending |
+| UAT-04 | Phase 76 | Pending |
 
 **Coverage:**
 - v1 requirements: 10 total
-- Mapped to phases: 0 (roadmapper fills this)
-- Unmapped: 10
+- Mapped to phases: 10
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-05-20*
+*Traceability filled: 2026-05-20 — roadmapper assigned all 10 requirements to phases 72-76*
 *v8.0 requirements (GATE/INPUT/ORCH/CLI/AGT/UAT-01/02) preserved in git history + ROADMAP.md phase sections + v8.0-UAT-POSTMORTEM.md*
