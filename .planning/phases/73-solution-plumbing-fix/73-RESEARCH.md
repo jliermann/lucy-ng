@@ -574,17 +574,11 @@ Empty assumptions log is not accurate here: see above.
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Output file name: `solutions.smi` vs `outlsd.out`**
-   - What we know: orchestrator uses `solutions.smi`; runner currently uses `outlsd.out`; `lsd_rank` CLI accepts any filename.
-   - What's unclear: Whether any existing skill documentation or agent memory hardcodes `outlsd.out` as the expected output filename from `lucy lsd run`.
-   - Recommendation: Use `solutions.smi` in the fixed runner (consistent with orchestrator); update Phase 75 skill docs to reflect the new name. For backward compatibility, optionally also write a symlink or copy to `outlsd.out`.
+1. **Output file name: `solutions.smi` vs `outlsd.out`** — RESOLVED: use `solutions.smi` (orchestrator convention) in the fixed runner. Phase 75 skill docs update to the new name. The naming consistency is tracked as a Phase 75 doc item, not a Phase 73 blocker.
 
-2. **`LSDResult.solutions` field population**
-   - What we know: Currently `solutions` is populated by reading all `*.sol` files after LSD run. After the fix, `compound.sol` will be in `output_dir`.
-   - What's unclear: Whether callers use `result.solutions` (raw `.sol` content) or only `result.output_files` (paths). `cli/lsd.py lsd_run` uses neither — it only prints file paths.
-   - Recommendation: Keep `result.solutions` population unchanged; it reads `.sol` content which is now present. No callers currently depend on it critically.
+2. **`LSDResult.solutions` field population** — RESOLVED: keep `result.solutions` population unchanged; it reads `.sol` content which is now present after the file-argument fix. `cli/lsd.py lsd_run` uses only `output_files` paths; no caller depends critically on `result.solutions`.
 
 ---
 
