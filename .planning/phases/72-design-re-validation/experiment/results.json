@@ -1,0 +1,67 @@
+[
+  {
+    "arm": "arm_a",
+    "solution_count": 2,
+    "parsed_smiles_count": 2,
+    "any_aromatic": true,
+    "aromatic_count": 2,
+    "ibuprofen_found": true,
+    "solutions": [
+      {
+        "smiles": "C1=CC=C(C(C)C(O)=O)C(=C1)CC(C)C",
+        "aromatic_ring": true,
+        "aromatic_atom_count": 6,
+        "inchi_key": "UYHNNWQKLGPQQX-UHFFFAOYSA-N",
+        "is_ibuprofen": false
+      },
+      {
+        "smiles": "CC(C)CC(=C1)C=CC(=C1)C(C)C(O)=O",
+        "aromatic_ring": true,
+        "aromatic_atom_count": 6,
+        "inchi_key": "HEFNNWSXXWATRW-UHFFFAOYSA-N",
+        "is_ibuprofen": true
+      }
+    ]
+  },
+  {
+    "arm": "arm_b",
+    "solution_count": 2,
+    "parsed_smiles_count": 2,
+    "any_aromatic": true,
+    "aromatic_count": 2,
+    "ibuprofen_found": true,
+    "solutions": [
+      {
+        "smiles": "C1=CC=C(C(C)C(O)=O)C(=C1)CC(C)C",
+        "aromatic_ring": true,
+        "aromatic_atom_count": 6,
+        "inchi_key": "UYHNNWQKLGPQQX-UHFFFAOYSA-N",
+        "is_ibuprofen": false
+      },
+      {
+        "smiles": "CC(C)CC(=C1)C=CC(=C1)C(C)C(O)=O",
+        "aromatic_ring": true,
+        "aromatic_atom_count": 6,
+        "inchi_key": "HEFNNWSXXWATRW-UHFFFAOYSA-N",
+        "is_ibuprofen": true
+      }
+    ]
+  },
+  {
+    "arm": "arm_c",
+    "solution_count": 1,
+    "parsed_smiles_count": 1,
+    "any_aromatic": true,
+    "aromatic_count": 1,
+    "ibuprofen_found": false,
+    "solutions": [
+      {
+        "smiles": "CC(C)CC(C=C1)=C(C=C1)C(C)C(O)=O",
+        "aromatic_ring": true,
+        "aromatic_atom_count": 6,
+        "inchi_key": "UYHNNWQKLGPQQX-UHFFFAOYSA-N",
+        "is_ibuprofen": false
+      }
+    ]
+  }
+]
