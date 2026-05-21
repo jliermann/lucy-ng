@@ -197,7 +197,7 @@ Plans:
 ## Phases
 
 - [x] **Phase 72: Design Re-Validation** - Answer the 4 open design questions from the postmortem before any fix is built: is pyLSD multi-run the right 4J approach? single vs dual solver path? where does constraint translation live? how is the aromatic ring established? (first phase; gates all fixes) (completed 2026-05-20)
-- [ ] **Phase 73: Solution Plumbing Fix** - Fix `lucy lsd run` / outlsd conversion so LSD solutions reliably become SMILES: the exit-255 / header-only bug means nothing downstream works. (depends on Phase 72)
+- [x] **Phase 73: Solution Plumbing Fix** - Fix `lucy lsd run` / outlsd conversion so LSD solutions reliably become SMILES: the exit-255 / header-only bug means nothing downstream works. (depends on Phase 72) (completed 2026-05-21)
 - [ ] **Phase 74: Constraint Preservation and Merge** - Fix permutation file generation to carry the full constraint set (BOND/SYME/DEFF NOT/grouped), and fix SolutionMerger to collect non-empty results from per-permutation runs. (depends on Phase 73)
 - [ ] **Phase 75: Skill Consolidation** - Audit all agent skills against actual LSD-3.4.9 behavior; eliminate the normal-LSD vs pyLSD documentation imbalance; encode the DESIGN-02 solver-path decision as unambiguous single-path guidance; update devils-advocate gates to catch the v8.0 failure modes. (depends on Phase 72, Phase 74)
 - [ ] **Phase 76: Milestone UAT Gate** - Blind CASE re-run on CASE1 (ibuprofen) AND CASE9 (4-(1-hydroxyethyl)benzoic acid isopropylester, C12H16O3) via the intended mechanism; all Phase-71 criteria verified against on-disk artifacts by independent RDKit check. (depends on Phase 75)
@@ -240,10 +240,10 @@ Plans:
   3. `SolutionMerger` receiving per-permutation outlsd output from a run that produced 2584 raw solutions (the documented ibuprofen perm_00 case) assembles a non-empty `merged.smi` — zero solutions is no longer possible when the solver found solutions
   4. All existing `lucy lsd run` regression tests pass (no behavioral regression on working paths)
 
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 Plans:
 
-- [ ] 73-01-PLAN.md — Fix _execute_lsd (file-arg), _run_outlsd (shared _invoke_outlsd helper), success semantics; TestLSDRunnerFixed tests
+- [x] 73-01-PLAN.md — Fix _execute_lsd (file-arg), _run_outlsd (shared _invoke_outlsd helper), success semantics; TestLSDRunnerFixed tests
 
 **UI hint**: no
 
@@ -297,7 +297,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 72. Design Re-Validation | 2/2 | Complete   | 2026-05-20 |
-| 73. Solution Plumbing Fix | 0/1 | Not started | - |
+| 73. Solution Plumbing Fix | 1/1 | Complete   | 2026-05-21 |
 | 74. Constraint Preservation and Merge | 0/TBD | Not started | - |
 | 75. Skill Consolidation | 0/TBD | Not started | - |
 | 76. Milestone UAT Gate | 0/TBD | Not started | - |
