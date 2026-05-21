@@ -1,8 +1,12 @@
 """Tests for LSD runner."""
 
-import pytest
-from pathlib import Path
+import shutil
+import subprocess
 import tempfile
+from pathlib import Path
+
+import pytest
+from rdkit import Chem
 
 from lucy_ng.lsd.models import Hybridization, LSDAtom, LSDCorrelation, LSDProblem
 from lucy_ng.lsd.runner import LSDRunner, LSDResult
@@ -241,3 +245,247 @@ class TestLSDRunnerMocked:
 
         assert result.success is False
         assert "Execution failed" in result.stderr
+
+
+# ---------------------------------------------------------------------------
+# Phase 73 regression tests — TestLSDRunnerFixed
+# ---------------------------------------------------------------------------
+
+FIXTURE_DIR = Path(__file__).parent / "fixtures" / "regression"
+
+
+class TestLSDRunnerFixed:
+    """Verify the Phase 73 plumbing fix: file-arg LSD invocation and
+    correct outlsd conversion.
+
+    Integration tests require LSD + outlsd on PATH (skipif-gated).
+    The mock-based unit test (test_invoke_outlsd_unit) runs without LSD.
+    """
+
+    @pytest.mark.skipif(
+        shutil.which("LSD") is None,
+        reason="LSD binary not installed",
+    )
+    def test_runner_writes_sol_file(self, tmp_path: Path) -> None:
+        """runner.run_file() writes a .sol file to output_dir.
+
+        Currently FAILS because stdin invocation mode writes no .sol file.
+        After the fix, LSD receives the input file as a positional argument
+        and writes {stem}.sol to the CWD (output_dir).
+        """
+        lsd_fixture = FIXTURE_DIR / "ibuprofen_no_4j.lsd"
+        runner = LSDRunner()
+        runner.run_file(lsd_fixture, output_dir=tmp_path, timeout=120)
+
+        sol_file = tmp_path / "ibuprofen_no_4j.sol"
+        assert sol_file.exists(), (
+            f"Expected .sol file at {sol_file} — "
+            "runner must use file-argument invocation (not stdin) to produce .sol"
+        )
+        assert sol_file.stat().st_size > 0, ".sol file is empty"
+
+    @pytest.mark.skipif(
+        shutil.which("LSD") is None,
+        reason="LSD binary not installed",
+    )
+    def test_runner_produces_smiles(self, tmp_path: Path) -> None:
+        """runner.run_file() produces solutions.smi with 392 valid SMILES lines.
+
+        Currently FAILS because outlsd.out contains a 10-line usage message
+        (not SMILES) due to the missing '5' argument in _run_outlsd.
+        After the fix, _invoke_outlsd uses [outlsd_path, '5'] with the .sol
+        file as stdin, producing one SMILES per line.
+        """
+        outlsd_bin = shutil.which("outlsd")
+        assert outlsd_bin is not None, "outlsd binary not found on PATH"
+
+        lsd_fixture = FIXTURE_DIR / "ibuprofen_no_4j.lsd"
+        runner = LSDRunner()
+        runner.run_file(lsd_fixture, output_dir=tmp_path, timeout=120)
+
+        smiles_file = tmp_path / "solutions.smi"
+        assert smiles_file.exists(), (
+            f"Expected solutions.smi at {smiles_file} — "
+            "runner._run_outlsd must write to solutions.smi with [outlsd, '5', .sol]"
+        )
+        lines = [ln for ln in smiles_file.read_text().splitlines() if ln.strip()]
+        assert len(lines) == 392, (
+            f"Expected 392 SMILES lines, got {len(lines)}. "
+            "If solutions.smi contains 'outlsd: usage:', the '5' argument is missing."
+        )
+
+    @pytest.mark.skipif(
+        shutil.which("LSD") is None,
+        reason="LSD binary not installed",
+    )
+    def test_no_header_only_output(self, tmp_path: Path) -> None:
+        """solutions.smi first line must be a valid SMILES string.
+
+        Currently FAILS because outlsd.out / solutions.smi first line is
+        'outlsd: usage: outlsd p' (a usage header, not SMILES).
+        After the fix, the first line is a valid RDKit-parseable SMILES.
+        """
+        outlsd_bin = shutil.which("outlsd")
+        assert outlsd_bin is not None, "outlsd binary not found on PATH"
+
+        lsd_fixture = FIXTURE_DIR / "ibuprofen_no_4j.lsd"
+        runner = LSDRunner()
+        runner.run_file(lsd_fixture, output_dir=tmp_path, timeout=120)
+
+        smiles_file = tmp_path / "solutions.smi"
+        assert smiles_file.exists(), "solutions.smi not written"
+        lines = [ln for ln in smiles_file.read_text().splitlines() if ln.strip()]
+        assert lines, "solutions.smi is empty"
+
+        first_line = lines[0].split()[0]  # take first whitespace-delimited token
+        mol = Chem.MolFromSmiles(first_line)
+        assert mol is not None, (
+            f"First line of solutions.smi is not a valid SMILES: {first_line!r}. "
+            "Expected a molecular structure, not a usage message."
+        )
+
+    @pytest.mark.skipif(
+        shutil.which("LSD") is None,
+        reason="LSD binary not installed",
+    )
+    def test_lsd_rank_end_to_end(self, tmp_path: Path) -> None:
+        """After runner.run_file(), _perform_ranking returns total_solutions=392.
+
+        Currently FAILS because no solutions.smi is written (outlsd bug).
+        After the fix, _perform_ranking can consume solutions.smi directly.
+        """
+        outlsd_bin = shutil.which("outlsd")
+        assert outlsd_bin is not None, "outlsd binary not found on PATH"
+
+        lsd_fixture = FIXTURE_DIR / "ibuprofen_no_4j.lsd"
+        runner = LSDRunner()
+        runner.run_file(lsd_fixture, output_dir=tmp_path, timeout=120)
+
+        smiles_file = tmp_path / "solutions.smi"
+        assert smiles_file.exists(), (
+            "solutions.smi not written — cannot test ranking"
+        )
+
+        from lucy_ng.cli.lsd import _perform_ranking
+
+        # Ibuprofen 13C shifts (no 4J correlations case)
+        ibuprofen_shifts = [
+            180.56, 141.37, 136.39, 129.38, 127.26, 45.03, 44.90,
+            30.09, 25.54, 22.63, 18.36,
+        ]
+        result_data = _perform_ranking(
+            smiles_file=smiles_file,
+            experimental_shifts=ibuprofen_shifts,
+            top=5,
+            output_format="json",
+            _silent=True,
+        )
+        assert result_data is not None, "_perform_ranking returned None for json format"
+        assert result_data["total_solutions"] == 392, (
+            f"Expected 392 total solutions, got {result_data['total_solutions']}"
+        )
+        assert result_data["ranked_count"] > 0, "No solutions could be ranked"
+
+    @pytest.mark.skipif(
+        shutil.which("LSD") is None,
+        reason="LSD binary not installed",
+    )
+    def test_runner_success_semantics(self, tmp_path: Path) -> None:
+        """result.success is True only when .sol exists AND solutions.smi exists.
+
+        Currently FAILS — success is True even with no .sol file written
+        (false-positive: success is determined by stderr solution count alone).
+        After the fix, success requires sol_file.exists() AND smiles_path is
+        not None.
+        """
+        outlsd_bin = shutil.which("outlsd")
+        assert outlsd_bin is not None, "outlsd binary not found on PATH"
+
+        lsd_fixture = FIXTURE_DIR / "ibuprofen_no_4j.lsd"
+        runner = LSDRunner()
+        result = runner.run_file(lsd_fixture, output_dir=tmp_path, timeout=120)
+
+        sol_file = tmp_path / "ibuprofen_no_4j.sol"
+        smiles_file = tmp_path / "solutions.smi"
+
+        # After fix: both files must exist AND result.success must be True
+        assert sol_file.exists(), (
+            "result.success is True but no .sol file was written — "
+            "success is a false-positive from stderr solution count"
+        )
+        assert smiles_file.exists(), (
+            "result.success is True but no solutions.smi was written — "
+            "outlsd conversion failed silently"
+        )
+        assert result.success is True, (
+            "result.success must be True when .sol and solutions.smi both exist"
+        )
+
+    def test_invoke_outlsd_unit(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        """_invoke_outlsd calls [outlsd_path, '5'] with the .sol file as stdin.
+
+        Currently FAILS with ImportError because _invoke_outlsd does not
+        exist yet in runner.py. After Task 2 creates it, this test verifies:
+        1. The mock receives argv=[str(outlsd_path), '5'] and stdin=sol_file.
+        2. Calling _invoke_outlsd with a non-existent sol_file returns None
+           (the open() raises, except block returns None).
+        """
+        # Import the helper — fails with ImportError until Task 2 adds it
+        from lucy_ng.lsd.runner import _invoke_outlsd  # noqa: F401 (import is the test)
+
+        outlsd_path = Path("/fake/outlsd")
+
+        # Create a fake .sol file with content that mimics a real solution file
+        sol_file = tmp_path / "compound.sol"
+        sol_file.write_text(
+            "# From file: /path/to/compound.lsd\n"
+            "; compound\n"
+            "#\n"
+            "OUTLSD\n"
+            "1 1\n"
+            " 1  C 4 0 3 3  0   2 2   3 1  10 1   0 0\n"
+        )
+
+        captured_calls: list[dict] = []
+
+        def mock_run(*args, **kwargs):  # type: ignore[no-untyped-def]
+            captured_calls.append({"args": args, "kwargs": kwargs})
+            # Return a mock completed process with valid SMILES-ish output
+            class MockResult:
+                stdout = "CC(C)Cc1ccc(cc1)C(C)C(=O)O\n"
+                returncode = 0
+            return MockResult()
+
+        monkeypatch.setattr(subprocess, "run", mock_run)
+
+        result_path = _invoke_outlsd(outlsd_path, sol_file, tmp_path)
+
+        # Verify the mock was called with correct arguments
+        assert len(captured_calls) == 1, "subprocess.run should be called exactly once"
+        call_args = captured_calls[0]["args"][0]  # first positional arg = argv list
+        assert call_args[0] == str(outlsd_path), (
+            f"Expected first arg to be str(outlsd_path)={str(outlsd_path)!r}, "
+            f"got {call_args[0]!r}"
+        )
+        assert call_args[1] == "5", (
+            f"Expected second arg to be '5' (SMILES mode), got {call_args[1]!r}"
+        )
+        # Verify stdin was the sol_file handle (not text input=...)
+        assert "stdin" in captured_calls[0]["kwargs"], (
+            "subprocess.run must receive stdin= kwarg (file handle), not input= kwarg"
+        )
+        assert "input" not in captured_calls[0]["kwargs"], (
+            "subprocess.run must NOT receive input= kwarg for outlsd — use stdin= with file handle"
+        )
+
+        # Verify solutions.smi was written
+        assert result_path is not None, "_invoke_outlsd returned None (stdout was truthy)"
+        assert (tmp_path / "solutions.smi").exists()
+
+        # Test None-on-missing-sol path: non-existent sol file → open() raises → None
+        missing_sol = tmp_path / "does_not_exist.sol"
+        # monkeypatch is still active, but open() on missing file raises before run()
+        result_none = _invoke_outlsd(outlsd_path, missing_sol, tmp_path)
+        assert result_none is None, (
+            "_invoke_outlsd must return None when sol_file does not exist"
+        )
