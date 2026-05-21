@@ -28,7 +28,7 @@ from pathlib import Path
 from lucy_ng.lsd.generator import LSDInputGenerator
 from lucy_ng.lsd.models import LSDCorrelation, LSDProblem
 from lucy_ng.lsd.parser import LSDOutputParser
-from lucy_ng.lsd.runner import LSDResult, LSDRunner
+from lucy_ng.lsd.runner import LSDResult, LSDRunner, _invoke_outlsd
 
 
 # ---------------------------------------------------------------------------
@@ -253,11 +253,10 @@ class PyLSDOrchestrator:
         return perm
 
     def _run_outlsd(self, perm_dir: Path, lsd_file: Path) -> Path | None:
-        """Run outlsd directly, bypassing the buggy LSDRunner._run_outlsd.
+        """Convert .sol to SMILES via the shared _invoke_outlsd helper.
 
-        The bug: LSDRunner._run_outlsd passes the LSD input file as stdin
-        and omits the required mode argument. The correct call is:
-            outlsd 5 < compound.sol > solutions.smi
+        Delegates to runner._invoke_outlsd so there is a single correct
+        implementation. Previously this was a private copy; Phase 73 unified them.
 
         Args:
             perm_dir: Directory containing the .sol file from LSD.
@@ -269,30 +268,10 @@ class PyLSDOrchestrator:
         outlsd_path = shutil.which("outlsd")
         if outlsd_path is None:
             return None
-
         sol_files = list(perm_dir.glob("*.sol"))
         if not sol_files:
             return None
-
-        sol_file = sol_files[0]
-        smiles_file = perm_dir / "solutions.smi"
-
-        try:
-            proc = subprocess.run(
-                [outlsd_path, "5"],  # "5" = SMILES output mode (required)
-                stdin=open(sol_file),
-                capture_output=True,
-                text=True,
-                timeout=30,
-                cwd=perm_dir,
-            )
-            if proc.stdout.strip():
-                smiles_file.write_text(proc.stdout)
-                return smiles_file
-        except Exception:
-            pass
-
-        return None
+        return _invoke_outlsd(Path(outlsd_path), sol_files[0], perm_dir)
 
 
 # ---------------------------------------------------------------------------

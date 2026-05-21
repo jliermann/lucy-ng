@@ -10,6 +10,43 @@ from lucy_ng.lsd.generator import LSDInputGenerator
 from lucy_ng.lsd.models import LSDProblem
 
 
+def _invoke_outlsd(
+    outlsd_path: Path, sol_file: Path, output_dir: Path
+) -> "Path | None":
+    """Convert .sol to SMILES via outlsd.
+
+    Correct call: outlsd 5 < compound.sol > solutions.smi
+    Source: orchestrator.py _run_outlsd (the correct implementation).
+    Both LSDRunner._run_outlsd and PyLSDOrchestrator._run_outlsd
+    delegate here so there is a single implementation.
+
+    Args:
+        outlsd_path: Absolute path to outlsd binary.
+        sol_file: Path to the .sol file produced by LSD.
+        output_dir: Directory where solutions.smi will be written.
+
+    Returns:
+        Path to solutions.smi if conversion succeeded, else None.
+    """
+    smiles_file = output_dir / "solutions.smi"
+    try:
+        with sol_file.open("r") as fh:
+            proc = subprocess.run(
+                [str(outlsd_path), "5"],  # "5" = SMILES mode (required)
+                stdin=fh,                  # .sol file (NOT the .lsd file)
+                capture_output=True,
+                text=True,
+                timeout=30,
+                cwd=output_dir,
+            )
+        if proc.stdout.strip():
+            smiles_file.write_text(proc.stdout)
+            return smiles_file
+    except Exception:
+        pass
+    return None
+
+
 @dataclass
 class LSDResult:
     """Result from LSD execution.
@@ -199,10 +236,19 @@ class LSDRunner:
             LSDResult with execution information
         """
         try:
-            # LSD command: lsd < input.lsd
+            # LSD command: lsd compound.lsd (file-argument mode, relative path)
+            # LSD-3.4.9 writes {stem}.sol to CWD only when given a RELATIVE path.
+            # With an absolute path, LSD runs but does not write a .sol file.
+            # Solution: copy input file to output_dir if not already there, then
+            # invoke LSD with the filename only (relative path in CWD=output_dir).
+            if input_file.parent.resolve() != output_dir.resolve():
+                dest = output_dir / input_file.name
+                shutil.copy2(str(input_file), str(dest))
+                lsd_input_name = input_file.name
+            else:
+                lsd_input_name = input_file.name
             proc = subprocess.run(
-                [str(self.lsd_path)],
-                input=input_file.read_text(),
+                [str(self.lsd_path), lsd_input_name],
                 capture_output=True,
                 text=True,
                 timeout=timeout,
@@ -217,17 +263,24 @@ class LSDRunner:
 
             # Read solution contents
             solutions = []
-            for sol_file in sorted(output_dir.glob("*.sol")):
-                solutions.append(sol_file.read_text())
+            for sol_file_item in sorted(output_dir.glob("*.sol")):
+                solutions.append(sol_file_item.read_text())
 
-            # Success if return code is 0 OR if solutions were found
-            success = proc.returncode == 0 or solution_count > 0
+            # .sol file is written to output_dir with the input file's stem
+            sol_file = output_dir / f"{input_file.stem}.sol"
 
             # Run outlsd to convert solutions to SMILES if available
-            if success and solution_count > 0 and self.outlsd_path:
-                self._run_outlsd(output_dir, input_file)
-                # Re-scan for output files to include outlsd.out
-                output_files = list(output_dir.glob("*.sol")) + list(output_dir.glob("*.out"))
+            smiles_path: Path | None = None
+            if sol_file.exists() and solution_count > 0 and self.outlsd_path:
+                smiles_path = self._run_outlsd(output_dir, input_file)
+            # Re-scan for output files to include .smi
+            output_files = (
+                list(output_dir.glob("*.sol"))
+                + list(output_dir.glob("*.out"))
+                + list(output_dir.glob("*.smi"))
+            )
+            # Success requires .sol file AND SMILES conversion (no silent false-positive)
+            success = sol_file.exists() and smiles_path is not None
 
             return LSDResult(
                 success=success,
@@ -323,37 +376,25 @@ class LSDRunner:
 
         return None
 
-    def _run_outlsd(self, output_dir: Path, input_file: Path) -> None:
+    def _run_outlsd(self, output_dir: Path, input_file: Path) -> "Path | None":
         """Run outlsd to convert solutions to SMILES.
 
-        Creates outlsd.out file with SMILES for each solution.
+        Delegates to the module-level _invoke_outlsd helper.
+        Correct call: outlsd 5 < {stem}.sol > solutions.smi
 
         Args:
-            output_dir: Directory containing solution files
-            input_file: Original LSD input file
+            output_dir: Directory containing the .sol file from LSD.
+            input_file: Original LSD input file (used to derive .sol filename).
+
+        Returns:
+            Path to solutions.smi if conversion succeeded, else None.
         """
         if self.outlsd_path is None:
-            return
-
-        try:
-            # outlsd reads from stdin like lsd
-            proc = subprocess.run(
-                [str(self.outlsd_path)],
-                input=input_file.read_text(),
-                capture_output=True,
-                text=True,
-                timeout=30,
-                cwd=output_dir,
-            )
-
-            # Write output to outlsd.out
-            if proc.stdout.strip():
-                outlsd_file = output_dir / "outlsd.out"
-                outlsd_file.write_text(proc.stdout)
-
-        except Exception:
-            # Non-fatal - ranking will just skip solutions without SMILES
-            pass
+            return None
+        sol_file = output_dir / f"{input_file.stem}.sol"
+        if not sol_file.exists():
+            return None
+        return _invoke_outlsd(self.outlsd_path, sol_file, output_dir)
 
     @classmethod
     def is_available(cls) -> bool:

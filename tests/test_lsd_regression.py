@@ -155,23 +155,26 @@ class TestLSDRegression:
 
         # Locate SMILES output.
         #
-        # LSDRunner._run_outlsd has a known bug (Phase 65 SUMMARY key-decisions):
-        # it calls outlsd WITHOUT the mode argument, so outlsd.out contains usage text,
-        # not SMILES.  The workaround:
+        # Phase 73 fix: runner now uses file-argument mode, writes {stem}.sol to
+        # output_dir, and runs outlsd correctly — solutions.smi is produced by
+        # the runner itself.  Use solutions.smi directly if available (Path A).
         #
+        # Path B (stdin-mode workaround, pre-Phase 73):
         # LSD-3.4.9 (stdin mode) writes OUTLSD-format solution data to stdout.
-        # outlsd expects a .sol file with the header:
-        #   "# From file: path.lsd\n<lsd_content>\n#\nOUTLSD\n<data>"
-        # We reconstruct this from result.stdout and run outlsd 5.
+        # Reconstruct a synthetic .sol from stdout and pipe to outlsd 5.
         #
-        # Fallback B: if .sol file exists on disk (older LSD versions with filename
-        # invocation), read it directly.
+        # Path C (Fallback B, pre-Phase 73):
+        # .sol file exists but solutions.smi was not written; convert manually.
         outlsd_bin = shutil.which("outlsd")
         assert outlsd_bin is not None, "outlsd binary not found on PATH"
-        fallback_smi = tmp_path / "solutions.smi"
+        runner_smi = tmp_path / "solutions.smi"
+        fallback_smi = tmp_path / "fallback_solutions.smi"
 
-        if result.stdout.strip():
-            # Reconstruct .sol from LSD stdin-mode stdout + fixture content
+        if runner_smi.exists() and runner_smi.stat().st_size > 0:
+            # Path A: Phase 73 fixed runner produced solutions.smi directly — use it.
+            smiles_path = runner_smi
+        elif result.stdout.strip():
+            # Path B: stdin-mode stdout with OUTLSD data (pre-Phase 73 behavior).
             stdout_lines = result.stdout.splitlines(keepends=True)
             try:
                 outlsd_idx = next(
@@ -220,7 +223,7 @@ class TestLSDRegression:
                 fallback_smi.write_text(proc.stdout)
                 smiles_path = fallback_smi
         else:
-            # Fallback B: .sol file from LSD filename-invocation (older LSD versions)
+            # Path C: .sol file from LSD filename-invocation without outlsd conversion.
             sol_files = list(tmp_path.glob("*.sol"))
             assert sol_files, (
                 "No usable SMILES output found: result.stdout is empty "
