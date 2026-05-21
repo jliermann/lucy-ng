@@ -138,6 +138,94 @@ def _get_default_table_path() -> Path:
     )
 
 
+def _perform_ranking(
+    smiles_file: "str | Path",
+    experimental_shifts: "list[float]",
+    top: int = 10,
+    tolerance: float = 3.0,
+    table: "str | Path | None" = None,
+    output_format: str = "text",
+    _silent: bool = False,
+) -> "dict | None":
+    """Rank LSD solutions by 13C spectrum similarity (module-private helper).
+
+    Args:
+        smiles_file: Path to a file containing SMILES strings (one per line).
+        experimental_shifts: List of experimental 13C shift values in ppm.
+        top: Number of top solutions to return.
+        tolerance: Tolerance in ppm for shift matching.
+        table: Path to HOSE lookup table; auto-detected when None.
+        output_format: 'text' (echo to stdout, return None) or 'json'
+            (echo JSON to stdout AND return the data dict for callers).
+        _silent: When True, suppress click.echo output.
+
+    Returns:
+        When output_format == 'json': the data dict.
+        When output_format == 'text': None.
+    """
+    try:
+        solutions = LSDOutputParser.parse_smiles_file(smiles_file)
+    except FileNotFoundError as e:
+        click.echo(f"Error: {e}", err=True)
+        raise SystemExit(1)
+    except Exception as e:
+        click.echo(f"Error loading SMILES file: {e}", err=True)
+        raise SystemExit(1)
+
+    if not solutions:
+        click.echo("Error: No SMILES found in file", err=True)
+        raise SystemExit(1)
+
+    table_path: Path
+    if table:
+        table_path = Path(table)
+    else:
+        try:
+            table_path = _get_default_table_path()
+        except FileNotFoundError as e:
+            click.echo(f"Error: {e}", err=True)
+            raise SystemExit(1)
+
+    try:
+        ranker = SolutionRanker.from_table_file(
+            table_path=str(table_path),
+            tolerance=tolerance,
+        )
+    except Exception as e:
+        click.echo(f"Error loading HOSE table: {e}", err=True)
+        raise SystemExit(1)
+
+    result = ranker.rank(solutions, experimental_shifts, top_n=top)
+
+    if output_format == "json":
+        data = {
+            "total_solutions": result.total_solutions,
+            "ranked_count": result.ranked_count,
+            "skipped_count": result.skipped_count,
+            "experimental_shifts": result.experimental_shifts,
+            "tolerance": result.tolerance,
+            "solutions": [
+                {
+                    "rank": i + 1,
+                    "solution_index": sol.solution_index,
+                    "smiles": sol.smiles,
+                    "mae": round(sol.mae, 3),
+                    "quality": sol.quality_label,
+                }
+                for i, sol in enumerate(result.solutions)
+            ],
+            "warnings": result.warnings,
+        }
+        if not _silent:
+            click.echo(json.dumps(data, indent=2))
+        return data
+    else:
+        if not _silent:
+            click.echo(f"Ranking {result.total_solutions} LSD solutions")
+            click.echo(f"  Successfully ranked: {result.ranked_count}")
+        return None
+
+
 @lsd.command("rank")
 @click.argument("smiles_file", type=click.Path(exists=True))
 @click.option(
