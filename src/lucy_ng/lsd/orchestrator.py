@@ -116,11 +116,11 @@ class PyLSDOrchestrator:
     1. Validates K ≤ 3 (raises ValueError otherwise)
     2. Generates 2^K permutation LSD files (each including/excluding suspects)
     3. Runs LSD on each permutation directory
-    4. Converts solutions to SMILES via outlsd (direct subprocess, bypass bug)
+    4. Converts solutions to SMILES via the shared runner._invoke_outlsd helper
     5. Returns OrchestrationResult with all PermutationResult objects
 
-    The outlsd invocation bypasses LSDRunner._run_outlsd() which has a known
-    bug (missing mode argument). See STATE.md Phase 65 findings.
+    Solution conversion delegates to the single shared `_invoke_outlsd` helper
+    in runner.py (unified in Phase 73; the earlier per-class outlsd bug is fixed).
     """
 
     def __init__(
