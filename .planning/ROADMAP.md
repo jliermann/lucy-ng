@@ -262,7 +262,12 @@ Plans:
 **Plans:** 2 plans
 Plans:
 
+**Wave 1**
+
 - [ ] 74-01-PLAN.md — Extend LSDProblem with ring_exclusion_enabled + add_equivalence_pair/add_aromatic_equivalence_pair; bundle ring3/ring4 filter files; native DEFF F/FEXP emission + _write_filter_files in generator; TestNativeConstraintEmission (TDD)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 74-02-PLAN.md — Permutation constraint preservation tests (deepcopy proof) + SolutionMerger correctness test + end-to-end emergent-aromatic integration test (skipif LSD)
 
 **UI hint**: no
