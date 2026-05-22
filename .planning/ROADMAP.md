@@ -259,7 +259,12 @@ Plans:
   3. After a multi-run with permutations that each produce solutions, `merged.smi` is non-empty and `run_report.json` records per-permutation solution counts that sum to at least the count from the most-productive permutation
   4. An aromatic compound processed through the full pyLSD pipeline (or the DESIGN-01-decided mechanism) produces at least one aromatic-ring solution in the ranked output — the benzene ring emerges from constraints, not from a forced SKEL fragment
 
-**Plans:** TBD
+**Plans:** 2 plans
+Plans:
+
+- [ ] 74-01-PLAN.md — Extend LSDProblem with ring_exclusion_enabled + add_equivalence_pair/add_aromatic_equivalence_pair; bundle ring3/ring4 filter files; native DEFF F/FEXP emission + _write_filter_files in generator; TestNativeConstraintEmission (TDD)
+- [ ] 74-02-PLAN.md — Permutation constraint preservation tests (deepcopy proof) + SolutionMerger correctness test + end-to-end emergent-aromatic integration test (skipif LSD)
+
 **UI hint**: no
 
 ### Phase 75: Skill Consolidation
@@ -298,9 +303,9 @@ Plans:
 |-------|----------------|--------|-----------|
 | 72. Design Re-Validation | 2/2 | Complete   | 2026-05-20 |
 | 73. Solution Plumbing Fix | 1/1 | Complete   | 2026-05-21 |
-| 74. Constraint Preservation and Merge | 0/TBD | Not started | - |
+| 74. Constraint Preservation and Merge | 0/2 | Not started | - |
 | 75. Skill Consolidation | 0/TBD | Not started | - |
 | 76. Milestone UAT Gate | 0/TBD | Not started | - |
 
 ---
-*Last updated: 2026-05-20 — Phase 73 planned (1 plan)*
+*Last updated: 2026-05-22 — Phase 74 planned (2 plans)*
