@@ -182,6 +182,8 @@ def search(
         fine_match_count = searcher.fine_match_count
 
     # Build DEFF commands (double quotes required by LSD 3.4.9)
+    # NOTE: Multi-fragment output uses F1..Fn. For CASE workflow, use lucy fragment to-lsd
+    # with --filter-index 3 (reserves F1/F2 for ring exclusion per Phase 75 convention).
     deff_commands = [
         f'DEFF F{i + 1} "fragment_{i + 1}.lsd"' for i in range(len(matches))
     ]
@@ -333,7 +335,20 @@ def build(
     show_default=True,
     help="Output format.",
 )
-def to_lsd(smiles: str, output_dir: Path | None, output_format: str) -> None:
+@click.option(
+    "--filter-index",
+    "filter_index",
+    type=int,
+    default=3,
+    show_default=True,
+    help=(
+        "DEFF filter index for the goodlist fragment (default 3). "
+        "F1 and F2 are reserved for ring exclusion (DEFF F1 ring3, DEFF F2 ring4). "
+        "Use 3 or higher when ring exclusion is active (Phase 75 convention). "
+        "Use --filter-index 1 only when ring exclusion is not active (backward compat)."
+    ),
+)
+def to_lsd(smiles: str, output_dir: Path | None, output_format: str, filter_index: int) -> None:
     """Generate an LSD fragment file from SMILES.
 
     Converts a SMILES string to an LSD SSTR/LINK fragment definition file
@@ -358,8 +373,8 @@ def to_lsd(smiles: str, output_dir: Path | None, output_format: str) -> None:
         click.echo(f"Error: {e}", err=True)
         raise click.Abort() from e
 
-    deff_cmd = DEFFFormatter.deff_command(1, written_path.name)
-    fexp_cmd = DEFFFormatter.fexp_command([1])
+    deff_cmd = DEFFFormatter.deff_command(filter_index, written_path.name)
+    fexp_cmd = DEFFFormatter.fexp_command([filter_index])
     content = written_path.read_text()
 
     # Count SSTR lines for atom count

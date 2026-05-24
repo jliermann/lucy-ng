@@ -2,14 +2,23 @@
 
 from __future__ import annotations
 
+import json
 import re
 import shutil
 import subprocess
 from pathlib import Path
 
 import pytest
+from click.testing import CliRunner
 
+from lucy_ng.cli.fragment import fragment
 from lucy_ng.fragments.lsd_formatter import DEFFFormatter
+
+
+@pytest.fixture()
+def runner() -> CliRunner:
+    """Click CliRunner for fragment CLI tests."""
+    return CliRunner()
 
 LSD_AVAILABLE = shutil.which("LSD") is not None
 
@@ -318,6 +327,38 @@ class TestLSDSmokeGoodlist:
         assert fexp_idx < mult_idx, (
             f"FEXP (line {fexp_idx}) must be before MULT (line {mult_idx})"
         )
+
+
+class TestToLsdFilterIndex:
+    """Test --filter-index option for lucy fragment to-lsd CLI."""
+
+    def test_to_lsd_default_filter_index_is_3(self, runner: CliRunner, tmp_path: Path) -> None:
+        """Default --filter-index is 3 (reserves F1/F2 for ring exclusion)."""
+        result = runner.invoke(fragment, ["to-lsd", "CCO", "--output-dir", str(tmp_path)])
+        assert result.exit_code == 0, result.output
+        data = json.loads(result.output)
+        assert "DEFF F3" in data["deff_command"]
+        assert data["fexp_command"] == 'FEXP "F3"'
+
+    def test_to_lsd_explicit_filter_index_1(self, runner: CliRunner, tmp_path: Path) -> None:
+        """Explicit --filter-index 1 allows backward compat."""
+        result = runner.invoke(
+            fragment, ["to-lsd", "CCO", "--filter-index", "1", "--output-dir", str(tmp_path)]
+        )
+        assert result.exit_code == 0, result.output
+        data = json.loads(result.output)
+        assert "DEFF F1" in data["deff_command"]
+        assert data["fexp_command"] == 'FEXP "F1"'
+
+    def test_to_lsd_explicit_filter_index_5(self, runner: CliRunner, tmp_path: Path) -> None:
+        """Explicit --filter-index 5 produces F5 commands."""
+        result = runner.invoke(
+            fragment, ["to-lsd", "CCO", "--filter-index", "5", "--output-dir", str(tmp_path)]
+        )
+        assert result.exit_code == 0, result.output
+        data = json.loads(result.output)
+        assert "DEFF F5" in data["deff_command"]
+        assert data["fexp_command"] == 'FEXP "F5"'
 
 
 class TestSearchDeffDoubleQuotes:
