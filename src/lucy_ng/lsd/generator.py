@@ -1,5 +1,6 @@
 """LSD input file generator from NMR peak data."""
 
+import importlib.resources
 import re
 from pathlib import Path
 
@@ -184,6 +185,17 @@ class LSDInputGenerator:
                 lines.append(f"{constraint.to_lsd_line()}{comment}")
             lines.append("")
 
+        # Ring exclusion (DEFF F / FEXP) — filter files written by write_file().
+        # generate() emits relative paths; write_file() copies ring3/ring4 to output_dir.
+        # LSD resolves relative DEFF paths from its CWD (always output_dir, per Phase-73
+        # runner contract).  No DEFF NOT is ever emitted — D-03 native-only contract.
+        if problem.ring_exclusion_enabled:
+            lines.append("; Ring exclusion filters")
+            lines.append('DEFF F1 "ring3"')
+            lines.append('DEFF F2 "ring4"')
+            lines.append('FEXP "NOT F1 AND NOT F2"')
+            lines.append("")
+
         # End marker
         lines.append("EXIT")
 
@@ -192,6 +204,11 @@ class LSDInputGenerator:
     @staticmethod
     def write_file(problem: LSDProblem, output_path: Path | str) -> Path:
         """Write LSD input file to disk.
+
+        When ring_exclusion_enabled is True, also copies the bundled ring3/ring4
+        filter files to the same directory as the .lsd file.  LSD is invoked with
+        cwd=output_dir (Phase-73 runner contract), so the relative DEFF paths
+        "ring3" and "ring4" emitted by generate() resolve correctly.
 
         Args:
             problem: LSD problem to write
@@ -203,7 +220,26 @@ class LSDInputGenerator:
         output_path = Path(output_path)
         content = LSDInputGenerator.generate(problem)
         output_path.write_text(content)
+        if problem.ring_exclusion_enabled:
+            LSDInputGenerator._write_filter_files(output_path.parent)
         return output_path
+
+    @staticmethod
+    def _write_filter_files(output_dir: Path) -> None:
+        """Copy bundled ring3/ring4 filter files to output_dir.
+
+        Filter files must be co-located with the .lsd file because LSD is
+        invoked with cwd=output_dir and resolves relative DEFF paths from its CWD
+        (per Phase-73 runner contract).  Called by write_file() when
+        ring_exclusion_enabled is True.
+
+        Args:
+            output_dir: Directory where the .lsd file will be written.
+        """
+        package = importlib.resources.files("lucy_ng.lsd.filters")
+        for name in ("ring3", "ring4"):
+            content = (package / name).read_text()
+            (output_dir / name).write_text(content)
 
     @staticmethod
     def from_peak_data(
