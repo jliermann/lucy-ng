@@ -662,6 +662,129 @@ class TestRunReportProvenance:
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# Test: Permutation constraint preservation
+# ---------------------------------------------------------------------------
+
+
+class TestPermutationConstraintPreservation:
+    """Permutation .lsd files carry the FULL constraint set from base_problem.
+
+    D-03 permutation path: PyLSDOrchestrator._build_permutation() uses
+    copy.deepcopy(base_problem), so any new fields (constraints, ring_exclusion_enabled)
+    propagate to every permutation file automatically.
+
+    These tests prove this structural property by writing real perm files to
+    disk and inspecting their content.
+    """
+
+    def test_perm_preserves_bond_constraints(self, tmp_path: Path) -> None:
+        """Every perm_NN/compound.lsd contains BOND 10 11 and BOND 10 12.
+
+        base_problem has BOND constraints on atoms 10→11 and 10→12 (gem-dimethyl).
+        K=2 suspects → 4 permutations.  Every perm must carry both BOND lines.
+        """
+        problem = _make_problem()  # atoms 1-4, HSQC 1-4, HMBC 1-2 and 2-3
+
+        # Add gem-dimethyl atoms and BOND constraints
+        for idx in [10, 11, 12]:
+            problem.add_atom(LSDAtom(
+                index=idx,
+                element="C",
+                hybridization=Hybridization.SP3,
+                hydrogen_count=1 if idx == 10 else 3,
+            ))
+        problem.add_equivalence_pair(parent_index=10, child1_index=11, child2_index=12)
+
+        # Add 2 suspect HMBC correlations (start_atom1=5, start_atom2=9 to avoid overlap)
+        suspects = _make_suspects(2, start_atom1=5, start_atom2=9)
+        for s in suspects:
+            for atom_idx in [s.atom1_index, s.atom2_index]:
+                if problem.get_atom_by_index(atom_idx) is None:
+                    problem.add_atom(LSDAtom(
+                        index=atom_idx,
+                        element="C",
+                        hybridization=Hybridization.SP2,
+                        hydrogen_count=0,
+                    ))
+            problem.add_correlation(s)
+
+        orchestrator = PyLSDOrchestrator()
+        with patch.object(orchestrator.runner, "run_file", return_value=_make_lsd_result()), \
+             patch.object(orchestrator, "_run_outlsd", return_value=None):
+            orchestrator.run(problem, suspects, output_dir=tmp_path / "out")
+
+        perm_dirs = sorted((tmp_path / "out").glob("perm_*"))
+        assert len(perm_dirs) == 4, f"Expected 4 perm dirs (K=2), got {len(perm_dirs)}"
+
+        for perm_dir in perm_dirs:
+            lsd_files = list(perm_dir.glob("*.lsd"))
+            assert len(lsd_files) == 1, f"{perm_dir.name} should have exactly 1 LSD file"
+            content = lsd_files[0].read_text()
+            assert "BOND 10 11" in content, (
+                f"{perm_dir.name}/compound.lsd missing BOND 10 11 (gem-dimethyl constraint lost)\n"
+                f"Content:\n{content}"
+            )
+            assert "BOND 10 12" in content, (
+                f"{perm_dir.name}/compound.lsd missing BOND 10 12 (gem-dimethyl constraint lost)\n"
+                f"Content:\n{content}"
+            )
+
+    def test_perm_preserves_ring_exclusion(self, tmp_path: Path) -> None:
+        """Every perm_NN/compound.lsd contains 'DEFF F1 "ring3"' and filter files.
+
+        base_problem with ring_exclusion_enabled=True.
+        K=1 suspect → 2 permutations.
+        Each perm dir must contain: ring3, ring4 filter files AND DEFF/FEXP in the .lsd.
+        """
+        problem = _make_problem()
+        problem.ring_exclusion_enabled = True
+
+        # K=1 suspect (start_atom1=5 to avoid overlap with _make_problem atoms 1-4)
+        suspects = _make_suspects(1, start_atom1=5, start_atom2=9)
+        for s in suspects:
+            for atom_idx in [s.atom1_index, s.atom2_index]:
+                if problem.get_atom_by_index(atom_idx) is None:
+                    problem.add_atom(LSDAtom(
+                        index=atom_idx,
+                        element="C",
+                        hybridization=Hybridization.SP2,
+                        hydrogen_count=0,
+                    ))
+            problem.add_correlation(s)
+
+        orchestrator = PyLSDOrchestrator()
+        with patch.object(orchestrator.runner, "run_file", return_value=_make_lsd_result()), \
+             patch.object(orchestrator, "_run_outlsd", return_value=None):
+            orchestrator.run(problem, suspects, output_dir=tmp_path / "out")
+
+        perm_dirs = sorted((tmp_path / "out").glob("perm_*"))
+        assert len(perm_dirs) == 2, f"Expected 2 perm dirs (K=1), got {len(perm_dirs)}"
+
+        for perm_dir in perm_dirs:
+            # Check .lsd file contains DEFF/FEXP lines
+            lsd_files = list(perm_dir.glob("*.lsd"))
+            assert len(lsd_files) == 1, f"{perm_dir.name} should have exactly 1 LSD file"
+            content = lsd_files[0].read_text()
+            assert 'DEFF F1 "ring3"' in content, (
+                f"{perm_dir.name}/compound.lsd missing ring exclusion filter DEFF F1\n"
+                f"Content:\n{content}"
+            )
+            assert 'FEXP "NOT F1 AND NOT F2"' in content, (
+                f"{perm_dir.name}/compound.lsd missing FEXP line\n"
+                f"Content:\n{content}"
+            )
+
+            # Check ring3 and ring4 filter files are present in perm dir
+            assert (perm_dir / "ring3").exists(), (
+                f"{perm_dir.name}/ring3 filter file missing — "
+                f"write_file() must copy filter files to perm_dir"
+            )
+            assert (perm_dir / "ring4").exists(), (
+                f"{perm_dir.name}/ring4 filter file missing"
+            )
+
+
 class TestSolutionMergerEdgeCases:
     """SolutionMerger handles invalid SMILES and missing files gracefully."""
 
