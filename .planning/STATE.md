@@ -4,8 +4,8 @@ milestone: v9.0
 milestone_name: CASE Reliability & Skill Consolidation
 status: executing
 stopped_at: Phase 72 design context gathered
-last_updated: "2026-05-22T08:23:38.197Z"
-last_activity: 2026-05-22 -- Phase 74 planning complete
+last_updated: "2026-05-24T12:03:48.584Z"
+last_activity: 2026-05-24 -- Phase 74 execution started
 progress:
   total_phases: 5
   completed_phases: 2
@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-20)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a multi-agent team that uses the intended solver pipeline — not a manual bypass
-**Current focus:** Phase 73 — solution-plumbing-fix
+**Current focus:** Phase 74 — constraint-preservation-and-merge
 
 ## Current Position
 
@@ -35,10 +35,10 @@ Phase 76: Milestone UAT Gate         [ ] Not started  (depends on 75)
 
 Progress: [----------] 0% (0/5 phases)
 
-Phase: 73 (solution-plumbing-fix) — EXECUTING
-Plan: 1 of 1
-Status: Ready to execute
-Last activity: 2026-05-22 -- Phase 74 planning complete
+Phase: 74 (constraint-preservation-and-merge) — EXECUTING
+Plan: 1 of 2
+Status: Executing Phase 74
+Last activity: 2026-05-24 -- Phase 74 execution started
 
 Wave structure:
 
