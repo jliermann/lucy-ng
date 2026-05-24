@@ -199,7 +199,7 @@ Plans:
 - [x] **Phase 72: Design Re-Validation** - Answer the 4 open design questions from the postmortem before any fix is built: is pyLSD multi-run the right 4J approach? single vs dual solver path? where does constraint translation live? how is the aromatic ring established? (first phase; gates all fixes) (completed 2026-05-20)
 - [x] **Phase 73: Solution Plumbing Fix** - Fix `lucy lsd run` / outlsd conversion so LSD solutions reliably become SMILES: the exit-255 / header-only bug means nothing downstream works. (depends on Phase 72) (completed 2026-05-21)
 - [x] **Phase 74: Constraint Preservation and Merge** - Fix permutation file generation to carry the full constraint set (BOND/SYME/DEFF NOT/grouped), and fix SolutionMerger to collect non-empty results from per-permutation runs. (depends on Phase 73) (completed 2026-05-24)
-- [ ] **Phase 75: Skill Consolidation** - Audit all agent skills against actual LSD-3.4.9 behavior; eliminate the normal-LSD vs pyLSD documentation imbalance; encode the DESIGN-02 solver-path decision as unambiguous single-path guidance; update devils-advocate gates to catch the v8.0 failure modes. (depends on Phase 72, Phase 74)
+- [x] **Phase 75: Skill Consolidation** - Audit all agent skills against actual LSD-3.4.9 behavior; eliminate the normal-LSD vs pyLSD documentation imbalance; encode the DESIGN-02 solver-path decision as unambiguous single-path guidance; update devils-advocate gates to catch the v8.0 failure modes. (depends on Phase 72, Phase 74)
 - [ ] **Phase 76: Milestone UAT Gate** - Blind CASE re-run on CASE1 (ibuprofen) AND CASE9 (4-(1-hydroxyethyl)benzoic acid isopropylester, C12H16O3) via the intended mechanism; all Phase-71 criteria verified against on-disk artifacts by independent RDKit check. (depends on Phase 75)
 
 ## Phase Details
@@ -284,13 +284,14 @@ Plans:
   3. The devils-advocate checklist includes gates that would have failed the v8.0 run early: (a) detect that permutation files drop non-HMBC constraints, (b) detect empty `merged.smi` despite non-zero `solncounter` files, (c) flag any LSD file modification after DA approval (the post-validation edit violation documented in the v8.0 postmortem)
   4. A developer reading the agent skills can determine, for any given solver invocation, exactly which constraints will be passed to the LSD binary and via which CLI command — no ambiguity about native vs abstraction layer
 
-**Plans:** 3/5 plans executed
-**Wave 1** *(independent — touch different files)*
+**Plans:** 5/5 plans executed
+**Wave 1**
 
 - [x] 75-01-lsd-engineer-native-singlepath-PLAN.md — SYME→BOND/COSY, DEFF NOT→DEFF F/FEXP, single-path step 11, outlsd pipe removal, SKEL escalation note in lsd-engineer.md
-- [ ] 75-02-devils-advocate-native-gates-PLAN.md — native-command sync in DA §1/§2/§5, add G5/G6/G7/G8 v8.0-failure-mode gates
+**Wave 2** *(all depend on 75-01; independent of each other)*
+- [x] 75-02-devils-advocate-native-gates-PLAN.md — native-command sync in DA §1/§2/§5, add G5/G6/G7/G8 v8.0-failure-mode gates
 - [x] 75-03-case-references-analyst-PLAN.md — outlsd pipe removal in case.md task descriptions, native vocab in spawn prompts, progress-format.md + solution-analyst.md updates
-- [ ] 75-04-python-schema-followups-PLAN.md — fragment to-lsd --filter-index 3 default, new tests, pytest green; all fragment F1→F3 refs in lsd-engineer.md
+- [x] 75-04-python-schema-followups-PLAN.md — fragment to-lsd --filter-index 3 default, new tests, pytest green; all fragment F1→F3 refs in lsd-engineer.md
 - [x] 75-05-diagnostic-native-PLAN.md — lucy-diagnostic.md SYME section → native BOND/COSY; fix template and grep check updated
 
 *(75-02, 75-03, 75-04, 75-05 all depend on 75-01 and are independent of each other)*
@@ -319,8 +320,8 @@ Plans:
 | 72. Design Re-Validation | 2/2 | Complete   | 2026-05-20 |
 | 73. Solution Plumbing Fix | 1/1 | Complete   | 2026-05-21 |
 | 74. Constraint Preservation and Merge | 2/2 | Complete   | 2026-05-24 |
-| 75. Skill Consolidation | 3/5 | In Progress|  |
+| 75. Skill Consolidation | 5/5 | Complete   | 2026-05-24 |
 | 76. Milestone UAT Gate | 0/TBD | Not started | - |
 
 ---
-*Last updated: 2026-05-24 — Phase 75 planned (5 plans, revised after checker review)*
+*Last updated: 2026-05-24 — Phase 75 complete (5/5 plans; SKILL-01/02/03 done, verified 10/10 must-haves; behavioral proof deferred to Phase 76 UAT)*

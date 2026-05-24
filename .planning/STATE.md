@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: CASE Reliability & Skill Consolidation
-status: verifying
-stopped_at: Phase 72 design context gathered
+status: phase_complete
+stopped_at: Phase 75 complete — Phase 76 (UAT gate) ready
 last_updated: "2026-05-24T16:14:24.828Z"
 last_activity: 2026-05-24
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 10
-  completed_plans: 8
-  percent: 60
+  completed_plans: 10
+  percent: 80
 ---
 
 # lucy-ng State
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-20)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a multi-agent team that uses the intended solver pipeline — not a manual bypass
-**Current focus:** Phase 74 — constraint-preservation-and-merge
+**Current focus:** Phase 76 — Milestone UAT Gate (blind CASE re-run; requires a fresh blind Claude instance)
 
 ## Current Position
 
 ```
-Phase 72: Design Re-Validation       [ ] Not started
-Phase 73: Solution Plumbing Fix      [ ] Not started  (depends on 72)
-Phase 74: Constraint Preservation    [ ] Not started  (depends on 73)
-Phase 75: Skill Consolidation        [ ] Not started  (depends on 72, 74)
+Phase 72: Design Re-Validation       [x] Complete
+Phase 73: Solution Plumbing Fix      [x] Complete
+Phase 74: Constraint Preservation    [x] Complete
+Phase 75: Skill Consolidation        [x] Complete
 Phase 76: Milestone UAT Gate         [ ] Not started  (depends on 75)
 ```
 
 Progress: [████████░░] 80%
 
-Phase: 74 (constraint-preservation-and-merge) — EXECUTING
-Plan: 2 of 2
-Status: Phase complete — ready for verification
+Phase: 75 (skill-consolidation) — COMPLETE
+Plan: 5 of 5 executed; verified 10/10 must-haves (SKILL-01/02/03 GOAL ACHIEVED)
+Status: Phase complete — behavioral proof deferred to Phase 76 blind UAT
 Last activity: 2026-05-24
 
 Wave structure:
@@ -98,14 +98,15 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [v8.0-UAT-POSTMORTEM]: Phase-65 hypothesis partially contradicted — iteration-2 (4J handled, but SYME/DEFF NOT dropped) produced 0/90 aromatic solutions; ring appeared only when forced via SKEL fragment in iteration-3 (confounded by constraint loss). Re-evaluation required in Phase 72.
 - [v8.0-UAT-POSTMORTEM]: Solution found via direct lsd binary (K=0, no permutations) after ~7 manual coordinator interventions — the intended pyLSD mechanism contributed nothing to the result (R4).
 - [v9.0-roadmap]: 4 open design questions (Q1-Q4 from postmortem) must be answered in Phase 72 before any fix phase begins. Q1: is pyLSD multi-run the right 4J approach? Q2: single vs dual solver path? Q3: where does constraint translation live? Q4: how is the aromatic ring established?
+- [Phase 75-skill-consolidation]: DEFF F-number namespace split — ring exclusion reserves F1/F2 (ring3/ring4 filters); fragment goodlist uses F3+ (`lucy fragment to-lsd --filter-index` default changed 1→3). The two must never collide; the zero-solution fallback removes only the fragment's Fn, never ring-exclusion F1/F2.
+- [Phase 75-skill-consolidation]: Native equivalence encoding (replaces non-native SYME): BOND for gem-dimethyl/isopropyl; COSY tagged `; equiv-pair` for aromatic symmetry pairs. DEFF F1/F2/FEXP replaces DEFF NOT for ring exclusion. devils-advocate G5-G8 gates added for the v8.0 failure modes (perm constraint completeness, empty-merge-vs-solncounter, post-validation edit, reversion).
+- [Phase 75-skill-consolidation]: lucy-case-agent.md left untouched — DEPRECATED v4.0, not spawned by any active workflow, preserved as historical reference; excluded from native-command sign-off scope.
 
 ### Pending Todos
 
-- Phase 72: Answer Q1-Q4 from v8.0 postmortem — document decisions in .planning/phases/72-design-revalidation/
-- Phase 73: Fix outlsd conversion / `lucy lsd run` exit-255 — the keystone bug for all downstream reliability
-- Phase 74: Fix permutation generator to carry full constraint set; fix SolutionMerger to collect solutions from non-empty per-run output
-- Phase 75: Audit ALL agent skills against LSD-3.4.9 native commands; resolve doc imbalance per DESIGN-02 decision
-- Phase 76: Blind UAT on CASE1 + CASE9 with independent RDKit verification
+- Phase 76: Blind UAT on CASE1 + CASE9 — MUST be run by a fresh blind Claude instance (no compound-identity context); verify merged.smi top-3 independently via RDKit (aromatic-ring + formula match), not agent self-report. This is the milestone gate proving the consolidated skills make the agent solve via the intended native mechanism.
+
+*(Phases 72-75 complete — design re-validated, plumbing fixed, constraints preserved, skills consolidated to native commands.)*
 
 ### Blockers/Concerns
 
@@ -121,9 +122,9 @@ Key v9.0 constraint: SYME and DEFF NOT are lucy-ng abstractions. Native LSD-3.4.
 
 ## Session Continuity
 
-Last session: 2026-05-24T16:14:24.824Z
-Stopped at: Phase 72 design context gathered
-Resume with: `/gsd:plan-phase 72`
+Last session: 2026-05-24
+Stopped at: Phase 75 (skill consolidation) complete + verified
+Resume with: `/gsd-plan-phase 76` — but note Phase 76 is the blind UAT gate and MUST be run by a fresh blind Claude instance (CASE1 + CASE9), with merged.smi verified independently via RDKit. See feedback_blind_uat memory.
 
 ---
-*Last updated: 2026-05-20 — v9.0 roadmap created, Phase 72 is next*
+*Last updated: 2026-05-24 — Phase 75 complete (5/5 plans, SKILL-01/02/03 verified); Phase 76 UAT next*
