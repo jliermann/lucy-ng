@@ -21,8 +21,8 @@ Requirements for v9.0 release. Outcome-level where possible so they survive the 
 
 ### Skill Consolidation
 
-- [ ] **SKILL-01**: All agent skills are correct against actual LSD-3.4.9 behavior — no commands taught that the binary rejects (e.g., SYME / DEFF NOT are non-native); native equivalents documented
-- [ ] **SKILL-02**: Skills give unambiguous single-solver-path guidance per DESIGN-02 (resolve the normal-LSD-vs-pyLSD documentation imbalance)
+- [x] **SKILL-01**: All agent skills are correct against actual LSD-3.4.9 behavior — no commands taught that the binary rejects (e.g., SYME / DEFF NOT are non-native); native equivalents documented
+- [x] **SKILL-02**: Skills give unambiguous single-solver-path guidance per DESIGN-02 (resolve the normal-LSD-vs-pyLSD documentation imbalance)
 - [ ] **SKILL-03**: devils-advocate gates detect the v8.0 failure modes — silent constraint loss, empty/zero merge despite per-run solutions, and post-validation file edits
 
 ### UAT (milestone gate)
@@ -61,8 +61,8 @@ Deferred to future release. Tracked but not in current roadmap.
 | RELI-01 | Phase 73 | Pending |
 | RELI-02 | Phase 74 | Complete |
 | RELI-03 | Phase 74 | Complete |
-| SKILL-01 | Phase 75 | Pending |
-| SKILL-02 | Phase 75 | Pending |
+| SKILL-01 | Phase 75 | Complete |
+| SKILL-02 | Phase 75 | Complete |
 | SKILL-03 | Phase 75 | Pending |
 | UAT-03 | Phase 76 | Pending |
 | UAT-04 | Phase 76 | Pending |

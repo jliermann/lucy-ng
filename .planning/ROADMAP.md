@@ -284,10 +284,10 @@ Plans:
   3. The devils-advocate checklist includes gates that would have failed the v8.0 run early: (a) detect that permutation files drop non-HMBC constraints, (b) detect empty `merged.smi` despite non-zero `solncounter` files, (c) flag any LSD file modification after DA approval (the post-validation edit violation documented in the v8.0 postmortem)
   4. A developer reading the agent skills can determine, for any given solver invocation, exactly which constraints will be passed to the LSD binary and via which CLI command — no ambiguity about native vs abstraction layer
 
-**Plans:** 5 plans
+**Plans:** 1/5 plans executed
 **Wave 1** *(independent — touch different files)*
 
-- [ ] 75-01-lsd-engineer-native-singlepath-PLAN.md — SYME→BOND/COSY, DEFF NOT→DEFF F/FEXP, single-path step 11, outlsd pipe removal, SKEL escalation note in lsd-engineer.md
+- [x] 75-01-lsd-engineer-native-singlepath-PLAN.md — SYME→BOND/COSY, DEFF NOT→DEFF F/FEXP, single-path step 11, outlsd pipe removal, SKEL escalation note in lsd-engineer.md
 - [ ] 75-02-devils-advocate-native-gates-PLAN.md — native-command sync in DA §1/§2/§5, add G5/G6/G7/G8 v8.0-failure-mode gates
 - [ ] 75-03-case-references-analyst-PLAN.md — outlsd pipe removal in case.md task descriptions, native vocab in spawn prompts, progress-format.md + solution-analyst.md updates
 - [ ] 75-04-python-schema-followups-PLAN.md — fragment to-lsd --filter-index 3 default, new tests, pytest green; all fragment F1→F3 refs in lsd-engineer.md
@@ -319,7 +319,7 @@ Plans:
 | 72. Design Re-Validation | 2/2 | Complete   | 2026-05-20 |
 | 73. Solution Plumbing Fix | 1/1 | Complete   | 2026-05-21 |
 | 74. Constraint Preservation and Merge | 2/2 | Complete   | 2026-05-24 |
-| 75. Skill Consolidation | 0/5 | In progress | - |
+| 75. Skill Consolidation | 1/5 | In Progress|  |
 | 76. Milestone UAT Gate | 0/TBD | Not started | - |
 
 ---
