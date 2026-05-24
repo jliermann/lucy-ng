@@ -183,6 +183,7 @@ class LSDProblem:
     comments: list[str] = field(default_factory=list)
     pylsd_mode: bool = False
     elim_commands: list[tuple[int, int]] = field(default_factory=list)
+    ring_exclusion_enabled: bool = False
 
     def add_atom(self, atom: LSDAtom) -> None:
         """Add an atom to the problem."""
@@ -195,6 +196,61 @@ class LSDProblem:
     def add_constraint(self, constraint: LSDConstraint) -> None:
         """Add a structural constraint to the problem."""
         self.constraints.append(constraint)
+
+    def add_equivalence_pair(
+        self,
+        parent_index: int,
+        child1_index: int,
+        child2_index: int,
+    ) -> None:
+        """Add gem-dimethyl (or isopropyl) equivalence as BOND constraints.
+
+        Injects two BOND entries into self.constraints so the existing BOND
+        section in generate() renders them natively (D-03, Option A).
+
+        Args:
+            parent_index: Atom index of the common parent (e.g., isobutyl CH).
+            child1_index: Atom index of first equivalent child (e.g., CH3 #1).
+            child2_index: Atom index of second equivalent child (e.g., CH3 #2).
+        """
+        self.constraints.append(LSDConstraint(
+            atom1_index=parent_index,
+            atom2_index=child1_index,
+            constraint_type="BOND",
+            reason="gem_dimethyl equivalence",
+        ))
+        self.constraints.append(LSDConstraint(
+            atom1_index=parent_index,
+            atom2_index=child2_index,
+            constraint_type="BOND",
+            reason="gem_dimethyl equivalence",
+        ))
+
+    def add_aromatic_equivalence_pair(self, atom1_index: int, atom2_index: int) -> None:
+        """Add an aromatic CH-pair equivalence as a COSY correlation.
+
+        Injects one COSY entry into self.correlations so the existing COSY
+        section in generate() renders it natively (D-03, Option A).
+
+        Deduplicates: if a COSY for the sorted (atom1, atom2) pair already
+        exists it is not added again, preventing duplicate COSY lines when
+        peak-data COSY and equivalence COSY overlap.
+
+        Args:
+            atom1_index: Atom index of first aromatic CH.
+            atom2_index: Atom index of second aromatic CH.
+        """
+        key = tuple(sorted([atom1_index, atom2_index]))
+        for corr in self.correlations:
+            if corr.correlation_type == "COSY":
+                existing_key = tuple(sorted([corr.atom1_index, corr.atom2_index]))
+                if existing_key == key:
+                    return  # Already present — skip
+        self.correlations.append(LSDCorrelation(
+            atom1_index=atom1_index,
+            atom2_index=atom2_index,
+            correlation_type="COSY",
+        ))
 
     def get_atom_by_index(self, index: int) -> LSDAtom | None:
         """Get atom by index."""

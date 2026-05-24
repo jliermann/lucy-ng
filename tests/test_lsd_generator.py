@@ -546,6 +546,67 @@ class TestPyLSDValidator:
         validate_pylsd_input(problem)  # Should not raise
 
 
+class TestNativeConstraintEmission:
+    """RELI-02: generated .lsd contains no SYME or DEFF NOT; equivalence -> BOND/COSY."""
+
+    def _make_ibuprofen_gem_dimethyl_problem(self) -> LSDProblem:
+        """Minimal problem: gem-dimethyl pair (atoms 10, 11, 12 as per arm_a.lsd)."""
+        problem = LSDProblem(name="gem_dimethyl_test")
+        problem.add_atom(LSDAtom(10, "C", Hybridization.SP3, 1))   # isobutyl CH
+        problem.add_atom(LSDAtom(11, "C", Hybridization.SP3, 3))   # CH3 #1
+        problem.add_atom(LSDAtom(12, "C", Hybridization.SP3, 3))   # CH3 #2
+        problem.add_equivalence_pair(parent_index=10, child1_index=11, child2_index=12)
+        return problem
+
+    def test_no_syme_in_output(self):
+        """Generated LSD content never contains SYME."""
+        problem = self._make_ibuprofen_gem_dimethyl_problem()
+        content = LSDInputGenerator.generate(problem)
+        assert "SYME" not in content
+
+    def test_no_deff_not_in_output(self):
+        """Generated LSD content never contains DEFF NOT."""
+        problem = LSDProblem(name="ring_excl_test", ring_exclusion_enabled=True)
+        problem.add_atom(LSDAtom(1, "C", Hybridization.SP2, 0))
+        content = LSDInputGenerator.generate(problem)
+        assert "DEFF NOT" not in content
+
+    def test_gem_dimethyl_emits_bond(self):
+        """Gem-dimethyl equivalence (parent=10, atoms 11+12) emits BOND 10 11 and BOND 10 12."""
+        problem = self._make_ibuprofen_gem_dimethyl_problem()
+        content = LSDInputGenerator.generate(problem)
+        assert "BOND 10 11" in content
+        assert "BOND 10 12" in content
+
+    def test_aromatic_ch_pair_emits_cosy(self):
+        """Aromatic CH pair equivalence emits COSY 4 7 and COSY 5 6 (arm_a.lsd ground truth)."""
+        problem = LSDProblem(name="aromatic_cosy_test")
+        for idx in [4, 5, 6, 7]:
+            problem.add_atom(LSDAtom(idx, "C", Hybridization.SP2, 1))
+        problem.add_aromatic_equivalence_pair(4, 7)
+        problem.add_aromatic_equivalence_pair(5, 6)
+        content = LSDInputGenerator.generate(problem)
+        assert "COSY 4 7" in content
+        assert "COSY 5 6" in content
+
+    def test_ring_exclusion_emits_deff_f_fexp(self):
+        """ring_exclusion_enabled=True emits DEFF F1/F2 and FEXP."""
+        problem = LSDProblem(name="ring_excl_test", ring_exclusion_enabled=True)
+        problem.add_atom(LSDAtom(1, "C", Hybridization.SP2, 0))
+        content = LSDInputGenerator.generate(problem)
+        assert 'DEFF F1 "ring3"' in content
+        assert 'DEFF F2 "ring4"' in content
+        assert 'FEXP "NOT F1 AND NOT F2"' in content
+
+    def test_ring_files_written_to_output_dir(self, tmp_path):
+        """write_file() copies ring3 and ring4 filter files to output dir."""
+        problem = LSDProblem(name="ring_excl_test", ring_exclusion_enabled=True)
+        problem.add_atom(LSDAtom(1, "C", Hybridization.SP2, 0))
+        LSDInputGenerator.write_file(problem, tmp_path / "test.lsd")
+        assert (tmp_path / "ring3").exists()
+        assert (tmp_path / "ring4").exists()
+
+
 class TestHydrogenAssignment:
     """Tests for missing hydrogen detection and assignment to oxygen."""
 
