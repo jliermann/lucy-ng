@@ -8,6 +8,7 @@ depends_on: ["75-01"]
 files_modified:
   - src/lucy_ng/cli/fragment.py
   - tests/test_lsd_formatter.py
+  - ~/.claude/agents/lucy-lsd-engineer.md
 autonomous: true
 requirements: [SKILL-01]
 
@@ -18,6 +19,8 @@ must_haves:
     - "lucy fragment to-lsd --filter-index 1 emits DEFF F1 and FEXP \"F1\" (backward compat)"
     - "schema constraint_inventory_v2.json uses additionalProperties: true (no change needed — confirmed)"
     - "pytest -x -q green after changes"
+    - "lsd-engineer.md fragment zero-solution fallback line 172 removes DEFF Fn (not DEFF F1 hard-coded)"
+    - "lsd-engineer.md fragment CLI example uses --filter-index 3"
   artifacts:
     - path: src/lucy_ng/cli/fragment.py
       provides: "Updated to-lsd CLI with configurable filter index"
@@ -206,10 +209,118 @@ New text:
 ```
 - `deff_command`: the DEFF F3 command string to insert in compound.lsd (F3 because F1/F2 are reserved for ring exclusion)
 ```
+
+**BLOCKER 2 + WARNING 5 fixes: Update ALL remaining fragment F1 references in lsd-engineer.md**
+
+The following edits fix the 7 remaining `DEFF F1` (fragment goodlist context) references in ~/.claude/agents/lucy-lsd-engineer.md. Ring-exclusion F1/F2 references are LEFT UNCHANGED — those are correct. Fragment goodlist references change from F1 → F3.
+
+Read the current lsd-engineer.md, then apply these edits in order:
+
+**lsd-engineer Edit 1 — Line 169: Fragment persistence rule (WARNING 5 — "same as DEFF NOT" stale)**
+
+Old text (exact):
+```
+**Fragment persistence rule:** Carry DEFF F1/FEXP forward across iterations, same as DEFF NOT. Read from previous LSD file, never reconstruct.
+```
+
+New text:
+```
+**Fragment persistence rule:** Carry the fragment DEFF F3/FEXP forward across iterations (read from previous LSD file, never reconstruct), same as the ring-exclusion DEFF F1/F2/FEXP.
+```
+
+**lsd-engineer Edit 2 — Line 172: Zero-solution fallback (OPERATIONAL BUG — removes wrong line)**
+
+Old text (exact):
+```
+1. Remove DEFF F1 and FEXP lines from the LSD file
+```
+
+New text:
+```
+1. Remove the fragment DEFF Fn and FEXP lines from the LSD file (Fn = the fragment goodlist filter, F3 by default — check the `deff_command` field in the inventory for the actual filter index; do NOT remove the ring-exclusion DEFF F1/F2 lines)
+```
+
+**lsd-engineer Edit 3 — Line 194: Manual checklist item 10**
+
+Old text (exact):
+```
+10. If fragment applied: DEFF F1/FEXP present after inventory block but before first MULT, fragment .lsd file exists in iteration dir
+```
+
+New text:
+```
+10. If fragment applied: DEFF F3/FEXP present after inventory block but before first MULT, fragment .lsd file exists in iteration dir (F3 = fragment goodlist; F1/F2 = ring exclusion — distinct namespaces)
+```
+
+**lsd-engineer Edit 4 — Line 418 area: inventory JSON example deff_command field**
+
+Old text (exact):
+```
+;     "deff_command": "DEFF F1 "fragment_abc123def456.lsd"",
+```
+
+New text:
+```
+;     "deff_command": "DEFF F3 "fragment_abc123def456.lsd"",
+```
+
+**lsd-engineer Edit 5 — Line 433 area: raw LSD example line after inventory block**
+
+Old text (exact):
+```
+DEFF F1 "fragment_abc123def456.lsd"
+FEXP "F1"
+```
+
+New text:
+```
+DEFF F3 "fragment_abc123def456.lsd"
+FEXP "F3"
+```
+
+**lsd-engineer Edit 6 — Line 453: Initialization Procedure DEFF F1/FEXP placement note**
+
+Old text (exact):
+```
+      - DEFF F1/FEXP lines go after inventory block, before first MULT
+```
+
+New text:
+```
+      - DEFF F3/FEXP lines go after inventory block, before first MULT (F3 = fragment goodlist, reserved above ring-exclusion F1/F2)
+```
+
+**lsd-engineer Edit 7 — Line 474: Update Procedure DEFF F1/FEXP carry-forward**
+
+Old text (exact):
+```
+   - Copy deff_fexp from previous inventory. If previous status was "applied", carry forward DEFF F1/FEXP lines. Re-run fragment search for logging. If previous was "discarded", keep "discarded" status.
+```
+
+New text:
+```
+   - Copy deff_fexp from previous inventory. If previous status was "applied", carry forward DEFF F3/FEXP lines (check `deff_command` in the inventory for the actual Fn index). Re-run fragment search for logging. If previous was "discarded", keep "discarded" status.
+```
+
+**lsd-engineer Edit 8 — Line 519: Workflow step 6 DEFF F1/FEXP fragment placement**
+
+Old text (exact):
+```
+6. Build/update LSD file: inventory block first (initialized or updated per Section 5C/5D), then DEFF F1/FEXP (if fragment applied), then MULT defs, HSQC, HMBC batch, BOND/LIST/PROP, DEFF F1+F2/FEXP ring exclusion
+```
+
+New text:
+```
+6. Build/update LSD file: inventory block first (initialized or updated per Section 5C/5D), then DEFF F3/FEXP (if fragment applied), then MULT defs, HSQC, HMBC batch, BOND/LIST/PROP, DEFF F1+F2/FEXP ring exclusion
+```
+
+Note: Edit 8 is applied AFTER Plan 75-01 Task 2 Edit N has already changed "DEFF NOT" → "DEFF F1+F2/FEXP ring exclusion" on that line. Verify the current text before applying — if Plan 75-01 ran first, use the post-75-01 version as the old text.
+
+**Also update must_haves artifacts entry for lsd-engineer.md** (this plan already declares it as files_modified via 75-01 SUMMARY dependency — no frontmatter change needed since lsd-engineer.md is already listed in 75-01's files_modified and 75-04 adds skill edits to the same file).
   </action>
   <verify>
     <automated>
-cd /Users/steinbeck/Dropbox/develop/lucy-ng && pytest tests/test_lsd_formatter.py -x -q -k "filter_index or to_lsd" 2>&1 | tail -20
+pytest tests/test_lsd_formatter.py -x -q -k "filter_index or to_lsd" 2>&1 | tail -20
 # New tests must pass
 
 cd /Users/steinbeck/Dropbox/develop/lucy-ng && pytest -x -q 2>&1 | tail -10
@@ -218,10 +329,23 @@ cd /Users/steinbeck/Dropbox/develop/lucy-ng && pytest -x -q 2>&1 | tail -10
 # CLI smoke test
 cd /Users/steinbeck/Dropbox/develop/lucy-ng && python -m lucy_ng.cli.main fragment to-lsd "CCO" 2>/dev/null | python3 -c "import sys,json; d=json.loads(sys.stdin.read()); print(d['deff_command'])"
 # Must print: DEFF F3 "fragment_..."
+
+# lsd-engineer.md skill edits: Blocker 2 + Warning 5
+# Operational fallback no longer hard-codes F1 (line 172 fix)
+grep -n "Remove the fragment DEFF Fn" ~/.claude/agents/lucy-lsd-engineer.md
+# Must return >= 1 line
+
+# Fragment persistence rule updated (Warning 5 / line 169 fix)
+grep -n "same as the ring-exclusion DEFF F1/F2" ~/.claude/agents/lucy-lsd-engineer.md
+# Must return >= 1 line
+
+# No hard-coded "carry forward DEFF F1/FEXP" in fragment context
+grep -n "carry forward DEFF F1/FEXP" ~/.claude/agents/lucy-lsd-engineer.md || echo "0 - good"
+# Must return 0
     </automated>
   </verify>
   <done>
-lucy fragment to-lsd emits DEFF F3 / FEXP "F3" by default. --filter-index 1 override works for backward compat. pytest suite green. lsd-engineer.md Fragment Goodlist CLI example uses --filter-index 3. Schema check confirms no action needed (additionalProperties: true).
+lucy fragment to-lsd emits DEFF F3 / FEXP "F3" by default. --filter-index 1 override works for backward compat. pytest suite green. lsd-engineer.md Fragment Goodlist CLI example uses --filter-index 3. Operational fallback (line 172) removes DEFF Fn not hard-coded F1. Fragment persistence rule (line 169) references ring-exclusion F1/F2 correctly. Schema check confirms no action needed (additionalProperties: true).
   </done>
 </task>
 

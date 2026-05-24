@@ -197,6 +197,18 @@ New text:
 ```
 For natural products, expect DEFF F1 "ring3" + DEFF F2 "ring4" + FEXP (native form) OR DEFF NOT C1CC1 + DEFF NOT C1CCC1 (legacy form). `grep -c "^DEFF F" compound.lsd` must be >= 2 (native) OR `grep -c "^DEFF NOT" compound.lsd` must be >= 2 (legacy). If neither condition holds: flag WARNING.
 ```
+
+**Edit I — Line 362: Bug 2 legacy fallback — stale SYME reference (WARNING 3 fix)**
+
+Old text (exact):
+```
+*Without inventory (legacy):* cross-reference nmr-chemist's detection message with SYME/grouped HMBC presence.
+```
+
+New text:
+```
+*Without inventory (legacy):* cross-reference nmr-chemist's detection message with COSY equiv-pair constraints / parenthesized HMBC (grouped notation) presence.
+```
   </action>
   <verify>
     <automated>

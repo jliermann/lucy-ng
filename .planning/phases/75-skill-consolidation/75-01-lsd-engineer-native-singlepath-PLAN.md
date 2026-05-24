@@ -152,8 +152,8 @@ New text:
   </action>
   <verify>
     <automated>
-grep -c "^SYME\b" ~/.claude/agents/lucy-lsd-engineer.md || true
-# Must return 0 (SYME no longer appears as a command to write)
+grep -rn "^SYME\b" ~/.claude/agents/lucy-lsd-engineer.md | grep -v "NOT native\|error 102\|Do NOT write\|NEVER write" || true
+# Must return 0 (the grep -v filters out legitimate "SYME causes... NEVER write" guidance lines)
 grep -c "BOND.*gem-dimethyl" ~/.claude/agents/lucy-lsd-engineer.md
 # Must return >= 1
 grep -c "COSY.*equiv-pair" ~/.claude/agents/lucy-lsd-engineer.md
