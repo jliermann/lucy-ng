@@ -785,6 +785,78 @@ class TestPermutationConstraintPreservation:
             )
 
 
+class TestSolutionMergerPostFix:
+    """SolutionMerger post-Phase-73: non-empty smiles files produce non-zero results.
+
+    Phase 73 fixed _invoke_outlsd so per-permutation solutions.smi files are
+    populated with real SMILES lines (not just the 10-line outlsd header).
+    This test confirms that SolutionMerger.merge() correctly collects those
+    solutions — total_raw_solutions > 0 and merged.smi is non-empty.
+    """
+
+    def _make_perm_result(
+        self,
+        perm_index: int,
+        smiles_file: Path | None,
+        include_flags: list[bool],
+    ) -> PermutationResult:
+        suspects = _make_suspects(len(include_flags))
+        return PermutationResult(
+            perm_index=perm_index,
+            include_flags=include_flags,
+            suspect_correlations=suspects,
+            lsd_result=_make_lsd_result(),
+            smiles_file=smiles_file,
+            perm_dir=Path("/fake"),
+        )
+
+    def test_merger_collects_from_non_empty_smiles_files(self, tmp_path: Path) -> None:
+        """SolutionMerger given two PermutationResult objects with real SMILES files
+        collects non-zero total_raw_solutions and non-empty merged.smi.
+
+        This is the post-Phase-73 correctness test: with outlsd producing real
+        SMILES content (not just a header), the merge pipeline works correctly.
+        """
+        from lucy_ng.lsd.orchestrator import SolutionMerger
+        import json
+
+        # Two distinct real molecules — not deduplicated (different InChI keys)
+        molecules = [
+            ("CCO", tmp_path / "perm_00"),          # ethanol
+            ("CCCO", tmp_path / "perm_01"),          # propanol
+        ]
+
+        perm_results = []
+        for i, (smi, perm_dir) in enumerate(molecules):
+            perm_dir.mkdir()
+            smi_file = perm_dir / "solutions.smi"
+            smi_file.write_text(smi + "\n")
+            perm_results.append(self._make_perm_result(i, smi_file, [True]))
+
+        merger = SolutionMerger()
+        output_dir = tmp_path / "merged"
+        merge_result = merger.merge(perm_results, output_dir=output_dir)
+
+        # merged.smi must be non-empty
+        assert merge_result.merged_smi.exists()
+        smi_content = merge_result.merged_smi.read_text().strip()
+        assert smi_content, "merged.smi should not be empty"
+
+        # total_raw_solutions in run_report must be >= 2 (1 from each perm)
+        report = json.loads(merge_result.run_report.read_text())
+        assert report["total_raw_solutions"] >= 2, (
+            f"Expected total_raw_solutions >= 2, got {report['total_raw_solutions']}"
+        )
+
+        # unique_solutions = 2 (both ethanol and propanol are distinct)
+        assert report["unique_solutions"] == 2
+
+        # merged_solutions in result object is non-empty
+        assert len(merge_result.merged_solutions) >= 2, (
+            "merge_result.merged_solutions should have >= 2 entries"
+        )
+
+
 class TestSolutionMergerEdgeCases:
     """SolutionMerger handles invalid SMILES and missing files gracefully."""
 
