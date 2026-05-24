@@ -216,6 +216,22 @@ New text:
 ```
 - Fix: "Add BOND/COSY equivalence constraints (COSY atom1 atom2 ; equiv-pair for aromatic CH pairs; BOND parent CH3_1 + BOND parent CH3_2 for gem-dimethyl/isopropyl)" — SYME is not native in LSD-3.4.9
 ```
+
+**Edit F — Line ~789: Replace stale SYME detection step (WARNING fix)**
+
+The PROCEDURE step that precedes the grep block still references SYME as a thing to look for in current LSD files. After 75-01, no LSD file contains SYME, so this step is stale. Read the file to confirm exact wording near line 789, then replace:
+
+Old text (exact):
+```
+3. If symmetry detected, check LSD file for SYME or equivalent LIST/PROP encoding
+```
+
+New text:
+```
+3. If symmetry detected, check LSD file for native symmetry encoding (BOND/COSY equiv-pair constraints — SYME is not native in LSD-3.4.9)
+```
+
+Also scan lines 6 and 24 (capability/knowledge listings in the agent header) — if either lists `SYME` as a known/supported command, reword to `BOND/COSY equivalence (SYME is not native)`. If they are non-instructional capability mentions the executor judges harmless, leave them but ensure the filtered sign-off grep still passes.
   </action>
   <verify>
     <automated>

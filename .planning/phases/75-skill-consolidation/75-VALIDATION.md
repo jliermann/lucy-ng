@@ -38,7 +38,7 @@ created: 2026-05-24
 
 | Task ID | Plan | Wave | Requirement | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------------|-----------|-------------------|-------------|--------|
-| TBD | TBD | 1 | SKILL-01 | No skill instructs writing SYME or DEFF NOT; native BOND/COSY + DEFF F/FEXP documented | grep | `! grep -rIl "SYME\|DEFF NOT" ~/.claude/agents/lucy-*.md ~/.claude/commands/lucy-ng/` (only as "do NOT use" notes) | ❌ W0 | ⬜ pending |
+| TBD | TBD | 1 | SKILL-01 | No skill instructs writing SYME or DEFF NOT; native BOND/COSY + DEFF F/FEXP documented | grep | `grep -rn "^SYME\b\|DEFF NOT" ~/.claude/agents/lucy-*.md ~/.claude/commands/lucy-ng/ \| grep -v "NOT native\|error 102\|Do NOT write\|NEVER write\|not a native"` → must return empty (guidance lines allowed) | ❌ W0 | ⬜ pending |
 | TBD | TBD | 1 | SKILL-01 | Phase-73 reality: no manual `outlsd 5 <` pipe; `lucy lsd run` produces solutions.smi | grep | `! grep -rn "outlsd 5 <" ~/.claude/agents/lucy-lsd-engineer.md ~/.claude/commands/lucy-ng/case.md` | ❌ W0 | ⬜ pending |
 | TBD | TBD | 1 | SKILL-02 | Single primary path: normal-LSD prominent; pyLSD demoted to subordinate "use ONLY when"; HMBC X Y 2 4 in main HMBC block | grep | `grep -n "use ONLY when\|####.*pyLSD" ~/.claude/agents/lucy-lsd-engineer.md` | ❌ W0 | ⬜ pending |
 | TBD | TBD | 1 | SKILL-03 | devils-advocate has G5 (perm HMBC-only), G6 (empty merge vs solncounter), G7 (post-validation edit), G8 (reversion) | grep | `grep -cE "^\*\*G[5678]:" ~/.claude/agents/lucy-devils-advocate.md` returns 4 | ❌ W0 | ⬜ pending |
@@ -76,7 +76,7 @@ created: 2026-05-24
 
 ## Validation Sign-Off
 
-- [ ] No skill instructs SYME or DEFF NOT (only "do NOT use" guidance); native equivalents documented with ground-truth examples
+- [ ] No skill instructs SYME or DEFF NOT (only "do NOT use" guidance); native equivalents documented with ground-truth examples. Verify with the filtered grep: `grep -rn "^SYME\b\|DEFF NOT" ~/.claude/agents/lucy-*.md ~/.claude/commands/lucy-ng/ | grep -v "NOT native\|error 102\|Do NOT write\|NEVER write\|not a native"` → empty
 - [ ] No manual outlsd-pipe instruction (Phase-73 solutions.smi reality)
 - [ ] Single prominent solver path; pyLSD subordinate; HMBC X Y 2 4 in main block
 - [ ] devils-advocate G5-G8 present + actionable
