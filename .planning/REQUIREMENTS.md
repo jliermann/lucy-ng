@@ -16,8 +16,8 @@ Requirements for v9.0 release. Outcome-level where possible so they survive the 
 ### Reliability (design-agnostic, outcome-level)
 
 - [ ] **RELI-01**: LSD solutions reliably convert to ranked SMILES with no silent solution loss — when the solver finds N solutions, the pipeline ranks them (covers the outlsd conversion / `lucy lsd run` exit-255 / empty-merge failures)
-- [ ] **RELI-02**: Every solver invocation runs with the COMPLETE validated constraint set — no silent constraint loss on any solver path (covers permutation-file constraint drop and the non-native-translation gap)
-- [ ] **RELI-03**: Aromatic compounds reliably yield aromatic-ring solutions in the ranked output (per the DESIGN-01 decision)
+- [x] **RELI-02**: Every solver invocation runs with the COMPLETE validated constraint set — no silent constraint loss on any solver path (covers permutation-file constraint drop and the non-native-translation gap)
+- [x] **RELI-03**: Aromatic compounds reliably yield aromatic-ring solutions in the ranked output (per the DESIGN-01 decision)
 
 ### Skill Consolidation
 
@@ -59,8 +59,8 @@ Deferred to future release. Tracked but not in current roadmap.
 | DESIGN-01 | Phase 72 | Pending |
 | DESIGN-02 | Phase 72 | Pending |
 | RELI-01 | Phase 73 | Pending |
-| RELI-02 | Phase 74 | Pending |
-| RELI-03 | Phase 74 | Pending |
+| RELI-02 | Phase 74 | Complete |
+| RELI-03 | Phase 74 | Complete |
 | SKILL-01 | Phase 75 | Pending |
 | SKILL-02 | Phase 75 | Pending |
 | SKILL-03 | Phase 75 | Pending |

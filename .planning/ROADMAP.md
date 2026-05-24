@@ -198,7 +198,7 @@ Plans:
 
 - [x] **Phase 72: Design Re-Validation** - Answer the 4 open design questions from the postmortem before any fix is built: is pyLSD multi-run the right 4J approach? single vs dual solver path? where does constraint translation live? how is the aromatic ring established? (first phase; gates all fixes) (completed 2026-05-20)
 - [x] **Phase 73: Solution Plumbing Fix** - Fix `lucy lsd run` / outlsd conversion so LSD solutions reliably become SMILES: the exit-255 / header-only bug means nothing downstream works. (depends on Phase 72) (completed 2026-05-21)
-- [ ] **Phase 74: Constraint Preservation and Merge** - Fix permutation file generation to carry the full constraint set (BOND/SYME/DEFF NOT/grouped), and fix SolutionMerger to collect non-empty results from per-permutation runs. (depends on Phase 73)
+- [x] **Phase 74: Constraint Preservation and Merge** - Fix permutation file generation to carry the full constraint set (BOND/SYME/DEFF NOT/grouped), and fix SolutionMerger to collect non-empty results from per-permutation runs. (depends on Phase 73) (completed 2026-05-24)
 - [ ] **Phase 75: Skill Consolidation** - Audit all agent skills against actual LSD-3.4.9 behavior; eliminate the normal-LSD vs pyLSD documentation imbalance; encode the DESIGN-02 solver-path decision as unambiguous single-path guidance; update devils-advocate gates to catch the v8.0 failure modes. (depends on Phase 72, Phase 74)
 - [ ] **Phase 76: Milestone UAT Gate** - Blind CASE re-run on CASE1 (ibuprofen) AND CASE9 (4-(1-hydroxyethyl)benzoic acid isopropylester, C12H16O3) via the intended mechanism; all Phase-71 criteria verified against on-disk artifacts by independent RDKit check. (depends on Phase 75)
 
@@ -259,7 +259,7 @@ Plans:
   3. After a multi-run with permutations that each produce solutions, `merged.smi` is non-empty and `run_report.json` records per-permutation solution counts that sum to at least the count from the most-productive permutation
   4. An aromatic compound processed through the full pyLSD pipeline (or the DESIGN-01-decided mechanism) produces at least one aromatic-ring solution in the ranked output — the benzene ring emerges from constraints, not from a forced SKEL fragment
 
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 Plans:
 
 **Wave 1**
@@ -268,7 +268,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 74-02-PLAN.md — Permutation constraint preservation tests (deepcopy proof) + SolutionMerger correctness test + end-to-end emergent-aromatic integration test (skipif LSD)
+- [x] 74-02-PLAN.md — Permutation constraint preservation tests (deepcopy proof) + SolutionMerger correctness test + end-to-end emergent-aromatic integration test (skipif LSD)
 
 **UI hint**: no
 
@@ -308,7 +308,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 72. Design Re-Validation | 2/2 | Complete   | 2026-05-20 |
 | 73. Solution Plumbing Fix | 1/1 | Complete   | 2026-05-21 |
-| 74. Constraint Preservation and Merge | 1/2 | In Progress|  |
+| 74. Constraint Preservation and Merge | 2/2 | Complete   | 2026-05-24 |
 | 75. Skill Consolidation | 0/TBD | Not started | - |
 | 76. Milestone UAT Gate | 0/TBD | Not started | - |
 
