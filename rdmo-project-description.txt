@@ -1,0 +1,34 @@
+lucy-ng — AI-Agent-Powered Computer-Assisted Structure Elucidation (CASE) for Natural Products
+
+Scientific scope
+lucy-ng addresses the long-standing problem of determining the chemical structure of unknown
+organic natural products from nuclear magnetic resonance (NMR) spectra. Natural products remain
+a cornerstone of drug discovery, chemical ecology, and metabolomics, but elucidating their
+structures from spectroscopic evidence is time-consuming, expertise-dependent, and error-prone.
+lucy-ng automates this workflow by coupling large-language-model agents (Claude) with the
+established logic-based structure generator LSD (Nuzillard, Univ. Reims) and a curated reference
+database of known natural products. The agents translate raw NMR evidence into formal structural
+constraints, run the LSD solver, rank candidate structures by predicted versus observed 13C
+chemical shifts, and iteratively refine the constraint set — replicating the reasoning a trained
+NMR chemist would apply. The package supports two complementary modes: dereplication (matching
+an unknown against ~928,000 known compounds) and de novo structure elucidation when no database
+match exists.
+
+Input data
+Primary inputs are Bruker-format NMR datasets for a single compound at natural abundance,
+typically comprising a 1H 1D, a 13C 1D, DEPT-135 (and optionally DEPT-90), edited HSQC, HMBC,
+and COSY experiments, together with the molecular formula obtained from high-resolution mass
+spectrometry. Dataset sizes range from a few MB to ~100 MB per compound.
+
+Reference data
+A single SQLite database (~2.8 GB uncompressed, ~830 MB compressed, DOI 10.6084/m9.figshare.31073554)
+integrates 928,443 compounds from COCONUT and NMRShiftDB with 13C chemical shift assignments and
+7.9 million precomputed HOSE-code shift statistics used for structure ranking.
+
+Generated data
+For each CASE run, lucy-ng produces machine-readable peak lists, statistically derived structural
+constraints (hybridisation, neighbour atoms, hetero-hetero bonds, symmetry groups), LSD input and
+solution files, deduplicated candidate structures in SMILES/InChI format with provenance metadata,
+a ranked shortlist scored by mean absolute error against predicted 13C shifts, and a full
+human-readable progress log (CASE-PROGRESS.md) documenting every reasoning step, intervention,
+and solver iteration for full reproducibility and auditability.
