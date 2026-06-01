@@ -13,7 +13,7 @@
 - [v6.0 Skill Quality Overhaul](milestones/v6.0-ROADMAP.md) - Phases 55-58 (shipped 2026-03-10)
 - [v7.0 Statistical 4J Detection](milestones/v7.0-ROADMAP.md) - Phases 59-64 (ABANDONED 2026-03-12)
 - **v8.0 pyLSD Integration** - Phases 65-71 (superseded by v9.0 before UAT passed)
-- **v9.0 CASE Reliability & Skill Consolidation** - Phases 72-77 (in progress; UAT gate failed at 76 → Phase 77 fix + re-UAT)
+- **v9.0 CASE Reliability & Skill Consolidation** - Phases 72-78 (in progress; UAT gate failed at 76 → Phase 77 fixes + Phase 78 re-UAT)
 
 ---
 
@@ -201,6 +201,8 @@ Plans:
 - [x] **Phase 74: Constraint Preservation and Merge** - Fix permutation file generation to carry the full constraint set (BOND/SYME/DEFF NOT/grouped), and fix SolutionMerger to collect non-empty results from per-permutation runs. (depends on Phase 73) (completed 2026-05-24)
 - [x] **Phase 75: Skill Consolidation** - Audit all agent skills against actual LSD-3.4.9 behavior; eliminate the normal-LSD vs pyLSD documentation imbalance; encode the DESIGN-02 solver-path decision as unambiguous single-path guidance; update devils-advocate gates to catch the v8.0 failure modes. (depends on Phase 72, Phase 74)
 - [x] **Phase 76: Milestone UAT Gate** - Blind CASE re-run on CASE1 (ibuprofen) AND CASE9 (4-(1-hydroxyethyl)benzoic acid isopropylester, C12H16O3) via the intended mechanism; all Phase-71 criteria verified against on-disk artifacts by independent RDKit check. (depends on Phase 75) (executed 2026-06-01 — **GATE VERDICT: FAILED**; CASE1 spirit-fail, CASE9 deferred. v9.0 does NOT ship. See 76-milestone-uat-gate/VERIFICATION.md → Phase 77)
+- [ ] **Phase 77: Fix lucy lsd run + Emergent-Aromatic Tooling + Skill Hygiene** - Fix the blocking defects the v9.0 UAT exposed: repair `lucy lsd run`/`_invoke_outlsd` (real solutions.smi + fail-loud + regression test); make cross-ring COSY equivalence-pair emission deterministic in tooling so the aromatic ring emerges; retire deprecated lucy-case-agent.md + targeted skill-creator audit. Fixes only — no UAT. (depends on Phase 76)
+- [ ] **Phase 78: Blind Re-UAT Gate (CASE1 + CASE9)** - Re-run the v9.0 milestone blind UAT on CASE1 + CASE9 via the now-fixed intended mechanism; independent RDKit verification with rewritten criteria (emergent ring = clean pass, documented BOND escalation = conditional pass, silent ring-BOND/SKEL = fail). Milestone-complete gate. (depends on Phase 77)
 
 ## Phase Details
 
@@ -334,18 +336,45 @@ Plans:
 | 74. Constraint Preservation and Merge | 2/2 | Complete   | 2026-05-24 |
 | 75. Skill Consolidation | 5/5 | Complete   | 2026-05-24 |
 | 76. Milestone UAT Gate | 2/2 | Executed — **GATE FAILED** | 2026-06-01 |
+| 77. Fix lucy lsd run + Emergent Tooling + Hygiene | 0/? | Context gathered | — |
+| 78. Blind Re-UAT Gate (CASE1 + CASE9) | 0/? | Not started | — |
 
 **v9.0 milestone gate: FAILED (does not ship).** Phase 76 executed: harness built (76-01), CASE1 blind run = spirit-fail (ibuprofen found but `lucy lsd run` broken + ring forced + interventions), CASE9 deferred. Blocking defects → **Phase 77** (fix `lucy lsd run`, revisit D-04 emergent-aromatic, retire deprecated lucy-case-agent.md), then re-UAT CASE1 + CASE9. See `.planning/phases/76-milestone-uat-gate/VERIFICATION.md`.
 
-### Phase 77: Fix lucy lsd run plumbing bug and re-run blind UAT — repair _invoke_outlsd so lucy lsd run produces real solutions.smi and fails loud on outlsd errors, resolve D-04 emergent-aromatic (ring did not emerge on CASE1), retire deprecated lucy-case-agent.md, then re-UAT CASE1 + CASE9 blind via verify_case_solution.py
+### Phase 77: Fix lucy lsd run + Emergent-Aromatic Tooling + Skill Hygiene
 
-**Goal:** [To be planned]
-**Requirements**: TBD
-**Depends on:** Phase 76
+**Goal:** The blocking defects exposed by the Phase 76 UAT are fixed so the intended v9.0 mechanism actually works end-to-end — `lucy lsd run` produces real solutions and fails loud on error, the aromatic ring emerges from deterministically-emitted cross-ring COSY constraints (no manual atom-index reasoning, no forced ring), and the skill is free of the deprecated/contradictory agent file. Fixes are verified by tests; the blind re-UAT is Phase 78.
+**Requirements:** FIX-01 (lucy lsd run plumbing), FIX-02 (deterministic cross-ring COSY emission / emergent-aromatic), FIX-03 (skill hygiene)
+**Depends on:** Phase 76 (forensics define the defects — see 76-VERIFICATION.md)
+**Success Criteria** (what must be TRUE):
+
+  1. `lucy lsd run` on a valid `.lsd` produces a `solutions.smi` containing real SMILES (not `outlsd: This is not a file for OUTLSD.`); when outlsd output is the error string / empty / non-SMILES, the runner exits non-zero with a clear error (no false "success"); a regression test asserts both the happy path and the error path
+  2. A CLI/generator helper derives cross-ring aromatic COSY equivalence pairs (e.g. 4≡7, 5≡6) from detected symmetry/grouping and emits them, so the agent no longer hand-assigns atom indices; on the CASE1 constraint set this yields an aromatic ring without explicit ring-BOND forcing (re-confirms Arm A emergence end-to-end)
+  3. Ring-BOND forcing is documented in the skill ONLY as an escalation after N non-aromatic iterations, logged in CASE-PROGRESS; the false Phase-73 "fix works" claim in lucy-lsd-engineer.md is corrected
+  4. Deprecated `~/.claude/agents/lucy-case-agent.md` is retired/archived; a targeted skill-creator audit confirms the v9.0 single-path + emergent/COSY guidance is prominent (not buried) and flags dead/contradictory content — no full rewrite
+  5. D-76 mechanistic UAT criterion is rewritten for Phase 78 (emergent = clean pass, documented BOND escalation = conditional pass, silent ring-BOND/SKEL = fail)
+
 **Plans:** 0 plans
 
 Plans:
 - [ ] TBD (run /gsd-plan-phase 77 to break down)
 
+### Phase 78: Blind Re-UAT Gate (CASE1 + CASE9)
+
+**Goal:** The fixed v9.0 stack solves CASE1 and CASE9 via the intended mechanism in a fresh blind instance, verified independently against on-disk artifacts with the rewritten criteria — the v9.0 milestone-complete gate.
+**Requirements:** UAT-03 (CASE1), UAT-04 (CASE9)
+**Depends on:** Phase 77 (all fixes verified green before the manual blind gate)
+**Success Criteria** (what must be TRUE):
+
+  1. Fresh blind instance runs `/lucy-ng:case` on CASE1 (C13H18O2) and CASE9 (C12H16O3) via the single primary path; `verify_case_solution.py` exits 0 on each `solutions.smi`
+  2. Emitted LSD files: native constraints present (BOND/COSY, DEFF F/FEXP), SYME=0, DEFF NOT=0, SKEL=0; aromatic ring emergent OR ring-BONDs only as a CASE-PROGRESS-documented escalation (silent ring-BONDs = fail)
+  3. 0 path-changing bypass interventions; `lucy lsd run` used as the primary path (no direct-binary bypass)
+  4. Both compounds pass (D-76-06 AND-gate) → v9.0 ships; failure is a valid result documented for a follow-up phase (D-76-07)
+
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 78 to break down)
+
 ---
-*Last updated: 2026-06-01 — Phase 76 executed; v9.0 UAT gate FAILED (CASE1 spirit-fail, CASE9 deferred) → Phase 77 needed before milestone can ship*
+*Last updated: 2026-06-01 — Phase 76 UAT FAILED → split into Phase 77 (fixes) + Phase 78 (blind re-UAT); Phase 77 context gathered*

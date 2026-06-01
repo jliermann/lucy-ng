@@ -25,6 +25,12 @@ Requirements for v9.0 release. Outcome-level where possible so they survive the 
 - [x] **SKILL-02**: Skills give unambiguous single-solver-path guidance per DESIGN-02 (resolve the normal-LSD-vs-pyLSD documentation imbalance)
 - [x] **SKILL-03**: devils-advocate gates detect the v8.0 failure modes — silent constraint loss, empty/zero merge despite per-run solutions, and post-validation file edits
 
+### Post-UAT Fixes (Phase 77 — from 76-VERIFICATION.md forensics)
+
+- [ ] **FIX-01**: `lucy lsd run` produces real SMILES in solutions.smi and fails loud (non-zero exit, no false "success") when outlsd output is the error string / empty / non-SMILES; regression test covers happy + error paths
+- [ ] **FIX-02**: Cross-ring aromatic COSY equivalence pairs are emitted deterministically by tooling (from detected symmetry/grouping), so the aromatic ring emerges without manual atom-index reasoning or forced ring-BONDs; ring-BOND forcing demoted to documented escalation
+- [ ] **FIX-03**: Skill hygiene — deprecated lucy-case-agent.md retired; targeted skill-creator audit confirms v9.0 single-path + emergent/COSY guidance is prominent and flags dead/contradictory content
+
 ### UAT (milestone gate)
 
 - [ ] **UAT-03**: CASE1 blind re-run solves ibuprofen via the intended mechanism (not a manual bypass); all four Phase-71 success criteria pass against on-disk artifacts (independent RDKit verification)
@@ -64,8 +70,11 @@ Deferred to future release. Tracked but not in current roadmap.
 | SKILL-01 | Phase 75 | Complete |
 | SKILL-02 | Phase 75 | Complete |
 | SKILL-03 | Phase 75 | Complete |
-| UAT-03 | Phase 76 | Pending |
-| UAT-04 | Phase 76 | Pending |
+| FIX-01 | Phase 77 | Pending |
+| FIX-02 | Phase 77 | Pending |
+| FIX-03 | Phase 77 | Pending |
+| UAT-03 | Phase 76 (failed) → Phase 78 | Pending |
+| UAT-04 | Phase 76 (deferred) → Phase 78 | Pending |
 
 **Coverage:**
 - v1 requirements: 10 total
