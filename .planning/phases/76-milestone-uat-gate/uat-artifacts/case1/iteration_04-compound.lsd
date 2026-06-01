@@ -1,0 +1,139 @@
+; === CONSTRAINT INVENTORY v2 ===
+; {
+;   "version": 2, "iteration": 4, "formula": "C13H18O2", "timestamp": "2026-06-01T15:30:00Z",
+;   "mult_count": 15, "hsqc_count": 11,
+;   "hmbc_batches": [
+;     {"batch": 1, "count": 4, "correlations": ["3 13", "1 9", "2 8", "10 11"]},
+;     {"batch": 2, "count": 2, "correlations": ["11 8", "10 8"]},
+;     {"batch": 3, "count": 2, "correlations": ["1 13", "3 9"]}
+;   ],
+;   "hmbc_total": 8, "grouped_hmbc": [],
+;   "bond_constraints": ["1 14", "1 15", "10 11", "10 12", "2 4", "4 6", "6 3", "3 7", "7 5", "5 2"],
+;   "cosy_equiv_pairs": [],
+;   "list_prop_constraints": [],
+;   "elim_value": null,
+;   "deff_not_patterns": [],
+;   "ring_exclusion_enabled": true,
+;   "pylsd_mode": false,
+;   "elim_annotated": false,
+;   "deferred_4j": [],
+;   "deff_fexp": {
+;     "status": "none",
+;     "fragment_smiles": null,
+;     "fragment_atoms": null,
+;     "fragment_avgdev": null,
+;     "fragment_filename": null,
+;     "deff_command": null,
+;     "fexp_command": null,
+;     "search_result_count": 0,
+;     "conflict_reason": null
+;   },
+;   "detection_results": {
+;     "hybridisation_queries": ["180.56 sp2 Cq COOH", "140.84 sp2 Cq aromat.", "136.96 sp2 Cq aromat.", "129.38 sp2 CH aromat.", "127.26 sp2 CH aromat."],
+;     "neighbours_queries": ["180.56 O mandatory COOH-Carbonyl"],
+;     "hhb_result": "no HHB detected",
+;     "grouping_detected": ["[44.90, 45.03] span 0.13 ppm -- benzylic CH2/CH pair"]
+;   },
+;   "applied_from_detection": [
+;     "BOND 1 14 from neighbours 180.56 O mandatory C=O",
+;     "BOND 1 15: hydroxyl O15 forced onto C1 -- COOH enforced (iter 3 fix)",
+;     "BOND 2-4-6-3-7-5-2: para-disubst. benzene ring enforced (iter 2)",
+;     "cosy_equiv_pairs superseded by ring BONDs (error 283 fix, iter 2)",
+;     "HMBC 9 10 removed: grouping artefact -- C7(44.90) para-separated from C8(isobutyl) in Ibuprofen; real peak belongs to C6(45.03) benzyl, covered by HMBC 10 8",
+;     "HMBC 3 13 retained: valid 3J H13-C13-C7-C3 (alpha-Me to aromat. ipso-para)",
+;     "HMBC 1 13 added (iter 4): valid 3J H13-C13-C7-C1 (alpha-Me to COOH, 36.5M, Ibuprofen discriminator)",
+;     "HMBC 3 9 added (iter 4): valid 2J H9-C7-C3 (alpha-CH to aromat. ipso-para, ring-alpha bond)"
+;   ],
+;   "pending_from_detection": []
+; }
+; === END CONSTRAINT INVENTORY ===
+
+; Compound: C13H18O2, DBE=5, MW=206
+; para-disubstituted benzene + COOH enforced; Ibuprofen regioisomer discriminated (iter 4)
+; sp2 count: 8 (atoms 1,2,3,4,5,6,7,14) -- EVEN OK
+; H budget: 17 C-H + 1 OH = 18H -- matches C13H18O2 OK
+; KEY FIX (iter 4): HMBC 9 10 replaced by grouped (8 9) 10
+;   nmr-chemist confirmed: C45.01/H0.90 belongs to C6(45.03) benzyl-CH2 <- H-C8 isobutyl (2J)
+;   C7(44.90) is para-separated from C8 -- HMBC 9 10 was grouping artefact
+; HMBC 1 13 + HMBC 3 9 added: discriminate Ibuprofen from p-tolyl regioisomer
+; RDKit-pre-verified: CC(C)Cc1ccc(C(C)C(=O)O)cc1 = Ibuprofen (MW=206.28)
+
+; Atom numbering:
+;  1 = C1  180.56 Cq  COOH-carbonyl
+;  2 = C2  140.84 Cq  aromat. ipso (benzyl-side)
+;  3 = C3  136.96 Cq  aromat. ipso para (alpha-CH-side)
+;  4 = C4  129.38 CH  aromat. equiv A -- ortho to C2
+;  5 = C4  129.38 CH  aromat. equiv B -- ortho to C2
+;  6 = C5  127.26 CH  aromat. equiv A -- ortho to C3
+;  7 = C5  127.26 CH  aromat. equiv B -- ortho to C3
+;  8 = C6   45.03 CH2 benzylic
+;  9 = C7   44.90 CH  alpha to COOH
+; 10 = C8   30.14 CH  aliphatic (isobutyl CH)
+; 11 = C9   22.37 CH3 gem-dimethyl equiv A
+; 12 = C9   22.37 CH3 gem-dimethyl equiv B
+; 13 = C10  18.09 CH3 alpha-methyl
+; 14 = O    carbonyl oxygen (sp2, C=O)
+; 15 = O    hydroxyl oxygen (sp3, COOH-OH)
+
+MULT 1 C 2 0     ; C1 180.56 Cq sp2 -- COOH carbonyl
+MULT 2 C 2 0     ; C2 140.84 Cq sp2 -- aromat. ipso
+MULT 3 C 2 0     ; C3 136.96 Cq sp2 -- aromat. ipso para
+MULT 4 C 2 1     ; C4 129.38 CH sp2 -- aromat. CH equiv A
+MULT 5 C 2 1     ; C4 129.38 CH sp2 -- aromat. CH equiv B
+MULT 6 C 2 1     ; C5 127.26 CH sp2 -- aromat. CH equiv A
+MULT 7 C 2 1     ; C5 127.26 CH sp2 -- aromat. CH equiv B
+MULT 8 C 3 2     ; C6  45.03 CH2 sp3 -- benzylic
+MULT 9 C 3 1     ; C7  44.90 CH  sp3 -- alpha to COOH
+MULT 10 C 3 1    ; C8  30.14 CH  sp3 -- isobutyl CH
+MULT 11 C 3 3    ; C9  22.37 CH3 sp3 -- gem-dimethyl equiv A
+MULT 12 C 3 3    ; C9  22.37 CH3 sp3 -- gem-dimethyl equiv B
+MULT 13 C 3 3    ; C10 18.09 CH3 sp3 -- alpha-methyl
+MULT 14 O 2 0    ; O carbonyl (sp2, C=O)
+MULT 15 O 3 1    ; O hydroxyl (sp3, COOH-OH)
+
+HSQC 4 4         ; C4 129.38 H7.12 aromat. CH equiv A
+HSQC 5 5         ; C4 129.38 H7.12 aromat. CH equiv B
+HSQC 6 6         ; C5 127.26 H7.21 aromat. CH equiv A
+HSQC 7 7         ; C5 127.26 H7.21 aromat. CH equiv B
+HSQC 8 8         ; C6  45.03 H2.44 CH2 benzylic
+HSQC 9 9         ; C7  44.90 H3.71 alpha-CH
+HSQC 10 10       ; C8  30.14 H0.90 isobutyl CH
+HSQC 11 11       ; C9  22.37 H0.90 gem-dimethyl equiv A
+HSQC 12 12       ; C9  22.37 H0.90 gem-dimethyl equiv B
+HSQC 13 13       ; C10 18.09 H1.50 alpha-methyl
+HSQC 15 15       ; OH  COOH-hydroxyl
+
+; HMBC Batch 1 -- 4 correlations (HMBC 9 10 replaced by grouped (8 9) 10 in batch 2)
+HMBC 3 13        ; C3(136.96) <- H13(1.50): alpha-Me to aromat. ipso para (3J: H13-C13-C7-C3)
+HMBC 1 9         ; C1(180.56) <- H9(3.71):  alpha-CH to COOH carbonyl (3J)
+HMBC 2 8         ; C2(140.84) <- H8(2.44):  benzyl-CH2 to aromat. ipso (3J)
+HMBC 10 11       ; C10(30.14) <- H11(0.90): gem-dimethyl to isobutyl CH (2/3J)
+
+; HMBC Batch 2 -- 2 isobutyl correlations (from iter 3)
+HMBC 11 8        ; C11(22.37) <- H8(2.44):  gem-Me to benzyl-CH2 (3J: C11-C10-C8)
+HMBC 10 8        ; C10(30.14) <- H8(2.44):  isobutyl CH to benzyl-CH2 (2/3J)
+
+; HMBC Batch 3 -- 2 regioisomer-discriminating correlations (iter 4 addition)
+HMBC 1 13        ; C1(180.56) <- H13(1.50): alpha-Me to COOH (3J: H13-C13-C7-C1, 36.5M, discriminator)
+HMBC 3 9         ; C3(136.96) <- H9(3.71):  aromat.ipso-para to alpha-CH (2J: H9-C7-C3)
+
+; Bond constraints
+BOND 1 14        ; C1=O14 carbonyl bond
+BOND 1 15        ; C1-O15 hydroxyl bond -- COOH enforced
+BOND 10 11       ; gem-dimethyl CH3-A on C10(30.14)
+BOND 10 12       ; gem-dimethyl CH3-B on C10(30.14)
+
+; Benzene ring bonds -- para-disubstituted (from iter 2)
+BOND 2 4         ; C2(140.84) -- C4(129.38) ortho
+BOND 4 6         ; C4(129.38) -- C6(127.26) meta
+BOND 6 3         ; C6(127.26) -- C3(136.96) ortho
+BOND 3 7         ; C3(136.96) -- C7(127.26) ortho
+BOND 7 5         ; C7(127.26) -- C5(129.38) meta
+BOND 5 2         ; C5(129.38) -- C2(140.84) ortho
+
+; Ring exclusion (MANDATORY -- always present)
+DEFF F1 "ring3"  ; exclude 3-membered rings
+DEFF F2 "ring4"  ; exclude 4-membered rings
+FEXP "NOT F1 AND NOT F2"
+
+EXIT
