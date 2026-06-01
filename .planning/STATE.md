@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: CASE Reliability & Skill Consolidation
-status: phase_complete
-stopped_at: Phase 75 complete — Phase 76 (UAT gate) ready
-last_updated: "2026-05-24T16:14:24.828Z"
+status: completed
+stopped_at: Phase 76 context gathered
+last_updated: "2026-06-01T07:24:52.263Z"
 last_activity: 2026-05-24
 progress:
   total_phases: 5
@@ -122,8 +122,8 @@ Key v9.0 constraint: SYME and DEFF NOT are lucy-ng abstractions. Native LSD-3.4.
 
 ## Session Continuity
 
-Last session: 2026-05-24
-Stopped at: Phase 75 (skill consolidation) complete + verified
+Last session: 2026-06-01T07:24:52.257Z
+Stopped at: Phase 76 context gathered
 Resume with: `/gsd-plan-phase 76` — but note Phase 76 is the blind UAT gate and MUST be run by a fresh blind Claude instance (CASE1 + CASE9), with merged.smi verified independently via RDKit. See feedback_blind_uat memory.
 
 ---
