@@ -38,8 +38,8 @@ created: 2026-06-01
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 77-01-xx | 01 | 1 | FIX-01 | — | runner exits non-zero + no false success on bad outlsd output | unit | `pytest tests/lsd/test_runner_*.py -q` | ❌ W0 | ⬜ pending |
-| 77-02-xx | 02 | 1 | FIX-02 | — | deterministic cross-ring COSY pairs (4≡7,5≡6) emitted; no within-group pairs | unit | `pytest tests/lsd/test_*cosy*.py -q` | ❌ W0 | ⬜ pending |
+| 77-01-xx | 01 | 1 | FIX-01 | — | runner exits non-zero + no false success on bad outlsd output | unit | `pytest tests/test_lsd_runner.py -q` | ❌ W0 | ⬜ pending |
+| 77-02-xx | 02 | 2 | FIX-02 | — | deterministic cross-ring COSY pairs (4≡7,5≡6) emitted; no within-group pairs | unit | `pytest tests/test_lsd_generator.py -q` | ❌ W0 | ⬜ pending |
 | 77-03-xx | 03 | 1 | FIX-03 | — | N/A (skill/agent file hygiene — manual audit) | manual | — | — | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
@@ -48,8 +48,8 @@ created: 2026-06-01
 
 ## Wave 0 Requirements
 
-- [ ] `tests/lsd/test_runner_outlsd.py` — stubs for FIX-01 (happy path + error path)
-- [ ] `tests/lsd/test_aromatic_cosy_pairs.py` — stubs for FIX-02 (cross-ring pairing)
+- [ ] `tests/test_lsd_runner.py::TestInvokeOutlsd` — stubs for FIX-01 (happy path + error path)
+- [ ] `tests/test_lsd_generator.py::TestDetectAromaticCosyPairs` — stubs for FIX-02 (cross-ring pairing)
 - [ ] `tests/fixtures/regression/arm_a_ring_excl.lsd` — regression fixture (ring-exclusion .lsd that triggers the original bug)
 - [ ] pytest already installed — no framework install needed
 

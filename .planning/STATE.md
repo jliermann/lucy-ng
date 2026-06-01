@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: CASE Reliability & Skill Consolidation
-status: BLOCKED on Phase 77 (fix lucy lsd run, revisit D-04, retire deprecated agent) → then re-UAT CASE1 + CASE9
+status: executing
 stopped_at: Phase 77 context gathered
-last_updated: "2026-06-01T13:44:44.409Z"
-last_activity: 2026-06-01 -- Phase 76 UAT verdict written (VERIFICATION.md); milestone gate FAILED
+last_updated: "2026-06-01T14:48:46.746Z"
+last_activity: 2026-06-01 -- Phase 77 planning complete
 progress:
   total_phases: 7
   completed_phases: 5
-  total_plans: 12
+  total_plans: 15
   completed_plans: 12
   percent: 71
 ---
@@ -38,8 +38,8 @@ Phase 78: Blind Re-UAT (CASE1+CASE9) [ ] Not started (depends on 77)
 Progress: [██████████] v9.0 milestone gate FAILED — does NOT ship until Phase 77 fixes land + Phase 78 re-UAT passes
 
 Phase: 77 (fix-lucy-lsd-run) — CONTEXT gathered, ready for /gsd-plan-phase 77
-Status: Phase 76 UAT failed → split into 77 (fixes) + 78 (re-UAT). Next: plan Phase 77.
-Last activity: 2026-06-01 -- Phase 77 context gathered (77-CONTEXT.md)
+Status: Ready to execute
+Last activity: 2026-06-01 -- Phase 77 planning complete
 
 **Phase 77 scope (fixes only — decisions in 77-CONTEXT.md):**
 
