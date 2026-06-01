@@ -939,3 +939,90 @@ class TestDetectAromaticCosyPairs:
                 f"Pair ({a},{b}) is NOT cross-group: "
                 f"group A={group_a_ids}, group B={group_b_ids}"
             )
+
+
+FIXTURE_DIR_GENERATOR = Path(__file__).parent / "fixtures" / "regression"
+
+
+class TestDetectAromaticCosyIntegration:
+    """End-to-end integration test: arm_a_ring_excl.lsd + detect_aromatic_cosy_pairs()
+    → aromatic ring WITHOUT explicit ring-BOND forcing (FIX-02).
+
+    This test verifies D-01/D-04: the aromatic ring emerges from cross-ring COSY pairs
+    (already in the fixture as COSY 4 7 + COSY 5 6) + ring exclusion. The fixture
+    arm_a_ring_excl.lsd was built with the correct cross-ring pairs and NO ring BONDs.
+    The test also verifies that no BOND lines for ring atoms exist in the fixture.
+    Requires both LSD and outlsd on PATH (skipif-gated).
+    """
+
+    @pytest.mark.skipif(
+        not (__import__("shutil").which("LSD") and __import__("shutil").which("outlsd")),
+        reason="LSD and outlsd not installed",
+    )
+    def test_aromatic_cosy_emergence_end_to_end(self, tmp_path: Path) -> None:
+        """arm_a_ring_excl.lsd (COSY 4 7 + COSY 5 6, no ring BONDs) yields >= 1 aromatic solution.
+
+        FIX-02 regression: the fixture contains cross-ring COSY pairs (derived from
+        detect_aromatic_cosy_pairs() algorithm) and NO explicit ring BOND constraints.
+        The aromatic ring must emerge purely from COSY + ring exclusion (DEFF F1/F2).
+        """
+        import shutil
+
+        from rdkit import Chem
+
+        from lucy_ng.lsd.runner import LSDRunner
+
+        lsd_fixture = FIXTURE_DIR_GENERATOR / "arm_a_ring_excl.lsd"
+        assert lsd_fixture.exists(), f"Fixture not found: {lsd_fixture}"
+
+        # Verify the fixture has no BOND lines for ring atoms (atoms 2-7 in arm_a.lsd)
+        # and does have COSY 4 7 + COSY 5 6 (cross-ring pairs from detect_aromatic_cosy_pairs)
+        fixture_content = lsd_fixture.read_text()
+        # arm_a.lsd has BOND 1 14 (C=O) and BOND 1 15 (C-OH) and BOND 10 11 / BOND 10 12
+        # (gem-dimethyl). No BOND for ring atoms 2-7.
+        ring_atom_bonds = [
+            line for line in fixture_content.splitlines()
+            if line.strip().startswith("BOND")
+            and any(f"BOND {a} " in line or f"BOND {b} " in line
+                    for a in range(2, 8) for b in range(2, 8)
+                    if a != b)
+        ]
+        assert len(ring_atom_bonds) == 0, (
+            f"Fixture must have NO ring BOND constraints (D-04: emergent ring).\n"
+            f"Found: {ring_atom_bonds}\nContent:\n{fixture_content}"
+        )
+        assert "COSY 4 7" in fixture_content, "Fixture must have COSY 4 7 (cross-ring pair)"
+        assert "COSY 5 6" in fixture_content, "Fixture must have COSY 5 6 (cross-ring pair)"
+
+        # Run LSD via the fixed runner (FIX-01 in place: ring3/ring4 filter files copied)
+        runner = LSDRunner()
+        result = runner.run_file(lsd_fixture, output_dir=tmp_path, timeout=120)
+
+        smiles_file = tmp_path / "solutions.smi"
+        assert smiles_file.exists(), (
+            "solutions.smi not written — LSD run failed. "
+            f"Runner result: success={result.success}, solution_count={result.solution_count}, "
+            f"stderr={result.stderr!r}"
+        )
+
+        lines = [ln for ln in smiles_file.read_text().splitlines() if ln.strip()]
+        assert len(lines) >= 1, (
+            f"solutions.smi has no SMILES lines. Content: {smiles_file.read_text()!r}"
+        )
+
+        # At least 1 solution must have an aromatic ring (>= 6 aromatic atoms)
+        aromatic_solutions = 0
+        for line in lines:
+            smiles = line.split()[0]
+            mol = Chem.MolFromSmiles(smiles)
+            if mol is None:
+                continue
+            n_aromatic = sum(1 for a in mol.GetAtoms() if a.GetIsAromatic())
+            if n_aromatic >= 6:
+                aromatic_solutions += 1
+
+        assert aromatic_solutions >= 1, (
+            f"No aromatic solution (>= 6 aromatic atoms) found among {len(lines)} solutions.\n"
+            f"SMILES lines: {lines}\n"
+            f"FIX-02 requires cross-ring COSY pairs to produce aromatic ring without ring BONDs."
+        )

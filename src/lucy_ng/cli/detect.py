@@ -197,6 +197,67 @@ def neighbours_command(
         click.echo(f"\nWarning: {result.warning}", err=True)
 
 
+@detect.command("aromatic-cosy")
+@click.argument("shifts", type=str)
+@click.option(
+    "--multiplicities", "-m", type=str, default=None,
+    help="Comma-separated multiplicities (e.g. 'CH,CH,CH,CH'). Optional.",
+)
+@click.option(
+    "--tolerance", "-t", type=float, default=0.25,
+    help="Grouping tolerance in ppm (default: 0.25).",
+)
+@click.option(
+    "--format", "output_format",
+    type=click.Choice(["text", "json"]), default="text",
+    help="Output format.",
+)
+def aromatic_cosy_command(
+    shifts: str,
+    multiplicities: str | None,
+    tolerance: float,
+    output_format: str,
+) -> None:
+    """Derive cross-ring COSY pairs for aromatic CH equivalence groups.
+
+    Given comma-separated 13C shifts (aromatic region), detects groups
+    of equivalent aromatic CH carbons and emits cross-ring COSY pairs
+    for use in LSD problem construction.
+
+    Algorithm verified by arm_a.lsd reference: produces COSY 4 7 + COSY 5 6
+    for ibuprofen para-disubstituted benzene (2/2 aromatic solutions).
+
+    Examples:
+
+        lucy detect aromatic-cosy "129.38,129.38,127.26,127.26"
+
+        lucy detect aromatic-cosy "129.38,129.38,127.26,127.26" --multiplicities "CH,CH,CH,CH"
+
+        lucy detect aromatic-cosy "129.38,127.26" --format json
+    """
+    try:
+        from lucy_ng.detection.grouping import group_signals
+        from lucy_ng.lsd.generator import detect_aromatic_cosy_pairs
+
+        shift_list = [float(s.strip()) for s in shifts.split(",")]
+        mult_list = [m.strip() for m in multiplicities.split(",")] if multiplicities else None
+        grouping = group_signals(shift_list, multiplicities=mult_list, tolerance=tolerance)
+        pairs = detect_aromatic_cosy_pairs(grouping.groups)
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        raise SystemExit(1) from e
+
+    if output_format == "json":
+        import json
+        click.echo(json.dumps({"cosy_pairs": [list(p) for p in pairs]}))
+    else:
+        if pairs:
+            for a, b in pairs:
+                click.echo(f"COSY {a} {b}")
+        else:
+            click.echo("No aromatic equivalence pairs detected.")
+
+
 @detect.command("hhb")
 @click.argument("formula", type=str)
 @click.option(
