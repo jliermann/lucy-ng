@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: CASE Reliability & Skill Consolidation
-status: verifying
-stopped_at: Phase 77 context gathered
-last_updated: "2026-06-01T16:04:22.233Z"
+status: ready_to_plan
+stopped_at: Phase 77 complete (3/3) — ready to discuss Phase 78
+last_updated: 2026-06-01T16:27:37.019Z
 last_activity: 2026-06-01
 progress:
   total_phases: 7
   completed_phases: 6
   total_plans: 15
-  completed_plans: 15
+  completed_plans: 125
   percent: 86
 ---
 
@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-20)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a multi-agent team that uses the intended solver pipeline — not a manual bypass
-**Current focus:** Phase 77 — fix-lucy-lsd-run-plumbing-bug-and-re-run-blind-uat-repair-in
+**Current focus:** Phase 78 — blind re uat gate
 
 ## Current Position
 
@@ -37,9 +37,9 @@ Phase 78: Blind Re-UAT (CASE1+CASE9) [ ] Not started (depends on 77)
 
 Progress: [██████████] 100%
 
-Phase: 77 (fix-lucy-lsd-run-plumbing-bug-and-re-run-blind-uat-repair-in) — EXECUTING
-Plan: 3 of 3
-Status: Phase complete — ready for verification
+Phase: 78
+Plan: Not started
+Status: Ready to plan
 Last activity: 2026-06-01
 
 **Phase 77 scope (fixes only — decisions in 77-CONTEXT.md):**
@@ -78,7 +78,7 @@ Wave structure:
 
 **Velocity:**
 
-- Total plans completed: 111 across 10 milestones (9 shipped + 1 abandoned)
+- Total plans completed: 114 across 10 milestones (9 shipped + 1 abandoned)
 - v7.0: 5 phases executed, 9 plans, all reverted — 0 requirements met
 - v8.0: 6 phases executed (65-70), 15 plans complete; Phase 71 UAT superseded
 - Cumulative: 64 phases total (58 with code, v7 reverted, v8 phase 71 pending)

@@ -336,7 +336,7 @@ Plans:
 | 74. Constraint Preservation and Merge | 2/2 | Complete   | 2026-05-24 |
 | 75. Skill Consolidation | 5/5 | Complete   | 2026-05-24 |
 | 76. Milestone UAT Gate | 2/2 | Executed — **GATE FAILED** | 2026-06-01 |
-| 77. Fix lucy lsd run + Emergent Tooling + Hygiene | 3/3 | Complete   | 2026-06-01 |
+| 77. Fix lucy lsd run + Emergent Tooling + Hygiene | 3/3 | Complete    | 2026-06-01 |
 | 78. Blind Re-UAT Gate (CASE1 + CASE9) | 0/? | Not started | — |
 
 **v9.0 milestone gate: FAILED (does not ship).** Phase 76 executed: harness built (76-01), CASE1 blind run = spirit-fail (ibuprofen found but `lucy lsd run` broken + ring forced + interventions), CASE9 deferred. Blocking defects → **Phase 77** (fix `lucy lsd run`, revisit D-04 emergent-aromatic, retire deprecated lucy-case-agent.md), then re-UAT CASE1 + CASE9. See `.planning/phases/76-milestone-uat-gate/VERIFICATION.md`.
