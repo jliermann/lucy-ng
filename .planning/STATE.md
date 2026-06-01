@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: CASE Reliability & Skill Consolidation
-status: blocked
-stopped_at: Phase 76 executed — v9.0 UAT gate FAILED (CASE1 spirit-fail, CASE9 deferred); Phase 77 needed
-last_updated: "2026-06-01T14:40:00.000Z"
-last_activity: 2026-06-01 -- Phase 76 UAT verdict written; milestone gate FAILED → Phase 77
+status: BLOCKED on Phase 77 (fix lucy lsd run, revisit D-04, retire deprecated agent) → then re-UAT CASE1 + CASE9
+stopped_at: Phase 77 context gathered
+last_updated: "2026-06-01T13:44:44.409Z"
+last_activity: 2026-06-01 -- Phase 76 UAT verdict written (VERIFICATION.md); milestone gate FAILED
 progress:
-  total_phases: 5
-  completed_phases: 4
+  total_phases: 7
+  completed_phases: 5
   total_plans: 12
-  completed_plans: 10
-  percent: 80
+  completed_plans: 12
+  percent: 71
 ---
 
 # lucy-ng State
@@ -41,6 +41,7 @@ Status: BLOCKED on Phase 77 (fix lucy lsd run, revisit D-04, retire deprecated a
 Last activity: 2026-06-01 -- Phase 76 UAT verdict written (VERIFICATION.md); milestone gate FAILED
 
 **Phase 77 scope (from 76 VERIFICATION.md forensics, priority order):**
+
 1. Fix `lucy lsd run` `_invoke_outlsd` — real solutions.smi + fail loud on outlsd error (highest leverage; blocks re-UAT). See memory project-lucy-lsd-run-broken-v9.
 2. Revisit D-04 emergent-aromatic: ring did NOT emerge on CASE1 (368 non-aromatic); decide native-force vs documented ring-BOND path.
 3. Skill hygiene: retire deprecated lucy-case-agent.md (1291 lines, contradicts current); optional skill-creator audit.
@@ -132,8 +133,8 @@ Key v9.0 constraint: SYME and DEFF NOT are lucy-ng abstractions. Native LSD-3.4.
 
 ## Session Continuity
 
-Last session: 2026-06-01T07:24:52.257Z
-Stopped at: Phase 76 context gathered
+Last session: 2026-06-01T13:44:44.404Z
+Stopped at: Phase 77 context gathered
 Resume with: `/gsd-plan-phase 76` — but note Phase 76 is the blind UAT gate and MUST be run by a fresh blind Claude instance (CASE1 + CASE9), with merged.smi verified independently via RDKit. See feedback_blind_uat memory.
 
 ---
