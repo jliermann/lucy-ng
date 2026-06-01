@@ -55,11 +55,33 @@ def _invoke_outlsd(
             )
         if stdout.startswith("outlsd:"):
             raise RuntimeError(f"outlsd error: {stdout[:200]!r}")
-        # Output passes string checks — write to disk
+        # Validate first non-empty line is parseable SMILES (structural guard against
+        # unknown outlsd error output that slips past the string checks above).
+        lines = [ln.strip() for ln in proc.stdout.splitlines() if ln.strip()]
+        if not lines:
+            raise RuntimeError("outlsd produced no parseable lines")
+        try:
+            from rdkit import Chem, RDLogger
+
+            RDLogger.DisableLog("rdApp.*")
+            first_smiles = lines[0].split()[0]
+            if Chem.MolFromSmiles(first_smiles) is None:
+                raise RuntimeError(
+                    f"outlsd output is not valid SMILES: {lines[0][:100]!r}. "
+                    "Full output may be an unrecognised error message."
+                )
+        except ImportError:
+            # RDKit not available — string checks above are the last line of defence
+            pass
+        # Output passes all checks — write to disk
         smiles_file.write_text(proc.stdout)
         return smiles_file
     except RuntimeError:
         raise  # Propagate fail-loud errors to _execute_lsd exception handler
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError(
+            "outlsd timed out after 30 seconds — .sol file may be very large"
+        ) from exc
     except Exception:
         pass
     return None

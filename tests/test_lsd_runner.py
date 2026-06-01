@@ -543,7 +543,7 @@ class TestInvokeOutlsd:
 
 
 @pytest.mark.skipif(
-    shutil.which("LSD") is None,
+    shutil.which("lsd") is None,  # matches LSDRunner._find_lsd() which uses "lsd" (lowercase)
     reason="LSD binary not installed",
 )
 def test_ring_exclusion_lsd_produces_smiles(tmp_path: Path) -> None:
@@ -558,7 +558,10 @@ def test_ring_exclusion_lsd_produces_smiles(tmp_path: Path) -> None:
 
     lsd_fixture = FIXTURE_DIR / "arm_a_ring_excl.lsd"
     runner = LSDRunner()
-    runner.run_file(lsd_fixture, output_dir=tmp_path, timeout=120)
+    result = runner.run_file(lsd_fixture, output_dir=tmp_path, timeout=120)
+    assert result.success is True, (
+        f"LSDResult.success must be True after successful run. stderr: {result.stderr!r}"
+    )
 
     smiles_file = tmp_path / "solutions.smi"
     assert smiles_file.exists(), (
