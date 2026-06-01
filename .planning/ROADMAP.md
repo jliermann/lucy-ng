@@ -336,7 +336,7 @@ Plans:
 | 74. Constraint Preservation and Merge | 2/2 | Complete   | 2026-05-24 |
 | 75. Skill Consolidation | 5/5 | Complete   | 2026-05-24 |
 | 76. Milestone UAT Gate | 2/2 | Executed — **GATE FAILED** | 2026-06-01 |
-| 77. Fix lucy lsd run + Emergent Tooling + Hygiene | 0/? | Context gathered | — |
+| 77. Fix lucy lsd run + Emergent Tooling + Hygiene | 1/3 | In Progress|  |
 | 78. Blind Re-UAT Gate (CASE1 + CASE9) | 0/? | Not started | — |
 
 **v9.0 milestone gate: FAILED (does not ship).** Phase 76 executed: harness built (76-01), CASE1 blind run = spirit-fail (ibuprofen found but `lucy lsd run` broken + ring forced + interventions), CASE9 deferred. Blocking defects → **Phase 77** (fix `lucy lsd run`, revisit D-04 emergent-aromatic, retire deprecated lucy-case-agent.md), then re-UAT CASE1 + CASE9. See `.planning/phases/76-milestone-uat-gate/VERIFICATION.md`.
@@ -354,12 +354,12 @@ Plans:
   4. Deprecated `~/.claude/agents/lucy-case-agent.md` is retired/archived; a targeted skill-creator audit confirms the v9.0 single-path + emergent/COSY guidance is prominent (not buried) and flags dead/contradictory content — no full rewrite
   5. D-76 mechanistic UAT criterion is rewritten for Phase 78 (emergent = clean pass, documented BOND escalation = conditional pass, silent ring-BOND/SKEL = fail)
 
-**Plans:** 3 plans
+**Plans:** 1/3 plans executed
 
 Plans:
 **Wave 1** *(FIX-01 and FIX-03 are independent — run in parallel)*
 
-- [ ] 77-01-PLAN.md — Fix _execute_lsd filter-file copy + harden _invoke_outlsd fail-loud + regression tests
+- [x] 77-01-PLAN.md — Fix _execute_lsd filter-file copy + harden _invoke_outlsd fail-loud + regression tests
 - [ ] 77-03-PLAN.md — Skill hygiene: retire lucy-case-agent.md, correct lsd-engineer Phase-73 claim, add aromatic-cosy reference, D-77-06 criteria in case.md
 
 **Wave 2** *(depends on 77-01)*

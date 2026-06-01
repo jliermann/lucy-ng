@@ -4,13 +4,13 @@ milestone: v9.0
 milestone_name: CASE Reliability & Skill Consolidation
 status: executing
 stopped_at: Phase 77 context gathered
-last_updated: "2026-06-01T14:48:46.746Z"
-last_activity: 2026-06-01 -- Phase 77 planning complete
+last_updated: "2026-06-01T15:47:11.535Z"
+last_activity: 2026-06-01
 progress:
   total_phases: 7
   completed_phases: 5
   total_plans: 15
-  completed_plans: 12
+  completed_plans: 13
   percent: 71
 ---
 
@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-20)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a multi-agent team that uses the intended solver pipeline — not a manual bypass
-**Current focus:** Phase 77 (to be planned) — fix `lucy lsd run` + D-04 emergent-aromatic + skill hygiene, then re-UAT
+**Current focus:** Phase 77 — fix-lucy-lsd-run-plumbing-bug-and-re-run-blind-uat-repair-in
 
 ## Current Position
 
@@ -35,11 +35,12 @@ Phase 77: Fix lucy lsd run + Tooling [ ] Context gathered — ready to plan (fix
 Phase 78: Blind Re-UAT (CASE1+CASE9) [ ] Not started (depends on 77)
 ```
 
-Progress: [██████████] v9.0 milestone gate FAILED — does NOT ship until Phase 77 fixes land + Phase 78 re-UAT passes
+Progress: [█████████░] 87%
 
-Phase: 77 (fix-lucy-lsd-run) — CONTEXT gathered, ready for /gsd-plan-phase 77
+Phase: 77 (fix-lucy-lsd-run-plumbing-bug-and-re-run-blind-uat-repair-in) — EXECUTING
+Plan: 2 of 3
 Status: Ready to execute
-Last activity: 2026-06-01 -- Phase 77 planning complete
+Last activity: 2026-06-01
 
 **Phase 77 scope (fixes only — decisions in 77-CONTEXT.md):**
 
@@ -135,7 +136,7 @@ Key v9.0 constraint: SYME and DEFF NOT are lucy-ng abstractions. Native LSD-3.4.
 
 ## Session Continuity
 
-Last session: 2026-06-01T13:44:44.404Z
+Last session: 2026-06-01T15:47:11.530Z
 Stopped at: Phase 77 context gathered
 Resume with: `/gsd-plan-phase 76` — but note Phase 76 is the blind UAT gate and MUST be run by a fresh blind Claude instance (CASE1 + CASE9), with merged.smi verified independently via RDKit. See feedback_blind_uat memory.
 

@@ -27,7 +27,7 @@ Requirements for v9.0 release. Outcome-level where possible so they survive the 
 
 ### Post-UAT Fixes (Phase 77 — from 76-VERIFICATION.md forensics)
 
-- [ ] **FIX-01**: `lucy lsd run` produces real SMILES in solutions.smi and fails loud (non-zero exit, no false "success") when outlsd output is the error string / empty / non-SMILES; regression test covers happy + error paths
+- [x] **FIX-01**: `lucy lsd run` produces real SMILES in solutions.smi and fails loud (non-zero exit, no false "success") when outlsd output is the error string / empty / non-SMILES; regression test covers happy + error paths
 - [ ] **FIX-02**: Cross-ring aromatic COSY equivalence pairs are emitted deterministically by tooling (from detected symmetry/grouping), so the aromatic ring emerges without manual atom-index reasoning or forced ring-BONDs; ring-BOND forcing demoted to documented escalation
 - [ ] **FIX-03**: Skill hygiene — deprecated lucy-case-agent.md retired; targeted skill-creator audit confirms v9.0 single-path + emergent/COSY guidance is prominent and flags dead/contradictory content
 
@@ -70,7 +70,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | SKILL-01 | Phase 75 | Complete |
 | SKILL-02 | Phase 75 | Complete |
 | SKILL-03 | Phase 75 | Complete |
-| FIX-01 | Phase 77 | Pending |
+| FIX-01 | Phase 77 | Complete |
 | FIX-02 | Phase 77 | Pending |
 | FIX-03 | Phase 77 | Pending |
 | UAT-03 | Phase 76 (failed) → Phase 78 | Pending |
