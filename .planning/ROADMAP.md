@@ -288,7 +288,9 @@ Plans:
 **Wave 1**
 
 - [x] 75-01-lsd-engineer-native-singlepath-PLAN.md — SYME→BOND/COSY, DEFF NOT→DEFF F/FEXP, single-path step 11, outlsd pipe removal, SKEL escalation note in lsd-engineer.md
+
 **Wave 2** *(all depend on 75-01; independent of each other)*
+
 - [x] 75-02-devils-advocate-native-gates-PLAN.md — native-command sync in DA §1/§2/§5, add G5/G6/G7/G8 v8.0-failure-mode gates
 - [x] 75-03-case-references-analyst-PLAN.md — outlsd pipe removal in case.md task descriptions, native vocab in spawn prompts, progress-format.md + solution-analyst.md updates
 - [x] 75-04-python-schema-followups-PLAN.md — fragment to-lsd --filter-index 3 default, new tests, pytest green; all fragment F1→F3 refs in lsd-engineer.md
@@ -313,7 +315,12 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
+**Wave 1**
+
 - [ ] 76-01-PLAN.md — Build verify_case_solution.py (RDKit harness, TDD), pytest tests, sanitisation re-verification
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 76-02-PLAN.md — Blind CASE run gate (CASE1 + CASE9) + independent artifact verification, write VERIFICATION.md
 
 **UI hint**: no
