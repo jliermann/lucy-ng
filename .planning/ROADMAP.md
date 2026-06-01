@@ -201,7 +201,7 @@ Plans:
 - [x] **Phase 74: Constraint Preservation and Merge** - Fix permutation file generation to carry the full constraint set (BOND/SYME/DEFF NOT/grouped), and fix SolutionMerger to collect non-empty results from per-permutation runs. (depends on Phase 73) (completed 2026-05-24)
 - [x] **Phase 75: Skill Consolidation** - Audit all agent skills against actual LSD-3.4.9 behavior; eliminate the normal-LSD vs pyLSD documentation imbalance; encode the DESIGN-02 solver-path decision as unambiguous single-path guidance; update devils-advocate gates to catch the v8.0 failure modes. (depends on Phase 72, Phase 74)
 - [x] **Phase 76: Milestone UAT Gate** - Blind CASE re-run on CASE1 (ibuprofen) AND CASE9 (4-(1-hydroxyethyl)benzoic acid isopropylester, C12H16O3) via the intended mechanism; all Phase-71 criteria verified against on-disk artifacts by independent RDKit check. (depends on Phase 75) (executed 2026-06-01 — **GATE VERDICT: FAILED**; CASE1 spirit-fail, CASE9 deferred. v9.0 does NOT ship. See 76-milestone-uat-gate/VERIFICATION.md → Phase 77)
-- [ ] **Phase 77: Fix lucy lsd run + Emergent-Aromatic Tooling + Skill Hygiene** - Fix the blocking defects the v9.0 UAT exposed: repair `lucy lsd run`/`_invoke_outlsd` (real solutions.smi + fail-loud + regression test); make cross-ring COSY equivalence-pair emission deterministic in tooling so the aromatic ring emerges; retire deprecated lucy-case-agent.md + targeted skill-creator audit. Fixes only — no UAT. (depends on Phase 76)
+- [x] **Phase 77: Fix lucy lsd run + Emergent-Aromatic Tooling + Skill Hygiene** - Fix the blocking defects the v9.0 UAT exposed: repair `lucy lsd run`/`_invoke_outlsd` (real solutions.smi + fail-loud + regression test); make cross-ring COSY equivalence-pair emission deterministic in tooling so the aromatic ring emerges; retire deprecated lucy-case-agent.md + targeted skill-creator audit. Fixes only — no UAT. (depends on Phase 76) (completed 2026-06-01)
 - [ ] **Phase 78: Blind Re-UAT Gate (CASE1 + CASE9)** - Re-run the v9.0 milestone blind UAT on CASE1 + CASE9 via the now-fixed intended mechanism; independent RDKit verification with rewritten criteria (emergent ring = clean pass, documented BOND escalation = conditional pass, silent ring-BOND/SKEL = fail). Milestone-complete gate. (depends on Phase 77)
 
 ## Phase Details
@@ -336,7 +336,7 @@ Plans:
 | 74. Constraint Preservation and Merge | 2/2 | Complete   | 2026-05-24 |
 | 75. Skill Consolidation | 5/5 | Complete   | 2026-05-24 |
 | 76. Milestone UAT Gate | 2/2 | Executed — **GATE FAILED** | 2026-06-01 |
-| 77. Fix lucy lsd run + Emergent Tooling + Hygiene | 2/3 | In Progress|  |
+| 77. Fix lucy lsd run + Emergent Tooling + Hygiene | 3/3 | Complete   | 2026-06-01 |
 | 78. Blind Re-UAT Gate (CASE1 + CASE9) | 0/? | Not started | — |
 
 **v9.0 milestone gate: FAILED (does not ship).** Phase 76 executed: harness built (76-01), CASE1 blind run = spirit-fail (ibuprofen found but `lucy lsd run` broken + ring forced + interventions), CASE9 deferred. Blocking defects → **Phase 77** (fix `lucy lsd run`, revisit D-04 emergent-aromatic, retire deprecated lucy-case-agent.md), then re-UAT CASE1 + CASE9. See `.planning/phases/76-milestone-uat-gate/VERIFICATION.md`.
@@ -354,7 +354,7 @@ Plans:
   4. Deprecated `~/.claude/agents/lucy-case-agent.md` is retired/archived; a targeted skill-creator audit confirms the v9.0 single-path + emergent/COSY guidance is prominent (not buried) and flags dead/contradictory content — no full rewrite
   5. D-76 mechanistic UAT criterion is rewritten for Phase 78 (emergent = clean pass, documented BOND escalation = conditional pass, silent ring-BOND/SKEL = fail)
 
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 **Wave 1** *(FIX-01 and FIX-03 are independent — run in parallel)*
@@ -364,7 +364,7 @@ Plans:
 
 **Wave 2** *(depends on 77-01)*
 
-- [ ] 77-02-PLAN.md — detect_aromatic_cosy_pairs() in generator.py + lucy detect aromatic-cosy CLI + emergence integration test
+- [x] 77-02-PLAN.md — detect_aromatic_cosy_pairs() in generator.py + lucy detect aromatic-cosy CLI + emergence integration test
 
 ### Phase 78: Blind Re-UAT Gate (CASE1 + CASE9)
 

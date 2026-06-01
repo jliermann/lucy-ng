@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: CASE Reliability & Skill Consolidation
-status: executing
+status: verifying
 stopped_at: Phase 77 context gathered
-last_updated: "2026-06-01T15:56:33.750Z"
+last_updated: "2026-06-01T16:04:22.233Z"
 last_activity: 2026-06-01
 progress:
   total_phases: 7
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 15
-  completed_plans: 14
-  percent: 71
+  completed_plans: 15
+  percent: 86
 ---
 
 # lucy-ng State
@@ -35,11 +35,11 @@ Phase 77: Fix lucy lsd run + Tooling [ ] Context gathered — ready to plan (fix
 Phase 78: Blind Re-UAT (CASE1+CASE9) [ ] Not started (depends on 77)
 ```
 
-Progress: [█████████░] 93%
+Progress: [██████████] 100%
 
 Phase: 77 (fix-lucy-lsd-run-plumbing-bug-and-re-run-blind-uat-repair-in) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-06-01
 
 **Phase 77 scope (fixes only — decisions in 77-CONTEXT.md):**
@@ -115,6 +115,8 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Phase 75-skill-consolidation]: DEFF F-number namespace split — ring exclusion reserves F1/F2 (ring3/ring4 filters); fragment goodlist uses F3+ (`lucy fragment to-lsd --filter-index` default changed 1→3). The two must never collide; the zero-solution fallback removes only the fragment's Fn, never ring-exclusion F1/F2.
 - [Phase 75-skill-consolidation]: Native equivalence encoding (replaces non-native SYME): BOND for gem-dimethyl/isopropyl; COSY tagged `; equiv-pair` for aromatic symmetry pairs. DEFF F1/F2/FEXP replaces DEFF NOT for ring exclusion. devils-advocate G5-G8 gates added for the v8.0 failure modes (perm constraint completeness, empty-merge-vs-solncounter, post-validation edit, reversion).
 - [Phase 75-skill-consolidation]: lucy-case-agent.md left untouched — DEPRECATED v4.0, not spawned by any active workflow, preserved as historical reference; excluded from native-command sign-off scope.
+- [Phase 77-02-FIX-02]: detect_aromatic_cosy_pairs() algorithm: zip(sorted(groupA.atom_ids), reversed(sorted(groupB.atom_ids))) — cross-ring pairing, never within-group, verified against Arm A (COSY 4 7 + COSY 5 6 → 2/2 aromatic solutions)
+- [Phase 77-02-FIX-02]: lucy detect aromatic-cosy CLI is now the authoritative source for cross-ring COSY pairs; agent must use this command instead of hand-deriving atom indices
 
 ### Pending Todos
 
@@ -136,7 +138,7 @@ Key v9.0 constraint: SYME and DEFF NOT are lucy-ng abstractions. Native LSD-3.4.
 
 ## Session Continuity
 
-Last session: 2026-06-01T15:56:33.745Z
+Last session: 2026-06-01T16:04:22.227Z
 Stopped at: Phase 77 context gathered
 Resume with: `/gsd-plan-phase 76` — but note Phase 76 is the blind UAT gate and MUST be run by a fresh blind Claude instance (CASE1 + CASE9), with merged.smi verified independently via RDKit. See feedback_blind_uat memory.
 
