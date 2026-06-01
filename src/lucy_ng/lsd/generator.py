@@ -4,6 +4,7 @@ import importlib.resources
 import re
 from pathlib import Path
 
+from lucy_ng.detection.models import SignalGroup
 from lucy_ng.lsd.models import Hybridization, LSDAtom, LSDConstraint, LSDCorrelation, LSDProblem
 from lucy_ng.models import PeakList1D, PeakList2D
 from lucy_ng.processing.dept_guided_picker import DEPTGuidedResult
@@ -599,3 +600,63 @@ def validate_pylsd_input(problem: LSDProblem) -> None:
             f"FORM/MULT mismatch: FORM declares {form_c} carbons "
             f"but MULT defines {mult_c} carbons in '{problem.molecular_formula}'"
         )
+
+
+def detect_aromatic_cosy_pairs(
+    groups: list[SignalGroup],
+    aromatic_range: tuple[float, float] = (100.0, 165.0),
+) -> list[tuple[int, int]]:
+    """Derive cross-ring COSY equivalence pairs for aromatic CH groups.
+
+    For two groups of aromatic sp2 CH atoms detected by lucy analyze grouping,
+    pairs them cross-ring using the reversed-sort algorithm. Verified reference:
+    arm_a.lsd (.planning/phases/72-design-re-validation/experiment/arm_a.lsd)
+    → COSY 4 7 + COSY 5 6 → 2/2 aromatic solutions (ibuprofen present).
+
+    Algorithm: zip(sorted(groupA.atom_ids), reversed(sorted(groupB.atom_ids)))
+    This produces cross-group pairing (NEVER within-group), preventing LSD
+    error 283 when ring BONDs are also present.
+
+    For ibuprofen example:
+    - Group A: shifts [129.38, 129.38], atom_ids [4, 5]
+    - Group B: shifts [127.26, 127.26], atom_ids [6, 7]
+    - zip(sorted([4,5]), reversed(sorted([6,7]))) = zip([4,5], [7,6]) = [(4,7), (5,6)]
+    - Yields COSY 4 7 + COSY 5 6 (exactly the Arm A reference)
+
+    Args:
+        groups: SignalGroup list from group_signals() (lucy analyze grouping output).
+                atom_ids are 1-based (LSD convention).
+        aromatic_range: ppm range for aromatic sp2 CH carbon shifts.
+                        Default (100.0, 165.0) covers all aromatic carbons.
+
+    Returns:
+        List of (atom1_id, atom2_id) tuples — 1-based, ready for
+        LSDProblem.add_aromatic_equivalence_pair(). Empty list if fewer than
+        2 aromatic groups of equal size are present.
+    """
+    # Filter groups where ALL shifts fall within the aromatic range
+    aromatic_groups = [
+        g for g in groups
+        if all(aromatic_range[0] <= s <= aromatic_range[1] for s in g.shifts)
+    ]
+
+    pairs: list[tuple[int, int]] = []
+    used: set[int] = set()
+
+    for i, ga in enumerate(aromatic_groups):
+        if i in used:
+            continue
+        for j, gb in enumerate(aromatic_groups):
+            if j <= i or j in used:
+                continue
+            if len(ga.atom_ids) == len(gb.atom_ids) and len(ga.atom_ids) >= 2:
+                # Cross-ring pairing: sort group A ascending, sort group B descending
+                # zip produces cross-ring pairs (a_ids[0] with b_ids[-1], etc.)
+                a_ids = sorted(ga.atom_ids)
+                b_ids = list(reversed(sorted(gb.atom_ids)))
+                pairs.extend(zip(a_ids, b_ids, strict=True))
+                used.add(i)
+                used.add(j)
+                break
+
+    return pairs
