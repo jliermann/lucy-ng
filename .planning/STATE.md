@@ -31,21 +31,23 @@ Phase 73: Solution Plumbing Fix      [x] Complete
 Phase 74: Constraint Preservation    [x] Complete
 Phase 75: Skill Consolidation        [x] Complete
 Phase 76: Milestone UAT Gate         [x] Executed — GATE FAILED (CASE1 spirit-fail, CASE9 deferred)
-Phase 77: (fix + re-UAT)             [ ] Not yet planned
+Phase 77: Fix lucy lsd run + Tooling [ ] Context gathered — ready to plan (fixes only)
+Phase 78: Blind Re-UAT (CASE1+CASE9) [ ] Not started (depends on 77)
 ```
 
-Progress: [██████████] v9.0 milestone gate FAILED — does NOT ship until Phase 77 fixes + re-UAT pass
+Progress: [██████████] v9.0 milestone gate FAILED — does NOT ship until Phase 77 fixes land + Phase 78 re-UAT passes
 
-Phase: 76 (milestone-uat-gate) — EXECUTED, GATE FAILED
-Status: BLOCKED on Phase 77 (fix lucy lsd run, revisit D-04, retire deprecated agent) → then re-UAT CASE1 + CASE9
-Last activity: 2026-06-01 -- Phase 76 UAT verdict written (VERIFICATION.md); milestone gate FAILED
+Phase: 77 (fix-lucy-lsd-run) — CONTEXT gathered, ready for /gsd-plan-phase 77
+Status: Phase 76 UAT failed → split into 77 (fixes) + 78 (re-UAT). Next: plan Phase 77.
+Last activity: 2026-06-01 -- Phase 77 context gathered (77-CONTEXT.md)
 
-**Phase 77 scope (from 76 VERIFICATION.md forensics, priority order):**
+**Phase 77 scope (fixes only — decisions in 77-CONTEXT.md):**
 
-1. Fix `lucy lsd run` `_invoke_outlsd` — real solutions.smi + fail loud on outlsd error (highest leverage; blocks re-UAT). See memory project-lucy-lsd-run-broken-v9.
-2. Revisit D-04 emergent-aromatic: ring did NOT emerge on CASE1 (368 non-aromatic); decide native-force vs documented ring-BOND path.
-3. Skill hygiene: retire deprecated lucy-case-agent.md (1291 lines, contradicts current); optional skill-creator audit.
-4. Re-UAT CASE1 + CASE9 (harness scripts/verify_case_solution.py already built + committed).
+1. FIX-01: `lucy lsd run` `_invoke_outlsd` — real solutions.smi + fail-loud on outlsd error + regression test. See memory project-lucy-lsd-run-broken-v9.
+2. FIX-02: deterministic cross-ring COSY equivalence emission in tooling → aromatic ring emerges (emergent primary; ring-BOND only as documented escalation per D-77-01/06).
+3. FIX-03: retire deprecated lucy-case-agent.md + targeted skill-creator audit (no full rewrite).
+
+**Phase 78 (separate):** blind re-UAT CASE1 + CASE9 via fixed mechanism; harness scripts/verify_case_solution.py already built. UAT-03/04.
 
 Wave structure:
 
