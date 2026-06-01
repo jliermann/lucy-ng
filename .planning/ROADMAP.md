@@ -312,12 +312,12 @@ Plans:
   3. Neither run required manual coordinator intervention to bypass the pipeline — the 7-intervention rescue pattern from the v8.0 UAT is absent from `CASE-PROGRESS.md`
   4. `run_report.json` for both runs documents per-permutation solution counts; at least one permutation per compound produces solutions that include an aromatic ring (independently verified by RDKit aromatic atom count, not relying on agent annotation)
 
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 76-01-PLAN.md — Build verify_case_solution.py (RDKit harness, TDD), pytest tests, sanitisation re-verification
+- [x] 76-01-PLAN.md — Build verify_case_solution.py (RDKit harness, TDD), pytest tests, sanitisation re-verification
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -333,7 +333,7 @@ Plans:
 | 73. Solution Plumbing Fix | 1/1 | Complete   | 2026-05-21 |
 | 74. Constraint Preservation and Merge | 2/2 | Complete   | 2026-05-24 |
 | 75. Skill Consolidation | 5/5 | Complete   | 2026-05-24 |
-| 76. Milestone UAT Gate | 0/2 | Not started | - |
+| 76. Milestone UAT Gate | 1/2 | In Progress|  |
 
 ---
 *Last updated: 2026-06-01 — Phase 76 planned (2 plans; 76-01 builds verification harness, 76-02 is the blind UAT gate)*
