@@ -200,7 +200,7 @@ Plans:
 - [x] **Phase 73: Solution Plumbing Fix** - Fix `lucy lsd run` / outlsd conversion so LSD solutions reliably become SMILES: the exit-255 / header-only bug means nothing downstream works. (depends on Phase 72) (completed 2026-05-21)
 - [x] **Phase 74: Constraint Preservation and Merge** - Fix permutation file generation to carry the full constraint set (BOND/SYME/DEFF NOT/grouped), and fix SolutionMerger to collect non-empty results from per-permutation runs. (depends on Phase 73) (completed 2026-05-24)
 - [x] **Phase 75: Skill Consolidation** - Audit all agent skills against actual LSD-3.4.9 behavior; eliminate the normal-LSD vs pyLSD documentation imbalance; encode the DESIGN-02 solver-path decision as unambiguous single-path guidance; update devils-advocate gates to catch the v8.0 failure modes. (depends on Phase 72, Phase 74)
-- [ ] **Phase 76: Milestone UAT Gate** - Blind CASE re-run on CASE1 (ibuprofen) AND CASE9 (4-(1-hydroxyethyl)benzoic acid isopropylester, C12H16O3) via the intended mechanism; all Phase-71 criteria verified against on-disk artifacts by independent RDKit check. (depends on Phase 75)
+- [x] **Phase 76: Milestone UAT Gate** - Blind CASE re-run on CASE1 (ibuprofen) AND CASE9 (4-(1-hydroxyethyl)benzoic acid isopropylester, C12H16O3) via the intended mechanism; all Phase-71 criteria verified against on-disk artifacts by independent RDKit check. (depends on Phase 75) (executed 2026-06-01 — **GATE VERDICT: FAILED**; CASE1 spirit-fail, CASE9 deferred. v9.0 does NOT ship. See 76-milestone-uat-gate/VERIFICATION.md → Phase 77)
 
 ## Phase Details
 
@@ -312,7 +312,7 @@ Plans:
   3. Neither run required manual coordinator intervention to bypass the pipeline — the 7-intervention rescue pattern from the v8.0 UAT is absent from `CASE-PROGRESS.md`
   4. `run_report.json` for both runs documents per-permutation solution counts; at least one permutation per compound produces solutions that include an aromatic ring (independently verified by RDKit aromatic atom count, not relying on agent annotation)
 
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 **Wave 1**
@@ -321,7 +321,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 76-02-PLAN.md — Blind CASE run gate (CASE1 + CASE9) + independent artifact verification, write VERIFICATION.md
+- [x] 76-02-PLAN.md — Blind CASE run gate (CASE1 + CASE9) + independent artifact verification, write VERIFICATION.md
 
 **UI hint**: no
 
@@ -333,7 +333,9 @@ Plans:
 | 73. Solution Plumbing Fix | 1/1 | Complete   | 2026-05-21 |
 | 74. Constraint Preservation and Merge | 2/2 | Complete   | 2026-05-24 |
 | 75. Skill Consolidation | 5/5 | Complete   | 2026-05-24 |
-| 76. Milestone UAT Gate | 1/2 | In Progress|  |
+| 76. Milestone UAT Gate | 2/2 | Executed — **GATE FAILED** | 2026-06-01 |
+
+**v9.0 milestone gate: FAILED (does not ship).** Phase 76 executed: harness built (76-01), CASE1 blind run = spirit-fail (ibuprofen found but `lucy lsd run` broken + ring forced + interventions), CASE9 deferred. Blocking defects → **Phase 77** (fix `lucy lsd run`, revisit D-04 emergent-aromatic, retire deprecated lucy-case-agent.md), then re-UAT CASE1 + CASE9. See `.planning/phases/76-milestone-uat-gate/VERIFICATION.md`.
 
 ---
-*Last updated: 2026-06-01 — Phase 76 planned (2 plans; 76-01 builds verification harness, 76-02 is the blind UAT gate)*
+*Last updated: 2026-06-01 — Phase 76 executed; v9.0 UAT gate FAILED (CASE1 spirit-fail, CASE9 deferred) → Phase 77 needed before milestone can ship*

@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: CASE Reliability & Skill Consolidation
-status: executing
-stopped_at: Phase 76 context gathered
-last_updated: "2026-06-01T08:36:53.421Z"
-last_activity: 2026-06-01 -- Phase 76 execution started
+status: blocked
+stopped_at: Phase 76 executed — v9.0 UAT gate FAILED (CASE1 spirit-fail, CASE9 deferred); Phase 77 needed
+last_updated: "2026-06-01T14:40:00.000Z"
+last_activity: 2026-06-01 -- Phase 76 UAT verdict written; milestone gate FAILED → Phase 77
 progress:
   total_phases: 5
   completed_phases: 4
@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-20)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a multi-agent team that uses the intended solver pipeline — not a manual bypass
-**Current focus:** Phase 76 — milestone-uat-gate
+**Current focus:** Phase 77 (to be planned) — fix `lucy lsd run` + D-04 emergent-aromatic + skill hygiene, then re-UAT
 
 ## Current Position
 
@@ -30,15 +30,21 @@ Phase 72: Design Re-Validation       [x] Complete
 Phase 73: Solution Plumbing Fix      [x] Complete
 Phase 74: Constraint Preservation    [x] Complete
 Phase 75: Skill Consolidation        [x] Complete
-Phase 76: Milestone UAT Gate         [ ] Not started  (depends on 75)
+Phase 76: Milestone UAT Gate         [x] Executed — GATE FAILED (CASE1 spirit-fail, CASE9 deferred)
+Phase 77: (fix + re-UAT)             [ ] Not yet planned
 ```
 
-Progress: [████████░░] 80%
+Progress: [██████████] v9.0 milestone gate FAILED — does NOT ship until Phase 77 fixes + re-UAT pass
 
-Phase: 76 (milestone-uat-gate) — EXECUTING
-Plan: 1 of 2
-Status: Executing Phase 76
-Last activity: 2026-06-01 -- Phase 76 execution started
+Phase: 76 (milestone-uat-gate) — EXECUTED, GATE FAILED
+Status: BLOCKED on Phase 77 (fix lucy lsd run, revisit D-04, retire deprecated agent) → then re-UAT CASE1 + CASE9
+Last activity: 2026-06-01 -- Phase 76 UAT verdict written (VERIFICATION.md); milestone gate FAILED
+
+**Phase 77 scope (from 76 VERIFICATION.md forensics, priority order):**
+1. Fix `lucy lsd run` `_invoke_outlsd` — real solutions.smi + fail loud on outlsd error (highest leverage; blocks re-UAT). See memory project-lucy-lsd-run-broken-v9.
+2. Revisit D-04 emergent-aromatic: ring did NOT emerge on CASE1 (368 non-aromatic); decide native-force vs documented ring-BOND path.
+3. Skill hygiene: retire deprecated lucy-case-agent.md (1291 lines, contradicts current); optional skill-creator audit.
+4. Re-UAT CASE1 + CASE9 (harness scripts/verify_case_solution.py already built + committed).
 
 Wave structure:
 
