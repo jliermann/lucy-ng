@@ -6,7 +6,8 @@
   "milestone_name": "Fragment Library",
   "workflow": {
     "auto_advance": false,
-    "research": false
+    "research": true,
+    "_auto_chain_active": false
   },
   "granularity": "standard"
 }
