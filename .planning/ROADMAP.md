@@ -354,10 +354,17 @@ Plans:
   4. Deprecated `~/.claude/agents/lucy-case-agent.md` is retired/archived; a targeted skill-creator audit confirms the v9.0 single-path + emergent/COSY guidance is prominent (not buried) and flags dead/contradictory content — no full rewrite
   5. D-76 mechanistic UAT criterion is rewritten for Phase 78 (emergent = clean pass, documented BOND escalation = conditional pass, silent ring-BOND/SKEL = fail)
 
-**Plans:** 0 plans
+**Plans:** 3 plans
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 77 to break down)
+**Wave 1** *(FIX-01 and FIX-03 are independent — run in parallel)*
+
+- [ ] 77-01-PLAN.md — Fix _execute_lsd filter-file copy + harden _invoke_outlsd fail-loud + regression tests
+- [ ] 77-03-PLAN.md — Skill hygiene: retire lucy-case-agent.md, correct lsd-engineer Phase-73 claim, add aromatic-cosy reference, D-77-06 criteria in case.md
+
+**Wave 2** *(depends on 77-01)*
+
+- [ ] 77-02-PLAN.md — detect_aromatic_cosy_pairs() in generator.py + lucy detect aromatic-cosy CLI + emergence integration test
 
 ### Phase 78: Blind Re-UAT Gate (CASE1 + CASE9)
 
