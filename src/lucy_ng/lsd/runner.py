@@ -39,9 +39,27 @@ def _invoke_outlsd(
                 timeout=30,
                 cwd=output_dir,
             )
-        if proc.stdout.strip():
-            smiles_file.write_text(proc.stdout)
-            return smiles_file
+        stdout = proc.stdout.strip()
+        # Fail-loud: detect known error patterns before writing to disk
+        if not stdout:
+            raise RuntimeError(
+                "outlsd produced no output — .sol file may be incomplete "
+                "(likely cause: ring3/ring4 filter files missing from output_dir)"
+            )
+        if "This is not a file for OUTLSD" in stdout:
+            raise RuntimeError(
+                f"outlsd rejected .sol file: {stdout[:200]!r}. "
+                "Likely cause: ring3/ring4 filter files missing from output_dir, "
+                "causing LSD to produce a partial .sol (input echo only). "
+                "Fix: ensure _execute_lsd copies filter files (FIX-01A)."
+            )
+        if stdout.startswith("outlsd:"):
+            raise RuntimeError(f"outlsd error: {stdout[:200]!r}")
+        # Output passes string checks — write to disk
+        smiles_file.write_text(proc.stdout)
+        return smiles_file
+    except RuntimeError:
+        raise  # Propagate fail-loud errors to _execute_lsd exception handler
     except Exception:
         pass
     return None
@@ -247,6 +265,9 @@ class LSDRunner:
                 lsd_input_name = input_file.name
             else:
                 lsd_input_name = input_file.name
+            # Copy bundled ring3/ring4 filter files so DEFF F1 "ring3" / DEFF F2 "ring4" resolve.
+            # Unconditional — matches write_file() behavior; idempotent if already present.
+            LSDInputGenerator._write_filter_files(output_dir)
             proc = subprocess.run(
                 [str(self.lsd_path), lsd_input_name],
                 capture_output=True,
