@@ -4,9 +4,9 @@ Runs the verification script via subprocess so that tests remain completely
 independent of lucy_ng internals.  No imports from lucy_ng are used here.
 
 Test SMILES used:
-- ``"c1ccc(CC(C)CC(=O)O)cc1"`` — ibuprofen; C13H18O2; 6 aromatic atoms (PASS)
-- ``"c1ccccc1"``               — benzene;   C6H6;     6 aromatic atoms (aromatic but wrong formula)
-- ``"CCC"``                    — propane;   C3H8;     0 aromatic atoms  (FAIL)
+- ``"CC(Cc1ccc(cc1)C(C)C)C(=O)O"`` — ibuprofen; C13H18O2; 6 aromatic atoms (PASS)
+- ``"c1ccccc1"``                    — benzene;   C6H6;     6 aromatic atoms (aromatic but wrong formula)
+- ``"CCC"``                         — propane;   C3H8;     0 aromatic atoms  (FAIL)
 """
 
 from __future__ import annotations
@@ -32,7 +32,7 @@ class TestVerifyScript:
     def test_pass_aromatic_correct_formula(self, tmp_path: Path) -> None:
         """Ibuprofen SMILES at rank 1 — should PASS with exit code 0."""
         smi_file = tmp_path / "merged.smi"
-        smi_file.write_text("c1ccc(CC(C)CC(=O)O)cc1\n")
+        smi_file.write_text("CC(Cc1ccc(cc1)C(C)C)C(=O)O\n")
 
         result = subprocess.run(
             [sys.executable, str(SCRIPT), str(smi_file), "C13H18O2"],
@@ -98,7 +98,7 @@ class TestVerifyScript:
     def test_json_structure(self, tmp_path: Path) -> None:
         """JSON output must contain required keys; top_n_checked must equal 3."""
         smi_file = tmp_path / "merged.smi"
-        smi_file.write_text("c1ccc(CC(C)CC(=O)O)cc1\n")
+        smi_file.write_text("CC(Cc1ccc(cc1)C(C)C)C(=O)O\n")
 
         result = subprocess.run(
             [sys.executable, str(SCRIPT), str(smi_file), "C13H18O2"],
@@ -129,7 +129,7 @@ class TestVerifyScriptEdgeCases:
             "CCC\n"
             "CCC\n"
             "CCC\n"
-            "c1ccc(CC(C)CC(=O)O)cc1\n"
+            "CC(Cc1ccc(cc1)C(C)C)C(=O)O\n"
         )
 
         result = subprocess.run(
