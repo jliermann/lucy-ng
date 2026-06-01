@@ -81,6 +81,10 @@ Wave structure:
 
 ## Accumulated Context
 
+### Roadmap Evolution
+
+- Phase 77 added (2026-06-01): fix `lucy lsd run` plumbing bug + resolve D-04 emergent-aromatic + retire deprecated lucy-case-agent.md, then re-UAT CASE1 + CASE9. Created because the Phase 76 v9.0 UAT gate FAILED (CASE1 spirit-fail, CASE9 deferred).
+
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.

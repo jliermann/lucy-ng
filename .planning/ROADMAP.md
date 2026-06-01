@@ -13,7 +13,7 @@
 - [v6.0 Skill Quality Overhaul](milestones/v6.0-ROADMAP.md) - Phases 55-58 (shipped 2026-03-10)
 - [v7.0 Statistical 4J Detection](milestones/v7.0-ROADMAP.md) - Phases 59-64 (ABANDONED 2026-03-12)
 - **v8.0 pyLSD Integration** - Phases 65-71 (superseded by v9.0 before UAT passed)
-- **v9.0 CASE Reliability & Skill Consolidation** - Phases 72-76 (in progress)
+- **v9.0 CASE Reliability & Skill Consolidation** - Phases 72-77 (in progress; UAT gate failed at 76 → Phase 77 fix + re-UAT)
 
 ---
 
@@ -336,6 +336,16 @@ Plans:
 | 76. Milestone UAT Gate | 2/2 | Executed — **GATE FAILED** | 2026-06-01 |
 
 **v9.0 milestone gate: FAILED (does not ship).** Phase 76 executed: harness built (76-01), CASE1 blind run = spirit-fail (ibuprofen found but `lucy lsd run` broken + ring forced + interventions), CASE9 deferred. Blocking defects → **Phase 77** (fix `lucy lsd run`, revisit D-04 emergent-aromatic, retire deprecated lucy-case-agent.md), then re-UAT CASE1 + CASE9. See `.planning/phases/76-milestone-uat-gate/VERIFICATION.md`.
+
+### Phase 77: Fix lucy lsd run plumbing bug and re-run blind UAT — repair _invoke_outlsd so lucy lsd run produces real solutions.smi and fails loud on outlsd errors, resolve D-04 emergent-aromatic (ring did not emerge on CASE1), retire deprecated lucy-case-agent.md, then re-UAT CASE1 + CASE9 blind via verify_case_solution.py
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 76
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 77 to break down)
 
 ---
 *Last updated: 2026-06-01 — Phase 76 executed; v9.0 UAT gate FAILED (CASE1 spirit-fail, CASE9 deferred) → Phase 77 needed before milestone can ship*
