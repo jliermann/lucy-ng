@@ -9,7 +9,7 @@ import pytest
 from rdkit import Chem
 
 from lucy_ng.lsd.models import Hybridization, LSDAtom, LSDCorrelation, LSDProblem
-from lucy_ng.lsd.runner import LSDRunner, LSDResult
+from lucy_ng.lsd.runner import LSDRunner, LSDResult, _invoke_outlsd
 
 
 class TestLSDResult:
@@ -488,4 +488,94 @@ class TestLSDRunnerFixed:
         result_none = _invoke_outlsd(outlsd_path, missing_sol, tmp_path)
         assert result_none is None, (
             "_invoke_outlsd must return None when sol_file does not exist"
+        )
+
+
+class TestInvokeOutlsd:
+    """Unit tests for _invoke_outlsd fail-loud behavior (FIX-01B).
+
+    Do not require LSD/outlsd.
+    """
+
+    def test_fail_loud_on_error_string(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """_invoke_outlsd raises RuntimeError when outlsd outputs the known error string."""
+        sol_file = tmp_path / "compound.sol"
+        sol_file.write_text("# header\n")
+
+        def mock_run(*args, **kwargs):  # type: ignore[no-untyped-def]
+            class MockResult:
+                stdout = "outlsd: This is not a file for OUTLSD.\n"
+                returncode = 0
+
+            return MockResult()
+
+        monkeypatch.setattr(subprocess, "run", mock_run)
+
+        with pytest.raises(RuntimeError, match="This is not a file for OUTLSD"):
+            _invoke_outlsd(Path("/fake/outlsd"), sol_file, tmp_path)
+
+    def test_fail_loud_on_empty_output(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """_invoke_outlsd raises RuntimeError when outlsd produces no output."""
+        sol_file = tmp_path / "compound.sol"
+        sol_file.write_text("# header\n")
+
+        def mock_run(*args, **kwargs):  # type: ignore[no-untyped-def]
+            class MockResult:
+                stdout = ""
+                returncode = 0
+
+            return MockResult()
+
+        monkeypatch.setattr(subprocess, "run", mock_run)
+
+        with pytest.raises(RuntimeError, match="no output"):
+            _invoke_outlsd(Path("/fake/outlsd"), sol_file, tmp_path)
+
+
+# ---------------------------------------------------------------------------
+# FIX-01A integration test — add to TestLSDRunnerFixed (append as standalone
+# function after class to keep skipif gate readable; pytest collects it correctly)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.skipif(
+    shutil.which("LSD") is None,
+    reason="LSD binary not installed",
+)
+def test_ring_exclusion_lsd_produces_smiles(tmp_path: Path) -> None:
+    """run_file() with a ring-exclusion LSD file (DEFF F1/F2) produces valid SMILES.
+
+    Regression for FIX-01A: _execute_lsd must copy ring3/ring4 filter files.
+    Fixture: arm_a_ring_excl.lsd (has DEFF F1 "ring3" + DEFF F2 "ring4").
+    Expected: 2 solutions, both aromatic (ibuprofen present).
+    """
+    outlsd_bin = shutil.which("outlsd")
+    assert outlsd_bin is not None, "outlsd binary not found on PATH"
+
+    lsd_fixture = FIXTURE_DIR / "arm_a_ring_excl.lsd"
+    runner = LSDRunner()
+    runner.run_file(lsd_fixture, output_dir=tmp_path, timeout=120)
+
+    smiles_file = tmp_path / "solutions.smi"
+    assert smiles_file.exists(), (
+        "solutions.smi not written — ring3/ring4 filter files likely not copied"
+    )
+    lines = [ln for ln in smiles_file.read_text().splitlines() if ln.strip()]
+    assert len(lines) == 2, (
+        f"arm_a_ring_excl.lsd should produce exactly 2 solutions, got {len(lines)}. "
+        "If 0: LSD failed (filter files missing). If 392: wrong fixture used."
+    )
+    # Both solutions must be valid SMILES with aromatic atoms
+    for line in lines:
+        smiles = line.split()[0]
+        mol = Chem.MolFromSmiles(smiles)
+        assert mol is not None, f"Not valid SMILES: {smiles!r}"
+        aromatic_atoms = sum(1 for a in mol.GetAtoms() if a.GetIsAromatic())
+        assert aromatic_atoms >= 6, (
+            f"Expected aromatic ring in solution, got {aromatic_atoms} aromatic atoms: "
+            f"{smiles!r}"
         )
