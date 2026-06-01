@@ -7,6 +7,9 @@ import tempfile
 from lucy_ng import BrukerReader, DEPTGuidedPicker, Peak1D, Peak2D, PeakList1D, PeakList2D
 from lucy_ng.lsd.models import Hybridization, LSDAtom, LSDConstraint, LSDCorrelation, LSDProblem
 from lucy_ng.lsd.generator import LSDInputGenerator
+from lucy_ng.detection.models import SignalGroup
+from lucy_ng.detection.grouping import group_signals
+from lucy_ng.lsd.generator import detect_aromatic_cosy_pairs
 
 
 class TestLSDInputGeneratorBasic:
@@ -854,3 +857,85 @@ class TestHydrogenAssignment:
 
         # Should have BOND constraint
         assert len(problem.constraints) >= 1
+
+
+class TestDetectAromaticCosyPairs:
+    """Unit tests for detect_aromatic_cosy_pairs() — FIX-02.
+
+    Verifies the cross-ring pairing algorithm that derives COSY equivalence
+    pairs for para-disubstituted aromatic rings from group_signals() output.
+    Reference: arm_a.lsd produces COSY 4 7 + COSY 5 6 → 2/2 aromatic solutions.
+    """
+
+    def test_ibuprofen_aromatic_groups_produces_cross_ring_pairs(self) -> None:
+        """Two groups at 129.38 and 127.26 ppm → cross-ring pairs, no self-COSY.
+
+        Verifies the Arm A reference: zip(sorted([a,b]), reversed(sorted([c,d])))
+        produces cross-group pairs — never within-group.
+        """
+        grouping = group_signals(
+            [129.38, 129.38, 127.26, 127.26],
+            multiplicities=["CH", "CH", "CH", "CH"],
+            tolerance=0.25,
+        )
+        pairs = detect_aromatic_cosy_pairs(grouping.groups)
+
+        assert len(pairs) == 2
+        # Cross-ring: atoms from group A paired with atoms from group B
+        assert all(a != b for a, b in pairs), "No self-COSY pairs (T-77-02-04)"
+
+        # Cross-group: no pair should have both atoms from same group
+        group_a_ids = set(grouping.groups[0].atom_ids)
+        group_b_ids = set(grouping.groups[1].atom_ids)
+        for a, b in pairs:
+            assert not (a in group_a_ids and b in group_a_ids), (
+                f"Within-group pair detected: ({a},{b}) both in group A {group_a_ids}"
+            )
+            assert not (a in group_b_ids and b in group_b_ids), (
+                f"Within-group pair detected: ({a},{b}) both in group B {group_b_ids}"
+            )
+
+    def test_single_group_no_pairs(self) -> None:
+        """Single aromatic group → no pairs (no partner to cross-pair with)."""
+        grouping = group_signals(
+            [129.38, 129.40],
+            multiplicities=["CH", "CH"],
+            tolerance=0.25,
+        )
+        pairs = detect_aromatic_cosy_pairs(grouping.groups)
+        assert pairs == []
+
+    def test_non_aromatic_shifts_excluded(self) -> None:
+        """Aliphatic shifts outside aromatic_range are ignored — only 1 aromatic group → no pairs."""
+        grouping = group_signals(
+            [44.90, 45.03, 129.38, 129.38],
+            multiplicities=["CH2", "CH2", "CH", "CH"],
+            tolerance=0.25,
+        )
+        # groups expected: [44.90, 45.03] (aliphatic) and [129.38, 129.38] (aromatic)
+        pairs = detect_aromatic_cosy_pairs(grouping.groups)
+        # Only 1 aromatic group → no cross-ring pairs possible
+        assert pairs == []
+
+    def test_reversed_pairing_is_cross_group(self) -> None:
+        """For 4 atoms in 2 groups of 2, all returned pairs have one atom from each group."""
+        grouping = group_signals(
+            [129.38, 129.38, 127.26, 127.26],
+            multiplicities=["CH", "CH", "CH", "CH"],
+            tolerance=0.25,
+        )
+        assert len(grouping.groups) == 2, (
+            f"Expected 2 groups, got {len(grouping.groups)}: {grouping.groups}"
+        )
+        group_a_ids = set(grouping.groups[0].atom_ids)
+        group_b_ids = set(grouping.groups[1].atom_ids)
+
+        pairs = detect_aromatic_cosy_pairs(grouping.groups)
+
+        for a, b in pairs:
+            one_from_a = (a in group_a_ids) and (b in group_b_ids)
+            one_from_b = (a in group_b_ids) and (b in group_a_ids)
+            assert one_from_a or one_from_b, (
+                f"Pair ({a},{b}) is NOT cross-group: "
+                f"group A={group_a_ids}, group B={group_b_ids}"
+            )
