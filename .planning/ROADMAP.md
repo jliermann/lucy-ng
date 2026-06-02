@@ -378,10 +378,18 @@ Plans:
   3. 0 path-changing bypass interventions; `lucy lsd run` used as the primary path (no direct-binary bypass)
   4. Both compounds pass (D-76-06 AND-gate) → v9.0 ships; failure is a valid result documented for a follow-up phase (D-76-07)
 
-**Plans:** 0 plans
+**Plans:** 4 plans
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 78 to break down)
+**Wave 1**
+- [ ] 78-01-PLAN.md — Dataset identity-leakage audit (CASE1 + CASE9 sanitisation pre-check)
+
+**Wave 2** *(depends on 78-01)*
+- [ ] 78-02-PLAN.md — CASE1 blind run + evidence collection (UAT-03)
+- [ ] 78-03-PLAN.md — CASE9 blind run + evidence collection (UAT-04)
+
+**Wave 3** *(depends on 78-02 + 78-03)*
+- [ ] 78-04-PLAN.md — AND-gate verdict roll-up + forensics-on-fail (milestone gate)
 
 ---
-*Last updated: 2026-06-01 — Phase 76 UAT FAILED → split into Phase 77 (fixes) + Phase 78 (blind re-UAT); Phase 77 context gathered*
+*Last updated: 2026-06-02 — Phase 78 planned: 4 plans / 3 waves; blind re-UAT gate for v9.0*
