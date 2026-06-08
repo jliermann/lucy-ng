@@ -203,7 +203,7 @@ Plans:
 - [x] **Phase 76: Milestone UAT Gate** - Blind CASE re-run on CASE1 (ibuprofen) AND CASE9 (4-(1-hydroxyethyl)benzoic acid isopropylester, C12H16O3) via the intended mechanism; all Phase-71 criteria verified against on-disk artifacts by independent RDKit check. (depends on Phase 75) (executed 2026-06-01 — **GATE VERDICT: FAILED**; CASE1 spirit-fail, CASE9 deferred. v9.0 does NOT ship. See 76-milestone-uat-gate/VERIFICATION.md → Phase 77)
 - [x] **Phase 77: Fix lucy lsd run + Emergent-Aromatic Tooling + Skill Hygiene** - Fix the blocking defects the v9.0 UAT exposed: repair `lucy lsd run`/`_invoke_outlsd` (real solutions.smi + fail-loud + regression test); make cross-ring COSY equivalence-pair emission deterministic in tooling so the aromatic ring emerges; retire deprecated lucy-case-agent.md + targeted skill-creator audit. Fixes only — no UAT. (depends on Phase 76) (completed 2026-06-01)
 - [x] **Phase 78: Blind Re-UAT Gate (CASE1 + CASE9)** - Re-run the v9.0 milestone blind UAT on CASE1 + CASE9 via the now-fixed intended mechanism; independent RDKit verification with rewritten criteria (emergent ring = clean pass, documented BOND escalation = conditional pass, silent ring-BOND/SKEL = fail). Milestone-complete gate. (depends on Phase 77) (executed 2026-06-08 — **GATE VERDICT: FAILED**; CASE1 UAT-03 PASS, CASE9 UAT-04 FAIL → v9.0 DOES NOT SHIP. See 78-UAT-VERDICT.md → Phase 79)
-- [ ] **Phase 79: Peak-Picking & Symmetry Detection Fix** - Fix the upstream defect the CASE9 UAT exposed: weak quaternary carbonyls masked by the CDCl₃-dominated max-relative peak-picking threshold (carbonyl at 166.08 ppm, SNR≈17, dropped); and 13C peak-intensity symmetry (2C signals) not used to detect equivalent aromatic carbons (so `lucy detect aromatic-cosy` gets no input and the emergent ring is disabled). Then re-run CASE9 blind and re-apply the AND-gate. (depends on Phase 78)
+- [x] **Phase 79: Peak-Picking & Symmetry Detection Fix** - Fix the upstream defect the CASE9 UAT exposed: weak quaternary carbonyls masked by the CDCl₃-dominated max-relative peak-picking threshold (carbonyl at 166.08 ppm, SNR≈17, dropped); and 13C peak-intensity symmetry (2C signals) not used to detect equivalent aromatic carbons (so `lucy detect aromatic-cosy` gets no input and the emergent ring is disabled). Then re-run CASE9 blind and re-apply the AND-gate. (depends on Phase 78) (completed 2026-06-08)
 
 ## Phase Details
 
@@ -339,7 +339,7 @@ Plans:
 | 76. Milestone UAT Gate | 2/2 | Executed — **GATE FAILED** | 2026-06-01 |
 | 77. Fix lucy lsd run + Emergent Tooling + Hygiene | 3/3 | Complete    | 2026-06-01 |
 | 78. Blind Re-UAT Gate (CASE1 + CASE9) | 4/4 | Executed — **GATE FAILED** | 2026-06-08 |
-| 79. Peak-Picking & Symmetry Detection Fix | 3/4 | In Progress|  |
+| 79. Peak-Picking & Symmetry Detection Fix | 4/4 | Complete   | 2026-06-08 |
 
 **v9.0 milestone gate: FAILED at Phase 78 (does not ship).** CASE1 UAT-03 = **PASS** (ibuprofen found as #2, ring fully emergent via cross-ring COSY, no ring-BOND/SKEL, clean). CASE9 UAT-04 = **FAIL** (correct structure — 4-(1-hydroxyethyl)benzoic acid isopropyl ester — never reached; ring forced via 6 ring-BONDs; correct para-disubstituted reading blocked by an upstream peak-picking defect). AND-gate = FAIL. Root cause: `lucy pick 1d` drops the ester carbonyl (166.08 ppm, SNR≈17) because the CDCl₃ triplet dominates the max-relative threshold, and 13C intensity-symmetry (2C signals) is not used to detect equivalent aromatic carbons → `lucy detect aromatic-cosy` has no input → emergent ring disabled. The Phase-77 LSD mechanism is **not** refuted; it never received correct input. Blocking defects → **Phase 79**. See `.planning/phases/78-blind-re-uat-gate/78-UAT-VERDICT.md`.
 
@@ -427,7 +427,7 @@ detection), FIX-06 (skill feedback loop: DBE self-check + quality loop-pattern)
      para-disubstituted aromatic-ester C12H16O3 solution via the emergent path (no forced
      ring-BONDs as the primary mechanism); the Phase-78 AND-gate is re-applied and recorded
 
-**Plans:** 3/4 plans executed
+**Plans:** 4/4 plans complete
 
 Plans:
 **Wave 0**
@@ -438,7 +438,7 @@ Plans:
 - [x] 79-02-PLAN.md — detect_intensity_symmetry for aromatic CH 2C-equivalence detection (FIX-05)
 
 **Wave 2** *(depends on 79-01 + 79-02)*
-- [ ] 79-03-PLAN.md — Skill feedback loop: DBE self-check + QUALITY_CONVERGENCE_FAILURE 5th loop-pattern (FIX-06)
+- [x] 79-03-PLAN.md — Skill feedback loop: DBE self-check + QUALITY_CONVERGENCE_FAILURE 5th loop-pattern (FIX-06)
 
 **UI hint**: no
 
