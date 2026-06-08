@@ -172,7 +172,7 @@ class DEPTGuidedPicker:
         return DEPTGuidedResult(
             peaks=validated_peaks,
             dept_peaks=dept_peaks,
-            threshold_used=threshold / threshold_step if iterations > 0 else initial_hsqc_threshold,
+            threshold_used=threshold if iterations > 0 else initial_hsqc_threshold,
             iterations=iterations,
             all_carbons_found=len(unmatched_positions) == 0,
             unmatched_dept_peaks=unmatched_dept,
