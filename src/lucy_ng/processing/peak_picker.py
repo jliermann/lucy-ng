@@ -7,15 +7,16 @@ from lucy_ng.models import Peak1D, PeakList1D, Spectrum1D
 
 # Solvent residual 13C shifts: exclusion windows (low_ppm, high_ppm).
 # Each window is centred on the residual shift with ±5 ppm margin for multiplets.
-_SOLVENT_EXCLUSION_13C: dict[str, tuple[float, float]] = {
-    "CDCl3":   (72.0, 82.0),    # 77.16 ppm triplet
-    "DMSO":    (37.0, 42.0),    # 39.52 ppm septet
-    "DMSO-d6": (37.0, 42.0),
-    "CD3OD":   (46.0, 52.0),    # 49.0 ppm septet
-    "MeOD":    (46.0, 52.0),
-    "CD3CN":   (1.0,   5.0),    # 1.32 ppm septet (benign low-ppm region anyway)
-    "acetone": (27.0, 33.0),    # 29.84 ppm
-    "C6D6":    (125.0, 131.0),  # 128.06 ppm triplet
+# Values are lists of (lo, hi) tuples to support solvents with multiple signals.
+_SOLVENT_EXCLUSION_13C: dict[str, list[tuple[float, float]]] = {
+    "CDCl3":   [(72.0, 82.0)],                       # 77.16 ppm triplet
+    "DMSO":    [(37.0, 42.0)],                        # 39.52 ppm septet
+    "DMSO-d6": [(37.0, 42.0)],
+    "CD3OD":   [(46.0, 52.0)],                        # 49.0 ppm septet
+    "MeOD":    [(46.0, 52.0)],
+    "CD3CN":   [(1.0, 5.0), (114.0, 120.0)],          # 1.32 ppm CD3 septet + 117.1 ppm CN singlet
+    "acetone": [(27.0, 33.0)],                        # 29.84 ppm
+    "C6D6":    [(125.0, 131.0)],                      # 128.06 ppm triplet
 }
 
 
@@ -36,17 +37,31 @@ def _compute_snr_threshold(
 
     Returns:
         (abs_threshold, sigma_mad) — threshold = k * sigma_mad.
+        Both values are always finite (fallback to 5%-of-max if MAD is zero or
+        solvent exclusion empties the noise region).
     """
-    exclusion = _SOLVENT_EXCLUSION_13C.get(solvent or "", None)
-    if exclusion is not None:
-        lo, hi = exclusion
-        mask = (ppm_scale >= lo) & (ppm_scale <= hi)
+    windows = _SOLVENT_EXCLUSION_13C.get(solvent or "", None)
+    if windows is not None:
+        # Build a combined exclusion mask across all solvent windows.
+        mask = np.zeros(len(ppm_scale), dtype=bool)
+        for lo, hi in windows:
+            mask |= (ppm_scale >= lo) & (ppm_scale <= hi)
         clean_data = data[~mask]
+        # Fall back to full spectrum if exclusion removed all points.
+        if len(clean_data) == 0:
+            clean_data = data
     else:
         clean_data = data
 
     mad = float(np.median(np.abs(clean_data - np.median(clean_data))))
     sigma_mad = 1.4826 * mad
+
+    # Guard against zero/NaN sigma (constant or empty baseline).
+    # Fall back to 5% of max so the function always returns a usable threshold.
+    if not np.isfinite(sigma_mad) or sigma_mad == 0.0:
+        fallback = 0.05 * float(np.max(np.abs(data))) if data.size > 0 else 1.0
+        return fallback, fallback / k
+
     return k * sigma_mad, sigma_mad
 
 

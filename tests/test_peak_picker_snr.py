@@ -44,6 +44,62 @@ class TestSNRThreshold:
         # threshold = 3 * sigma_mad, must be << 2.30e6 (the old 5%-max threshold)
         assert threshold < 1e6
 
+    def test_empty_clean_data_fallback_is_finite(self) -> None:
+        """When solvent exclusion removes all points, fallback must produce finite threshold.
+
+        Regression for CR-01: np.median([]) returns nan, which propagated silently to
+        find_peaks and to JSON output (NaN literal, invalid RFC-8259).
+        """
+        # Spectrum entirely within the CDCl3 exclusion window (72–82 ppm).
+        # After masking, clean_data is empty → old code returned (nan, nan).
+        ppm = np.linspace(82.0, 72.0, 100)   # entirely inside exclusion window
+        data = np.zeros(100)
+        data[50] = 1.0                         # one real peak at centre
+        threshold, sigma_mad = _compute_snr_threshold(data, ppm, solvent="CDCl3")
+        assert np.isfinite(threshold), f"threshold must be finite, got {threshold}"
+        assert np.isfinite(sigma_mad), f"sigma_mad must be finite, got {sigma_mad}"
+        assert threshold > 0
+
+    def test_zero_mad_fallback_is_finite(self) -> None:
+        """When MAD=0 (perfectly flat baseline), fallback must produce non-zero threshold.
+
+        Regression for CR-01: zero-background synthetic spectra have MAD=0, so
+        _compute_snr_threshold previously returned threshold=0, causing every local
+        max to be picked (find_peaks(height=0) floods results).
+        """
+        ppm = np.linspace(200.0, 0.0, 1000)
+        data = np.zeros(1000)
+        data[300] = 1.0   # one isolated peak on a perfectly flat baseline
+        threshold, sigma_mad = _compute_snr_threshold(data, ppm, solvent=None)
+        assert np.isfinite(threshold), f"threshold must be finite, got {threshold}"
+        assert np.isfinite(sigma_mad), f"sigma_mad must be finite, got {sigma_mad}"
+        assert threshold > 0
+
+    def test_empty_clean_data_fallback_picks_real_peak(self) -> None:
+        """After the empty-clean_data fallback, real peaks are still found.
+
+        Verifies the full pick_peaks path does not silently discard peaks when the
+        solvent exclusion covers the entire spectrum window.
+        """
+        ppm = np.linspace(82.0, 72.0, 200)
+        data = np.zeros(200)
+        # Strong peak at 77 ppm (inside CDCl3 window — pathological spectrum)
+        peak_idx = 100
+        data[peak_idx] = 1.0
+        data[peak_idx - 1] = 0.3
+        data[peak_idx + 1] = 0.3
+
+        from lucy_ng.models import Spectrum1D
+
+        spectrum = Spectrum1D(data=data, ppm_scale=ppm, nucleus="13C", frequency=100.0, solvent="CDCl3")
+        from lucy_ng.processing.peak_picker import AdaptivePeakPicker
+        peaks = AdaptivePeakPicker.pick_peaks(spectrum)
+        # The fallback threshold (5% of max = 0.05) must leave the 1.0-intensity peak visible
+        assert len(peaks.peaks) >= 1
+        # noise_sigma must be finite (not NaN)
+        assert peaks.noise_sigma is not None
+        assert np.isfinite(peaks.noise_sigma)
+
 
 class TestCASE9Regression:
     """Integration regression: CASE9 carbonyl must be picked."""
