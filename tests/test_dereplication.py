@@ -143,7 +143,7 @@ class TestAdaptivePeakPicker:
             frequency=100.0,
         )
 
-        peaks = AdaptivePeakPicker.pick_peaks(spectrum, threshold=0.1)
+        peaks = AdaptivePeakPicker.pick_peaks(spectrum, threshold=0.1, use_snr=False)
 
         assert len(peaks.peaks) == 4
         assert peaks.nucleus == "13C"
@@ -160,8 +160,8 @@ class TestAdaptivePeakPicker:
 
         spectrum = Spectrum1D(data=data, ppm_scale=ppm, nucleus="13C", frequency=100.0)
 
-        peaks_low = AdaptivePeakPicker.pick_peaks(spectrum, threshold=0.05)
-        peaks_high = AdaptivePeakPicker.pick_peaks(spectrum, threshold=0.5)
+        peaks_low = AdaptivePeakPicker.pick_peaks(spectrum, threshold=0.05, use_snr=False)
+        peaks_high = AdaptivePeakPicker.pick_peaks(spectrum, threshold=0.5, use_snr=False)
 
         assert len(peaks_low.peaks) >= len(peaks_high.peaks)
 
