@@ -427,7 +427,18 @@ detection), FIX-06 (skill feedback loop: DBE self-check + quality loop-pattern)
      para-disubstituted aromatic-ester C12H16O3 solution via the emergent path (no forced
      ring-BONDs as the primary mechanism); the Phase-78 AND-gate is re-applied and recorded
 
-**Plans:** TBD (run `/gsd-discuss-phase 79` — 79-SCOPE-SEED.md seeds the discussion)
+**Plans:** 4 plans in 3 waves
+
+Plans:
+**Wave 0**
+- [ ] 79-00-PLAN.md — Add FIX-04/05/06 to REQUIREMENTS.md + create failing test stubs (Wave 0 foundation)
+
+**Wave 1** *(depends on 79-00)*
+- [ ] 79-01-PLAN.md — SNR/MAD threshold, solvent exclusion, per-peak SNR annotation (FIX-04)
+- [ ] 79-02-PLAN.md — detect_intensity_symmetry for aromatic CH 2C-equivalence detection (FIX-05)
+
+**Wave 2** *(depends on 79-01 + 79-02)*
+- [ ] 79-03-PLAN.md — Skill feedback loop: DBE self-check + QUALITY_CONVERGENCE_FAILURE 5th loop-pattern (FIX-06)
 
 **UI hint**: no
 
@@ -435,7 +446,7 @@ detection), FIX-06 (skill feedback loop: DBE self-check + quality loop-pattern)
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 79. Peak-Picking & Symmetry Detection Fix | TBD | Not started | — |
+| 79. Peak-Picking & Symmetry Detection Fix | 0/4 | In progress | — |
 
 ---
-*Last updated: 2026-06-08 — Phase 78 closed (GATE FAILED: CASE1 PASS, CASE9 FAIL); Phase 79 added with two-layer scope (tooling + skill feedback loop), seeded by 79-SCOPE-SEED.md*
+*Last updated: 2026-06-08 — Phase 78 closed (GATE FAILED: CASE1 PASS, CASE9 FAIL); Phase 79 planned: 4 plans in 3 waves (Wave 0 foundation, Wave 1 Python tooling FIX-04/05, Wave 2 skill markdown FIX-06)*
