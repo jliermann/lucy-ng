@@ -172,7 +172,8 @@ class TestAdaptivePeakPicker:
 
         spectrum = BrukerReader.read_1d(IBUPROFEN_DIR / "2")
 
-        peaks = AdaptivePeakPicker.pick_peaks(spectrum, threshold=0.05)
+        # use_snr=False: preserve legacy fraction-of-max threshold (0.05×max)
+        peaks = AdaptivePeakPicker.pick_peaks(spectrum, threshold=0.05, use_snr=False)
 
         # Ibuprofen has 13 carbons, but some may overlap
         # Expect reasonable number of peaks (8-15)

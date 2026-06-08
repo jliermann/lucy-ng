@@ -58,34 +58,57 @@ def detect_intensity_symmetry(
 ) -> list[tuple[float, float, int]]:
     """Detect intensity-doubled aromatic CH peaks as 2C-equivalence candidates.
 
-    Scope restriction (D-06): only HSQC-confirmed aromatic CH carbons in 100-165 ppm.
+    Compares each HSQC-confirmed aromatic CH peak against the median intensity
+    of ALL peaks in the aromatic region (100-165 ppm). A 2C-equivalent peak
+    (two equivalent carbons contributing to one signal) will have ~2× the
+    intensity of a 1C aromatic signal, and thus will exceed the min_ratio
+    threshold when the class median is dominated by 1C signals (Cq, mono-CH).
+
+    Scope restriction (D-06): results are restricted to HSQC-confirmed aromatic
+    CH carbons; the comparison median uses all 100-165 ppm peaks.
 
     Args:
         peaks: List of 1D peaks (from 13C spectrum).
         aromatic_ch_ppms: HSQC-confirmed aromatic CH ppm positions.
-        tolerance_ppm: Window for matching peaks to aromatic_ch_ppms.
+        tolerance_ppm: Match window for pairing 13C peaks to HSQC references.
         min_ratio: Minimum intensity ratio vs class median to flag as 2C candidate.
 
     Returns:
         List of (ppm, intensity_ratio_to_class_median, estimated_carbon_count).
     """
-    aromatic_ch_peaks = [
-        p for p in peaks
-        if any(abs(p.position - ref) < tolerance_ppm for ref in aromatic_ch_ppms)
-        and 100.0 <= p.position <= 165.0
-    ]
-    if len(aromatic_ch_peaks) < 2:
+    if not aromatic_ch_ppms:
         return []
 
-    median_intensity = float(np.median([p.intensity for p in aromatic_ch_peaks]))
+    # Median is computed over ALL peaks in the aromatic region (100-165 ppm).
+    # This includes Cq signals which serve as the 1C baseline for comparison.
+    all_aromatic = [p for p in peaks if 100.0 <= p.position <= 165.0]
+    if len(all_aromatic) < 2:
+        return []
+
+    median_intensity = float(np.median([p.intensity for p in all_aromatic]))
     if median_intensity <= 0:
         return []
 
-    return [
-        (p.position, p.intensity / median_intensity, round(p.intensity / median_intensity))
-        for p in aromatic_ch_peaks
-        if p.intensity / median_intensity >= min_ratio
-    ]
+    # Flag HSQC-confirmed CH peaks that exceed the ratio threshold.
+    # Use reference-driven matching: for each reference, find the closest peak.
+    results: list[tuple[float, float, int]] = []
+    seen_peaks: set[int] = set()
+    for ref in aromatic_ch_ppms:
+        candidates = [
+            p for p in all_aromatic
+            if abs(p.position - ref) < tolerance_ppm
+        ]
+        if not candidates:
+            continue
+        best = min(candidates, key=lambda p: abs(p.position - ref))
+        if id(best) in seen_peaks:
+            continue
+        seen_peaks.add(id(best))
+        ratio = best.intensity / median_intensity
+        if ratio >= min_ratio:
+            results.append((best.position, ratio, round(ratio)))
+
+    return results
 
 
 class AdaptivePeakPicker:
