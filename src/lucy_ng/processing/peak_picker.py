@@ -5,6 +5,88 @@ from scipy.signal import find_peaks, peak_widths
 
 from lucy_ng.models import Peak1D, PeakList1D, Spectrum1D
 
+# Solvent residual 13C shifts: exclusion windows (low_ppm, high_ppm).
+# Each window is centred on the residual shift with ±5 ppm margin for multiplets.
+_SOLVENT_EXCLUSION_13C: dict[str, tuple[float, float]] = {
+    "CDCl3":   (72.0, 82.0),    # 77.16 ppm triplet
+    "DMSO":    (37.0, 42.0),    # 39.52 ppm septet
+    "DMSO-d6": (37.0, 42.0),
+    "CD3OD":   (46.0, 52.0),    # 49.0 ppm septet
+    "MeOD":    (46.0, 52.0),
+    "CD3CN":   (1.0,   5.0),    # 1.32 ppm septet (benign low-ppm region anyway)
+    "acetone": (27.0, 33.0),    # 29.84 ppm
+    "C6D6":    (125.0, 131.0),  # 128.06 ppm triplet
+}
+
+
+def _compute_snr_threshold(
+    data: np.ndarray,
+    ppm_scale: np.ndarray,
+    solvent: str | None = None,
+    k: float = 3.0,
+) -> tuple[float, float]:
+    """Compute SNR-based absolute threshold using MAD noise estimate.
+
+    Args:
+        data: Spectrum intensity array.
+        ppm_scale: Corresponding ppm axis.
+        solvent: Bruker SOLVENT string (e.g. "CDCl3"). If None or not in table,
+                 MAD is computed over the full array (still robust for 13C).
+        k: SNR floor multiplier. IUPAC LoD convention: k=3.
+
+    Returns:
+        (abs_threshold, sigma_mad) — threshold = k * sigma_mad.
+    """
+    exclusion = _SOLVENT_EXCLUSION_13C.get(solvent or "", None)
+    if exclusion is not None:
+        lo, hi = exclusion
+        mask = (ppm_scale >= lo) & (ppm_scale <= hi)
+        clean_data = data[~mask]
+    else:
+        clean_data = data
+
+    mad = float(np.median(np.abs(clean_data - np.median(clean_data))))
+    sigma_mad = 1.4826 * mad
+    return k * sigma_mad, sigma_mad
+
+
+def detect_intensity_symmetry(
+    peaks: list[Peak1D],
+    aromatic_ch_ppms: list[float],
+    tolerance_ppm: float = 1.0,
+    min_ratio: float = 1.6,
+) -> list[tuple[float, float, int]]:
+    """Detect intensity-doubled aromatic CH peaks as 2C-equivalence candidates.
+
+    Scope restriction (D-06): only HSQC-confirmed aromatic CH carbons in 100-165 ppm.
+
+    Args:
+        peaks: List of 1D peaks (from 13C spectrum).
+        aromatic_ch_ppms: HSQC-confirmed aromatic CH ppm positions.
+        tolerance_ppm: Window for matching peaks to aromatic_ch_ppms.
+        min_ratio: Minimum intensity ratio vs class median to flag as 2C candidate.
+
+    Returns:
+        List of (ppm, intensity_ratio_to_class_median, estimated_carbon_count).
+    """
+    aromatic_ch_peaks = [
+        p for p in peaks
+        if any(abs(p.position - ref) < tolerance_ppm for ref in aromatic_ch_ppms)
+        and 100.0 <= p.position <= 165.0
+    ]
+    if len(aromatic_ch_peaks) < 2:
+        return []
+
+    median_intensity = float(np.median([p.intensity for p in aromatic_ch_peaks]))
+    if median_intensity <= 0:
+        return []
+
+    return [
+        (p.position, p.intensity / median_intensity, round(p.intensity / median_intensity))
+        for p in aromatic_ch_peaks
+        if p.intensity / median_intensity >= min_ratio
+    ]
+
 
 class AdaptivePeakPicker:
     """Adaptive peak picker that adjusts minimum distance based on line width.
@@ -39,6 +121,8 @@ class AdaptivePeakPicker:
         spectrum: Spectrum1D,
         threshold: float = 0.05,
         detect_negative: bool = False,
+        snr_floor: float = 3.0,
+        use_snr: bool = True,
     ) -> PeakList1D:
         """Pick peaks with adaptive minimum distance based on line width.
 
@@ -48,18 +132,24 @@ class AdaptivePeakPicker:
 
         Args:
             spectrum: 1D NMR spectrum with data and ppm_scale
-            threshold: Minimum intensity as fraction of max (0-1)
+            threshold: Minimum intensity as fraction of max (0-1); used only
+                       when use_snr=False (backwards-compat mode)
             detect_negative: If True, also detect negative peaks (for DEPT)
+            snr_floor: SNR floor multiplier k (IUPAC LoD: k=3). Used when
+                       use_snr=True (default).
+            use_snr: If True (default), use MAD/SNR absolute threshold.
+                     If False, fall back to threshold * max behaviour.
 
         Returns:
-            PeakList1D containing detected peaks
+            PeakList1D containing detected peaks (with snr annotation when
+            use_snr=True)
         """
         # Lazily create default instance
         if AdaptivePeakPicker._default_instance is None:
             AdaptivePeakPicker._default_instance = AdaptivePeakPicker()
 
         return AdaptivePeakPicker._default_instance.pick_peaks_instance(
-            spectrum, threshold, detect_negative
+            spectrum, threshold, detect_negative, snr_floor, use_snr
         )
 
     def pick_peaks_instance(
@@ -67,6 +157,8 @@ class AdaptivePeakPicker:
         spectrum: Spectrum1D,
         threshold: float = 0.05,
         detect_negative: bool = False,
+        snr_floor: float = 3.0,
+        use_snr: bool = True,
     ) -> PeakList1D:
         """Pick peaks with adaptive minimum distance based on line width.
 
@@ -74,19 +166,30 @@ class AdaptivePeakPicker:
 
         Args:
             spectrum: 1D NMR spectrum with data and ppm_scale
-            threshold: Minimum intensity as fraction of max (0-1)
+            threshold: Minimum intensity as fraction of max (0-1); used only
+                       when use_snr=False (backwards-compat mode)
             detect_negative: If True, also detect negative peaks (for DEPT)
+            snr_floor: SNR floor multiplier k (IUPAC LoD: k=3). Used when
+                       use_snr=True (default).
+            use_snr: If True (default), use MAD/SNR absolute threshold.
+                     If False, fall back to threshold * max behaviour.
 
         Returns:
-            PeakList1D containing detected peaks
+            PeakList1D containing detected peaks (with snr annotation when
+            use_snr=True)
         """
         data = spectrum.data
         ppm_scale = spectrum.ppm_scale
         ppm_per_point = abs(ppm_scale[1] - ppm_scale[0]) if len(ppm_scale) > 1 else 1.0
 
-        # Calculate threshold in absolute units
-        max_intensity = np.max(np.abs(data))
-        abs_threshold = threshold * max_intensity
+        # Compute threshold in absolute units
+        if use_snr:
+            abs_threshold, sigma_mad = _compute_snr_threshold(
+                data, ppm_scale, solvent=spectrum.solvent, k=snr_floor
+            )
+        else:
+            abs_threshold = threshold * np.max(np.abs(data))
+            sigma_mad = None
 
         # Estimate adaptive minimum distance from line widths
         min_distance_ppm = self._estimate_min_distance(
@@ -103,9 +206,12 @@ class AdaptivePeakPicker:
 
         peaks = []
         for idx in peak_indices:
-            position = float(ppm_scale[idx])
-            intensity = float(data[idx])
-            peaks.append(Peak1D(position=position, intensity=intensity))
+            snr = float(abs(data[idx]) / sigma_mad) if sigma_mad is not None else None
+            peaks.append(Peak1D(
+                position=float(ppm_scale[idx]),
+                intensity=float(data[idx]),
+                snr=snr,
+            ))
 
         # Find negative peaks if requested (for DEPT spectra)
         if detect_negative:
@@ -115,14 +221,22 @@ class AdaptivePeakPicker:
                 distance=min_distance_points,
             )
             for idx in neg_indices:
-                position = float(ppm_scale[idx])
-                intensity = float(data[idx])  # Keep negative value
-                peaks.append(Peak1D(position=position, intensity=intensity))
+                # SNR uses abs value so it is always positive even for negative DEPT peaks
+                snr = float(abs(data[idx]) / sigma_mad) if sigma_mad is not None else None
+                peaks.append(Peak1D(
+                    position=float(ppm_scale[idx]),
+                    intensity=float(data[idx]),  # Keep negative value
+                    snr=snr,
+                ))
 
         # Sort by ppm (descending)
         peaks.sort(key=lambda p: p.position, reverse=True)
 
-        return PeakList1D(peaks=peaks, nucleus=spectrum.nucleus)
+        return PeakList1D(
+            peaks=peaks,
+            nucleus=spectrum.nucleus,
+            noise_sigma=sigma_mad,
+        )
 
     def estimate_line_widths(
         self,
