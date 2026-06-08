@@ -339,7 +339,7 @@ Plans:
 | 76. Milestone UAT Gate | 2/2 | Executed — **GATE FAILED** | 2026-06-01 |
 | 77. Fix lucy lsd run + Emergent Tooling + Hygiene | 3/3 | Complete    | 2026-06-01 |
 | 78. Blind Re-UAT Gate (CASE1 + CASE9) | 4/4 | Executed — **GATE FAILED** | 2026-06-08 |
-| 79. Peak-Picking & Symmetry Detection Fix | 1/4 | In Progress|  |
+| 79. Peak-Picking & Symmetry Detection Fix | 3/4 | In Progress|  |
 
 **v9.0 milestone gate: FAILED at Phase 78 (does not ship).** CASE1 UAT-03 = **PASS** (ibuprofen found as #2, ring fully emergent via cross-ring COSY, no ring-BOND/SKEL, clean). CASE9 UAT-04 = **FAIL** (correct structure — 4-(1-hydroxyethyl)benzoic acid isopropyl ester — never reached; ring forced via 6 ring-BONDs; correct para-disubstituted reading blocked by an upstream peak-picking defect). AND-gate = FAIL. Root cause: `lucy pick 1d` drops the ester carbonyl (166.08 ppm, SNR≈17) because the CDCl₃ triplet dominates the max-relative threshold, and 13C intensity-symmetry (2C signals) is not used to detect equivalent aromatic carbons → `lucy detect aromatic-cosy` has no input → emergent ring disabled. The Phase-77 LSD mechanism is **not** refuted; it never received correct input. Blocking defects → **Phase 79**. See `.planning/phases/78-blind-re-uat-gate/78-UAT-VERDICT.md`.
 
@@ -427,15 +427,15 @@ detection), FIX-06 (skill feedback loop: DBE self-check + quality loop-pattern)
      para-disubstituted aromatic-ester C12H16O3 solution via the emergent path (no forced
      ring-BONDs as the primary mechanism); the Phase-78 AND-gate is re-applied and recorded
 
-**Plans:** 1/4 plans executed
+**Plans:** 3/4 plans executed
 
 Plans:
 **Wave 0**
 - [x] 79-00-PLAN.md — Add FIX-04/05/06 to REQUIREMENTS.md + create failing test stubs (Wave 0 foundation)
 
 **Wave 1** *(depends on 79-00)*
-- [ ] 79-01-PLAN.md — SNR/MAD threshold, solvent exclusion, per-peak SNR annotation (FIX-04)
-- [ ] 79-02-PLAN.md — detect_intensity_symmetry for aromatic CH 2C-equivalence detection (FIX-05)
+- [x] 79-01-PLAN.md — SNR/MAD threshold, solvent exclusion, per-peak SNR annotation (FIX-04)
+- [x] 79-02-PLAN.md — detect_intensity_symmetry for aromatic CH 2C-equivalence detection (FIX-05)
 
 **Wave 2** *(depends on 79-01 + 79-02)*
 - [ ] 79-03-PLAN.md — Skill feedback loop: DBE self-check + QUALITY_CONVERGENCE_FAILURE 5th loop-pattern (FIX-06)
