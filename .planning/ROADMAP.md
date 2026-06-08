@@ -393,5 +393,49 @@ Plans:
 **Wave 3** *(depends on 78-02 + 78-03)*
 - [x] 78-04-PLAN.md — AND-gate verdict roll-up + forensics-on-fail (v9.0 DOES NOT SHIP)
 
+**UI hint**: no
+
+### Phase 79: Peak-Picking & Symmetry Detection Fix
+
+**Goal:** The CASE9 failure mode is eliminated at both layers — the peak-picker no longer masks
+weak quaternary carbonyls under a solvent-dominated threshold, 13C intensity-symmetry is used to
+detect equivalent aromatic carbons (feeding the emergent-COSY mechanism), AND the CASE skill gains
+a feedback loop so a clean-but-wrong convergence triggers a return to the spectrum instead of
+silently terminating. Verified by a blind CASE9 re-run that reaches a para-disubstituted ester
+solution via the emergent path, then re-applying the Phase-78 AND-gate.
+**Depends on:** Phase 78 (forensics define the two-layer defect — see 78-UAT-CASE9.md and
+79-SCOPE-SEED.md)
+**Requirements:** FIX-04 (peak-picker threshold / solvent masking), FIX-05 (intensity-symmetry
+detection), FIX-06 (skill feedback loop: DBE self-check + quality loop-pattern)
+**Success Criteria** (what must be TRUE):
+
+  1. `lucy pick 1d` on the CASE9 13C spectrum lists the ester carbonyl at ~166 ppm (SNR≈17) — the
+     CDCl₃ solvent multiplet no longer suppresses weak quaternary peaks (SNR-based and/or
+     solvent-aware threshold); a regression test asserts the carbonyl is picked and that existing
+     CASE1 picking is unchanged
+  2. 13C peak intensity is used as a 2C-equivalence indicator so a para-disubstituted ring yields
+     equivalence pairs from `lucy analyze symmetry` / `lucy detect aromatic-cosy` on the CASE9 set
+     (e.g. 129.94≡, 125.31≡) — the emergent-ring mechanism receives correct input
+  3. The nmr-chemist skill performs a DBE-insaturation self-check after picking: a DBE deficit
+     coinciding with an empty 160–220 ppm region triggers a targeted low-threshold re-pick before
+     [SETUP-COMPLETE]; the intensity-symmetry check is procedural, not an optional note
+  4. A quality-based loop-pattern exists (best MAE > tier threshold OR all top solutions
+     IMPLAUSIBLE/QUESTIONABLE across N iterations) wired into case.md detect_loops +
+     loop-patterns.md + advisory-templates.md, with a bounded re-pick budget to avoid infinite
+     loops; it reactivates the nmr-chemist to re-inspect the spectrum
+  5. A blind CASE9 re-run (fresh instance, per feedback_blind_uat) reaches a RDKit-verified
+     para-disubstituted aromatic-ester C12H16O3 solution via the emergent path (no forced
+     ring-BONDs as the primary mechanism); the Phase-78 AND-gate is re-applied and recorded
+
+**Plans:** TBD (run `/gsd-discuss-phase 79` — 79-SCOPE-SEED.md seeds the discussion)
+
+**UI hint**: no
+
+## Progress Table (v9.0, cont.)
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 79. Peak-Picking & Symmetry Detection Fix | TBD | Not started | — |
+
 ---
-*Last updated: 2026-06-02 — Phase 78 planned: 4 plans / 3 waves; blind re-UAT gate for v9.0*
+*Last updated: 2026-06-08 — Phase 78 closed (GATE FAILED: CASE1 PASS, CASE9 FAIL); Phase 79 added with two-layer scope (tooling + skill feedback loop), seeded by 79-SCOPE-SEED.md*
