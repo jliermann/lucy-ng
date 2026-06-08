@@ -140,7 +140,8 @@ None — plan executed exactly as written. All 4 files received targeted inserti
 
 ## Status
 
-Awaiting human-verify checkpoint approval. Tasks 1 and 2 complete; grep assertions all pass; Python suite green.
+COMPLETE. Tasks 1 and 2 done; grep assertions all pass; Python suite green. Human-verify
+checkpoint **APPROVED** by user on 2026-06-08.
 
 ## Self-Check: PASSED
 
