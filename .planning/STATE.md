@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: CASE Reliability & Skill Consolidation
 status: executing
-stopped_at: Phase 78 context gathered
-last_updated: "2026-06-02T12:15:45.359Z"
-last_activity: 2026-06-02 -- Phase 78 planning complete
+stopped_at: Phase 78 executed — GATE FAILED (CASE1 PASS, CASE9 FAIL); Phase 79 added
+last_updated: "2026-06-08T00:00:00.000Z"
+last_activity: 2026-06-08 -- Phase 78 AND-gate verdict written; v9.0 does not ship; Phase 79 seeded
 progress:
-  total_phases: 7
-  completed_phases: 6
+  total_phases: 8
+  completed_phases: 7
   total_plans: 19
-  completed_plans: 15
-  percent: 79
+  completed_plans: 19
+  percent: 88
 ---
 
 # lucy-ng State
@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-20)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a multi-agent team that uses the intended solver pipeline — not a manual bypass
-**Current focus:** Phase 78 — blind re uat gate
+**Current focus:** Phase 79 — peak-picking & symmetry detection fix (CASE9 UAT root cause)
 
 ## Current Position
 
@@ -31,16 +31,16 @@ Phase 73: Solution Plumbing Fix      [x] Complete
 Phase 74: Constraint Preservation    [x] Complete
 Phase 75: Skill Consolidation        [x] Complete
 Phase 76: Milestone UAT Gate         [x] Executed — GATE FAILED (CASE1 spirit-fail, CASE9 deferred)
-Phase 77: Fix lucy lsd run + Tooling [ ] Context gathered — ready to plan (fixes only)
-Phase 78: Blind Re-UAT (CASE1+CASE9) [ ] Not started (depends on 77)
+Phase 77: Fix lucy lsd run + Tooling [x] Complete
+Phase 78: Blind Re-UAT (CASE1+CASE9) [x] Executed — GATE FAILED (CASE1 UAT-03 PASS, CASE9 UAT-04 FAIL)
+Phase 79: Peak-Picking + Symmetry    [ ] Not started — fixes CASE9 upstream defect
 ```
 
-Progress: [██████████] 100%
+Progress: [█████████░] 88% (7/8 phases; v9.0 does NOT ship until CASE9 passes)
 
-Phase: 78
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-06-02 -- Phase 78 planning complete
+Phase: 79 (peak-picking-symmetry-fix) — NOT STARTED
+Status: Phase 78 closed; v9.0 milestone gate FAILED on UAT-04 (CASE9)
+Last activity: 2026-06-08 -- Phase 78 AND-gate verdict written; Phase 79 seeded
 
 **Phase 77 scope (fixes only — decisions in 77-CONTEXT.md):**
 
@@ -117,12 +117,15 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Phase 75-skill-consolidation]: lucy-case-agent.md left untouched — DEPRECATED v4.0, not spawned by any active workflow, preserved as historical reference; excluded from native-command sign-off scope.
 - [Phase 77-02-FIX-02]: detect_aromatic_cosy_pairs() algorithm: zip(sorted(groupA.atom_ids), reversed(sorted(groupB.atom_ids))) — cross-ring pairing, never within-group, verified against Arm A (COSY 4 7 + COSY 5 6 → 2/2 aromatic solutions)
 - [Phase 77-02-FIX-02]: lucy detect aromatic-cosy CLI is now the authoritative source for cross-ring COSY pairs; agent must use this command instead of hand-deriving atom indices
+- [Phase 78-GATE]: v9.0 milestone gate FAILED (does not ship). CASE1 UAT-03 = PASS (ibuprofen #2, ring fully emergent, clean). CASE9 UAT-04 = FAIL (correct structure 4-(1-hydroxyethyl)benzoic acid isopropyl ester never reached; ring forced via 6 ring-BONDs; governance-deadlock intervention). See 78-UAT-VERDICT.md.
+- [Phase 78-FORENSICS]: CASE9 root cause is UPSTREAM of the Phase-77 LSD fix, proven from raw 13C (…/CASE9/12): (1) ester carbonyl at 166.08 ppm SNR≈17 dropped by `lucy pick 1d` because the CDCl₃ triplet (4.6e7 @ 77 ppm) dominates the max-relative threshold → DBE computed without carbonyl → forced extra ring; (2) 13C intensity doubling (129.94/125.31/22.10 = 2C signals) not used as a symmetry indicator → ring read monosubstituted → `lucy detect aromatic-cosy` gets no equivalence pairs → emergent ring disabled. The emergent-COSY mechanism is NOT refuted — it never got correct input. CASE1 lacks a weak quaternary carbonyl in the CDCl₃ shadow, so it was unaffected.
 
 ### Pending Todos
 
-- Phase 76: Blind UAT on CASE1 + CASE9 — MUST be run by a fresh blind Claude instance (no compound-identity context); verify merged.smi top-3 independently via RDKit (aromatic-ring + formula match), not agent self-report. This is the milestone gate proving the consolidated skills make the agent solve via the intended native mechanism.
+- **Phase 79 (next): fix CASE9 upstream peak-picking / symmetry defect.** (1) Peak-picker: SNR-based (not max-relative) threshold and/or exclude the CDCl₃ solvent multiplet before computing the threshold, so weak quaternary carbonyls (e.g. 166.08 ppm, SNR≈17) are not masked. (2) Symmetry detection: use 13C peak intensity as a 2C-equivalence indicator → feeds `lucy detect aromatic-cosy` so para-disubstituted rings yield cross-ring COSY pairs. Then re-run CASE9 blind (fresh instance, per feedback_blind_uat) and re-apply the AND-gate.
+- Phase 78 blind UAT DONE: CASE1 UAT-03 PASS, CASE9 UAT-04 FAIL. See 78-UAT-VERDICT.md.
 
-*(Phases 72-75 complete — design re-validated, plumbing fixed, constraints preserved, skills consolidated to native commands.)*
+*(Phases 72-78 complete — design re-validated, plumbing fixed, constraints preserved, skills consolidated, Phase-77 fixes verified, re-UAT executed. CASE1 passes clean; CASE9 fails on an upstream peak-picking defect → Phase 79.)*
 
 ### Blockers/Concerns
 

@@ -13,7 +13,7 @@
 - [v6.0 Skill Quality Overhaul](milestones/v6.0-ROADMAP.md) - Phases 55-58 (shipped 2026-03-10)
 - [v7.0 Statistical 4J Detection](milestones/v7.0-ROADMAP.md) - Phases 59-64 (ABANDONED 2026-03-12)
 - **v8.0 pyLSD Integration** - Phases 65-71 (superseded by v9.0 before UAT passed)
-- **v9.0 CASE Reliability & Skill Consolidation** - Phases 72-78 (in progress; UAT gate failed at 76 → Phase 77 fixes + Phase 78 re-UAT)
+- **v9.0 CASE Reliability & Skill Consolidation** - Phases 72-79 (in progress; re-UAT at 78: CASE1 PASS, CASE9 FAIL → does not ship; Phase 79 fixes upstream peak-picking defect)
 
 ---
 
@@ -202,7 +202,8 @@ Plans:
 - [x] **Phase 75: Skill Consolidation** - Audit all agent skills against actual LSD-3.4.9 behavior; eliminate the normal-LSD vs pyLSD documentation imbalance; encode the DESIGN-02 solver-path decision as unambiguous single-path guidance; update devils-advocate gates to catch the v8.0 failure modes. (depends on Phase 72, Phase 74)
 - [x] **Phase 76: Milestone UAT Gate** - Blind CASE re-run on CASE1 (ibuprofen) AND CASE9 (4-(1-hydroxyethyl)benzoic acid isopropylester, C12H16O3) via the intended mechanism; all Phase-71 criteria verified against on-disk artifacts by independent RDKit check. (depends on Phase 75) (executed 2026-06-01 — **GATE VERDICT: FAILED**; CASE1 spirit-fail, CASE9 deferred. v9.0 does NOT ship. See 76-milestone-uat-gate/VERIFICATION.md → Phase 77)
 - [x] **Phase 77: Fix lucy lsd run + Emergent-Aromatic Tooling + Skill Hygiene** - Fix the blocking defects the v9.0 UAT exposed: repair `lucy lsd run`/`_invoke_outlsd` (real solutions.smi + fail-loud + regression test); make cross-ring COSY equivalence-pair emission deterministic in tooling so the aromatic ring emerges; retire deprecated lucy-case-agent.md + targeted skill-creator audit. Fixes only — no UAT. (depends on Phase 76) (completed 2026-06-01)
-- [ ] **Phase 78: Blind Re-UAT Gate (CASE1 + CASE9)** - Re-run the v9.0 milestone blind UAT on CASE1 + CASE9 via the now-fixed intended mechanism; independent RDKit verification with rewritten criteria (emergent ring = clean pass, documented BOND escalation = conditional pass, silent ring-BOND/SKEL = fail). Milestone-complete gate. (depends on Phase 77)
+- [x] **Phase 78: Blind Re-UAT Gate (CASE1 + CASE9)** - Re-run the v9.0 milestone blind UAT on CASE1 + CASE9 via the now-fixed intended mechanism; independent RDKit verification with rewritten criteria (emergent ring = clean pass, documented BOND escalation = conditional pass, silent ring-BOND/SKEL = fail). Milestone-complete gate. (depends on Phase 77) (executed 2026-06-08 — **GATE VERDICT: FAILED**; CASE1 UAT-03 PASS, CASE9 UAT-04 FAIL → v9.0 DOES NOT SHIP. See 78-UAT-VERDICT.md → Phase 79)
+- [ ] **Phase 79: Peak-Picking & Symmetry Detection Fix** - Fix the upstream defect the CASE9 UAT exposed: weak quaternary carbonyls masked by the CDCl₃-dominated max-relative peak-picking threshold (carbonyl at 166.08 ppm, SNR≈17, dropped); and 13C peak-intensity symmetry (2C signals) not used to detect equivalent aromatic carbons (so `lucy detect aromatic-cosy` gets no input and the emergent ring is disabled). Then re-run CASE9 blind and re-apply the AND-gate. (depends on Phase 78)
 
 ## Phase Details
 
@@ -337,9 +338,10 @@ Plans:
 | 75. Skill Consolidation | 5/5 | Complete   | 2026-05-24 |
 | 76. Milestone UAT Gate | 2/2 | Executed — **GATE FAILED** | 2026-06-01 |
 | 77. Fix lucy lsd run + Emergent Tooling + Hygiene | 3/3 | Complete    | 2026-06-01 |
-| 78. Blind Re-UAT Gate (CASE1 + CASE9) | 0/? | Not started | — |
+| 78. Blind Re-UAT Gate (CASE1 + CASE9) | 4/4 | Executed — **GATE FAILED** | 2026-06-08 |
+| 79. Peak-Picking & Symmetry Detection Fix | 0/0 | Not started | — |
 
-**v9.0 milestone gate: FAILED (does not ship).** Phase 76 executed: harness built (76-01), CASE1 blind run = spirit-fail (ibuprofen found but `lucy lsd run` broken + ring forced + interventions), CASE9 deferred. Blocking defects → **Phase 77** (fix `lucy lsd run`, revisit D-04 emergent-aromatic, retire deprecated lucy-case-agent.md), then re-UAT CASE1 + CASE9. See `.planning/phases/76-milestone-uat-gate/VERIFICATION.md`.
+**v9.0 milestone gate: FAILED at Phase 78 (does not ship).** CASE1 UAT-03 = **PASS** (ibuprofen found as #2, ring fully emergent via cross-ring COSY, no ring-BOND/SKEL, clean). CASE9 UAT-04 = **FAIL** (correct structure — 4-(1-hydroxyethyl)benzoic acid isopropyl ester — never reached; ring forced via 6 ring-BONDs; correct para-disubstituted reading blocked by an upstream peak-picking defect). AND-gate = FAIL. Root cause: `lucy pick 1d` drops the ester carbonyl (166.08 ppm, SNR≈17) because the CDCl₃ triplet dominates the max-relative threshold, and 13C intensity-symmetry (2C signals) is not used to detect equivalent aromatic carbons → `lucy detect aromatic-cosy` has no input → emergent ring disabled. The Phase-77 LSD mechanism is **not** refuted; it never received correct input. Blocking defects → **Phase 79**. See `.planning/phases/78-blind-re-uat-gate/78-UAT-VERDICT.md`.
 
 ### Phase 77: Fix lucy lsd run + Emergent-Aromatic Tooling + Skill Hygiene
 
@@ -378,18 +380,18 @@ Plans:
   3. 0 path-changing bypass interventions; `lucy lsd run` used as the primary path (no direct-binary bypass)
   4. Both compounds pass (D-76-06 AND-gate) → v9.0 ships; failure is a valid result documented for a follow-up phase (D-76-07)
 
-**Plans:** 4 plans
+**Plans:** 4/4 plans executed
 
 Plans:
 **Wave 1**
-- [ ] 78-01-PLAN.md — Dataset identity-leakage audit (CASE1 + CASE9 sanitisation pre-check)
+- [x] 78-01-PLAN.md — Dataset identity-leakage audit (CASE1 + CASE9 sanitisation pre-check)
 
 **Wave 2** *(depends on 78-01)*
-- [ ] 78-02-PLAN.md — CASE1 blind run + evidence collection (UAT-03)
-- [ ] 78-03-PLAN.md — CASE9 blind run + evidence collection (UAT-04)
+- [x] 78-02-PLAN.md — CASE1 blind run + evidence collection (UAT-03 PASS)
+- [x] 78-03-PLAN.md — CASE9 blind run + evidence collection (UAT-04 FAIL)
 
 **Wave 3** *(depends on 78-02 + 78-03)*
-- [ ] 78-04-PLAN.md — AND-gate verdict roll-up + forensics-on-fail (milestone gate)
+- [x] 78-04-PLAN.md — AND-gate verdict roll-up + forensics-on-fail (v9.0 DOES NOT SHIP)
 
 ---
 *Last updated: 2026-06-02 — Phase 78 planned: 4 plans / 3 waves; blind re-UAT gate for v9.0*
