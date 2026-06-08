@@ -34,7 +34,7 @@ the emergent path, then re-applying the Phase-78 AND-gate.
 - **D-03:** **Solvent detection** = read `SOLVENT` from Bruker `acqus` → known solvent-shift table
   (CDCl₃ 77.16 t, DMSO 39.5 sep, MeOD, D₂O, …). ppm-heuristic (~77 ppm) only as fallback when the
   param is absent.
-- **D-04 (KEY — Steinbeck refinement):** **No hard-wired chemical threshold.** The picker answers
+- **D-04:** **(KEY — Steinbeck refinement) No hard-wired chemical threshold.** The picker answers
   only the *statistical* question "is this distinguishable from noise?" → emits **all peaks at
   SNR ≥ 3** (IUPAC limit-of-detection convention, not a tuned magic number) and **annotates every
   peak with its SNR**. The carbonyl at SNR ≈ 17 is then trivially included (5–6× margin). The

@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: CASE Reliability & Skill Consolidation
-status: Phase 78 closed; v9.0 milestone gate FAILED on UAT-04 (CASE9)
+status: executing
 stopped_at: Phase 79 context gathered
-last_updated: "2026-06-08T14:14:21.840Z"
-last_activity: 2026-06-08 -- Phase 78 AND-gate verdict written; Phase 79 seeded
+last_updated: "2026-06-08T15:40:39.366Z"
+last_activity: 2026-06-08 -- Phase 79 planning complete
 progress:
   total_phases: 8
   completed_phases: 7
-  total_plans: 19
+  total_plans: 23
   completed_plans: 19
-  percent: 88
+  percent: 83
 ---
 
 # lucy-ng State
@@ -39,8 +39,8 @@ Phase 79: Peak-Picking + Symmetry    [ ] Not started — fixes CASE9 upstream de
 Progress: [█████████░] 88% (7/8 phases; v9.0 does NOT ship until CASE9 passes)
 
 Phase: 79 (peak-picking-symmetry-fix) — NOT STARTED
-Status: Phase 78 closed; v9.0 milestone gate FAILED on UAT-04 (CASE9)
-Last activity: 2026-06-08 -- Phase 78 AND-gate verdict written; Phase 79 seeded
+Status: Ready to execute
+Last activity: 2026-06-08 -- Phase 79 planning complete
 
 **Phase 77 scope (fixes only — decisions in 77-CONTEXT.md):**
 

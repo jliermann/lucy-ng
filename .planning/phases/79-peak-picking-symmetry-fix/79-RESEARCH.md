@@ -590,7 +590,7 @@ data = {
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should `use_snr=True` be the default for `pick_peaks` static method, or should it be an explicit parameter?**
    - What we know: making it the default changes all existing callers (analyze_symmetry, CLI, tests)
