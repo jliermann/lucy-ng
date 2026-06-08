@@ -64,6 +64,7 @@ class PeakList1D(BaseModel):
             "peaks": [p.model_dump() for p in self.peaks],
             "nucleus": self.nucleus,
             "spectrum_id": self.spectrum_id,
+            "noise_sigma": self.noise_sigma,
         }
 
     @classmethod
@@ -73,6 +74,7 @@ class PeakList1D(BaseModel):
             peaks=[Peak1D(**p) for p in d["peaks"]],
             nucleus=d["nucleus"],
             spectrum_id=d.get("spectrum_id"),
+            noise_sigma=d.get("noise_sigma"),
         )
 
 
