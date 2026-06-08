@@ -50,23 +50,33 @@ def pick_1d(path: str, threshold: float | None, output_format: str) -> None:
     max_abs = float(np.max(np.abs(spectrum.data)))
     has_significant_negative = bool(np.min(spectrum.data) < -effective_threshold * max_abs)
 
+    # When an explicit threshold is given, disable SNR mode to preserve legacy behaviour.
+    # When threshold is None (default), use SNR mode (MAD/CDCl3-aware threshold).
+    use_snr = threshold is None
     if threshold is not None:
         peaks = AdaptivePeakPicker.pick_peaks(
-            spectrum, threshold=threshold, detect_negative=has_significant_negative
+            spectrum,
+            threshold=threshold,
+            detect_negative=has_significant_negative,
+            use_snr=use_snr,
         )
     else:
         peaks = AdaptivePeakPicker.pick_peaks(
-            spectrum, detect_negative=has_significant_negative
+            spectrum,
+            detect_negative=has_significant_negative,
+            use_snr=use_snr,
         )
 
     if output_format == "json":
         data = {
             "count": len(peaks.peaks),
+            "noise_sigma": peaks.noise_sigma,  # None for legacy/explicit-threshold callers
             "negative_detected": has_significant_negative,
             "peaks": [
                 {
                     "ppm": p.position,
                     "intensity": p.intensity,
+                    "snr": p.snr,  # None for explicit-threshold callers
                 }
                 for p in peaks.peaks
             ],

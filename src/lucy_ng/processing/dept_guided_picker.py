@@ -221,8 +221,8 @@ class DEPTGuidedPicker:
             threshold_step=threshold_step,
         )
 
-        # Pick DEPT-90 peaks (only CH visible)
-        dept90_peaks = AdaptivePeakPicker.pick_peaks(dept90, threshold=dept_threshold)
+        # Pick DEPT-90 peaks (only CH visible) — use explicit threshold, not SNR mode
+        dept90_peaks = AdaptivePeakPicker.pick_peaks(dept90, threshold=dept_threshold, use_snr=False)
         dept90_positions = set(p.position for p in dept90_peaks.peaks)
 
         # Refine multiplicities using DEPT-90
@@ -266,9 +266,10 @@ class DEPTGuidedPicker:
         """
         from lucy_ng.processing.peak_picker import AdaptivePeakPicker
 
-        # Use AdaptivePeakPicker which supports negative peak detection
+        # Use AdaptivePeakPicker which supports negative peak detection.
+        # use_snr=False: DEPT picking uses explicit fraction-of-max threshold, not SNR mode.
         picker = AdaptivePeakPicker()
-        return picker.pick_peaks(dept, threshold=threshold, detect_negative=detect_negative)
+        return picker.pick_peaks(dept, threshold=threshold, detect_negative=detect_negative, use_snr=False)
 
     @staticmethod
     def _extract_multiplicities(dept_peaks: PeakList1D) -> dict[float, str]:

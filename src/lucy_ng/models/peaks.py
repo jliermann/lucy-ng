@@ -12,6 +12,7 @@ class Peak1D(BaseModel):
     intensity: float
     assignment: str | None = None
     multiplicity: str | None = None  # s, d, t, q, m, etc.
+    snr: float | None = None  # signal-to-noise ratio vs MAD-based sigma (Phase 79)
 
     @field_validator("multiplicity")
     @classmethod
@@ -46,6 +47,7 @@ class PeakList1D(BaseModel):
     peaks: list[Peak1D]
     nucleus: str
     spectrum_id: str | None = None
+    noise_sigma: float | None = None  # MAD-based noise estimate sigma (Phase 79)
 
     @field_validator("nucleus")
     @classmethod
