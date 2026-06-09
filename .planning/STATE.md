@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: CASE Reliability & Skill Consolidation
-status: executing
-stopped_at: Phase 79 complete (CASE9 UAT exposed 4J-HMBC defect) → Phase 80 added, not started
-last_updated: 2026-06-09T10:00:00.000Z
-last_activity: 2026-06-09 -- Phase 79 executed + CASE9 blind UAT (fixes worked, new 4J-HMBC blocker) → Phase 80 added
+status: completed
+stopped_at: Phase 80 context gathered
+last_updated: "2026-06-09T09:40:40.762Z"
+last_activity: 2026-06-09
 progress:
   total_phases: 9
   completed_phases: 8
@@ -148,8 +148,8 @@ Key v9.0 constraint: SYME and DEFF NOT are lucy-ng abstractions. Native LSD-3.4.
 
 ## Session Continuity
 
-Last session: 2026-06-09
-Stopped at: Phase 79 executed + verified + CASE9 blind UAT run (fixes worked; new 4J-HMBC blocker) → Phase 80 added
+Last session: 2026-06-09T09:40:40.755Z
+Stopped at: Phase 80 context gathered
 Resume with: `/gsd-discuss-phase 80` — decide the 4J-HMBC approach (extended HMBC range / repaired pyLSD multi-run / narrow heuristic flag) BEFORE planning. Do NOT start coding before the approach is chosen. v9.0 ships only when a blind CASE9 re-run (fresh instance, per feedback_blind_uat) reaches the RDKit-verified para-benzoate.
 
 ---
