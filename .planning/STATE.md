@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: CASE Reliability & Skill Consolidation
-status: milestone_complete
-stopped_at: Milestone complete (Phase 79 was final phase)
-last_updated: 2026-06-09T08:00:16.645Z
-last_activity: 2026-06-08 -- Phase 79 execution started
+status: executing
+stopped_at: Phase 79 complete (CASE9 UAT exposed 4J-HMBC defect) → Phase 80 added, not started
+last_updated: 2026-06-09T10:00:00.000Z
+last_activity: 2026-06-09 -- Phase 79 executed + CASE9 blind UAT (fixes worked, new 4J-HMBC blocker) → Phase 80 added
 progress:
-  total_phases: 8
-  completed_phases: 7
+  total_phases: 9
+  completed_phases: 8
   total_plans: 23
-  completed_plans: 133
-  percent: 88
+  completed_plans: 23
+  percent: 89
 ---
 
 # lucy-ng State
@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-20)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a multi-agent team that uses the intended solver pipeline — not a manual bypass
-**Current focus:** Milestone complete
+**Current focus:** Phase 80 — Long-Range (4J) HMBC connectivity defect (the v9.0 ship-blocker after Phase 79)
 
 ## Current Position
 
@@ -33,14 +33,15 @@ Phase 75: Skill Consolidation        [x] Complete
 Phase 76: Milestone UAT Gate         [x] Executed — GATE FAILED (CASE1 spirit-fail, CASE9 deferred)
 Phase 77: Fix lucy lsd run + Tooling [x] Complete
 Phase 78: Blind Re-UAT (CASE1+CASE9) [x] Executed — GATE FAILED (CASE1 UAT-03 PASS, CASE9 UAT-04 FAIL)
-Phase 79: Peak-Picking + Symmetry    [ ] Not started — fixes CASE9 upstream defect
+Phase 79: Peak-Picking + Symmetry    [x] Complete — defect ELIMINATED (verified live), but CASE9 exposed new 4J-HMBC blocker
+Phase 80: Long-Range 4J-HMBC Defect  [ ] Not started — v9.0 ship-gate; start with discuss/research
 ```
 
-Progress: [█████████░] 88% (7/8 phases; v9.0 does NOT ship until CASE9 passes)
+Progress: [█████████░] 89% (8/9 phases; v9.0 does NOT ship until CASE9 passes)
 
-Phase: 79
+Phase: 80 (long-range-4j-hmbc-connectivity-defect) — NOT STARTED
 Plan: Not started
-Status: Milestone complete
+Status: Phase 79 complete; Phase 80 ready to discuss
 Last activity: 2026-06-09
 
 **Phase 77 scope (fixes only — decisions in 77-CONTEXT.md):**
@@ -89,10 +90,15 @@ Wave structure:
 ### Roadmap Evolution
 
 - Phase 77 added (2026-06-01): fix `lucy lsd run` plumbing bug + resolve D-04 emergent-aromatic + retire deprecated lucy-case-agent.md, then re-UAT CASE1 + CASE9. Created because the Phase 76 v9.0 UAT gate FAILED (CASE1 spirit-fail, CASE9 deferred).
+- Phase 80 added (2026-06-09): Long-Range (4J) HMBC connectivity defect (FIX-07). Created because the Phase-79 blind CASE9 UAT proved the peak-picking/symmetry fixes work but exposed a deeper 4J-HMBC blocker. The v9.0 ship-gate moves to Phase 80.
 
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
+
+- [Phase 79-EXECUTION]: All 4 plans complete; code-review found 2 critical + 4 warnings (CR-01 NaN/empty-clean_data threshold, CR-02 noise_sigma roundtrip loss), ALL fixed + regression-tested. Full suite 1037 passed. FIX-04/05/06 verified.
+- [Phase 79-UAT (CASE9 blind, 2026-06-09)]: Fixes ALL engaged in the live run — carbonyl 166.1 picked @ SNR 17 (FIX-04), 3 intensity-symmetry 2C-pairs detected (FIX-05), benzene ring emerged via COSY with no SKEL/ring-BOND, DBE self-check 5/5 + quality reexamination advisory fired (FIX-06). The Phase-78 carbonyl-masking root cause is ELIMINATED.
+- [Phase 79-UAT root cause for Phase 80]: CASE9 still unsolved — converged to a wrong benzylic carbonate (meta, MAE 9.09, PLAUSIBLE-but-wrong) instead of the true para-benzoate-with-benzylic-alcohol (`CC(C)OC(=O)c1ccc(C(C)O)cc1`). Cause: false-positive long-range (4J) HMBC (`HMBC 1 8`=166.1↔70.2; set 2 3/2 9/3 8) enforced as 2-3J bonds the carbonyl to the para benzylic C (geometrically impossible), excluding the correct structure. Agent self-diagnosed this (iter 6-7) but couldn't recover within budget. This is the long-standing 4J-HMBC trap (v4.0 ibuprofen; v7.0 abandoned). Forensics: CASE9/analysis/final_results.md + CASE-PROGRESS.md.
 
 - [v7.0 Post-Mortem]: Statistical 4J detection non-viable — 100% FP rate, j5_plus dominates universally
 - [v7.0 Post-Mortem]: Next approach is pyLSD integration — solver explores 4J possibilities directly
@@ -142,9 +148,9 @@ Key v9.0 constraint: SYME and DEFF NOT are lucy-ng abstractions. Native LSD-3.4.
 
 ## Session Continuity
 
-Last session: 2026-06-08T14:14:21.833Z
-Stopped at: Phase 79 context gathered
-Resume with: `/gsd-plan-phase 76` — but note Phase 76 is the blind UAT gate and MUST be run by a fresh blind Claude instance (CASE1 + CASE9), with merged.smi verified independently via RDKit. See feedback_blind_uat memory.
+Last session: 2026-06-09
+Stopped at: Phase 79 executed + verified + CASE9 blind UAT run (fixes worked; new 4J-HMBC blocker) → Phase 80 added
+Resume with: `/gsd-discuss-phase 80` — decide the 4J-HMBC approach (extended HMBC range / repaired pyLSD multi-run / narrow heuristic flag) BEFORE planning. Do NOT start coding before the approach is chosen. v9.0 ships only when a blind CASE9 re-run (fresh instance, per feedback_blind_uat) reaches the RDKit-verified para-benzoate.
 
 ---
-*Last updated: 2026-05-24 — Phase 75 complete (5/5 plans, SKILL-01/02/03 verified); Phase 76 UAT next*
+*Last updated: 2026-06-09 — Phase 79 complete (4/4 plans, FIX-04/05/06 verified, code-review bugs fixed); CASE9 blind UAT exposed 4J-HMBC trap → Phase 80 (FIX-07) added; v9.0 ship-gate moves to Phase 80*

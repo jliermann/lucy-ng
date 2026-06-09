@@ -13,7 +13,7 @@
 - [v6.0 Skill Quality Overhaul](milestones/v6.0-ROADMAP.md) - Phases 55-58 (shipped 2026-03-10)
 - [v7.0 Statistical 4J Detection](milestones/v7.0-ROADMAP.md) - Phases 59-64 (ABANDONED 2026-03-12)
 - **v8.0 pyLSD Integration** - Phases 65-71 (superseded by v9.0 before UAT passed)
-- **v9.0 CASE Reliability & Skill Consolidation** - Phases 72-79 (in progress; re-UAT at 78: CASE1 PASS, CASE9 FAIL → does not ship; Phase 79 fixes upstream peak-picking defect)
+- **v9.0 CASE Reliability & Skill Consolidation** - Phases 72-80 (in progress; does not ship until CASE9 passes. Phase 79 eliminated the peak-picking/symmetry defect — verified in a live CASE9 run — but exposed the deeper 4J-HMBC connectivity trap → Phase 80)
 
 ---
 
@@ -203,7 +203,8 @@ Plans:
 - [x] **Phase 76: Milestone UAT Gate** - Blind CASE re-run on CASE1 (ibuprofen) AND CASE9 (4-(1-hydroxyethyl)benzoic acid isopropylester, C12H16O3) via the intended mechanism; all Phase-71 criteria verified against on-disk artifacts by independent RDKit check. (depends on Phase 75) (executed 2026-06-01 — **GATE VERDICT: FAILED**; CASE1 spirit-fail, CASE9 deferred. v9.0 does NOT ship. See 76-milestone-uat-gate/VERIFICATION.md → Phase 77)
 - [x] **Phase 77: Fix lucy lsd run + Emergent-Aromatic Tooling + Skill Hygiene** - Fix the blocking defects the v9.0 UAT exposed: repair `lucy lsd run`/`_invoke_outlsd` (real solutions.smi + fail-loud + regression test); make cross-ring COSY equivalence-pair emission deterministic in tooling so the aromatic ring emerges; retire deprecated lucy-case-agent.md + targeted skill-creator audit. Fixes only — no UAT. (depends on Phase 76) (completed 2026-06-01)
 - [x] **Phase 78: Blind Re-UAT Gate (CASE1 + CASE9)** - Re-run the v9.0 milestone blind UAT on CASE1 + CASE9 via the now-fixed intended mechanism; independent RDKit verification with rewritten criteria (emergent ring = clean pass, documented BOND escalation = conditional pass, silent ring-BOND/SKEL = fail). Milestone-complete gate. (depends on Phase 77) (executed 2026-06-08 — **GATE VERDICT: FAILED**; CASE1 UAT-03 PASS, CASE9 UAT-04 FAIL → v9.0 DOES NOT SHIP. See 78-UAT-VERDICT.md → Phase 79)
-- [x] **Phase 79: Peak-Picking & Symmetry Detection Fix** - Fix the upstream defect the CASE9 UAT exposed: weak quaternary carbonyls masked by the CDCl₃-dominated max-relative peak-picking threshold (carbonyl at 166.08 ppm, SNR≈17, dropped); and 13C peak-intensity symmetry (2C signals) not used to detect equivalent aromatic carbons (so `lucy detect aromatic-cosy` gets no input and the emergent ring is disabled). Then re-run CASE9 blind and re-apply the AND-gate. (depends on Phase 78) (completed 2026-06-08)
+- [x] **Phase 79: Peak-Picking & Symmetry Detection Fix** - Fix the upstream defect the CASE9 UAT exposed: weak quaternary carbonyls masked by the CDCl₃-dominated max-relative peak-picking threshold (carbonyl at 166.08 ppm, SNR≈17, dropped); and 13C peak-intensity symmetry (2C signals) not used to detect equivalent aromatic carbons (so `lucy detect aromatic-cosy` gets no input and the emergent ring is disabled). Then re-run CASE9 blind and re-apply the AND-gate. (depends on Phase 78) (completed 2026-06-09 — all deliverables verified + targeted defect ELIMINATED: blind CASE9 re-run picked the carbonyl @ SNR 17, detected 3 symmetry pairs, ring emerged via COSY with no SKEL/ring-BOND, DBE+quality-loop fired. BUT CASE9 still unsolved — a NEW root cause surfaced → Phase 80. v9.0 still does not ship.)
+- [ ] **Phase 80: Long-Range (4J) HMBC Connectivity Defect** - Resolve the blocker the Phase-79 blind CASE9 UAT exposed once carbonyl-masking was removed: false-positive long-range (4J) HMBC correlations (e.g. `HMBC 1 8` = 166.1↔70.2; set 2 3 / 2 9 / 3 8) are enforced as 2-3J, forcing wrong carbonyl connectivity and excluding the correct para-benzoate-with-benzylic-alcohol (`CC(C)OC(=O)c1ccc(C(C)O)cc1`). This is the long-standing 4J-HMBC trap (v4.0 ibuprofen; v7.0 statistical approach abandoned at 100% FP; v8.0 pyLSD `HMBC X Y 2 4` extended-range). Start with discuss/research to choose the approach. (depends on Phase 79) (not started)
 
 ## Phase Details
 
@@ -447,6 +448,51 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 79. Peak-Picking & Symmetry Detection Fix | 0/4 | In progress | — |
+
+### Phase 80: Long-Range (4J) HMBC Connectivity Defect
+
+**Goal:** False-positive long-range (4J) HMBC correlations no longer force incorrect 2-3J
+connectivity that excludes the correct structure. The CASE9 compound
+(4-(1-hydroxyethyl)benzoic acid isopropyl ester, `CC(C)OC(=O)c1ccc(C(C)O)cc1`) becomes
+reachable via the emergent path, with the benzylic carbon correctly resolved as a free
+secondary alcohol rather than bonded into the carbonyl. Verified by a blind CASE9 re-run that
+reaches the RDKit-verified para-benzoate solution and re-applies the Phase-78 AND-gate.
+**Requirements:** FIX-07 (long-range / 4J HMBC connectivity handling)
+**Depends on:** Phase 79 (its blind CASE9 UAT exposed this defect — see 79-HUMAN-UAT.md and
+CASE9/analysis/final_results.md + CASE-PROGRESS.md)
+
+**Discovery context (Phase 79 blind CASE9 UAT, 2026-06-09):** Phase-79 fixes all engaged and
+worked (carbonyl 166.1 picked @ SNR 17; 3 intensity-symmetry 2C-pairs detected; benzene ring
+emerged via COSY equivalence pairs with no SKEL / no ring-BOND; DBE self-check 5/5 + quality
+reexamination advisory fired). CASE9 nonetheless converged to a wrong benzylic-carbonate
+(meta, MAE 9.09, PLAUSIBLE-but-wrong). Agent self-diagnosis (iterations 6–7): the correlations
+`HMBC 1 8` (166.1↔70.2), `2 3`, `2 9`, `3 8` are 4J / long-range artifacts; enforcing them as
+2-3J bonds the ester carbonyl to the para benzylic carbon, which is geometrically impossible in
+the true para-benzoate and excludes it from the LSD solution space. Even forcing ester topology
+(iteration 7) could not recover because the spurious `HMBC 1 8` remained.
+
+**Success Criteria** (what must be TRUE):
+
+  1. The pipeline distinguishes (statistically, structurally, or via solver-side range relaxation)
+     long-range/4J HMBC correlations from genuine 2-3J ones, so a spurious `166.1↔70.2`-class
+     correlation no longer forces an impossible bond — without reintroducing the v7.0 100%-FP failure.
+  2. On the CASE9 constraint set, the correct para-benzoate-with-benzylic-alcohol is generated as
+     an LSD solution via the emergent path (no forced ring-BONDs / SKEL as the primary mechanism).
+  3. A regression guard exists (test or documented experiment) that locks the 4J-handling behavior
+     for both CASE9 and the historical ibuprofen 4J case (v4.0), so prior wins do not regress.
+  4. A blind CASE9 re-run (fresh instance, per feedback_blind_uat) reaches the RDKit-verified
+     C12H16O3 para-benzoate solution; the Phase-78 AND-gate is re-applied and recorded. This is the
+     v9.0 milestone-ship gate.
+
+**Open approach question (resolve in discuss/research):** extend the emergent HMBC bond range
+(`HMBC X Y 2 4`) selectively for suspect quaternary↔distant-CH pairs? solver-side multi-run over
+suspect-correlation subsets (pyLSD-style, repaired)? a narrower statistical/heuristic 4J flag than
+the abandoned v7.0 one? The phase should NOT start coding before this is decided.
+
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-discuss-phase 80, then /gsd-plan-phase 80 to break down)
 
 ---
 *Last updated: 2026-06-08 — Phase 78 closed (GATE FAILED: CASE1 PASS, CASE9 FAIL); Phase 79 planned: 4 plans in 3 waves (Wave 0 foundation, Wave 1 Python tooling FIX-04/05, Wave 2 skill markdown FIX-06)*

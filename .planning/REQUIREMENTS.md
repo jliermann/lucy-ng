@@ -32,7 +32,8 @@ Requirements for v9.0 release. Outcome-level where possible so they survive the 
 - [x] **FIX-03**: Skill hygiene — deprecated lucy-case-agent.md retired; targeted skill-creator audit confirms v9.0 single-path + emergent/COSY guidance is prominent and flags dead/contradictory content
 - [x] **FIX-04**: Peak-picker threshold replaced with SNR/MAD-absolute (noise = 1.4826·MAD, floor k=3 IUPAC LoD); solvent multiplet (CDCl₃ etc.) excluded before threshold/scale computation; per-peak SNR annotation added to Peak1D and JSON output; backwards-compatible (threshold param kept; use_snr=True is new default)
 - [x] **FIX-05**: 13C intensity class-normalized 2C-equivalence detection for protonated aromatic CH (HSQC-confirmed, 100–165 ppm scope); output feeds `lucy analyze symmetry` / `lucy detect aromatic-cosy`; DO NOT modify detect_aromatic_cosy_pairs
-- [ ] **FIX-06**: Skill feedback loop — (a) DBE self-check procedural/mandatory in nmr-chemist after picking (O→carbonyl 160–220; N→amide/nitrile); (b) 5th quality loop-pattern QUALITY_CONVERGENCE_FAILURE in case.md detect_loops + loop-patterns.md + advisory-templates.md; budget = 1 re-look cycle; does NOT escalate to diagnostic specialist
+- [x] **FIX-06**: Skill feedback loop — (a) DBE self-check procedural/mandatory in nmr-chemist after picking (O→carbonyl 160–220; N→amide/nitrile); (b) 5th quality loop-pattern QUALITY_CONVERGENCE_FAILURE in case.md detect_loops + loop-patterns.md + advisory-templates.md; budget = 1 re-look cycle; does NOT escalate to diagnostic specialist
+- [ ] **FIX-07**: Long-range / 4J HMBC connectivity handling — false-positive long-range (4J) HMBC correlations must no longer be enforced as 2-3J bonds that exclude the correct structure. Exposed by the Phase-79 blind CASE9 UAT: `HMBC 1 8` (166.1↔70.2) + set 2 3 / 2 9 / 3 8 forced an impossible carbonyl→para-benzylic bond, excluding the true para-benzoate (`CC(C)OC(=O)c1ccc(C(C)O)cc1`). Must not reintroduce the v7.0 100%-FP statistical failure; must not regress the v4.0 ibuprofen 4J win. Approach (extended HMBC range / repaired pyLSD multi-run / narrow heuristic flag) to be chosen in discuss/research.
 
 ### UAT (milestone gate)
 
@@ -78,7 +79,8 @@ Deferred to future release. Tracked but not in current roadmap.
 | FIX-03 | Phase 77 | Complete |
 | FIX-04 | Phase 79 | Complete |
 | FIX-05 | Phase 79 | Complete |
-| FIX-06 | Phase 79 | Pending |
+| FIX-06 | Phase 79 | Complete |
+| FIX-07 | Phase 80 | Pending |
 | UAT-03 | Phase 76 (failed) → Phase 78 | Pending |
 | UAT-04 | Phase 76 (deferred) → Phase 78 | Pending |
 
