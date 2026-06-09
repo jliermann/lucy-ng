@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: CASE Reliability & Skill Consolidation
-status: completed
+status: executing
 stopped_at: Phase 80 context gathered
-last_updated: "2026-06-09T09:40:40.762Z"
-last_activity: 2026-06-09
+last_updated: "2026-06-09T12:04:22.621Z"
+last_activity: 2026-06-09 -- Phase 80 planning complete
 progress:
   total_phases: 9
   completed_phases: 8
-  total_plans: 23
+  total_plans: 28
   completed_plans: 23
-  percent: 89
+  percent: 82
 ---
 
 # lucy-ng State
@@ -41,8 +41,8 @@ Progress: [█████████░] 89% (8/9 phases; v9.0 does NOT ship u
 
 Phase: 80 (long-range-4j-hmbc-connectivity-defect) — NOT STARTED
 Plan: Not started
-Status: Phase 79 complete; Phase 80 ready to discuss
-Last activity: 2026-06-09
+Status: Ready to execute
+Last activity: 2026-06-09 -- Phase 80 planning complete
 
 **Phase 77 scope (fixes only — decisions in 77-CONTEXT.md):**
 
