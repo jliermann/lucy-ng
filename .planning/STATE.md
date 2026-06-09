@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: CASE Reliability & Skill Consolidation
-status: executing
-stopped_at: Phase 79 context gathered
-last_updated: "2026-06-08T16:03:48.594Z"
+status: milestone_complete
+stopped_at: Milestone complete (Phase 79 was final phase)
+last_updated: 2026-06-09T08:00:16.645Z
 last_activity: 2026-06-08 -- Phase 79 execution started
 progress:
   total_phases: 8
   completed_phases: 7
   total_plans: 23
-  completed_plans: 19
-  percent: 83
+  completed_plans: 133
+  percent: 88
 ---
 
 # lucy-ng State
@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-20)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a multi-agent team that uses the intended solver pipeline — not a manual bypass
-**Current focus:** Phase 79 — peak-picking-symmetry-fix
+**Current focus:** Milestone complete
 
 ## Current Position
 
@@ -38,10 +38,10 @@ Phase 79: Peak-Picking + Symmetry    [ ] Not started — fixes CASE9 upstream de
 
 Progress: [█████████░] 88% (7/8 phases; v9.0 does NOT ship until CASE9 passes)
 
-Phase: 79 (peak-picking-symmetry-fix) — EXECUTING
-Plan: 1 of 4
-Status: Executing Phase 79
-Last activity: 2026-06-08 -- Phase 79 execution started
+Phase: 79
+Plan: Not started
+Status: Milestone complete
+Last activity: 2026-06-09
 
 **Phase 77 scope (fixes only — decisions in 77-CONTEXT.md):**
 
@@ -79,7 +79,7 @@ Wave structure:
 
 **Velocity:**
 
-- Total plans completed: 114 across 10 milestones (9 shipped + 1 abandoned)
+- Total plans completed: 118 across 10 milestones (9 shipped + 1 abandoned)
 - v7.0: 5 phases executed, 9 plans, all reverted — 0 requirements met
 - v8.0: 6 phases executed (65-70), 15 plans complete; Phase 71 UAT superseded
 - Cumulative: 64 phases total (58 with code, v7 reverted, v8 phase 71 pending)

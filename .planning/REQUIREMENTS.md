@@ -30,8 +30,8 @@ Requirements for v9.0 release. Outcome-level where possible so they survive the 
 - [x] **FIX-01**: `lucy lsd run` produces real SMILES in solutions.smi and fails loud (non-zero exit, no false "success") when outlsd output is the error string / empty / non-SMILES; regression test covers happy + error paths
 - [x] **FIX-02**: Cross-ring aromatic COSY equivalence pairs are emitted deterministically by tooling (from detected symmetry/grouping), so the aromatic ring emerges without manual atom-index reasoning or forced ring-BONDs; ring-BOND forcing demoted to documented escalation
 - [x] **FIX-03**: Skill hygiene — deprecated lucy-case-agent.md retired; targeted skill-creator audit confirms v9.0 single-path + emergent/COSY guidance is prominent and flags dead/contradictory content
-- [ ] **FIX-04**: Peak-picker threshold replaced with SNR/MAD-absolute (noise = 1.4826·MAD, floor k=3 IUPAC LoD); solvent multiplet (CDCl₃ etc.) excluded before threshold/scale computation; per-peak SNR annotation added to Peak1D and JSON output; backwards-compatible (threshold param kept; use_snr=True is new default)
-- [ ] **FIX-05**: 13C intensity class-normalized 2C-equivalence detection for protonated aromatic CH (HSQC-confirmed, 100–165 ppm scope); output feeds `lucy analyze symmetry` / `lucy detect aromatic-cosy`; DO NOT modify detect_aromatic_cosy_pairs
+- [x] **FIX-04**: Peak-picker threshold replaced with SNR/MAD-absolute (noise = 1.4826·MAD, floor k=3 IUPAC LoD); solvent multiplet (CDCl₃ etc.) excluded before threshold/scale computation; per-peak SNR annotation added to Peak1D and JSON output; backwards-compatible (threshold param kept; use_snr=True is new default)
+- [x] **FIX-05**: 13C intensity class-normalized 2C-equivalence detection for protonated aromatic CH (HSQC-confirmed, 100–165 ppm scope); output feeds `lucy analyze symmetry` / `lucy detect aromatic-cosy`; DO NOT modify detect_aromatic_cosy_pairs
 - [ ] **FIX-06**: Skill feedback loop — (a) DBE self-check procedural/mandatory in nmr-chemist after picking (O→carbonyl 160–220; N→amide/nitrile); (b) 5th quality loop-pattern QUALITY_CONVERGENCE_FAILURE in case.md detect_loops + loop-patterns.md + advisory-templates.md; budget = 1 re-look cycle; does NOT escalate to diagnostic specialist
 
 ### UAT (milestone gate)
@@ -76,8 +76,8 @@ Deferred to future release. Tracked but not in current roadmap.
 | FIX-01 | Phase 77 | Complete |
 | FIX-02 | Phase 77 | Complete |
 | FIX-03 | Phase 77 | Complete |
-| FIX-04 | Phase 79 | Pending |
-| FIX-05 | Phase 79 | Pending |
+| FIX-04 | Phase 79 | Complete |
+| FIX-05 | Phase 79 | Complete |
 | FIX-06 | Phase 79 | Pending |
 | UAT-03 | Phase 76 (failed) → Phase 78 | Pending |
 | UAT-04 | Phase 76 (deferred) → Phase 78 | Pending |
