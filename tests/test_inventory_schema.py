@@ -87,13 +87,12 @@ class TestSchemaLoading:
         Draft202012Validator.check_schema(schema)
 
     def test_schema_has_required_fields_list(self):
-        """Schema required array must include all 11 mandatory v2 fields."""
+        """Schema required array must include all 8 mandatory v2 fields (Phase 80: pylsd_mode, elim_annotated, deferred_4j retired from required)."""
         schema = _load_schema()
         required = schema.get("required", [])
         expected_required = [
             "version", "iteration", "formula", "timestamp",
             "mult_count", "hsqc_count", "hmbc_batches", "hmbc_total",
-            "pylsd_mode", "elim_annotated", "deferred_4j",
         ]
         for field in expected_required:
             assert field in required, f"Required field '{field}' missing from schema.required"
@@ -169,23 +168,23 @@ class TestSchemaValidation:
         errors = list(validator.iter_errors(instance))
         assert len(errors) >= 1, "Expected at least one error for string-array deferred_4j"
 
-    def test_rejects_missing_pylsd_mode(self):
-        """Instance without pylsd_mode must fail required-field validation."""
+    def test_accepts_missing_pylsd_mode(self):
+        """Phase 80: pylsd_mode is now optional — missing it must NOT cause a required-field error."""
         schema = _load_schema()
         validator = Draft202012Validator(schema)
         instance = _minimal_valid_v2()
         del instance["pylsd_mode"]
         errors = list(validator.iter_errors(instance))
-        assert len(errors) >= 1, "Expected error for missing pylsd_mode field"
+        assert errors == [], f"Expected no errors for missing pylsd_mode (now optional), got: {[e.message for e in errors]}"
 
-    def test_rejects_missing_elim_annotated(self):
-        """Instance without elim_annotated must fail required-field validation."""
+    def test_accepts_missing_elim_annotated(self):
+        """Phase 80: elim_annotated is now optional — missing it must NOT cause a required-field error."""
         schema = _load_schema()
         validator = Draft202012Validator(schema)
         instance = _minimal_valid_v2()
         del instance["elim_annotated"]
         errors = list(validator.iter_errors(instance))
-        assert len(errors) >= 1, "Expected error for missing elim_annotated field"
+        assert errors == [], f"Expected no errors for missing elim_annotated (now optional), got: {[e.message for e in errors]}"
 
     def test_rejects_missing_version(self):
         """Instance without version must fail required-field validation."""

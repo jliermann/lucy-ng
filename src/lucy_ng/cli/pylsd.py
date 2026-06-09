@@ -182,13 +182,13 @@ def pylsd_run(
     timeout: int,
     output_format: str,
 ) -> None:
-    """Run PyLSD multi-run orchestration on an LSD input file.
-
-    LSD_FILE is the path to the LSD input file. Suspect 4J HMBC correlations
-    are extracted from the v2 inventory block (D-13) or ; ELIM annotations
-    (D-13b), and a permutation run is performed for each include/exclude
-    combination (2^K runs). Solutions are merged and optionally ranked.
-    """
+    """Run PyLSD orchestration (DEPRECATED — use lucy lsd run with ELIM escalation per D-05)."""
+    click.echo(
+        "Warning: lucy pylsd run is deprecated (Phase 80 D-05). "
+        "Use lucy lsd run with ELIM escalation instead. "
+        "See .planning/phases/80-long-range-4j-hmbc-connectivity-defect/80-CONTEXT.md",
+        err=True,
+    )
     # --- Guard: LSD must be available ---
     if not LSDRunner.is_available():
         click.echo("Error: LSD is not installed or not in PATH", err=True)
