@@ -59,6 +59,13 @@ class RankedSolution(BaseModel):
     has_aromatic_ring: bool = Field(
         default=False, description="Whether the structure contains an aromatic ring"
     )
+    is_plausible: bool = Field(
+        default=True,
+        description=(
+            "False when chemical plausibility pre-filter (D-09) rejected this solution. "
+            "Implausible solutions are appended after plausible ones in the ranked list."
+        ),
+    )
 
     @property
     def match_rate(self) -> float:
