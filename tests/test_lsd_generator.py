@@ -1026,3 +1026,50 @@ class TestDetectAromaticCosyIntegration:
             f"SMILES lines: {lines}\n"
             f"FIX-02 requires cross-ring COSY pairs to produce aromatic ring without ring BONDs."
         )
+
+
+class TestElimBudget:
+    """Tests for elim_budget field and ELIM emission (Phase 80 D-01/D-02)."""
+
+    def test_elim_budget_zero_emits_no_elim(self):
+        """LSDProblem(elim_budget=0) must produce NO ELIM line in generated file."""
+        problem = LSDProblem(name="test", elim_budget=0)
+        problem.add_atom(LSDAtom(1, "C", Hybridization.SP2, 0))
+        content = LSDInputGenerator.generate(problem)
+        # No ELIM line — exact match to ensure no spurious emission
+        assert "ELIM" not in content
+
+    def test_elim_budget_one_emits_elim_1_0(self):
+        """LSDProblem(elim_budget=1) must emit 'ELIM 1 0' in generated file."""
+        problem = LSDProblem(name="test", elim_budget=1)
+        problem.add_atom(LSDAtom(1, "C", Hybridization.SP2, 0))
+        content = LSDInputGenerator.generate(problem)
+        assert "ELIM 1 0" in content
+
+    def test_elim_budget_three_emits_elim_3_0(self):
+        """LSDProblem(elim_budget=3) must emit 'ELIM 3 0'."""
+        problem = LSDProblem(name="test", elim_budget=3)
+        problem.add_atom(LSDAtom(1, "C", Hybridization.SP2, 0))
+        content = LSDInputGenerator.generate(problem)
+        assert "ELIM 3 0" in content
+
+    def test_elim_budget_appears_before_mult(self):
+        """ELIM line must appear before first MULT line in the file."""
+        problem = LSDProblem(name="test", elim_budget=1)
+        problem.add_atom(LSDAtom(1, "C", Hybridization.SP2, 0))
+        content = LSDInputGenerator.generate(problem)
+        elim_pos = content.index("ELIM 1 0")
+        mult_pos = content.index("MULT")
+        assert elim_pos < mult_pos
+
+    def test_elim_budget_independent_of_pylsd_mode(self):
+        """ELIM budget emission must NOT require pylsd_mode=True."""
+        problem = LSDProblem(name="test", elim_budget=2, pylsd_mode=False)
+        problem.add_atom(LSDAtom(1, "C", Hybridization.SP2, 0))
+        content = LSDInputGenerator.generate(problem)
+        assert "ELIM 2 0" in content
+
+    def test_elim_budget_default_is_zero(self):
+        """LSDProblem default elim_budget must be 0 (no ELIM by default)."""
+        problem = LSDProblem()
+        assert problem.elim_budget == 0
