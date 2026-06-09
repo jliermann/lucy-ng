@@ -748,3 +748,131 @@ class TestRankingCLI:
         assert callable(_get_default_table_path)
 
 
+class TestPlausibilityFilter:
+    """Tests for _is_chemically_plausible() pre-filter (Phase 80 D-09)."""
+
+    @pytest.fixture
+    def mock_predictor(self):
+        """Create a mock predictor."""
+        predictor = MagicMock(spec=C13Predictor)
+        return predictor
+
+    def test_non_aromatic_rejected_when_aromatic_expected(self, mock_predictor):
+        """Non-aromatic solution is IMPLAUSIBLE when >= 4 shifts are in 110-160 ppm."""
+        # Ibuprofen-like aromatic shifts (5 shifts in 110-160 ppm)
+        experimental = [180.0, 141.0, 137.0, 129.4, 127.1, 45.0, 30.0]
+
+        def predict(smiles: str):
+            return make_prediction_result(smiles, [180.0, 141.0, 137.0, 129.4, 127.1, 45.0, 30.0])
+
+        mock_predictor.predict_from_smiles.side_effect = predict
+        ranker = SolutionRanker(mock_predictor, tolerance=3.0)
+
+        solutions = [
+            LSDSolution(index=1, smiles="C1CCCCC1C(=O)O"),  # cyclohexane acid, no aromatic ring
+        ]
+        result = ranker.rank(solutions, experimental)
+
+        # The non-aromatic solution should appear but be marked implausible
+        assert len(result.solutions) == 1
+        assert result.solutions[0].is_plausible is False
+
+    def test_aromatic_retained_when_aromatic_expected(self, mock_predictor):
+        """Aromatic solution is PLAUSIBLE when shifts suggest aromaticity."""
+        experimental = [180.0, 141.0, 137.0, 129.4, 127.1, 45.0, 30.0]
+
+        def predict(smiles: str):
+            return make_prediction_result(smiles, [180.0, 141.0, 137.0, 129.4, 127.1, 45.0, 30.0])
+
+        mock_predictor.predict_from_smiles.side_effect = predict
+        ranker = SolutionRanker(mock_predictor, tolerance=3.0)
+
+        solutions = [
+            LSDSolution(index=1, smiles="CC(C)Cc1ccc(cc1)C(C)C(=O)O"),  # ibuprofen, has aromatic ring
+        ]
+        result = ranker.rank(solutions, experimental)
+
+        assert result.solutions[0].is_plausible is True
+
+    def test_non_aromatic_ok_when_no_aromatic_shifts(self, mock_predictor):
+        """Non-aromatic solution is PLAUSIBLE when < 4 shifts in 110-160 ppm."""
+        experimental = [45.0, 30.0, 22.0]  # Only aliphatic shifts
+
+        def predict(smiles: str):
+            return make_prediction_result(smiles, [45.0, 30.0, 22.0])
+
+        mock_predictor.predict_from_smiles.side_effect = predict
+        ranker = SolutionRanker(mock_predictor, tolerance=3.0)
+
+        solutions = [
+            LSDSolution(index=1, smiles="CCC"),  # no aromatic ring
+        ]
+        result = ranker.rank(solutions, experimental)
+
+        assert result.solutions[0].is_plausible is True
+
+
+class TestPlausibilityFilterOrdering:
+    """Tests that plausible solutions rank ABOVE implausible ones (Phase 80 D-09)."""
+
+    @pytest.fixture
+    def mock_predictor(self):
+        predictor = MagicMock(spec=C13Predictor)
+        return predictor
+
+    def test_plausible_ranks_above_implausible(self, mock_predictor):
+        """Plausible solution (aromatic) must appear before implausible (non-aromatic)
+        even when the implausible solution has a lower MAE."""
+
+        def predict(smiles: str):
+            if smiles == "AROMATIC":
+                # Slightly higher MAE than the non-aromatic
+                return make_prediction_result(smiles, [180.0, 141.0, 137.0, 129.4, 127.1, 48.0, 30.0])
+            else:  # NON_AROMATIC
+                # Perfect MAE but no aromatic ring
+                return make_prediction_result(smiles, [180.0, 141.0, 137.0, 129.4, 127.1, 45.0, 30.0])
+
+        mock_predictor.predict_from_smiles.side_effect = predict
+        ranker = SolutionRanker(mock_predictor, tolerance=3.0)
+
+        # Experimental shifts: 5 in 110-160 ppm range → aromatic required
+        experimental = [180.0, 141.0, 137.0, 129.4, 127.1, 45.0, 30.0]
+        solutions = [
+            LSDSolution(index=1, smiles="NON_AROMATIC"),   # non-aromatic, low MAE
+            LSDSolution(index=2, smiles="AROMATIC"),        # aromatic, higher MAE
+        ]
+
+        result = ranker.rank(solutions, experimental)
+
+        assert len(result.solutions) == 2
+        # Aromatic solution must be first (plausible before implausible)
+        assert result.solutions[0].smiles == "AROMATIC"
+        assert result.solutions[0].is_plausible is True
+        assert result.solutions[1].smiles == "NON_AROMATIC"
+        assert result.solutions[1].is_plausible is False
+
+    def test_survivor_ordering_preserved(self, mock_predictor):
+        """Among plausible solutions, original matched_count-desc / MAE-asc order is preserved."""
+
+        def predict(smiles: str):
+            if smiles == "HIGH_MATCH_AROMATIC":
+                return make_prediction_result(smiles, [141.0, 137.0, 129.4, 127.1, 45.0, 30.0, 22.0])
+            else:  # LOW_MATCH_AROMATIC
+                return make_prediction_result(smiles, [141.0, 137.0, 999.0, 888.0, 45.0, 30.0, 22.0])
+
+        mock_predictor.predict_from_smiles.side_effect = predict
+        ranker = SolutionRanker(mock_predictor, tolerance=3.0)
+
+        # 4 shifts in 110-160 range: both solutions need aromatic ring to be plausible
+        experimental = [141.0, 137.0, 129.4, 127.1, 45.0, 30.0, 22.0]
+        solutions = [
+            LSDSolution(index=1, smiles="LOW_MATCH_AROMATIC"),
+            LSDSolution(index=2, smiles="HIGH_MATCH_AROMATIC"),
+        ]
+
+        result = ranker.rank(solutions, experimental)
+
+        assert result.solutions[0].smiles == "HIGH_MATCH_AROMATIC"
+        assert result.solutions[1].smiles == "LOW_MATCH_AROMATIC"
+
+
