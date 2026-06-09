@@ -4,8 +4,8 @@ milestone: v9.0
 milestone_name: CASE Reliability & Skill Consolidation
 status: executing
 stopped_at: Phase 80 context gathered
-last_updated: "2026-06-09T12:04:22.621Z"
-last_activity: 2026-06-09 -- Phase 80 planning complete
+last_updated: "2026-06-09T12:13:54.861Z"
+last_activity: 2026-06-09 -- Phase 80 execution started
 progress:
   total_phases: 9
   completed_phases: 8
@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-20)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a multi-agent team that uses the intended solver pipeline — not a manual bypass
-**Current focus:** Phase 80 — Long-Range (4J) HMBC connectivity defect (the v9.0 ship-blocker after Phase 79)
+**Current focus:** Phase 80 — long-range-4j-hmbc-connectivity-defect
 
 ## Current Position
 
@@ -39,10 +39,10 @@ Phase 80: Long-Range 4J-HMBC Defect  [ ] Not started — v9.0 ship-gate; start w
 
 Progress: [█████████░] 89% (8/9 phases; v9.0 does NOT ship until CASE9 passes)
 
-Phase: 80 (long-range-4j-hmbc-connectivity-defect) — NOT STARTED
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-06-09 -- Phase 80 planning complete
+Phase: 80 (long-range-4j-hmbc-connectivity-defect) — EXECUTING
+Plan: 1 of 5
+Status: Executing Phase 80
+Last activity: 2026-06-09 -- Phase 80 execution started
 
 **Phase 77 scope (fixes only — decisions in 77-CONTEXT.md):**
 

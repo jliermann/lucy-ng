@@ -489,11 +489,11 @@ the true para-benzoate and excludes it from the LSD solution space. Even forcing
 suspect-correlation subsets (pyLSD-style, repaired)? a narrower statistical/heuristic 4J flag than
 the abandoned v7.0 one? The phase should NOT start coding before this is decided.
 
-**Plans:** 5 plans in 4 waves
+**Plans:** 1/5 plans executed
 
 Plans:
 **Wave 0**
-- [ ] 80-00-PLAN.md — Failing test stubs (TestElimBudget, TestPlausibilityFilter, TestPlausibilityFilterOrdering, TestSchemaV2Phase80) — RED baseline
+- [x] 80-00-PLAN.md — Failing test stubs (TestElimBudget, TestPlausibilityFilter, TestPlausibilityFilterOrdering, TestSchemaV2Phase80) — RED baseline
 
 **Wave 1** *(depends on 80-00; plans 01 and 02 parallel)*
 - [ ] 80-01-PLAN.md — elim_budget field on LSDProblem + ELIM emission decoupled from pylsd_mode + schema surgery + pyLSD deprecation (FIX-07-A/B/E)
