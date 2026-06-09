@@ -19,7 +19,7 @@ created: 2026-06-09
 |----------|-------|
 | **Framework** | pytest 7.x |
 | **Config file** | `pyproject.toml` (project root) |
-| **Quick run command** | `pytest tests/test_lsd_generator.py tests/test_ranking.py tests/test_lsd_schema.py -x` |
+| **Quick run command** | `pytest tests/test_lsd_generator.py tests/test_ranking.py tests/test_inventory_schema.py -x` |
 | **Full suite command** | `pytest` |
 | **Estimated runtime** | ~60 seconds (quick) / ~5 min (full) |
 
@@ -27,7 +27,7 @@ created: 2026-06-09
 
 ## Sampling Rate
 
-- **After every task commit:** Run `pytest tests/test_lsd_generator.py tests/test_ranking.py tests/test_lsd_schema.py -x`
+- **After every task commit:** Run `pytest tests/test_lsd_generator.py tests/test_ranking.py tests/test_inventory_schema.py -x`
 - **After every plan wave:** Run `pytest` (full suite)
 - **Before `/gsd:verify-work`:** Full suite must be green
 - **Max feedback latency:** 60 seconds (quick), 300 seconds (full)
@@ -42,7 +42,7 @@ created: 2026-06-09
 | FIX-07-B | TBD | 1 | FIX-07 | — | N/A | unit | `pytest tests/test_lsd_generator.py::TestElimBudget -x` | ❌ W0 | ⬜ pending |
 | FIX-07-C | TBD | 1 | FIX-07 | — | N/A | unit | `pytest tests/test_ranking.py::TestPlausibilityFilter -x` | ❌ W0 | ⬜ pending |
 | FIX-07-D | TBD | 1 | FIX-07 | — | N/A | unit | `pytest tests/test_ranking.py::TestPlausibilityFilterOrdering -x` | ❌ W0 | ⬜ pending |
-| FIX-07-E | TBD | 1 | FIX-07 | — | N/A | unit | `pytest tests/test_lsd_schema.py::TestSchemaV2Phase80 -x` | ❌ W0 | ⬜ pending |
+| FIX-07-E | TBD | 1 | FIX-07 | — | N/A | unit | `pytest tests/test_inventory_schema.py::TestSchemaV2Phase80 -x` | ❌ W0 | ⬜ pending |
 | FIX-07-F | TBD | 2 | FIX-07 | — | N/A | agent-experiment | `scripts/verify_case_solution.py solutions.smi C12H16O3` | ✅ | ⬜ pending |
 | FIX-07-G | TBD | 2 | FIX-07 | — | N/A | agent-experiment | `scripts/verify_case_solution.py solutions.smi C13H18O2` | ✅ | ⬜ pending |
 
@@ -56,7 +56,7 @@ created: 2026-06-09
 - [ ] `tests/test_lsd_generator.py::TestElimBudget` — new test class: `elim_budget` field emission (`ELIM 1 0` when budget=1; no ELIM line when budget=0)
 - [ ] `tests/test_ranking.py::TestPlausibilityFilter` — new test class: `_is_chemically_plausible()` rejects non-aromatic solution when ≥4 shifts in 110–160 ppm
 - [ ] `tests/test_ranking.py::TestPlausibilityFilterOrdering` — new test class: pre-filter preserves ranking order (matched_count desc, MAE asc) for survivors
-- [ ] `tests/test_lsd_schema.py::TestSchemaV2Phase80` — new test: schema accepts inventory without `deferred_4j`/`pylsd_mode`/`elim_annotated`
+- [ ] `tests/test_inventory_schema.py::TestSchemaV2Phase80` — new test: schema accepts inventory without `deferred_4j`/`pylsd_mode`/`elim_annotated`
 
 ---
 
