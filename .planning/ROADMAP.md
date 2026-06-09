@@ -489,10 +489,21 @@ the true para-benzoate and excludes it from the LSD solution space. Even forcing
 suspect-correlation subsets (pyLSD-style, repaired)? a narrower statistical/heuristic 4J flag than
 the abandoned v7.0 one? The phase should NOT start coding before this is decided.
 
-**Plans:** 0 plans
+**Plans:** 5 plans in 4 waves
 
 Plans:
-- [ ] TBD (run /gsd-discuss-phase 80, then /gsd-plan-phase 80 to break down)
+**Wave 0**
+- [ ] 80-00-PLAN.md — Failing test stubs (TestElimBudget, TestPlausibilityFilter, TestPlausibilityFilterOrdering, TestSchemaV2Phase80) — RED baseline
+
+**Wave 1** *(depends on 80-00; plans 01 and 02 parallel)*
+- [ ] 80-01-PLAN.md — elim_budget field on LSDProblem + ELIM emission decoupled from pylsd_mode + schema surgery + pyLSD deprecation (FIX-07-A/B/E)
+- [ ] 80-02-PLAN.md — Chemical plausibility pre-filter in SolutionRanker + is_plausible field on RankedSolution (FIX-07-C/D)
+
+**Wave 2** *(depends on 80-01 + 80-02)*
+- [ ] 80-03-PLAN.md — Agent skill surgery: lsd-engineer (4J Deferral Rule removed, ELIM escalation added), devils-advocate (G1-G4/G8 removed, G-ELIM gates added), solution-analyst, diagnostic, case.md (D-03/04/05/07/08/09)
+
+**Wave 3** *(depends on 80-03; autonomous: false — blind UAT gate)*
+- [ ] 80-04-PLAN.md — Blind CASE9 + CASE1 UAT gate (FIX-07-F/G) — v9.0 milestone-ship gate
 
 ---
 *Last updated: 2026-06-08 — Phase 78 closed (GATE FAILED: CASE1 PASS, CASE9 FAIL); Phase 79 planned: 4 plans in 3 waves (Wave 0 foundation, Wave 1 Python tooling FIX-04/05, Wave 2 skill markdown FIX-06)*
