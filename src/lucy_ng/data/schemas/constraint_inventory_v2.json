@@ -12,10 +12,7 @@
     "mult_count",
     "hsqc_count",
     "hmbc_batches",
-    "hmbc_total",
-    "pylsd_mode",
-    "elim_annotated",
-    "deferred_4j"
+    "hmbc_total"
   ],
   "additionalProperties": true,
   "properties": {
@@ -147,6 +144,12 @@
     "elim_value": {
       "type": ["integer", "null"],
       "description": "Argument N to a bare 'ELIM N M' LSD command (last-resort zero-solution recovery). Non-null only when bare ELIM was written. CAUTION: if pylsd_mode=true, G2 gate blocks any LSD file with non-null elim_value."
+    },
+    "elim_budget": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 0,
+      "description": "Global ELIM N value (Phase 80 D-02). 0 = no ELIM. Replaces deferred_4j as the 4J mechanism tracker. Ceiling: 3."
     },
     "deff_not_patterns": {
       "type": "array",

@@ -117,6 +117,12 @@ class LSDInputGenerator:
             if problem.molecular_formula or problem.elim_commands:
                 lines.append("")
 
+        # Global ELIM budget (Phase 80 D-01/D-02: primary 4J mechanism)
+        # Independent of pylsd_mode — emits ELIM N 0 when elim_budget > 0
+        if problem.elim_budget > 0:
+            lines.append(LSDInputGenerator.emit_elim(problem.elim_budget, 0))
+            lines.append("")
+
         # Atom definitions (MULT commands)
         if problem.atoms:
             lines.append("; Atom definitions")

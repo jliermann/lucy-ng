@@ -183,6 +183,7 @@ class LSDProblem:
     comments: list[str] = field(default_factory=list)
     pylsd_mode: bool = False
     elim_commands: list[tuple[int, int]] = field(default_factory=list)
+    elim_budget: int = 0  # Global ELIM N value (Phase 80 D-01/D-02). 0 = no ELIM. Ceiling: 3.
     ring_exclusion_enabled: bool = False
 
     def add_atom(self, atom: LSDAtom) -> None:
