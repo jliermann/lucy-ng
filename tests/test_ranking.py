@@ -556,9 +556,31 @@ class TestTwoTierRanking:
 
         ranker = SolutionRanker(mock_predictor, tolerance=3.0)
 
+        # Use real parseable aromatic SMILES so the plausibility pre-filter (D-09) does not
+        # reject either solution (4 shifts in 110-160 ppm → aromatic ring required).
+        # The SMILES identity strings still match the mock dispatch conditions above.
+        wrong_smiles = "CC(C)Cc1ccc(CC(C)C)cc1"   # bis-isobutylbenzene, aromatic, labelled WRONG
+        correct_smiles = "CC(C)Cc1ccc(C(C)C(=O)O)cc1"  # ibuprofen isomer, aromatic, labelled CORRECT
+
+        # Re-define side_effect so mock dispatches on the real SMILES strings
+        def predict_side_effect_real(smiles: str):
+            if smiles == wrong_smiles:
+                return make_prediction_result(
+                    smiles,
+                    [180.2, 140.5, 136.9, 129.2, 126.9, 44.9, 40.2, 30.1, 50.1, 25.1, 14.9,
+                     33.5, 11.0]
+                )
+            else:  # correct_smiles
+                return make_prediction_result(
+                    smiles,
+                    [182.5, 143.0, 139.5, 131.5, 129.0, 47.0, 42.5, 32.5, 24.5, 20.5, 52.5, 27.5, 17.5]
+                )
+
+        mock_predictor.predict_from_smiles.side_effect = predict_side_effect_real
+
         solutions = [
-            LSDSolution(index=1, smiles="WRONG"),
-            LSDSolution(index=2, smiles="CORRECT"),
+            LSDSolution(index=1, smiles=wrong_smiles),
+            LSDSolution(index=2, smiles=correct_smiles),
         ]
         # 13 experimental peaks
         experimental = [180.5, 140.8, 137.2, 129.4, 127.1, 45.1, 40.4, 30.2, 22.4, 18.2, 50.2, 25.0, 15.0]
@@ -566,8 +588,8 @@ class TestTwoTierRanking:
         result = ranker.rank(solutions, experimental)
 
         # Check that WRONG has lower MAE but fewer matches (this is the hallucination scenario)
-        wrong_sol = next(s for s in result.solutions if s.smiles == "WRONG")
-        correct_sol = next(s for s in result.solutions if s.smiles == "CORRECT")
+        wrong_sol = next(s for s in result.solutions if s.smiles == wrong_smiles)
+        correct_sol = next(s for s in result.solutions if s.smiles == correct_smiles)
 
         assert wrong_sol.matched_count == 11, f"WRONG should have 11 matches, got {wrong_sol.matched_count}"
         assert correct_sol.matched_count == 13, f"CORRECT should have 13 matches, got {correct_sol.matched_count}"
@@ -575,7 +597,7 @@ class TestTwoTierRanking:
             f"WRONG should have lower MAE (hallucination scenario), got WRONG={wrong_sol.mae:.2f} vs CORRECT={correct_sol.mae:.2f}"
 
         # CORRECT should rank #1 despite higher MAE (more matches is primary sort key)
-        assert result.solutions[0].smiles == "CORRECT", \
+        assert result.solutions[0].smiles == correct_smiles, \
             f"Expected CORRECT to rank #1 (matched={correct_sol.matched_count}, MAE={correct_sol.mae:.2f}), " \
             f"but got {result.solutions[0].smiles} (matched={result.solutions[0].matched_count}, MAE={result.solutions[0].mae:.2f})"
 
@@ -697,7 +719,8 @@ class TestAromaticSanityCheck:
         assert len(result.warnings) == 1
         assert "Aromatic ring expected" in result.warnings[0]
         assert "5 shifts in 110-160 ppm" in result.warnings[0]
-        assert "4J HMBC" in result.warnings[0]
+        # D-04: warning now references ELIM escalation instead of 4J HMBC artifact (Phase 80)
+        assert "ELIM" in result.warnings[0]
 
     def test_no_warning_when_solutions_contain_aromatic_rings(self, mock_predictor):
         """Test no warning when at least one solution has an aromatic ring."""
@@ -823,12 +846,16 @@ class TestPlausibilityFilterOrdering:
     def test_plausible_ranks_above_implausible(self, mock_predictor):
         """Plausible solution (aromatic) must appear before implausible (non-aromatic)
         even when the implausible solution has a lower MAE."""
+        # Use real parseable SMILES so RDKit can evaluate aromaticity:
+        # c1ccccc1C = toluene (has aromatic ring); C1CCCCC1C = methylcyclohexane (no ring)
+        aromatic_smiles = "c1ccccc1C"
+        non_aromatic_smiles = "C1CCCCC1C"
 
         def predict(smiles: str):
-            if smiles == "AROMATIC":
+            if smiles == aromatic_smiles:
                 # Slightly higher MAE than the non-aromatic
                 return make_prediction_result(smiles, [180.0, 141.0, 137.0, 129.4, 127.1, 48.0, 30.0])
-            else:  # NON_AROMATIC
+            else:  # non_aromatic_smiles
                 # Perfect MAE but no aromatic ring
                 return make_prediction_result(smiles, [180.0, 141.0, 137.0, 129.4, 127.1, 45.0, 30.0])
 
@@ -838,26 +865,29 @@ class TestPlausibilityFilterOrdering:
         # Experimental shifts: 5 in 110-160 ppm range → aromatic required
         experimental = [180.0, 141.0, 137.0, 129.4, 127.1, 45.0, 30.0]
         solutions = [
-            LSDSolution(index=1, smiles="NON_AROMATIC"),   # non-aromatic, low MAE
-            LSDSolution(index=2, smiles="AROMATIC"),        # aromatic, higher MAE
+            LSDSolution(index=1, smiles=non_aromatic_smiles),  # non-aromatic, low MAE
+            LSDSolution(index=2, smiles=aromatic_smiles),       # aromatic, higher MAE
         ]
 
         result = ranker.rank(solutions, experimental)
 
         assert len(result.solutions) == 2
         # Aromatic solution must be first (plausible before implausible)
-        assert result.solutions[0].smiles == "AROMATIC"
+        assert result.solutions[0].smiles == aromatic_smiles
         assert result.solutions[0].is_plausible is True
-        assert result.solutions[1].smiles == "NON_AROMATIC"
+        assert result.solutions[1].smiles == non_aromatic_smiles
         assert result.solutions[1].is_plausible is False
 
     def test_survivor_ordering_preserved(self, mock_predictor):
         """Among plausible solutions, original matched_count-desc / MAE-asc order is preserved."""
+        # Use real parseable aromatic SMILES so both solutions pass the aromatic check
+        high_match_smiles = "c1ccccc1"       # benzene — aromatic, high match
+        low_match_smiles = "c1ccc(C)cc1"     # toluene — aromatic, low match
 
         def predict(smiles: str):
-            if smiles == "HIGH_MATCH_AROMATIC":
+            if smiles == high_match_smiles:
                 return make_prediction_result(smiles, [141.0, 137.0, 129.4, 127.1, 45.0, 30.0, 22.0])
-            else:  # LOW_MATCH_AROMATIC
+            else:  # low_match_smiles
                 return make_prediction_result(smiles, [141.0, 137.0, 999.0, 888.0, 45.0, 30.0, 22.0])
 
         mock_predictor.predict_from_smiles.side_effect = predict
@@ -866,13 +896,13 @@ class TestPlausibilityFilterOrdering:
         # 4 shifts in 110-160 range: both solutions need aromatic ring to be plausible
         experimental = [141.0, 137.0, 129.4, 127.1, 45.0, 30.0, 22.0]
         solutions = [
-            LSDSolution(index=1, smiles="LOW_MATCH_AROMATIC"),
-            LSDSolution(index=2, smiles="HIGH_MATCH_AROMATIC"),
+            LSDSolution(index=1, smiles=low_match_smiles),
+            LSDSolution(index=2, smiles=high_match_smiles),
         ]
 
         result = ranker.rank(solutions, experimental)
 
-        assert result.solutions[0].smiles == "HIGH_MATCH_AROMATIC"
-        assert result.solutions[1].smiles == "LOW_MATCH_AROMATIC"
+        assert result.solutions[0].smiles == high_match_smiles
+        assert result.solutions[1].smiles == low_match_smiles
 
 
