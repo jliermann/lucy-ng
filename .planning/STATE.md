@@ -149,8 +149,8 @@ Key v9.0 constraint: SYME and DEFF NOT are lucy-ng abstractions. Native LSD-3.4.
 ## Session Continuity
 
 Last session: 2026-06-09T09:40:40.755Z
-Stopped at: Phase 80 context gathered
-Resume with: `/gsd-discuss-phase 80` — decide the 4J-HMBC approach (extended HMBC range / repaired pyLSD multi-run / narrow heuristic flag) BEFORE planning. Do NOT start coding before the approach is chosen. v9.0 ships only when a blind CASE9 re-run (fresh instance, per feedback_blind_uat) reaches the RDKit-verified para-benzoate.
+Stopped at: Phase 80 Wave 3 (80-04) — BLIND UAT HUMAN-ACTION CHECKPOINT. Waves 0-2 complete (80-00 RED baseline, 80-01 elim_budget+schema, 80-02 plausibility filter, 80-03 skill surgery + SC-3 guard PASS). Pre-flight gate fully green (pytest 1054 passed; mechanism + skill markers verified). Awaiting blind CASE9 + CASE1 runs by a FRESH instance — the orchestrating instance is tainted (knows CASE9 = CC(C)OC(=O)c1ccc(C(C)O)cc1) and MUST NOT run them.
+Resume with: spawn a fresh blind Claude session, run /lucy-ng:case on CASE9 (C12H16O3) and separately CASE1 (C13H18O2), then return here and report "CASE9-PASS/FAIL" + "CASE1-PASS/FAIL". The orchestrator then independently RDKit-verifies solutions.smi via scripts/verify_case_solution.py and writes 80-UAT-VERDICT.md (AND-gate). v9.0 ships iff both pass.
 
 ---
 *Last updated: 2026-06-09 — Phase 79 complete (4/4 plans, FIX-04/05/06 verified, code-review bugs fixed); CASE9 blind UAT exposed 4J-HMBC trap → Phase 80 (FIX-07) added; v9.0 ship-gate moves to Phase 80*
