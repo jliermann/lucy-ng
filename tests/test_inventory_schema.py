@@ -822,3 +822,70 @@ class TestValidateAndParseInventory:
         with pytest.raises(SystemExit) as exc_info:
             _validate_and_parse_inventory(lsd_file)
         assert exc_info.value.code == 1
+
+
+class TestSchemaV2Phase80:
+    """Tests for Phase 80 schema changes: retire required pyLSD fields, add elim_budget.
+
+    These tests FAIL before the schema is updated (Wave 0 prerequisite).
+    """
+
+    def test_accepts_inventory_without_pylsd_mode(self):
+        """Phase 80: inventory without 'pylsd_mode' field must be accepted."""
+        schema = _load_schema()
+        validator = Draft202012Validator(schema)
+        instance = _minimal_valid_v2()
+        del instance["pylsd_mode"]  # Remove the now-optional field
+        errors = list(validator.iter_errors(instance))
+        assert errors == [], f"Expected no errors but got: {[e.message for e in errors]}"
+
+    def test_accepts_inventory_without_elim_annotated(self):
+        """Phase 80: inventory without 'elim_annotated' field must be accepted."""
+        schema = _load_schema()
+        validator = Draft202012Validator(schema)
+        instance = _minimal_valid_v2()
+        del instance["elim_annotated"]
+        errors = list(validator.iter_errors(instance))
+        assert errors == [], f"Expected no errors but got: {[e.message for e in errors]}"
+
+    def test_accepts_inventory_without_deferred_4j(self):
+        """Phase 80: inventory without 'deferred_4j' field must be accepted."""
+        schema = _load_schema()
+        validator = Draft202012Validator(schema)
+        instance = _minimal_valid_v2()
+        del instance["deferred_4j"]
+        errors = list(validator.iter_errors(instance))
+        assert errors == [], f"Expected no errors but got: {[e.message for e in errors]}"
+
+    def test_accepts_inventory_with_elim_budget(self):
+        """Phase 80: inventory with 'elim_budget' integer field must be accepted."""
+        schema = _load_schema()
+        validator = Draft202012Validator(schema)
+        instance = _minimal_valid_v2()
+        del instance["pylsd_mode"]
+        del instance["elim_annotated"]
+        del instance["deferred_4j"]
+        instance["elim_budget"] = 1  # New Phase 80 field
+        errors = list(validator.iter_errors(instance))
+        assert errors == [], f"Expected no errors but got: {[e.message for e in errors]}"
+
+    def test_rejects_negative_elim_budget(self):
+        """Phase 80: elim_budget must be >= 0 (minimum: 0)."""
+        schema = _load_schema()
+        validator = Draft202012Validator(schema)
+        instance = _minimal_valid_v2()
+        del instance["pylsd_mode"]
+        del instance["elim_annotated"]
+        del instance["deferred_4j"]
+        instance["elim_budget"] = -1
+        errors = list(validator.iter_errors(instance))
+        assert len(errors) >= 1, "Expected error for negative elim_budget"
+
+    def test_schema_required_excludes_retired_pyLSD_fields(self):
+        """Phase 80: 'pylsd_mode', 'elim_annotated', 'deferred_4j' must NOT be in required."""
+        schema = _load_schema()
+        required = schema.get("required", [])
+        for retired_field in ("pylsd_mode", "elim_annotated", "deferred_4j"):
+            assert retired_field not in required, (
+                f"Retired field '{retired_field}' must not be in schema.required after Phase 80"
+            )
