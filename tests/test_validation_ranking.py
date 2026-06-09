@@ -90,9 +90,31 @@ class TestTwoTierRanking:
 
         ranker = SolutionRanker(mock_predictor, tolerance=3.0)
 
+        # Use real parseable aromatic SMILES so the plausibility pre-filter (D-09) does not
+        # reject either solution (4 shifts in 110-160 ppm → aromatic ring required).
+        # The wrong structure is an isobutylbenzene (wrong connectivity but still aromatic);
+        # the correct structure is ibuprofen. Both pass the aromatic plausibility check.
+        wrong_smiles = "CC(C)Cc1ccccc1"     # isobutylbenzene — aromatic, labelled WRONG
+        correct_smiles = "CC(C)Cc1ccc(C(C)C(=O)O)cc1"  # ibuprofen — aromatic, labelled CORRECT
+
+        def predict_side_effect_real(smiles: str):
+            if smiles == wrong_smiles:
+                return make_prediction_result(
+                    smiles,
+                    [180.3, 140.6, 136.8, 129.2, 127.3, 44.8, 40.2, 30.3, 22.5, 18.1, 50.1,
+                     33.5, 11.0]
+                )
+            else:  # correct_smiles
+                return make_prediction_result(
+                    smiles,
+                    [182.5, 143.0, 139.0, 131.5, 129.0, 47.0, 42.5, 32.5, 24.5, 20.0, 52.0, 27.5, 15.5]
+                )
+
+        mock_predictor.predict_from_smiles.side_effect = predict_side_effect_real
+
         solutions = [
-            LSDSolution(index=1, smiles="WRONG_CYCLOHEXADIENE"),
-            LSDSolution(index=2, smiles="CORRECT_IBUPROFEN"),
+            LSDSolution(index=1, smiles=wrong_smiles),
+            LSDSolution(index=2, smiles=correct_smiles),
         ]
         # 13 experimental peaks (ibuprofen)
         experimental = [180.5, 140.8, 137.2, 129.4, 127.1, 45.1, 40.4, 30.2, 22.4, 18.2, 50.2, 25.0, 15.0]
@@ -100,17 +122,17 @@ class TestTwoTierRanking:
         result = ranker.rank(solutions, experimental)
 
         # Verify the hallucination scenario exists
-        wrong_sol = next(s for s in result.solutions if s.smiles == "WRONG_CYCLOHEXADIENE")
-        correct_sol = next(s for s in result.solutions if s.smiles == "CORRECT_IBUPROFEN")
+        wrong_sol = next(s for s in result.solutions if s.smiles == wrong_smiles)
+        correct_sol = next(s for s in result.solutions if s.smiles == correct_smiles)
 
         assert wrong_sol.matched_count < correct_sol.matched_count, \
             "WRONG should have fewer matches (hallucination scenario)"
         assert correct_sol.matched_count == 13, "CORRECT should match all 13 signals"
 
         # THE CRITICAL VALIDATION: CORRECT ranks #1 despite higher MAE
-        assert result.solutions[0].smiles == "CORRECT_IBUPROFEN", \
+        assert result.solutions[0].smiles == correct_smiles, \
             "Two-tier ranking MUST place complete coverage first (prevents MAE hallucination)"
-        assert result.solutions[1].smiles == "WRONG_CYCLOHEXADIENE"
+        assert result.solutions[1].smiles == wrong_smiles
 
     def test_same_coverage_mae_tiebreaker(self, mock_predictor):
         """When signal coverage is equal, MAE acts as tiebreaker.

@@ -8,6 +8,70 @@ from lucy_ng.prediction import C13Predictor, PredictedShift
 from .models import RankedSolution, RankingResult, ShiftAssignment
 
 
+def _calc_dbe_from_formula(formula: str) -> float:
+    """Compute Degree of Unsaturation (DBE) from a molecular formula string.
+
+    DBE = (2C + 2 + N - H - X) / 2  where X = halogens (F, Cl, Br, I).
+    Uses parse_molecular_formula() from lucy_ng.lsd.generator.
+    """
+    from lucy_ng.lsd.generator import parse_molecular_formula
+
+    counts = parse_molecular_formula(formula)
+    c = counts.get("C", 0)
+    h = counts.get("H", 0)
+    n = counts.get("N", 0)
+    x = (
+        counts.get("F", 0)
+        + counts.get("Cl", 0)
+        + counts.get("Br", 0)
+        + counts.get("I", 0)
+    )
+    return (2 * c + 2 + n - h - x) / 2
+
+
+def _calc_dbe_from_mol(mol: "Chem.Mol") -> float:
+    """Compute DBE from an RDKit mol object via CalcMolFormula."""
+    from rdkit.Chem import rdMolDescriptors
+
+    formula = rdMolDescriptors.CalcMolFormula(mol)
+    return _calc_dbe_from_formula(formula)
+
+
+def _is_chemically_plausible(
+    solution: "RankedSolution",
+    experimental_shifts: list[float],
+    formula: str | None = None,
+) -> bool:
+    """Return False if the solution is chemically implausible.
+
+    Check 1: Aromatic ring required when >= 4 shifts are in 110-160 ppm.
+    Check 2: DBE consistency when formula is provided (tolerance ±1).
+
+    Args:
+        solution: Ranked solution to evaluate
+        experimental_shifts: List of experimental 13C shifts in ppm
+        formula: Optional molecular formula string for DBE check (e.g. "C12H16O3")
+
+    Returns:
+        False if the solution fails a plausibility check, True otherwise
+    """
+    # Check 1: aromatic ring required when shifts strongly suggest aromaticity
+    aromatic_shift_count = sum(1 for s in experimental_shifts if 110.0 <= s <= 160.0)
+    if aromatic_shift_count >= 4 and not solution.has_aromatic_ring:
+        return False
+
+    # Check 2: DBE consistency (optional — requires formula)
+    if formula is not None:
+        expected_dbe = _calc_dbe_from_formula(formula)
+        mol = Chem.MolFromSmiles(solution.smiles)
+        if mol is not None:
+            actual_dbe = _calc_dbe_from_mol(mol)
+            if abs(actual_dbe - expected_dbe) > 1:
+                return False
+
+    return True
+
+
 class SolutionRanker:
     """Rank LSD solutions by comparing predicted vs experimental 13C shifts.
 
@@ -42,6 +106,7 @@ class SolutionRanker:
         solutions: list[LSDSolution],
         experimental_shifts: list[float],
         top_n: int | None = None,
+        formula: str | None = None,
     ) -> RankingResult:
         """Rank LSD solutions by 13C spectrum similarity.
 
@@ -49,9 +114,14 @@ class SolutionRanker:
             solutions: List of LSD solutions (must have SMILES for ranking)
             experimental_shifts: List of experimental 13C peak positions in ppm
             top_n: If specified, only return top N results
+            formula: Optional molecular formula (e.g. "C12H16O3") for DBE
+                plausibility check (D-09). When provided, solutions with DBE
+                deviating >1 from expected are marked implausible.
 
         Returns:
-            RankingResult with solutions sorted by match count (best first), then MAE
+            RankingResult with solutions sorted by match count (best first), then MAE.
+            Plausible solutions appear before implausible ones; implausible solutions
+            have is_plausible=False set on their RankedSolution entry.
         """
         ranked: list[RankedSolution] = []
         skipped = 0
@@ -100,8 +170,19 @@ class SolutionRanker:
             )
             ranked.append(ranked_solution)
 
-        # Sort by match count (higher is better), then MAE (lower is better)
-        ranked.sort(key=lambda r: (-r.matched_count, r.mae))
+        # Chemical plausibility pre-filter (D-09): partition before MAE sort.
+        # Plausible solutions are sorted by the ranking contract (matched_count desc,
+        # MAE asc); implausible solutions are appended after with is_plausible=False.
+        plausible = [
+            r for r in ranked if _is_chemically_plausible(r, experimental_shifts, formula)
+        ]
+        implausible = [
+            r for r in ranked if not _is_chemically_plausible(r, experimental_shifts, formula)
+        ]
+        plausible.sort(key=lambda r: (-r.matched_count, r.mae))
+        ranked = plausible + [
+            r.model_copy(update={"is_plausible": False}) for r in implausible
+        ]
 
         # Store count before limiting
         total_ranked = len(ranked)
@@ -110,8 +191,8 @@ class SolutionRanker:
         warnings: list[str] = []
 
         # Aromatic ring sanity check: if experimental shifts strongly suggest
-        # aromaticity (>= 4 shifts in 110-160 ppm) but no solutions have
-        # aromatic rings, warn about possible 4J HMBC artifact
+        # aromaticity (>= 4 shifts in 110-160 ppm) but no plausible solutions
+        # have aromatic rings, note that the pre-filter has acted.
         aromatic_shift_count = sum(
             1 for s in experimental_shifts if 110.0 <= s <= 160.0
         )
@@ -120,9 +201,9 @@ class SolutionRanker:
             warnings.append(
                 f"Aromatic ring expected ({aromatic_shift_count} shifts in "
                 f"110-160 ppm) but no solutions contain aromatic rings. "
-                f"Possible 4J HMBC artifact — consider removing HMBC "
-                f"correlations between aromatic ring positions and "
-                f"benzylic/alpha substituents."
+                f"Implausible solutions (no aromatic ring) are appended after "
+                f"plausible ones. Consider ELIM escalation (D-02) if no plausible "
+                f"solutions emerge."
             )
 
         # Limit results if requested
