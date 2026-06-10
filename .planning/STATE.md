@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-20)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a multi-agent team that uses the intended solver pipeline — not a manual bypass
-**Current focus:** Phase 83 — constraint-hardness-guard
+**Current focus:** v9.0 ship-gate — blind CASE9 re-run (fresh instance) on the decontaminated + FIX-08/09/10-fixed skills. Phases 81 (peak-picking), 82 (skill hygiene + repo migration) and 83 (constraint-hardness guard) all DONE + verified. Remaining content blockers for a full CASE9 solve (separate, not yet scoped): benzene-ring emergence (D-04) and thin HMBC pool.
 
 ## Current Position
 
@@ -35,7 +35,9 @@ Phase 77: Fix lucy lsd run + Tooling [x] Complete
 Phase 78: Blind Re-UAT (CASE1+CASE9) [x] Executed — GATE FAILED (CASE1 UAT-03 PASS, CASE9 UAT-04 FAIL)
 Phase 79: Peak-Picking + Symmetry    [x] Complete — carbonyl-masking ELIMINATED (verified live), but CASE9 exposed 4J-HMBC blocker
 Phase 80: Long-Range 4J-HMBC Defect  [~] Mechanism delivered + unit-green; blind UAT GATE FAILED (upstream picker defect) → Phase 81
-Phase 81: Peak-Picking Integrity     [x] Code complete + VERIFIED (FIX-08) — all 5 fixes a–e shipped, suite 1077 passed; blind re-UAT is the remaining v9.0 ship-gate
+Phase 81: Peak-Picking Integrity     [x] Code complete + VERIFIED (FIX-08) — all 5 fixes a–e shipped, suite 1077 passed
+Phase 82: Blind-UAT Skill Hygiene    [x] DONE (FIX-09) — runtime CASE skills decontaminated + migrated into repo/.claude (symlinked); 2026-06-10 CASE9 run invalidated
+Phase 83: Constraint-Hardness Guard  [x] DONE + VERIFIED (FIX-10) — advisory rule + G-PROP-EVIDENCE gate + dominant_element tooling; CASE9 truth not excluded; suite 1071 passed. Blind CASE9 re-run = remaining v9.0 ship-gate
 ```
 
 Progress: [█████████░] 89% (8/10 phases; v9.0 does NOT ship until CASE9 passes)
