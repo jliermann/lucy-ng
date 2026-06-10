@@ -371,11 +371,49 @@ File hash at approval: <FILE_HASH>  (md5)
 
 ---
 
+**G-PROP-EVIDENCE: Hard Heteroatom PROP/BOND Without Sufficient Evidence (CRITICAL)**
+
+*Trigger:* The LSD file contains a hard heteroatom constraint (`PROP X O`, `PROP X N`, or `BOND X O`/`BOND X N` outside the Cq 160-220 ppm carbonyl exception) AND the constraint inventory `applied_from_detection` entry for that constraint does NOT cite (i) direct connectivity evidence (HMBC/HSQC/exchangeable-H) or (ii) convergent multi-source corroboration (Cq + 160-220 ppm shift + C=O context + O in formula).
+
+**Check procedure:**
+
+Step 1 — Detect hard heteroatom constraints:
+```bash
+grep -E "^PROP [0-9]+ (O|N)" analysis/iteration_NN/compound.lsd
+grep -E "^BOND [0-9]+ [0-9]+" analysis/iteration_NN/compound.lsd
+```
+For BOND lines, cross-reference with MULT definitions to determine if any BOND atom is a heteroatom. If no hard heteroatom constraints found: gate passes.
+
+Step 2 — For each hard heteroatom constraint, check the constraint inventory `applied_from_detection` array (Section 5A). The constraint PASSES if its entry cites one of:
+- 'HMBC' — direct 2-3J correlation establishing adjacency to the heteroatom-bearing carbon
+- 'HSQC Cq' with '160-220 ppm' — confirming Cq in the carbonyl region (carbonyl exception; BOND C=O permitted)
+- 'exchangeable H' — OH or NH confirmed independently
+
+Step 3 — Sub-checks (each triggers CRITICAL independently):
+
+**(a) constraint_type is 'typical':** If the inventory entry cites a detect-neighbours value but the constraint_type for that element is 'typical' (~0.5-0.9, not 'mandatory' >=0.95): CRITICAL — "G-PROP-EVIDENCE: constraint_type 'typical' is advisory-only; a borderline heteroatom probability is never a sufficient basis for a hard constraint without converging direct evidence."
+
+**(b) Carbon is dominant neighbour:** If the inventory entry shows carbon as the highest-frequency element at the queried shift: CRITICAL — "G-PROP-EVIDENCE: carbon is the dominant neighbour at this shift; heteroatom placement is uncertain. A carbon-dominant shift must be left open unless direct connectivity evidence establishes the heteroatom."
+
+**(c) Renormalized probability:** If the constraint inventory records a heteroatom frequency that does not match the raw detect-neighbours output for that shift, or if any 'after X-exclusion' or recalculated percentage is cited: CRITICAL — "G-PROP-EVIDENCE: renormalized/inflated detect-neighbours probability detected. Only raw tool output values are permitted. Recalculating by excluding elements is fabrication."
+
+Step 4 — Without inventory (legacy fallback): check CASE-PROGRESS.md for documented direct-evidence or convergent-evidence citation. If absent: flag CRITICAL.
+
+CRITICAL message template:
+'G-PROP-EVIDENCE: Hard heteroatom constraint [{constraint}] lacks sufficient evidence. Permitted basis: direct HMBC/HSQC/exchangeable-H OR convergent corroboration (Cq + 160-220 ppm + C=O context). Found only: [{cited_evidence}]. Remove the constraint or supply qualifying evidence. (FIX-10)'
+
+*Severity:* CRITICAL — blocks solver run. An incorrect hard heteroatom PROP/BOND is solution-excluding; 13C ranking cannot recover from it.
+
+*Rationale:* The failure mode is: agent reads a borderline 'typical' heteroatom frequency, inflates it by renormalization, and emits a hard constraint — while carbon is actually the dominant neighbour, consistent with a carbon substituent at that shift. An open placement lets LSD generate all variants; ranking then discriminates correctly. (FIX-10)
+
+---
+
 **Summary of Check 5 gates:**
 
 | Gate | When | Severity | Trigger |
 |------|------|----------|---------|
 | G7 | Pre-run, lsd-engineer self-check | CRITICAL | File hash changed after DA approval |
+| G-PROP-EVIDENCE | Pre-run, all iterations | CRITICAL | Hard heteroatom PROP/BOND: cites only single detect-neighbours value without direct/convergent evidence; OR constraint_type is 'typical'; OR carbon is dominant neighbour; OR probability is renormalized |
 
 
 
@@ -480,6 +518,7 @@ Action required: lsd-engineer must fix CRITICAL issues before solver run
    f. ELIM usage check
 7. If iteration > 1: Run constraint diff protocol. **With inventory:** use inventory-based checks (Section 5B). **Without inventory:** use legacy count+content comparison (Section 1).
 8. Run bug checklist (all 5 items). **With inventory:** use inventory-enhanced checks (Section 5D). **Without inventory:** use legacy checks (Section 2).
+8a. Run G-PROP-EVIDENCE gate (Section 5, Check 5): for each hard heteroatom PROP/BOND in the LSD file, verify the constraint inventory cites direct connectivity evidence or convergent corroboration (Cq + 160-220 ppm + C=O context). Sub-check: flag CRITICAL if constraint_type is 'typical', if carbon is dominant neighbour, or if any renormalized/inflated probability is documented.
 9. Classify each issue by severity (CRITICAL/WARNING/INFO)
 10. If any CRITICAL: Send [VALIDATION-BLOCKED] message to coordinator (and also notify lsd-engineer that fixes are required)
 11. If no CRITICAL: Send [VALIDATION-PASSED] message to coordinator (with WARNING/INFO listed under Concerns)
