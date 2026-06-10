@@ -93,3 +93,40 @@ class TestAnalyzeSymmetry:
             ["symmetry", "C13H18O2", "data/NonExistent/6"],
         )
         assert result.exit_code != 0
+
+    # --- FIX-08 overcount alarm tests ---
+
+    def test_analyze_symmetry_overcount_text_contains_warning(self) -> None:
+        """Overcount: text output contains 'Warning:' (case-sensitive) and 'more signals than carbons'."""
+        runner = CliRunner()
+        # C4H8 has 4 expected carbons; Ibuprofen/2 has ~13 observed → overcount
+        result = runner.invoke(
+            analyze,
+            ["symmetry", "C4H8", "data/Ibuprofen/2"],
+        )
+        assert result.exit_code == 0
+        assert "Warning:" in result.output  # case-sensitive assertion
+        assert "more signals than carbons" in result.output
+
+    def test_analyze_symmetry_overcount_json_alarm_true(self) -> None:
+        """Overcount: JSON output has overcount_alarm=true and overcount_excess>0."""
+        runner = CliRunner()
+        result = runner.invoke(
+            analyze,
+            ["symmetry", "C4H8", "data/Ibuprofen/2", "--format", "json"],
+        )
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert data["overcount_alarm"] is True
+        assert data["overcount_excess"] > 0
+
+    def test_analyze_symmetry_normal_json_alarm_false(self) -> None:
+        """Normal case (no overcount): JSON output has overcount_alarm=false."""
+        runner = CliRunner()
+        result = runner.invoke(
+            analyze,
+            ["symmetry", "C13H18O2", "data/Ibuprofen/2", "--format", "json"],
+        )
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert data["overcount_alarm"] is False
