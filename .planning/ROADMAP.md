@@ -205,7 +205,7 @@ Plans:
 - [x] **Phase 78: Blind Re-UAT Gate (CASE1 + CASE9)** - Re-run the v9.0 milestone blind UAT on CASE1 + CASE9 via the now-fixed intended mechanism; independent RDKit verification with rewritten criteria (emergent ring = clean pass, documented BOND escalation = conditional pass, silent ring-BOND/SKEL = fail). Milestone-complete gate. (depends on Phase 77) (executed 2026-06-08 — **GATE VERDICT: FAILED**; CASE1 UAT-03 PASS, CASE9 UAT-04 FAIL → v9.0 DOES NOT SHIP. See 78-UAT-VERDICT.md → Phase 79)
 - [x] **Phase 79: Peak-Picking & Symmetry Detection Fix** - Fix the upstream defect the CASE9 UAT exposed: weak quaternary carbonyls masked by the CDCl₃-dominated max-relative peak-picking threshold (carbonyl at 166.08 ppm, SNR≈17, dropped); and 13C peak-intensity symmetry (2C signals) not used to detect equivalent aromatic carbons (so `lucy detect aromatic-cosy` gets no input and the emergent ring is disabled). Then re-run CASE9 blind and re-apply the AND-gate. (depends on Phase 78) (completed 2026-06-09 — all deliverables verified + targeted defect ELIMINATED: blind CASE9 re-run picked the carbonyl @ SNR 17, detected 3 symmetry pairs, ring emerged via COSY with no SKEL/ring-BOND, DBE+quality-loop fired. BUT CASE9 still unsolved — a NEW root cause surfaced → Phase 80. v9.0 still does not ship.)
 - [ ] **Phase 80: Long-Range (4J) HMBC Connectivity Defect** - Resolve the blocker the Phase-79 blind CASE9 UAT exposed once carbonyl-masking was removed: false-positive long-range (4J) HMBC correlations (e.g. `HMBC 1 8` = 166.1↔70.2; set 2 3 / 2 9 / 3 8) are enforced as 2-3J, forcing wrong carbonyl connectivity and excluding the correct para-benzoate-with-benzylic-alcohol (`CC(C)OC(=O)c1ccc(C(C)O)cc1`). This is the long-standing 4J-HMBC trap (v4.0 ibuprofen; v7.0 statistical approach abandoned at 100% FP; v8.0 pyLSD `HMBC X Y 2 4` extended-range). (depends on Phase 79) (mechanism delivered + unit-green 2026-06-10: elim_budget, plausibility pre-filter, skill surgery, SC-3 regression guard PASS — but blind UAT GATE FAILED: CASE9 still unsolved. Root cause is UPSTREAM peak-picking, not the solver → Phase 81. See 80-UAT-VERDICT.md. v9.0 does not ship.)
-- [ ] **Phase 81: Peak-Picking Integrity (FIX-08)** - Fix the upstream peak-picking defect that failed the Phase-80 blind CASE9 UAT: default `snr_floor=3.0` floods the picker with ~50 baseline-ripple peaks (incl. 13 impossible >220 ppm), so the agent's manual curation dropped the genuine ester carbonyl (166.08 ppm, SNR 17) → DBE misallocated, benzene read as monosubstituted, correct para-benzoate excluded. Plus: no overcount guard (`analyze symmetry` only models undercount; 76-vs-12 prints a silent negative and even confirmed the carbonyl-free skeleton). Fixes: snr_floor 3→5, expose `--snr-floor`, overcount guard + `missing_carbons<0` alarm, nmr-chemist SNR/carbonyl rules, CASE9 regression test. Then re-run blind UAT + re-apply AND-gate. (depends on Phase 80) (not started)
+- [x] **Phase 81: Peak-Picking Integrity (FIX-08)** - Fix the upstream peak-picking defect that failed the Phase-80 blind CASE9 UAT: default `snr_floor=3.0` floods the picker with ~50 baseline-ripple peaks (incl. 13 impossible >220 ppm), so the agent's manual curation dropped the genuine ester carbonyl (166.08 ppm, SNR 17) → DBE misallocated, benzene read as monosubstituted, correct para-benzoate excluded. Plus: no overcount guard (`analyze symmetry` only models undercount; 76-vs-12 prints a silent negative and even confirmed the carbonyl-free skeleton). Fixes: snr_floor 3→5, expose `--snr-floor`, overcount guard + `missing_carbons<0` alarm, nmr-chemist SNR/carbonyl rules, CASE9 regression test. Then re-run blind UAT + re-apply AND-gate. (depends on Phase 80) (not started) (completed 2026-06-10)
 
 ## Phase Details
 
@@ -519,7 +519,7 @@ Plans:
 
 **Requirements**: FIX-08
 **Depends on:** Phase 80
-**Plans:** 3/4 plans executed
+**Plans:** 4/4 plans complete
 
 **Exit gate:** After fixes, re-run the blind UAT on CASE9 + CASE1 (fresh instances per `feedback_blind_uat`) and re-apply the Phase-78 AND-gate. v9.0 ships iff both pass.
 
@@ -532,7 +532,7 @@ Plans:
 
 **Wave 2** *(depends on 81-01 + 81-02)*
 
-- [ ] 81-04-PLAN.md — FIX-08 regression test suite (CASE9@k=5 + overcount guard + CASE1 non-regression) + full suite health check
+- [x] 81-04-PLAN.md — FIX-08 regression test suite (CASE9@k=5 + overcount guard + CASE1 non-regression) + full suite health check
 
 ---
 *Last updated: 2026-06-10 — Phase 80 blind UAT GATE FAILED (CASE9 FAIL, see 80-UAT-VERDICT.md); root cause = upstream peak-picking integrity defect (snr_floor=3 noise flood + no overcount guard) → Phase 81 (FIX-08) added. Phase-80 mechanism delivered + unit-green; v9.0 still does not ship.*
