@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: CASE Reliability & Skill Consolidation
 status: executing
-stopped_at: Phase 80 context gathered
-last_updated: "2026-06-09T12:13:54.861Z"
-last_activity: 2026-06-09 -- Phase 80 execution started
+stopped_at: Phase 80 closed at FAILED gate (80-UAT-VERDICT.md written, CASE9 FAIL). Phase 80 mechanism (elim_budget, plausibility filter, skill surgery, SC-3 guard PASS) delivered + unit-green (pytest 1054) but the blind CASE9 UAT failed on an UPSTREAM peak-picking defect. Phase 81 (FIX-08) created with full scope in ROADMAP. v9.0 still does not ship.
+last_updated: "2026-06-10T08:07:09.472Z"
+last_activity: 2026-06-10 -- Phase 81 execution started
 progress:
-  total_phases: 9
-  completed_phases: 8
-  total_plans: 28
-  completed_plans: 23
-  percent: 82
+  total_phases: 10
+  completed_phases: 9
+  total_plans: 32
+  completed_plans: 28
+  percent: 88
 ---
 
 # lucy-ng State
@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-20)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a multi-agent team that uses the intended solver pipeline — not a manual bypass
-**Current focus:** Phase 80 — long-range-4j-hmbc-connectivity-defect
+**Current focus:** Phase 81 — peak-picking-integrity-fix-08
 
 ## Current Position
 
@@ -40,10 +40,10 @@ Phase 81: Peak-Picking Integrity     [ ] Not started — v9.0 ship-gate (FIX-08)
 
 Progress: [█████████░] 89% (8/10 phases; v9.0 does NOT ship until CASE9 passes)
 
-Phase: 81 (peak-picking-integrity-fix-08) — NOT STARTED
-Plan: Not started
-Status: Phase 80 mechanism complete but gate FAILED; Phase 81 added to fix the upstream picker defect
-Last activity: 2026-06-10 -- Phase 80 blind UAT gate FAILED (CASE9), root-caused to peak-picking; Phase 81 (FIX-08) created
+Phase: 81 (peak-picking-integrity-fix-08) — EXECUTING
+Plan: 1 of 4
+Status: Executing Phase 81
+Last activity: 2026-06-10 -- Phase 81 execution started
 
 **Phase 77 scope (fixes only — decisions in 77-CONTEXT.md):**
 

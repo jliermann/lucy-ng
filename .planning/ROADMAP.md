@@ -519,16 +519,16 @@ Plans:
 
 **Requirements**: FIX-08
 **Depends on:** Phase 80
-**Plans:** 4 plans
+**Plans:** 3/4 plans executed
 
 **Exit gate:** After fixes, re-run the blind UAT on CASE9 + CASE1 (fresh instances per `feedback_blind_uat`) and re-apply the Phase-78 AND-gate. v9.0 ships iff both pass.
 
 Plans:
 **Wave 1** *(81-01, 81-02, 81-03 are independent and run in parallel)*
 
-- [ ] 81-01-PLAN.md — snr_floor default 3→5 in peak_picker.py + expose --snr-floor in lucy pick 1d
-- [ ] 81-02-PLAN.md — overcount guard + missing_carbons<0 alarm in analyze.py + symmetry_analysis.py
-- [ ] 81-03-PLAN.md — nmr-chemist skill: SNR≥5 rules, overcount=noise rule, carbonyl-never-discard rule
+- [x] 81-01-PLAN.md — snr_floor default 3→5 in peak_picker.py + expose --snr-floor in lucy pick 1d
+- [x] 81-02-PLAN.md — overcount guard + missing_carbons<0 alarm in analyze.py + symmetry_analysis.py
+- [x] 81-03-PLAN.md — nmr-chemist skill: SNR≥5 rules, overcount=noise rule, carbonyl-never-discard rule
 
 **Wave 2** *(depends on 81-01 + 81-02)*
 
