@@ -70,6 +70,22 @@ ELEM L2 O       ; list of all oxygens
 PROP L1 1 L2    ; each atom in L1 has at least 1 neighbor from L2
 ```
 
+**FIX-10 PROHIBITION — No hard heteroatom PROP/BOND from a single statistical detection value (G-PROP-EVIDENCE):**
+
+A hard heteroatom constraint (`PROP X O n`, `PROP X N n`, or any `BOND` to a heteroatom outside the carbonyl exception) requires ONE of:
+
+(i) **Direct connectivity evidence:** an HMBC correlation establishing adjacency to a heteroatom-bearing carbon, an HSQC absence confirming Cq combined with formula O/N count and shift range, or an exchangeable H peak confirming OH/NH.
+
+(ii) **convergent multi-source corroboration (carbonyl exception only):** Cq confirmed by DEPT/HSQC + shift in 160-220 ppm + unambiguous C=O context (ester/acid/amide chemistry from formula) + O present in formula. This is the ONLY case where a detect-neighbours O value contributes to a hard BOND — because three independent sources converge. Emit `BOND X O` (C=O) in this case only.
+
+**Forbidden patterns (devils-advocate G-PROP-EVIDENCE gate will BLOCK):**
+- Citing a single detect-neighbours 'typical' probability (~0.5-0.9) as the sole basis for PROP or BOND.
+- renormalizing or inflating a detect-neighbours frequency (excluding elements and recalculating to a higher percentage). Use raw tool output only.
+- Emitting a hard heteroatom constraint when carbon is the dominant neighbour at that shift (highest frequency in the detect-neighbours distribution).
+- Citing detect-neighbours alone for any shift in the 145-160 ppm aromatic range (ambiguous: ring-O vs benzylic/EDG substituent — see nmr-chemist Pitfall 6).
+
+**When uncertain:** leave heteroatom placement OPEN. Use LIST/ELEM/PROP only when direct HMBC connectivity is established. Let LSD explore alternatives; 13C ranking (lucy lsd rank) discriminates. An incorrect hard PROP is a solution-excluding constraint that ranking cannot recover from. (FIX-10)
+
 **NATIVE EQUIVALENCE COMMANDS (replaces non-native SYME):**
 
 SYME causes LSD error 102 (unknown command) — NEVER write SYME to an LSD file.
@@ -226,7 +242,7 @@ Before every LSD run, verify:
 3. sp2 count is EVEN
 4. HSQC before HMBC in file
 5. HMBC references only defined H positions
-6. Heteroatom constraints: BOND for C=O only; LIST/ELEM/PROP for flexible connectivity
+6. Heteroatom constraints: BOND for C=O only when convergent evidence confirms it (Cq via DEPT/HSQC + 160-220 ppm shift + unambiguous C=O context + O in formula — three independent sources). For ALL other heteroatom placements: leave OPEN unless direct HMBC/HSQC/exchangeable-H evidence establishes connectivity. NEVER emit `PROP X O n` or hard heteroatom BOND from a single detect-neighbours value alone — especially a 'typical' (~0.5-0.9) value or when carbon is the dominant neighbour. Devils-advocate G-PROP-EVIDENCE gate will BLOCK. (FIX-10)
 7. NO ELIM on first run (ELIM is added only after all HMBC are included and 0 plausible solutions remain — see ELIM Escalation)
 8. Ring exclusion DEFF F1 "ring3" + DEFF F2 "ring4" + FEXP "NOT F1 AND NOT F2" present
 9. Constraint Inventory block present at top of file with correct counts

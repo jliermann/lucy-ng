@@ -54,7 +54,19 @@ Read file: ~/.claude/commands/lucy-ng/references/nmr-basics.md
 
 **Pitfall 5 — Heteroatom positions:** O and N invisible in standard NMR. Infer from formula count, chemical shifts, and HMBC connectivity.
 
-**Pitfall 6 — Heteroatom constraints (CRITICAL):** Express what you KNOW, not what you GUESS. Use detection to identify mandatory/forbidden neighbors BEFORE constraints. For carbonyls (160-220 ppm): detection confirms O mandatory -> BOND C=O is safe. For second oxygens: do NOT constrain connectivity. Let LSD explore acid vs ester vs ether. Ranking decides.
+**Pitfall 6 — Heteroatom constraints (CRITICAL — re-asserted FIX-10):** `detect neighbours` output is a statistical prior / advisory signal — never the sole basis for a hard PROP or BOND heteroatom constraint. Read the FULL distribution, not just one element's frequency:
+
+**How to read the output correctly:**
+- Check `constraint_type` for each element: 'mandatory' (>=0.95 frequency) vs 'typical' (~0.5-0.9) vs 'forbidden' (<0.01).
+- Identify the DOMINANT neighbour (highest frequency). If carbon is dominant, the shift is more consistent with a carbon substituent than a heteroatom substituent — even if a heteroatom also shows 'typical' frequency.
+- A single 'typical' or borderline heteroatom probability (~0.5-0.9) never hardens. 'Typical' means the heteroatom appears sometimes in the database, not that it is required for this structure.
+- NEVER renormalize or inflate a frequency by excluding other elements. Use raw tool output values as-is. Inflating a typical value by renormalization (e.g., 'after N-exclusion') is fabrication and is forbidden.
+
+**145-160 ppm aromatic C ambiguity (CRITICAL):** A carbon in this shift range is ambiguous between (a) ring-O-substituted (phenol/aryl-ether) and (b) an aromatic C bearing an electron-donating or benzylic substituent with NO ring-oxygen — especially when an sp3 C-O signal at ~65-75 ppm could be a benzylic carbinol (CH(OH)CH3 or similar, directly attached to the ring carbon). Detection O-frequency is elevated for both cases; it cannot distinguish them. If carbon is the dominant neighbour at this range: do NOT emit PROP or BOND for the heteroatom.
+
+**Carbonyl exception (the ONLY safe hard heteroatom constraint that may draw on detection):** For a Cq in the 160-220 ppm range where (i) DEPT/HSQC confirms no attached H (Cq), (ii) shift is in the C=O region, and (iii) the carbonyl carbon's chemistry is unambiguous (ester/acid/amide context from formula and HMBC), convergent multi-source evidence supports BOND C=O. This is a multi-source inference, NOT a single detect-neighbours probability.
+
+**Rule:** For all other heteroatom placements: express what you KNOW from direct evidence (HMBC correlation to a heteroatom-bearing carbon, exchangeable H confirming OH/NH), not what detection suggests. Leave uncertain placement OPEN. Let LSD explore acid vs ester vs ether vs carbon substituent. Ranking (13C prediction) decides. This is 'don't over-constrain heteroatoms; let ranking decide.'
 
 **Pitfall 7 — H budget mismatch:** Check heteroatom OH/NH FIRST (invisible in HSQC). If off by 1H + formula has O/N, likely missing heteroatom H. Only change carbon multiplicities as LAST resort with DEPT evidence.
 
@@ -155,7 +167,15 @@ Run detection ONCE per compound, before first LSD iteration.
 
 **Hybridisation:** sp2 > 80% -> MULT hybridisation 2. sp3 > 80% -> MULT hybridisation 3. Mixed 40-60% -> ambiguous, use DEPT/HSQC as tiebreaker. No data -> fallback heuristics (120-160=sp2, 160-220=sp2, <50=sp3).
 
-**Neighbours:** Mandatory (>95%) -> report for PROP constraint. Forbidden (<1%) -> report for exclusion. Typical (1-95%) -> no constraint. CRITICAL: check formula first — ignore "O mandatory" if formula has no O.
+**Neighbours:** Output is a statistical prior — advisory only. Protocol:
+1. Read the FULL distribution. Identify the dominant element (highest frequency) first.
+2. For each element, note its `constraint_type`: 'mandatory' (>=0.95), 'typical' (~0.5-0.9), 'forbidden' (<0.01).
+3. A 'typical' heteroatom value, alone, warrants only an advisory observation in [SETUP-COMPLETE] — never a hard PROP or BOND constraint.
+4. If carbon is the dominant element, report the shift as 'likely C-substituted' in [SETUP-COMPLETE]; do NOT propose a heteroatom constraint.
+5. For carbonyls (Cq 160-220 ppm, see Pitfall 6 carbonyl exception): convergent multi-source evidence supports BOND C=O — document all converging sources explicitly.
+6. 'Forbidden' (<1%) -> report as advisory exclusion only; applies only if formula has the element.
+7. CRITICAL: check formula first — ignore any 'mandatory' reading if formula has no such element.
+8. NEVER renormalize or reinterpret raw frequencies. Report them as-is from the tool output.
 
 **HHB:** Forbidden pair (<1%) -> report no such BOND. Allowed (>1%) -> no exclusion. Guidelines, not absolute rules.
 
