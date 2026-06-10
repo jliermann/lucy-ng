@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-20)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a multi-agent team that uses the intended solver pipeline — not a manual bypass
-**Current focus:** Phase 81 — peak-picking-integrity-fix-08
+**Current focus:** v9.0 ship-gate — blind re-UAT (CASE9 + CASE1, fresh instances) after Phase 81 code-complete + verified
 
 ## Current Position
 
@@ -35,7 +35,7 @@ Phase 77: Fix lucy lsd run + Tooling [x] Complete
 Phase 78: Blind Re-UAT (CASE1+CASE9) [x] Executed — GATE FAILED (CASE1 UAT-03 PASS, CASE9 UAT-04 FAIL)
 Phase 79: Peak-Picking + Symmetry    [x] Complete — carbonyl-masking ELIMINATED (verified live), but CASE9 exposed 4J-HMBC blocker
 Phase 80: Long-Range 4J-HMBC Defect  [~] Mechanism delivered + unit-green; blind UAT GATE FAILED (upstream picker defect) → Phase 81
-Phase 81: Peak-Picking Integrity     [ ] Not started — v9.0 ship-gate (FIX-08); snr_floor 3→5 + overcount guard
+Phase 81: Peak-Picking Integrity     [x] Code complete + VERIFIED (FIX-08) — all 5 fixes a–e shipped, suite 1077 passed; blind re-UAT is the remaining v9.0 ship-gate
 ```
 
 Progress: [█████████░] 89% (8/10 phases; v9.0 does NOT ship until CASE9 passes)
