@@ -554,3 +554,96 @@ class TestIntegration:
         summary = result.summary()
         assert len(summary) > 100  # Substantial output
         assert "Symmetry Analysis" in summary
+
+
+# --- FIX-08 SymmetryAnalysisResult overcount alarm tests ---
+
+
+class TestSymmetryAnalysisResultOvercount:
+    """Tests for FIX-08: overcount alarm in SymmetryAnalysisResult.summary()."""
+
+    @pytest.fixture
+    def overcount_result(self) -> SymmetryAnalysisResult:
+        """SymmetryAnalysisResult with overcount (76 observed vs 12 expected)."""
+        hb = HydrogenBudgetResult(
+            molecular_formula="C12H16O3",
+            expected_h=16,
+            carbon_assigned_h=16,
+            heteroatom_h=0,
+            total_accounted=16,
+            missing_h=0,
+        )
+        ir = IntensityReport(peaks=[])
+        return SymmetryAnalysisResult(
+            molecular_formula="C12H16O3",
+            hydrogen_budget=hb,
+            intensity_report=ir,
+            signal_count=76,
+            expected_carbons=12,
+            missing_carbons=-64,
+        )
+
+    def test_overcount_summary_contains_overcount_alarm(
+        self, overcount_result: SymmetryAnalysisResult
+    ) -> None:
+        """summary() must contain 'OVERCOUNT ALARM' when missing_carbons < 0."""
+        s = overcount_result.summary()
+        assert "OVERCOUNT ALARM" in s
+
+    def test_overcount_summary_contains_more_signals_than_carbons(
+        self, overcount_result: SymmetryAnalysisResult
+    ) -> None:
+        """summary() must mention 'more signals than carbons' for overcount."""
+        s = overcount_result.summary()
+        assert "more signals than carbons" in s
+
+    def test_overcount_has_symmetry_is_false(
+        self, overcount_result: SymmetryAnalysisResult
+    ) -> None:
+        """has_symmetry must be False when missing_carbons < 0."""
+        assert overcount_result.has_symmetry is False
+
+    def test_undercount_summary_unchanged(self) -> None:
+        """Undercount path (missing_carbons > 0) must be unchanged."""
+        hb = HydrogenBudgetResult(
+            molecular_formula="C13H18O2",
+            expected_h=18,
+            carbon_assigned_h=11,
+            heteroatom_h=0,
+            total_accounted=11,
+            missing_h=7,
+        )
+        ir = IntensityReport(peaks=[])
+        r = SymmetryAnalysisResult(
+            molecular_formula="C13H18O2",
+            hydrogen_budget=hb,
+            intensity_report=ir,
+            signal_count=6,
+            expected_carbons=13,
+            missing_carbons=7,
+        )
+        s = r.summary()
+        assert "OVERCOUNT ALARM" not in s
+        assert "7 carbons must be equivalent" in s
+
+    def test_zero_difference_summary_unchanged(self) -> None:
+        """Zero difference (missing_carbons == 0) must produce no alarm."""
+        hb = HydrogenBudgetResult(
+            molecular_formula="C2H6O",
+            expected_h=6,
+            carbon_assigned_h=6,
+            heteroatom_h=0,
+            total_accounted=6,
+            missing_h=0,
+        )
+        ir = IntensityReport(peaks=[])
+        r = SymmetryAnalysisResult(
+            molecular_formula="C2H6O",
+            hydrogen_budget=hb,
+            intensity_report=ir,
+            signal_count=2,
+            expected_carbons=2,
+            missing_carbons=0,
+        )
+        s = r.summary()
+        assert "OVERCOUNT ALARM" not in s

@@ -69,6 +69,8 @@ def analyze_symmetry(
             "expected_carbons": expected_carbons,
             "observed_peaks": observed_peaks,
             "difference": difference,
+            "overcount_alarm": difference < 0,
+            "overcount_excess": max(0, -difference),
         }
         click.echo(json.dumps(data, indent=2))
     else:
@@ -79,7 +81,11 @@ def analyze_symmetry(
         if difference > 0:
             click.echo(f"  → {difference} carbons may be equivalent due to symmetry")
         elif difference < 0:
-            click.echo("  → Warning: More peaks than expected carbons")
+            click.echo(
+                f"  → Warning: more signals than carbons ({observed_peaks} observed vs"
+                f" {expected_carbons} expected) — likely noise, not symmetry."
+                " Re-pick with --snr-floor 5 or higher before proceeding."
+            )
 
 
 @analyze.command("grouping")

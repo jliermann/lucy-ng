@@ -51,7 +51,13 @@ class SymmetryAnalysisResult:
             f"  Missing carbons:         {self.missing_carbons}",
         ]
 
-        if self.missing_carbons > 0:
+        if self.missing_carbons < 0:
+            lines.append(
+                f"  OVERCOUNT ALARM: {-self.missing_carbons} more signals than carbons"
+                " — likely noise peaks in the spectrum. Re-pick at snr_floor >= 5 before"
+                " any symmetry or DBE reasoning."
+            )
+        elif self.missing_carbons > 0:
             lines.append(f"  → {self.missing_carbons} carbons must be equivalent to observed signals")
 
         lines.append("")
