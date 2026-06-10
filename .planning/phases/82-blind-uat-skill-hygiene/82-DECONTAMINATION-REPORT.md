@@ -32,7 +32,7 @@ Independent central grep across all 10 active runtime files: **0 matches** for e
 
 ## Follow-ups (out of scope for FIX-09)
 - **Skill-creator bloat findings** (observation only): `lucy-diagnostic.md` ~1146 lines (≈2× the ~500 guideline), `lucy-lsd-engineer.md` 524, `lucy-devils-advocate.md` 488, `case.md` 608. Candidates for progressive-disclosure refactor (move reference material to `references/`, dedupe inline advisory templates). Several agent `description:` fields lack explicit "Use when:" spawn triggers. Backlog, not blocking.
-- **`lucy-case-agent.md`** orphaned/deprecated (62 KB) — recommend deletion to remove even theoretical risk.
+- **`lucy-case-agent.md`** — **DELETED 2026-06-10.** Closes a FIX-03 loose end: Phase 77 / plan 77-03 (2026-06-01) "retired" it only by renaming the frontmatter `name:` to `DEPRECATED-lucy-case-agent` + a deprecation blockquote ("archive in place"), leaving the 1291-line file on disk with an active-looking `description:`. It was confirmed orphaned (never spawned by any active command/agent), so not a live blind-UAT vector, but it was dead weight and latent risk. Note the irony: the same plan 77-03 that "retired" it also INTRODUCED the `uat_criteria` (D-77-06) leak into case.md that FIX-09 just removed — "skill hygiene" that left dead files and added a contaminant. Lesson now codified in FIX-09: hygiene must mean concrete deletion + grep-verification, not archive-in-place.
 - **Repo `skill/` dir** is stale v2.x structure (not the source of the current team agents) — separate cleanup.
 
 ## Gate status
