@@ -121,12 +121,17 @@ class TestAnalyzeSymmetry:
         assert data["overcount_excess"] > 0
 
     def test_analyze_symmetry_normal_json_alarm_false(self) -> None:
-        """Normal case (no overcount): JSON output has overcount_alarm=false."""
+        """Normal case (no overcount): JSON output has overcount_alarm=false.
+
+        Uses C200H300O5 so expected carbons (200) always exceeds any realistic
+        peak count from the Ibuprofen/2 spectrum.
+        """
         runner = CliRunner()
         result = runner.invoke(
             analyze,
-            ["symmetry", "C13H18O2", "data/Ibuprofen/2", "--format", "json"],
+            ["symmetry", "C200H300O5", "data/Ibuprofen/2", "--format", "json"],
         )
         assert result.exit_code == 0
         data = json.loads(result.output)
         assert data["overcount_alarm"] is False
+        assert data["overcount_excess"] == 0
