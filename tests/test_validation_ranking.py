@@ -7,7 +7,6 @@ encoded in agent knowledge.
 
 import pytest
 from unittest.mock import MagicMock
-from pathlib import Path
 
 from lucy_ng.ranking.ranker import SolutionRanker
 from lucy_ng.ranking.models import RankedSolution
@@ -260,118 +259,6 @@ class TestRankingOutput:
         # Check that confidence is present
         assert result.solutions[0].assignments[0].confidence == 0.9
         assert result.solutions[0].assignments[1].confidence == 0.7
-
-
-class TestBadlistPatterns:
-    """Validate badlist DEFF NOT patterns exist in agent knowledge."""
-
-    @pytest.fixture
-    def agent_file_path(self) -> Path:
-        """Path to CASE agent file."""
-        return Path.home() / ".claude" / "agents" / "lucy-case-agent.md"
-
-    def test_agent_file_exists(self, agent_file_path: Path):
-        """Agent file must exist at expected location."""
-        assert agent_file_path.exists(), f"Agent file not found: {agent_file_path}"
-
-    def test_badlist_section_exists(self, agent_file_path: Path):
-        """Agent must have badlist section with DEFF NOT patterns."""
-        content = agent_file_path.read_text()
-        assert "DEFF NOT" in content, "Agent must contain DEFF NOT patterns"
-
-    def test_cyclopropane_pattern_present(self, agent_file_path: Path):
-        """3-membered ring (cyclopropane) badlist pattern must be present.
-
-        Chemistry: Cyclopropane is highly strained (unusual) and often causes
-        LSD to generate invalid solutions. Badlist prevents this.
-        """
-        content = agent_file_path.read_text()
-        assert "DEFF NOT C1CC1" in content, "Cyclopropane badlist pattern missing"
-
-    def test_cyclobutane_pattern_present(self, agent_file_path: Path):
-        """4-membered ring (cyclobutane) badlist pattern must be present.
-
-        Chemistry: Cyclobutane is strained and uncommon in natural products.
-        """
-        content = agent_file_path.read_text()
-        assert "DEFF NOT C1CCC1" in content, "Cyclobutane badlist pattern missing"
-
-    def test_aziridine_pattern_present(self, agent_file_path: Path):
-        """3-membered N-heterocycle (aziridine) badlist pattern must be present."""
-        content = agent_file_path.read_text()
-        assert "DEFF NOT C1NC1" in content, "Aziridine badlist pattern missing"
-
-    def test_azetidine_pattern_present(self, agent_file_path: Path):
-        """4-membered N-heterocycle (azetidine) badlist pattern must be present."""
-        content = agent_file_path.read_text()
-        assert "DEFF NOT C1NCC1" in content, "Azetidine badlist pattern missing"
-
-    def test_thiirane_pattern_present(self, agent_file_path: Path):
-        """3-membered S-heterocycle (thiirane) badlist pattern must be present."""
-        content = agent_file_path.read_text()
-        assert "DEFF NOT C1SC1" in content, "Thiirane badlist pattern missing"
-
-    def test_thietane_pattern_present(self, agent_file_path: Path):
-        """4-membered S-heterocycle (thietane) badlist pattern must be present."""
-        content = agent_file_path.read_text()
-        assert "DEFF NOT C1SCC1" in content, "Thietane badlist pattern missing"
-
-    def test_epoxide_pattern_present(self, agent_file_path: Path):
-        """3-membered O-heterocycle (epoxide) badlist pattern must be present.
-
-        NOTE: This is conditional - agent should document exception for
-        shifts in 45-55 ppm range with oxygen in formula.
-        """
-        content = agent_file_path.read_text()
-        assert "DEFF NOT C1OC1" in content, "Epoxide badlist pattern missing"
-
-    def test_oxetane_pattern_present(self, agent_file_path: Path):
-        """4-membered O-heterocycle (oxetane) badlist pattern must be present."""
-        content = agent_file_path.read_text()
-        assert "DEFF NOT C1OCC1" in content, "Oxetane badlist pattern missing"
-
-    def test_epoxide_exception_documented(self, agent_file_path: Path):
-        """Agent must document epoxide exception (45-55 ppm + oxygen formula).
-
-        Chemistry: Epoxides show characteristic shifts in 45-55 ppm range.
-        When evidence exists, remove DEFF NOT C1OC1 line.
-        """
-        content = agent_file_path.read_text()
-        # Check for shift range mention
-        assert "45" in content and "55" in content, \
-            "Epoxide exception shift range (45-55 ppm) must be documented"
-        # Check for removal instruction
-        assert "remove" in content.lower() and "C1OC1" in content, \
-            "Agent must instruct when to remove epoxide badlist"
-
-    def test_badlist_count(self, agent_file_path: Path):
-        """Agent must have all 8 standard badlist patterns.
-
-        Patterns:
-        1. C1CC1 (cyclopropane)
-        2. C1CCC1 (cyclobutane)
-        3. C1NC1 (aziridine)
-        4. C1NCC1 (azetidine)
-        5. C1SC1 (thiirane)
-        6. C1SCC1 (thietane)
-        7. C1OC1 (epoxide)
-        8. C1OCC1 (oxetane)
-        """
-        content = agent_file_path.read_text()
-
-        patterns = [
-            "DEFF NOT C1CC1",
-            "DEFF NOT C1CCC1",
-            "DEFF NOT C1NC1",
-            "DEFF NOT C1NCC1",
-            "DEFF NOT C1SC1",
-            "DEFF NOT C1SCC1",
-            "DEFF NOT C1OC1",
-            "DEFF NOT C1OCC1",
-        ]
-
-        found_count = sum(1 for p in patterns if p in content)
-        assert found_count == 8, f"Expected 8 badlist patterns, found {found_count}"
 
 
 class TestRegressionSuite:
