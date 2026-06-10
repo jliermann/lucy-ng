@@ -519,12 +519,20 @@ Plans:
 
 **Requirements**: FIX-08
 **Depends on:** Phase 80
-**Plans:** 0 plans
+**Plans:** 4 plans
 
 **Exit gate:** After fixes, re-run the blind UAT on CASE9 + CASE1 (fresh instances per `feedback_blind_uat`) and re-apply the Phase-78 AND-gate. v9.0 ships iff both pass.
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 81 to break down)
+**Wave 1** *(81-01, 81-02, 81-03 are independent and run in parallel)*
+
+- [ ] 81-01-PLAN.md — snr_floor default 3→5 in peak_picker.py + expose --snr-floor in lucy pick 1d
+- [ ] 81-02-PLAN.md — overcount guard + missing_carbons<0 alarm in analyze.py + symmetry_analysis.py
+- [ ] 81-03-PLAN.md — nmr-chemist skill: SNR≥5 rules, overcount=noise rule, carbonyl-never-discard rule
+
+**Wave 2** *(depends on 81-01 + 81-02)*
+
+- [ ] 81-04-PLAN.md — FIX-08 regression test suite (CASE9@k=5 + overcount guard + CASE1 non-regression) + full suite health check
 
 ---
 *Last updated: 2026-06-10 — Phase 80 blind UAT GATE FAILED (CASE9 FAIL, see 80-UAT-VERDICT.md); root cause = upstream peak-picking integrity defect (snr_floor=3 noise flood + no overcount guard) → Phase 81 (FIX-08) added. Phase-80 mechanism delivered + unit-green; v9.0 still does not ship.*
