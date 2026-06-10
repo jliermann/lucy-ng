@@ -555,7 +555,11 @@ Plans:
 
 **Exit gate:** A later blind CASE9 re-run (fresh instance) is the milestone gate; FIX-10 verifies the exclusion defect is removed, not that CASE9 fully solves.
 
-**Plans:** 0 plans
+**Plans:** 2 plans
+Plans:
+
+- [ ] 83-01-PLAN.md — Skill edits: nmr-chemist advisory rule + 145-160 ppm ambiguity, lsd-engineer FIX-10 prohibition, devils-advocate G-PROP-EVIDENCE gate
+- [ ] 83-02-PLAN.md — Tooling: NeighbourResult advisory field + CLI advisory note + regression tests (advisory label + CASE9-truth-not-excluded)
 
 ---
 *Last updated: 2026-06-10 — Phase 81 (FIX-08) code-complete + verified; Phase 82 (FIX-09 blind-UAT skill decontamination) DONE + skills migrated into repo/.claude (symlinked); the 2026-06-10 CASE9 run is invalidated. Phase 83 (FIX-10 constraint-hardness guard) added from the CASE9 C150.80 diagnosis. v9.0 still does not ship.*
