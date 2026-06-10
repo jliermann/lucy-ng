@@ -35,11 +35,12 @@ Requirements for v9.0 release. Outcome-level where possible so they survive the 
 - [x] **FIX-06**: Skill feedback loop — (a) DBE self-check procedural/mandatory in nmr-chemist after picking (O→carbonyl 160–220; N→amide/nitrile); (b) 5th quality loop-pattern QUALITY_CONVERGENCE_FAILURE in case.md detect_loops + loop-patterns.md + advisory-templates.md; budget = 1 re-look cycle; does NOT escalate to diagnostic specialist
 - [ ] **FIX-07**: Long-range / 4J HMBC connectivity handling — false-positive long-range (4J) HMBC correlations must no longer be enforced as 2-3J bonds that exclude the correct structure. Exposed by the Phase-79 blind CASE9 UAT: `HMBC 1 8` (166.1↔70.2) + set 2 3 / 2 9 / 3 8 forced an impossible carbonyl→para-benzylic bond, excluding the true para-benzoate (`CC(C)OC(=O)c1ccc(C(C)O)cc1`). Must not reintroduce the v7.0 100%-FP statistical failure; must not regress the v4.0 ibuprofen 4J win. Approach (extended HMBC range / repaired pyLSD multi-run / narrow heuristic flag) to be chosen in discuss/research.
 - [ ] **FIX-08**: Peak-picking integrity — 13C peak-picking must deterministically separate signal from noise so a fresh blind agent receives the real carbons (incl. weak quaternary carbonyls), never a noise-flooded list. Exposed by the Phase-80 blind CASE9 UAT: default `snr_floor=3.0` (IUPAC LoD) returned 76 peaks (~50 baseline ripple at SNR≈3, incl. 13 impossible >220 ppm), so the agent's manual curation dropped the genuine ester carbonyl (166.08 ppm, SNR 17) → DBE misallocated (benzene+O-ring instead of benzene+C=O) → para-benzoate excluded. No overcount guard exists: `analyze symmetry`/`symmetry_analysis.py` only model the undercount (equivalence) direction; 76-observed-vs-12-expected prints a silent negative and even confirmed the carbonyl-free skeleton. Fixes: snr_floor default 3→5; expose `--snr-floor` in `lucy pick 1d`; overcount guard + `missing_carbons<0` alarm; nmr-chemist SNR≥5/carbonyl-never-discard rules; CASE9/12 regression test. Must not regress prior passing CASE1.
+- [ ] **FIX-09**: Blind-UAT skill hygiene — every runtime file a fresh blind CASE instance loads (`~/.claude/commands/lucy-ng/case.md` + `references/`, and the 4 spawned team agents `lucy-nmr-chemist`/`lucy-lsd-engineer`/`lucy-solution-analyst`/`lucy-devils-advocate`, plus `lucy-diagnostic`) must contain ONLY compound-agnostic NMR/LSD domain knowledge. All blind-test contaminants must be removed: (L1) GSD dev-meta — phase numbers, decision IDs (D-xx/FIX-xx/DESIGN-xx), milestone versions (v2.1–v9.0), "UAT"/"gate"/"milestone"/"postmortem", experiment-arm labels (Arm A/B/C); (L2) answer-key — named test compounds (ibuprofen, para-benzoate), formulas tied to a test (C13H18O2/C12H16O3), test-answer SMILES, specific solution atom mappings (COSY 4 7, BOND 10 11, "iter3"), specific test-spectrum shifts ([44.90,45.03]), "CASE9 trap"/"CASE9"/"CASE1"; (L3) success-criteria — pass/fail gate definitions baked into runtime ("EMERGENT RING = CLEAN PASS", the `uat_criteria` step, "fails the Phase 78 UAT gate"). Exposed 2026-06-10 when a fresh CASE9 instance reported "Phase-78 gate passed — aromatic ring emerged" — it had read the gate criteria from its own skill files. ~52 leak sites inventoried across 6 active files. Gate criteria relocate to the orchestrator/verification tooling layer (`.planning/case-uat-gate-criteria.md` + `scripts/verify_case_solution.py`), not the runtime skill. Neutralization preserves all genuine domain knowledge; answer-key examples become abstract/illustrative.
 
 ### UAT (milestone gate)
 
 - [ ] **UAT-03**: CASE1 blind re-run solves ibuprofen via the intended mechanism (not a manual bypass); all four Phase-71 success criteria pass against on-disk artifacts (independent RDKit verification)
-- [ ] **UAT-04**: CASE9 blind run (4-(1-hydroxyethyl)benzoic acid isopropylester, C12H16O3 — different molecule, same para-aromatic 4J failure mode) solves correctly via the intended mechanism
+- [ ] **UAT-04**: CASE9 blind run (4-(1-hydroxyethyl)benzoic acid isopropylester, C12H16O3 — different molecule, same para-aromatic 4J failure mode) solves correctly via the intended mechanism *(NOTE: the 2026-06-10 CASE9 blind run is INVALIDATED — the instance read GSD phase/gate criteria + answer-key from contaminated runtime skills, see FIX-09. Re-run only after FIX-09 decontamination lands.)*
 
 ## v2 Requirements
 
@@ -82,13 +83,14 @@ Deferred to future release. Tracked but not in current roadmap.
 | FIX-05 | Phase 79 | Complete |
 | FIX-06 | Phase 79 | Complete |
 | FIX-07 | Phase 80 | Mechanism delivered; blind UAT gate FAILED (upstream picker defect) |
-| FIX-08 | Phase 81 | Pending |
-| UAT-03 | Phase 76 (failed) → Phase 78 | Pending |
-| UAT-04 | Phase 76 (deferred) → Phase 78 | Pending |
+| FIX-08 | Phase 81 | Code complete + verified |
+| FIX-09 | Phase 82 | Complete (60 edits, 0 residual leaks verified) |
+| UAT-03 | Phase 76 (failed) → Phase 78 | Pending (blind re-UAT after FIX-09) |
+| UAT-04 | Phase 76 (deferred) → Phase 78 | Pending (2026-06-10 run invalidated by contamination → FIX-09) |
 
 **Coverage:**
-- v1 requirements: 13 total
-- Mapped to phases: 13
+- v1 requirements: 14 total
+- Mapped to phases: 14
 - Unmapped: 0
 
 ---

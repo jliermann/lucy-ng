@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-20)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a multi-agent team that uses the intended solver pipeline — not a manual bypass
-**Current focus:** v9.0 ship-gate — blind re-UAT (CASE9 + CASE1, fresh instances) after Phase 81 code-complete + verified
+**Current focus:** v9.0 ship-gate — blind re-UAT (CASE9 + CASE1, fresh instances). Phase 82 / FIX-09 DONE 2026-06-10: runtime CASE skills decontaminated (60 edits/7 files, independent grep = 0 leaks across all 10 active files, gate criteria relocated out of runtime). The 2026-06-10 CASE9 run is INVALIDATED (instance had read contaminated skills). Blind re-UAT is now safe to run on the cleaned skills.
 
 ## Current Position
 
