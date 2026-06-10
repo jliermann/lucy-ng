@@ -132,6 +132,39 @@ class TestCASE9Regression:
             assert p.snr > 0
 
 
+class TestSNRFloorDefault:
+    """Tests for FIX-08: snr_floor default raised from 3.0 to 5.0."""
+
+    def test_pick_peaks_default_snr_floor_is_5(self) -> None:
+        """AdaptivePeakPicker.pick_peaks must have snr_floor default = 5.0."""
+        import inspect
+
+        sig = inspect.signature(AdaptivePeakPicker.pick_peaks)
+        assert sig.parameters["snr_floor"].default == 5.0, (
+            f"Expected snr_floor default 5.0, got {sig.parameters['snr_floor'].default}"
+        )
+
+    def test_pick_peaks_instance_default_snr_floor_is_5(self) -> None:
+        """AdaptivePeakPicker.pick_peaks_instance must have snr_floor default = 5.0."""
+        import inspect
+
+        sig = inspect.signature(AdaptivePeakPicker.pick_peaks_instance)
+        assert sig.parameters["snr_floor"].default == 5.0, (
+            f"Expected snr_floor default 5.0, got {sig.parameters['snr_floor'].default}"
+        )
+
+    def test_explicit_snr_floor_3_still_overrides(self) -> None:
+        """Explicit snr_floor=3.0 kwarg must override the new default."""
+        spectrum = BrukerReader.read_1d(str(CASE1_C13))
+        peaks_at_3 = AdaptivePeakPicker.pick_peaks(spectrum, snr_floor=3.0)
+        peaks_at_5 = AdaptivePeakPicker.pick_peaks(spectrum, snr_floor=5.0)
+        # At k=3 we expect at least as many peaks as at k=5 (lower floor = more peaks)
+        assert len(peaks_at_3.peaks) >= len(peaks_at_5.peaks), (
+            f"k=3 returned {len(peaks_at_3.peaks)} peaks, k=5 returned {len(peaks_at_5.peaks)}. "
+            "Lower SNR floor should return >= peaks."
+        )
+
+
 class TestCASE1Regression:
     """Regression: ibuprofen 13C peak count must not decrease."""
 

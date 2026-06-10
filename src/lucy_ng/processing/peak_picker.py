@@ -159,7 +159,7 @@ class AdaptivePeakPicker:
         spectrum: Spectrum1D,
         threshold: float = 0.05,
         detect_negative: bool = False,
-        snr_floor: float = 3.0,
+        snr_floor: float = 5.0,
         use_snr: bool = True,
     ) -> PeakList1D:
         """Pick peaks with adaptive minimum distance based on line width.
@@ -173,7 +173,8 @@ class AdaptivePeakPicker:
             threshold: Minimum intensity as fraction of max (0-1); used only
                        when use_snr=False (backwards-compat mode)
             detect_negative: If True, also detect negative peaks (for DEPT)
-            snr_floor: SNR floor multiplier k (IUPAC LoD: k=3). Used when
+            snr_floor: SNR floor multiplier k (k=5 signal/noise separation;
+                       use k=3 for exploratory re-pick). Used when
                        use_snr=True (default).
             use_snr: If True (default), use MAD/SNR absolute threshold.
                      If False, fall back to threshold * max behaviour.
@@ -195,7 +196,7 @@ class AdaptivePeakPicker:
         spectrum: Spectrum1D,
         threshold: float = 0.05,
         detect_negative: bool = False,
-        snr_floor: float = 3.0,
+        snr_floor: float = 5.0,
         use_snr: bool = True,
     ) -> PeakList1D:
         """Pick peaks with adaptive minimum distance based on line width.
@@ -207,7 +208,8 @@ class AdaptivePeakPicker:
             threshold: Minimum intensity as fraction of max (0-1); used only
                        when use_snr=False (backwards-compat mode)
             detect_negative: If True, also detect negative peaks (for DEPT)
-            snr_floor: SNR floor multiplier k (IUPAC LoD: k=3). Used when
+            snr_floor: SNR floor multiplier k (k=5 signal/noise separation;
+                       use k=3 for exploratory re-pick). Used when
                        use_snr=True (default).
             use_snr: If True (default), use MAD/SNR absolute threshold.
                      If False, fall back to threshold * max behaviour.

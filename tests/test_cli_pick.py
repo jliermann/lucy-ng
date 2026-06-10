@@ -74,6 +74,55 @@ class TestPick1D:
         for p in data["peaks"]:
             assert p["intensity"] > 0
 
+    def test_pick_1d_snr_floor_flag_routes_to_picker(self) -> None:
+        """--snr-floor 3 must route snr_floor=3.0 to AdaptivePeakPicker."""
+        runner = CliRunner()
+        result = runner.invoke(
+            pick, ["1d", "data/Ibuprofen/2", "--snr-floor", "3", "--format", "json"]
+        )
+        assert result.exit_code == 0, f"CLI failed: {result.output}"
+        data = json.loads(result.output)
+        assert "snr_floor_used" in data, "JSON must contain 'snr_floor_used' field"
+        assert data["snr_floor_used"] == 3.0, (
+            f"Expected snr_floor_used=3.0, got {data['snr_floor_used']}"
+        )
+
+    def test_pick_1d_snr_floor_short_flag(self) -> None:
+        """Short -s flag must work identically to --snr-floor."""
+        runner = CliRunner()
+        result = runner.invoke(
+            pick, ["1d", "data/Ibuprofen/2", "-s", "3", "--format", "json"]
+        )
+        assert result.exit_code == 0, f"CLI failed: {result.output}"
+        data = json.loads(result.output)
+        assert data["snr_floor_used"] == 3.0
+
+    def test_pick_1d_default_snr_floor_used_is_5(self) -> None:
+        """Without --snr-floor, snr_floor_used must be 5.0 (the new default)."""
+        runner = CliRunner()
+        result = runner.invoke(
+            pick, ["1d", "data/Ibuprofen/2", "--format", "json"]
+        )
+        assert result.exit_code == 0, f"CLI failed: {result.output}"
+        data = json.loads(result.output)
+        assert "snr_floor_used" in data, "JSON must contain 'snr_floor_used' field"
+        assert data["snr_floor_used"] == 5.0, (
+            f"Expected snr_floor_used=5.0 (default), got {data['snr_floor_used']}"
+        )
+
+    def test_pick_1d_threshold_snr_floor_used_is_none(self) -> None:
+        """With -t, snr_floor_used must be None (SNR mode disabled)."""
+        runner = CliRunner()
+        result = runner.invoke(
+            pick, ["1d", "data/Ibuprofen/2", "-t", "0.1", "--format", "json"]
+        )
+        assert result.exit_code == 0, f"CLI failed: {result.output}"
+        data = json.loads(result.output)
+        assert "snr_floor_used" in data, "JSON must contain 'snr_floor_used' field"
+        assert data["snr_floor_used"] is None, (
+            f"Expected snr_floor_used=None for -t mode, got {data['snr_floor_used']}"
+        )
+
 
 class TestPick2D:
     """Tests for lucy pick 2d command."""

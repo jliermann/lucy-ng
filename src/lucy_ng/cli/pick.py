@@ -28,13 +28,22 @@ def pick() -> None:
     help="Peak threshold (auto if not set).",
 )
 @click.option(
+    "--snr-floor",
+    "-s",
+    type=float,
+    default=None,
+    help="SNR floor multiplier k (default: 5.0 signal/noise; use 3.0 for exploratory re-pick).",
+)
+@click.option(
     "--format",
     "output_format",
     type=click.Choice(["text", "json"]),
     default="text",
     help="Output format.",
 )
-def pick_1d(path: str, threshold: float | None, output_format: str) -> None:
+def pick_1d(
+    path: str, threshold: float | None, snr_floor: float | None, output_format: str
+) -> None:
     """Pick peaks from a 1D spectrum.
 
     PATH is the path to the Bruker experiment directory.
@@ -60,6 +69,13 @@ def pick_1d(path: str, threshold: float | None, output_format: str) -> None:
             detect_negative=has_significant_negative,
             use_snr=use_snr,
         )
+    elif snr_floor is not None:
+        peaks = AdaptivePeakPicker.pick_peaks(
+            spectrum,
+            detect_negative=has_significant_negative,
+            snr_floor=snr_floor,
+            use_snr=True,
+        )
     else:
         peaks = AdaptivePeakPicker.pick_peaks(
             spectrum,
@@ -67,11 +83,23 @@ def pick_1d(path: str, threshold: float | None, output_format: str) -> None:
             use_snr=use_snr,
         )
 
+    # Compute the effective snr_floor for JSON output.
+    # When use_snr=False (threshold mode): None.
+    # When use_snr=True and snr_floor kwarg provided: that value.
+    # When use_snr=True and no snr_floor kwarg: the method default (5.0).
+    if not use_snr:
+        snr_floor_used: float | None = None
+    elif snr_floor is not None:
+        snr_floor_used = snr_floor
+    else:
+        snr_floor_used = 5.0
+
     if output_format == "json":
         data = {
             "count": len(peaks.peaks),
             "noise_sigma": peaks.noise_sigma,  # None for legacy/explicit-threshold callers
             "negative_detected": has_significant_negative,
+            "snr_floor_used": snr_floor_used,
             "peaks": [
                 {
                     "ppm": p.position,
