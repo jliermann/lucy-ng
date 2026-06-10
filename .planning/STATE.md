@@ -4,14 +4,14 @@ milestone: v9.0
 milestone_name: CASE Reliability & Skill Consolidation
 status: executing
 stopped_at: Phase 80 closed at FAILED gate (80-UAT-VERDICT.md written, CASE9 FAIL). Phase 80 mechanism (elim_budget, plausibility filter, skill surgery, SC-3 guard PASS) delivered + unit-green (pytest 1054) but the blind CASE9 UAT failed on an UPSTREAM peak-picking defect. Phase 81 (FIX-08) created with full scope in ROADMAP. v9.0 still does not ship.
-last_updated: "2026-06-10T08:07:09.472Z"
-last_activity: 2026-06-10 -- Phase 81 execution started
+last_updated: "2026-06-10T16:28:36.592Z"
+last_activity: 2026-06-10 -- Phase 83 execution started
 progress:
-  total_phases: 10
-  completed_phases: 9
-  total_plans: 32
-  completed_plans: 28
-  percent: 88
+  total_phases: 11
+  completed_phases: 10
+  total_plans: 34
+  completed_plans: 32
+  percent: 91
 ---
 
 # lucy-ng State
@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-20)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a multi-agent team that uses the intended solver pipeline — not a manual bypass
-**Current focus:** Phase 83 / FIX-10 — constraint-hardness guard. CASE9 diagnosis (on the now-invalidated contaminated run) found the deeper content defect: nmr-chemist turned `detect neighbours 150.80`→O into a hard `PROP 2 O 1`, forcing ring-oxygen onto the aromatic C that truly bears a benzylic CH(OH)CH₃ → the correct para-alkylbenzoate (`CC(O)c1ccc(cc1)C(=O)OC(C)C`, RDKit-verified 0 ring-O) was excluded. FIX-10 = uncertain inference must never be a hard, solution-excluding constraint (advisory/ranking only; leave open, let ranking decide). Phase 82/FIX-09 DONE (skills decontaminated + migrated into repo/.claude, symlinked). Ring-emergence + thin-HMBC remain separate CASE9 blockers. Next: plan Phase 83.
+**Current focus:** Phase 83 — constraint-hardness-guard
 
 ## Current Position
 
@@ -40,10 +40,10 @@ Phase 81: Peak-Picking Integrity     [x] Code complete + VERIFIED (FIX-08) — a
 
 Progress: [█████████░] 89% (8/10 phases; v9.0 does NOT ship until CASE9 passes)
 
-Phase: 81 (peak-picking-integrity-fix-08) — EXECUTING
-Plan: 1 of 4
-Status: Executing Phase 81
-Last activity: 2026-06-10 -- Phase 81 execution started
+Phase: 83 (constraint-hardness-guard) — EXECUTING
+Plan: 1 of 2
+Status: Executing Phase 83
+Last activity: 2026-06-10 -- Phase 83 execution started
 
 **Phase 77 scope (fixes only — decisions in 77-CONTEXT.md):**
 
