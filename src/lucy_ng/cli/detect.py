@@ -151,6 +151,10 @@ def neighbours_command(
         lucy detect neighbours 130.5 --min-frequency 0.05 --max-frequency 0.99
 
         lucy detect neighbours 155.0 --format json
+
+    Output is a STATISTICAL PRIOR (advisory). Do not encode as a hard LSD constraint
+    without direct connectivity evidence or convergent corroboration. Check dominant_element
+    in JSON output: if 'carbon', heteroatom placement is uncertain. See FIX-10.
     """
     from lucy_ng.detection import StatisticalDetector
 

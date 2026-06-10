@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from enum import Enum
 
-from pydantic import BaseModel
+from pydantic import BaseModel, computed_field
 
 
 class HybridisationDistribution(BaseModel):
@@ -188,6 +188,22 @@ class NeighbourDistribution(BaseModel):
         return constraints
 
     @property
+    def dominant_element(self) -> str | None:
+        """Return the element name with the highest frequency, or None if all zero.
+
+        Returns:
+            "carbon", "oxygen", "nitrogen", "sulfur", "halogen", or None
+        """
+        elements = ["carbon", "oxygen", "nitrogen", "sulfur", "halogen"]
+        max_freq = max(getattr(self, e) for e in elements)
+        if max_freq == 0.0:
+            return None
+        for element_name in elements:
+            if getattr(self, element_name) == max_freq:
+                return element_name
+        return None  # unreachable
+
+    @property
     def forbidden_elements(self) -> list[str]:
         """Return elements with frequency below 1% (forbidden).
 
@@ -234,6 +250,18 @@ class NeighbourResult(BaseModel):
     unique_hose_codes: int = 0  # Number of HOSE codes that contributed
     has_data: bool = False  # False if no matching HOSE codes or all counts are 0
     warning: str | None = None  # Warning message
+    advisory: bool = True
+    advisory_note: str = (
+        "statistical prior — do not encode as a hard LSD constraint "
+        "without direct connectivity evidence (HMBC/HSQC/exchangeable-H) "
+        "or convergent multi-source corroboration. See FIX-10."
+    )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def dominant_element(self) -> str | None:
+        """Return the dominant neighbour element from the distribution."""
+        return self.distribution.dominant_element
 
     def summary(self) -> str:
         """Generate human-readable summary of detection result.
@@ -241,7 +269,8 @@ class NeighbourResult(BaseModel):
         Returns:
             Multi-line text summary
         """
-        lines = []
+        lines: list[str] = []
+        lines.insert(0, f"[ADVISORY] {self.advisory_note}")
 
         # Header
         lines.append(
@@ -288,6 +317,15 @@ class NeighbourResult(BaseModel):
                 f"{e} (>{self.mandatory_threshold*100:.1f}%)" for e in mandatory
             )
             lines.append(f"Mandatory: {mandatory_str}")
+
+        # Dominant-neighbour advisory
+        if self.dominant_element == "carbon":
+            lines.append(
+                "Dominant neighbour: carbon — likely carbon-substituted; "
+                "heteroatom placement uncertain at this shift."
+            )
+        elif self.dominant_element is not None:
+            lines.append(f"Dominant neighbour: {self.dominant_element}")
 
         # Data coverage
         lines.append(
