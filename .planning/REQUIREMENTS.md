@@ -34,6 +34,7 @@ Requirements for v9.0 release. Outcome-level where possible so they survive the 
 - [x] **FIX-05**: 13C intensity class-normalized 2C-equivalence detection for protonated aromatic CH (HSQC-confirmed, 100–165 ppm scope); output feeds `lucy analyze symmetry` / `lucy detect aromatic-cosy`; DO NOT modify detect_aromatic_cosy_pairs
 - [x] **FIX-06**: Skill feedback loop — (a) DBE self-check procedural/mandatory in nmr-chemist after picking (O→carbonyl 160–220; N→amide/nitrile); (b) 5th quality loop-pattern QUALITY_CONVERGENCE_FAILURE in case.md detect_loops + loop-patterns.md + advisory-templates.md; budget = 1 re-look cycle; does NOT escalate to diagnostic specialist
 - [ ] **FIX-07**: Long-range / 4J HMBC connectivity handling — false-positive long-range (4J) HMBC correlations must no longer be enforced as 2-3J bonds that exclude the correct structure. Exposed by the Phase-79 blind CASE9 UAT: `HMBC 1 8` (166.1↔70.2) + set 2 3 / 2 9 / 3 8 forced an impossible carbonyl→para-benzylic bond, excluding the true para-benzoate (`CC(C)OC(=O)c1ccc(C(C)O)cc1`). Must not reintroduce the v7.0 100%-FP statistical failure; must not regress the v4.0 ibuprofen 4J win. Approach (extended HMBC range / repaired pyLSD multi-run / narrow heuristic flag) to be chosen in discuss/research.
+- [ ] **FIX-08**: Peak-picking integrity — 13C peak-picking must deterministically separate signal from noise so a fresh blind agent receives the real carbons (incl. weak quaternary carbonyls), never a noise-flooded list. Exposed by the Phase-80 blind CASE9 UAT: default `snr_floor=3.0` (IUPAC LoD) returned 76 peaks (~50 baseline ripple at SNR≈3, incl. 13 impossible >220 ppm), so the agent's manual curation dropped the genuine ester carbonyl (166.08 ppm, SNR 17) → DBE misallocated (benzene+O-ring instead of benzene+C=O) → para-benzoate excluded. No overcount guard exists: `analyze symmetry`/`symmetry_analysis.py` only model the undercount (equivalence) direction; 76-observed-vs-12-expected prints a silent negative and even confirmed the carbonyl-free skeleton. Fixes: snr_floor default 3→5; expose `--snr-floor` in `lucy pick 1d`; overcount guard + `missing_carbons<0` alarm; nmr-chemist SNR≥5/carbonyl-never-discard rules; CASE9/12 regression test. Must not regress prior passing CASE1.
 
 ### UAT (milestone gate)
 
@@ -80,7 +81,8 @@ Deferred to future release. Tracked but not in current roadmap.
 | FIX-04 | Phase 79 | Complete |
 | FIX-05 | Phase 79 | Complete |
 | FIX-06 | Phase 79 | Complete |
-| FIX-07 | Phase 80 | Pending |
+| FIX-07 | Phase 80 | Mechanism delivered; blind UAT gate FAILED (upstream picker defect) |
+| FIX-08 | Phase 81 | Pending |
 | UAT-03 | Phase 76 (failed) → Phase 78 | Pending |
 | UAT-04 | Phase 76 (deferred) → Phase 78 | Pending |
 

@@ -33,16 +33,17 @@ Phase 75: Skill Consolidation        [x] Complete
 Phase 76: Milestone UAT Gate         [x] Executed — GATE FAILED (CASE1 spirit-fail, CASE9 deferred)
 Phase 77: Fix lucy lsd run + Tooling [x] Complete
 Phase 78: Blind Re-UAT (CASE1+CASE9) [x] Executed — GATE FAILED (CASE1 UAT-03 PASS, CASE9 UAT-04 FAIL)
-Phase 79: Peak-Picking + Symmetry    [x] Complete — defect ELIMINATED (verified live), but CASE9 exposed new 4J-HMBC blocker
-Phase 80: Long-Range 4J-HMBC Defect  [ ] Not started — v9.0 ship-gate; start with discuss/research
+Phase 79: Peak-Picking + Symmetry    [x] Complete — carbonyl-masking ELIMINATED (verified live), but CASE9 exposed 4J-HMBC blocker
+Phase 80: Long-Range 4J-HMBC Defect  [~] Mechanism delivered + unit-green; blind UAT GATE FAILED (upstream picker defect) → Phase 81
+Phase 81: Peak-Picking Integrity     [ ] Not started — v9.0 ship-gate (FIX-08); snr_floor 3→5 + overcount guard
 ```
 
-Progress: [█████████░] 89% (8/9 phases; v9.0 does NOT ship until CASE9 passes)
+Progress: [█████████░] 89% (8/10 phases; v9.0 does NOT ship until CASE9 passes)
 
-Phase: 80 (long-range-4j-hmbc-connectivity-defect) — EXECUTING
-Plan: 1 of 5
-Status: Executing Phase 80
-Last activity: 2026-06-09 -- Phase 80 execution started
+Phase: 81 (peak-picking-integrity-fix-08) — NOT STARTED
+Plan: Not started
+Status: Phase 80 mechanism complete but gate FAILED; Phase 81 added to fix the upstream picker defect
+Last activity: 2026-06-10 -- Phase 80 blind UAT gate FAILED (CASE9), root-caused to peak-picking; Phase 81 (FIX-08) created
 
 **Phase 77 scope (fixes only — decisions in 77-CONTEXT.md):**
 
@@ -91,6 +92,7 @@ Wave structure:
 
 - Phase 77 added (2026-06-01): fix `lucy lsd run` plumbing bug + resolve D-04 emergent-aromatic + retire deprecated lucy-case-agent.md, then re-UAT CASE1 + CASE9. Created because the Phase 76 v9.0 UAT gate FAILED (CASE1 spirit-fail, CASE9 deferred).
 - Phase 80 added (2026-06-09): Long-Range (4J) HMBC connectivity defect (FIX-07). Created because the Phase-79 blind CASE9 UAT proved the peak-picking/symmetry fixes work but exposed a deeper 4J-HMBC blocker. The v9.0 ship-gate moves to Phase 80.
+- Phase 81 added (2026-06-10): Peak-Picking Integrity (FIX-08). Created because the Phase-80 blind CASE9 UAT GATE FAILED — but root cause was UPSTREAM of the (correctly-built, unit-green) Phase-80 solver mechanism: default `snr_floor=3.0` floods the picker with ~50 baseline-ripple peaks (incl. 13 impossible >220 ppm), the agent dropped the genuine ester carbonyl (166.08 ppm, SNR 17), DBE was misallocated, and the para-benzoate was excluded before LSD ran. No overcount guard exists (symmetry analysis only models undercount). v9.0 ship-gate moves to Phase 81. See 80-UAT-VERDICT.md.
 
 ### Decisions
 
@@ -149,8 +151,8 @@ Key v9.0 constraint: SYME and DEFF NOT are lucy-ng abstractions. Native LSD-3.4.
 ## Session Continuity
 
 Last session: 2026-06-09T09:40:40.755Z
-Stopped at: Phase 80 Wave 3 (80-04) — BLIND UAT HUMAN-ACTION CHECKPOINT. Waves 0-2 complete (80-00 RED baseline, 80-01 elim_budget+schema, 80-02 plausibility filter, 80-03 skill surgery + SC-3 guard PASS). Pre-flight gate fully green (pytest 1054 passed; mechanism + skill markers verified). Awaiting blind CASE9 + CASE1 runs by a FRESH instance — the orchestrating instance is tainted (knows CASE9 = CC(C)OC(=O)c1ccc(C(C)O)cc1) and MUST NOT run them.
-Resume with: spawn a fresh blind Claude session, run /lucy-ng:case on CASE9 (C12H16O3) and separately CASE1 (C13H18O2), then return here and report "CASE9-PASS/FAIL" + "CASE1-PASS/FAIL". The orchestrator then independently RDKit-verifies solutions.smi via scripts/verify_case_solution.py and writes 80-UAT-VERDICT.md (AND-gate). v9.0 ships iff both pass.
+Stopped at: Phase 80 closed at FAILED gate (80-UAT-VERDICT.md written, CASE9 FAIL). Phase 80 mechanism (elim_budget, plausibility filter, skill surgery, SC-3 guard PASS) delivered + unit-green (pytest 1054) but the blind CASE9 UAT failed on an UPSTREAM peak-picking defect. Phase 81 (FIX-08) created with full scope in ROADMAP. v9.0 still does not ship.
+Resume with: `/gsd-plan-phase 81` (or `/gsd-discuss-phase 81` first) — 5 fixes: (a) snr_floor default 3→5 in peak_picker.py, (b) expose `--snr-floor` in `lucy pick 1d`, (c) overcount guard + `missing_carbons<0` alarm in analyze.py + symmetry_analysis.py, (d) nmr-chemist SNR≥5/carbonyl rules, (e) CASE9/12 regression test. Then re-run blind UAT CASE9+CASE1 (fresh instances per feedback_blind_uat) and re-apply the AND-gate.
 
 ---
 *Last updated: 2026-06-09 — Phase 79 complete (4/4 plans, FIX-04/05/06 verified, code-review bugs fixed); CASE9 blind UAT exposed 4J-HMBC trap → Phase 80 (FIX-07) added; v9.0 ship-gate moves to Phase 80*
