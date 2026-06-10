@@ -1,0 +1,608 @@
+---
+name: lucy-ng:case
+description: "Full CASE workflow — autonomous NMR structure elucidation. Use when: unknown compound, determine structure, identify molecule, what is this compound, structure determination from NMR"
+argument-hint: "<compound_path> <formula>"
+allowed-tools:
+  - Bash
+  - Read
+  - Write
+  - Glob
+  - Grep
+  - Task
+  - TeamCreate
+  - TeamDelete
+  - TaskCreate
+  - TaskList
+  - TaskUpdate
+  - SendMessage
+---
+
+<objective>
+Orchestrate the full Computer-Assisted Structure Elucidation (CASE) workflow by spawning a 4-agent specialist team (nmr-chemist, lsd-engineer, solution-analyst, devils-advocate), monitoring progress through CASE-PROGRESS.md (which this orchestrator writes as sole author) and TaskList, detecting unproductive loop patterns, diagnosing root causes, intervening with advisory constraints via SendMessage, and escalating to the user after 10 failed intervention cycles per pattern.
+
+This orchestrator does NOT perform CASE work itself—it delegates to a specialist team and handles supervision as team lead.
+
+**ABSOLUTE PROHIBITION:** This orchestrator NEVER attempts dereplication. Dereplication is a completely separate workflow. CASE starts from scratch with NMR spectra only.
+</objective>
+
+<process>
+
+<step name="parse_arguments">
+Extract compound path and molecular formula from user input.
+
+**Arguments:** `<compound_path> <formula>` — both optional if inferable.
+
+**Resolution logic:**
+
+1. **If both provided:** Use them directly.
+
+2. **If compound_path missing:** Check if cwd looks like a Bruker compound directory:
+   ```bash
+   ls -d [0-9]*/acqus 2>/dev/null | head -1
+   ```
+   If numbered subdirectories with `acqus` files exist, use `.` (current directory) as compound_path.
+
+3. **If formula missing:** Ask the user — just the formula, nothing else:
+   ```
+   What is the molecular formula? (e.g., C9H10O2)
+   ```
+
+4. **If neither provided and cwd is not a compound directory:** Show brief usage:
+   ```
+   cd into your compound directory, then: /lucy-ng:case <formula>
+   ```
+
+**Smoke test mode:** If the user's invocation includes `--smoke-test` or `smoke test`:
+- Set SMOKE_TEST = true
+- Default compound_path to `data/example_compound` if not provided
+- Default formula to `C9H10O2` if not provided
+- Print header:
+  ```
+  ========================================
+  SMOKE TEST — CASE Pipeline Validation
+  ========================================
+  Compound: {compound_path}
+  Formula: {formula}
+  Mode: 1-iteration validation (not full CASE)
+  ```
+</step>
+
+<step name="validate_prerequisites">
+Check environment readiness. Run via Bash — STOP on any failure, do NOT spawn team:
+
+0. `echo $CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` — must be "1". Fix: `export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`
+1. `lucy --version` — must succeed. Fix: `pip install lucy-ng`
+2. `lucy lsd check` — LSD and outlsd must be available. Fix: download from http://eos.univ-reims.fr/LSD/ and add bin/ to PATH
+3. `lucy predict c13 "CCO" --format json 2>/dev/null | head -1` — must succeed. Fix: `lucy database download`
+4. `ls <compound_path>` — directory must exist.
+</step>
+
+<step name="spawn_case_team">
+Spawn the 4-agent CASE specialist team via TeamCreate and Task(team_name).
+
+**CRITICAL:** The orchestrator skill IS the team lead (coordinator). Do NOT spawn a coordinator agent -- the skill itself manages the team, creates tasks, delivers advisories, and handles lifecycle.
+
+**Step 1: Initialize team namespace** ({compound_name} = last path component, e.g., "MyCompound")
+
+```
+TeamCreate(team_name="case-{compound_name}", description="CASE workflow for {compound_path} -- formula {formula}")
+```
+
+**Step 2: Create initial shared tasks**
+
+```
+TaskCreate(
+  subject="peak-picking",
+  description="Pick 13C, HSQC, HMBC peaks for {compound_path} with formula {formula}.
+               Run statistical detection (hybridisation, neighbours, hhb, grouping).
+               Write analysis/ directory structure.
+               Send structured [SETUP-COMPLETE] message to coordinator via SendMessage with all peak assignments, detection results, and quality assessment.",
+  activeForm="Picking NMR peaks"
+)
+
+TaskCreate(
+  subject="lsd-iteration-01",
+  description="Build initial LSD file from peak assignments. Use HSQC for MULT definitions,
+               add first HMBC batch (3-5 high-confidence correlations). Run LSD from
+               analysis/iteration_01/ directory. Send [ITERATION-COMPLETE] message to coordinator after LSD run.
+               solutions.smi is produced automatically by lucy lsd run (no manual outlsd step).",
+  activeForm="Running LSD iteration 1"
+)
+```
+
+**Step 3: Spawn 4 specialist teammates**
+
+```
+Task(
+  name="nmr-chemist",
+  team_name="case-{compound_name}",
+  subagent_type="lucy-nmr-chemist",
+  model="opus",
+  prompt="You are the NMR chemist for CASE of {formula} at {compound_path}.
+          Check TaskList for available tasks. Claim peak-picking task.
+          Execute peak picking and statistical detection using lucy CLI.
+          Send [SETUP-COMPLETE] message to coordinator via SendMessage with all peak assignments, detection results, and quality assessment.
+          Mark task completed when done. Check TaskList for more work."
+)
+
+Task(
+  name="lsd-engineer",
+  team_name="case-{compound_name}",
+  subagent_type="lucy-lsd-engineer",
+  model="opus",
+  prompt="You are the LSD engineer for CASE of {formula} at {compound_path}.
+          Wait for peak assignments from nmr-chemist via SendMessage.
+          Claim iteration tasks from TaskList as they become available. Build LSD files in
+          analysis/iteration_NN/ directories. Run LSD solver.
+          Send [ITERATION-COMPLETE] message to coordinator via SendMessage after EVERY iteration.
+          CRITICAL: Read previous LSD file, never reconstruct from memory.
+          Follow incremental HMBC strategy: 3-5 correlations per iteration.
+          Continue claiming tasks from TaskList. You will receive a shutdown_request when CASE is complete."
+)
+
+Task(
+  name="solution-analyst",
+  team_name="case-{compound_name}",
+  subagent_type="lucy-solution-analyst",
+  model="opus",
+  prompt="You are the solution analyst for CASE of {formula} at {compound_path}.
+          Monitor TaskList for ranking tasks. When solution_count <= 10,
+          claim ranking task. Read experimental 13C shifts from the task description
+          (coordinator embeds the full shift list when creating the ranking task).
+          Assess chemical plausibility of top candidates.
+          Write analysis/final_results.md with ranked structures.
+          Send [RANKING-COMPLETE] message to coordinator via SendMessage with ranking summary."
+)
+
+Task(
+  name="devils-advocate",
+  team_name="case-{compound_name}",
+  subagent_type="lucy-devils-advocate",
+  model="opus",
+  prompt="You are the devils advocate for CASE of {formula} at {compound_path}.
+          Receive validation requests from lsd-engineer via SendMessage.
+          After each validation request:
+          1. Diff current LSD file against previous iteration
+          2. Check for dropped constraints (ring exclusion DEFF F/FEXP, COSY equivalence pairs, grouped notation)
+          3. Verify sp2 count is even, H budget matches formula
+          4. Send [VALIDATION-PASSED] or [VALIDATION-BLOCKED] to coordinator via SendMessage.
+          Report constraint persistence status after every validation."
+)
+```
+
+The orchestrator then enters the monitor_progress step, waiting for team messages and polling progress.
+</step>
+
+<step name="write_progress">
+Read the full CASE-PROGRESS.md format template before writing any progress entries:
+
+Read file: ~/.claude/commands/lucy-ng/references/progress-format.md
+
+The orchestrator is the SOLE AUTHOR of CASE-PROGRESS.md. Create it at `<compound_path>/analysis/CASE-PROGRESS.md` after receiving [SETUP-COMPLETE] from nmr-chemist. Update after every [ITERATION-COMPLETE], [VALIDATION-PASSED/BLOCKED], and [RANKING-COMPLETE] message.
+</step>
+
+<step name="validate_message">
+Validate incoming structured messages before processing. Each message type has required fields. If any are missing, request resend via SendMessage.
+
+**Required fields by message type:**
+
+[SETUP-COMPLETE]:
+- DBE, Spectra found, Peak counts, Symmetry, Multiplicities, Quality assessment
+- Statistical detection, Grouping, HHB, Aromatic expectation
+- Conflicts with NMR evidence, Key observations
+
+[ITERATION-COMPLETE]:
+- LSD file, Solution count, Constraints added, Constraints removed
+- Constraint inventory delta, sp2 count, H budget
+- HMBC correlations used, Why, Constraint effectiveness, Confidence
+- Fragment search, Fragment file
+
+[RANKING-COMPLETE]:
+- Solutions, Top solution, Strained rings, Aromatic warning
+- Chemical plausibility, Quality, Recommendation
+
+**Validation procedure:**
+
+On receiving any structured message (identified by `[TAG]` prefix):
+1. Identify message type from tag
+2. Check message text for each required field label (case-insensitive substring match of the field name followed by `:`)
+3. If any required field label is missing:
+   - DO NOT process the message
+   - Send back to originating agent:
+     ```
+     SendMessage(
+       type="message",
+       recipient="{agent_name}",
+       content="[RESEND-REQUIRED] Your [{TAG}] message is missing required fields: {list}.
+                Please resend the complete message with all required fields.
+                See your agent definition for the full template.",
+       summary="Requesting resend of [{TAG}] — missing fields"
+     )
+     ```
+   - Log: "Message validation failed for [{TAG}] from {agent}: missing {fields}"
+4. If all required fields present: proceed to process in monitor_progress
+
+**Important:** "None detected", "N/A", "None", and "0" are all VALID values. Only truly missing field labels trigger resend.
+</step>
+
+<step name="monitor_progress">
+Monitor team progress via TaskList polling and incoming SendMessage notifications.
+
+Before processing any structured message, run validate_message to check for required fields.
+
+**Shift list retention:** When processing [SETUP-COMPLETE] from nmr-chemist, extract and retain the experimental 13C shift list (comma-separated ppm values). This is needed later for creating ranking tasks.
+
+**Monitoring loop:** Receive structured messages from teammates (arrive as conversation turns) + poll `TaskList()` periodically + read `<compound_path>/analysis/CASE-PROGRESS.md` for loop detection. On each structured message ([SETUP-COMPLETE], [ITERATION-COMPLETE], [VALIDATION-PASSED], [VALIDATION-BLOCKED], [RANKING-COMPLETE]): write the corresponding section to CASE-PROGRESS.md per write_progress, then continue monitoring.
+
+**Parse from CASE-PROGRESS.md:** solution count per iteration, constraints added/removed, sp2 checks, H budget status, HMBC correlations used (X/Y), last iteration number.
+
+**Smoke test early exit:**
+If SMOKE_TEST is true, track these checkpoints as they arrive:
+- [ ] [SETUP-COMPLETE] received from nmr-chemist (peak picking done)
+- [ ] [ITERATION-COMPLETE] received from lsd-engineer (LSD file built and run)
+- [ ] [VALIDATION-PASSED] or [VALIDATION-BLOCKED] received from devils-advocate
+
+When all 3 checkpoints are complete (or any checkpoint fails with error/timeout after 5 minutes):
+- Do NOT create further iteration tasks
+- Do NOT proceed to ranking
+- Proceed directly to smoke_test_report step
+
+**Completion signals (normal mode only, when SMOKE_TEST is false):** solution_count <= 10 → present_results | ranking task completed → present_results | 10 iterations reached → present_results with caveats | DA flags issue → detect_loops.
+
+**Iteration management (create next tasks):**
+
+After receiving [ITERATION-COMPLETE] from lsd-engineer AND [VALIDATION-PASSED] or [VALIDATION-BLOCKED] from devils-advocate, AND after writing both sections to CASE-PROGRESS.md:
+
+After writing the Devils-Advocate section to CASE-PROGRESS.md, relay the approval decision to lsd-engineer:
+
+If [VALIDATION-PASSED] was received:
+```
+SendMessage(
+  type="message",
+  recipient="lsd-engineer",
+  content="[DA-APPROVED] Iteration {N} — Validation passed. Proceed with solver run.
+           DA findings: {brief summary from [VALIDATION-PASSED] message}",
+  summary="DA approved iteration {N} — proceed with solver"
+)
+```
+
+If [VALIDATION-BLOCKED] was received:
+```
+SendMessage(
+  type="message",
+  recipient="lsd-engineer",
+  content="[DA-BLOCKED] Iteration {N} — Validation blocked. Critical issues:
+           {issues from [VALIDATION-BLOCKED] message}
+           Fix these before running solver.",
+  summary="DA blocked iteration {N} — fix required"
+)
+```
+
+1. Extract solution_count from the [ITERATION-COMPLETE] message
+2. Run detect_loops (existing step)
+3. **If no loop AND solution_count > 10 AND iterations < 10 (safety cap):**
+
+   Retain the shift list from the [SETUP-COMPLETE] message received earlier (the orchestrator wrote these to ## Setup / ### NMR-Chemist in CASE-PROGRESS.md — read from there if needed).
+
+   Create next iteration task:
+   ```
+   TaskCreate(
+     subject="lsd-iteration-{next_iter:02d}",
+     description="Build LSD file for iteration {next_iter} of {formula} at {compound_path}.
+                  Read previous: analysis/iteration_{current_iter:02d}/compound.lsd
+                  Use constraint inventory to copy ALL constraints forward.
+                  Add next HMBC batch (3-5 correlations, best remaining from CASE-PROGRESS.md Setup).
+                  Send validation request to devils-advocate.
+                  WAIT for approval before running solver.
+                  Run LSD from analysis/iteration_{next_iter:02d}/.
+                  Send [ITERATION-COMPLETE] to coordinator.",
+     activeForm="LSD iteration {next_iter}"
+   )
+   ```
+
+   **Parallel task creation (when solution_count is 10-50 and iterations >= 2):**
+   Additionally create an HMBC selection task for nmr-chemist:
+   ```
+   TaskCreate(
+     subject="hmbc-selection-{next_iter:02d}",
+     description="Select next HMBC batch (3-5 correlations) for iteration {next_iter}.
+                  Review CASE-PROGRESS.md for already-used correlations.
+                  Apply selection criteria: isolated carbons, unique protons, strong intensity.
+                  Send selected batch to lsd-engineer via SendMessage.",
+     activeForm="Selecting HMBC batch {next_iter}"
+   )
+   ```
+
+4. **If solution_count <= 10:**
+
+   Read the shift list from CASE-PROGRESS.md ## Setup / ### NMR-Chemist section (the 13C peak positions written from [SETUP-COMPLETE]).
+
+   Create ranking task with embedded shifts:
+   ```
+   TaskCreate(
+     subject="ranking-iteration-{current_iter:02d}",
+     description="Rank LSD solutions from iteration {current_iter}.
+                  solutions.smi path: analysis/iteration_{current_iter:02d}/solutions.smi
+                  Experimental 13C shifts: {shift_list}
+                  Run: lucy lsd rank analysis/iteration_{current_iter:02d}/solutions.smi --shifts '{shift_list}'
+                  Assess chemical plausibility of top candidates.
+                  Write analysis/final_results.md with full report.
+                  Send [RANKING-COMPLETE] to coordinator.",
+     activeForm="Ranking LSD solutions"
+   )
+   ```
+
+5. **If iterations >= 10 (safety cap) AND solution_count > 10:**
+
+   Create ranking task (same as above) AND proceed to present_results with caveat.
+
+Return to monitoring after creating tasks.
+</step>
+
+<step name="detect_loops">
+Read the full loop pattern definitions before analyzing iteration patterns:
+
+Read file: ~/.claude/commands/lucy-ng/references/loop-patterns.md
+
+Five patterns to detect: ELIM Thrashing, Zero-Solution Loop, Solution Explosion, Constraint Churning, Quality Convergence Failure.
+
+**Quick detection criteria (check against parsed iteration history):**
+
+**Pattern 1: ELIM Escalation (runaway-N detection)** — `elim_budget > 3` in consecutive `[ITERATION-COMPLETE]` messages without a plausible solution (runaway ELIM escalation). At N=3 with 0 plausible solutions, the problem is a constraint conflict, not a 4J issue.
+
+**Pattern 2: Zero-Solution Loop** — 3+ consecutive iterations with solution_count = 0.
+
+**Pattern 3: Solution Explosion** — Last 3 iterations all have solution_count > 100 AND each iteration reduces count by less than 10%.
+
+**Pattern 4: Constraint Churning** — Last 5 iterations show >10 constraints added AND >5 constraints removed AND most recent solution_count > 50.
+
+**Pattern 5: Quality Convergence Failure** — Most recent [RANKING-COMPLETE] message (or
+CASE-PROGRESS.md ## Ranking section for current iteration) shows Chemical plausibility =
+IMPLAUSIBLE or QUESTIONABLE for ALL top-3 candidates.
+OR-trigger: best-MAE > 4.0 ppm AND solution_count ≤ 20.
+Guard: only fire if a [RANKING-COMPLETE] record exists for the current iteration.
+Do NOT fire if solution_count = 0 (Pattern 2 covers that case).
+
+If no loop pattern detected, check convergence:
+- **If solution_count <= 10:** SUCCESS, proceed to present_results
+- **If iterations >= 10 and solution_count > 10:** Safety cap reached, proceed to present_results with caveats
+- **If solution_count > 10 and iterations < 10:** Agent is still progressing, allow to continue
+
+If a loop pattern is detected, proceed to diagnose step.
+</step>
+
+<step name="diagnose">
+For the detected loop pattern, perform basic diagnosis to identify root cause.
+
+**For ELIM Escalation (runaway N):**
+1. Read the latest LSD file from the most recent iteration
+2. Confirm elim_budget > 3 by checking `[ITERATION-COMPLETE]` history
+3. Count MULT commands with hybridization = 2 (sp2 atoms) — verify EVEN
+4. Sum all hydrogen counts from MULT commands — verify matches formula
+5. Check latest HMBC correlations against HSQC positions for 1J artifacts:
+   - 1J artifact if HMBC (C, H) within ±1.5 ppm (carbon) and ±0.3 ppm (proton) of any HSQC correlation
+6. If all checks pass at N=3 and still 0 solutions → constraint conflict, not 4J → escalate to diagnostic specialist
+
+**For Zero-Solution Loop:**
+1. Identify which iteration first returned 0 solutions
+2. Identify constraints added in that iteration
+3. Check if any HMBC correlations match HSQC positions (1J artifacts, ±1.5 ppm C, ±0.3 ppm H)
+4. Check if carbons in that batch are within 3 ppm of each other (ambiguous assignment)
+
+**For Solution Explosion:**
+1. Check if ELIM command is present in latest LSD file
+2. Check if heteroatom constraints (BOND, LIST, PROP) are present in LSD file
+3. Review recent HMBC correlations to determine if they connect new fragments or redundant connections
+
+**For Constraint Churning:**
+1. Review last 5 iterations for systematic vs random correlation selection
+2. Check if correlations selected by criteria (isolated carbons, unique protons, strong intensity)
+3. Check if correlations selected randomly without clear strategy
+
+Document diagnostic findings for intervention generation.
+</step>
+
+<step name="intervene">
+Based on diagnosis findings, generate an advisory intervention that tells the agent WHAT to fix, not HOW to fix it.
+
+**Advisory templates by pattern:**
+
+**ELIM Escalation (runaway N):**
+```
+Runaway ELIM escalation detected. At N=3 with 0 plausible solutions, this is a constraint conflict — not a 4J issue.
+
+Do NOT escalate ELIM beyond N=3. Instead:
+
+1. Verify sp2 count is even (current count: <N>)
+   - Re-examine DEPT-135 spectrum to verify sp2 assignments
+   - Common sp2 atoms: carbonyl C, carbonyl O, aromatic C
+
+2. Verify hydrogen budget matches formula
+   - Sum of MULT H-counts: <N>
+   - Formula H-count: <N>
+   - If mismatch, review HSQC peak assignments
+
+3. Check HMBC correlations for 1J artifacts
+   - Compare against HSQC positions (±1.5 ppm C, ±0.3 ppm H)
+   - Exclude flagged artifacts
+
+Escalate to diagnostic specialist — do NOT continue ELIM escalation.
+```
+
+**Zero-Solution Loop:**
+```
+Zero-solution loop detected (3 consecutive iterations with 0 solutions).
+
+Diagnose:
+1. Remove last HMBC batch (iteration <N> constraints)
+2. Confirm solutions return
+3. Test each correlation individually to find the conflict
+4. Check if any carbons are within 3 ppm (could be misassigned due to digital resolution)
+5. Check for 1J artifacts (compare HMBC to HSQC per skill/SKILL.md Section 2.3)
+
+Only re-add correlations after resolving the conflict.
+```
+
+**Solution Explosion:**
+```
+Solution explosion stalled (3 iterations, <10% reduction each, still >100 solutions).
+
+Check:
+1. Verify recent HMBC correlations connect NEW fragments (not already-connected atoms)
+2. Add heteroatom constraints:
+   - Use BOND for known positions (e.g., carbonyl O bonded to specific C)
+   - Use LIST/PROP for ambiguous positions (see skill/SKILL.md Section 10.2)
+3. Check quaternary carbons — if 0 HMBC correlations, add shift-based constraints
+   (see skill/SKILL.md Section 10.3)
+4. ELIM is the final zero-solution recovery mechanism. If ELIM N=3 yields 0 plausible solutions, escalate to diagnostic specialist — this is a constraint conflict, not a 4J issue. Do NOT remove ELIM as a first response to solution explosion; large solution sets are expected with ELIM and handled by ranking.
+
+Focus on high-leverage constraints that separate structural classes.
+```
+
+**Constraint Churning:**
+```
+Constraint churning detected (high add/remove activity without convergence).
+
+Reset to last known-good state (iteration <N> with <X> solutions).
+
+Follow incremental HMBC strategy from skill/SKILL.md Section 7:
+1. Select 3-5 HIGH-CONFIDENCE correlations per batch:
+   - Isolated carbon shifts (>3 ppm from nearest neighbor)
+   - Unique proton assignments
+   - Strong peak intensities (top quartile)
+2. Add batch, run LSD, evaluate effectiveness
+3. If reduction >= 30%, continue with next batch
+4. If reduction < 10%, re-evaluate selection criteria
+
+Do NOT add/remove randomly. Be systematic.
+```
+
+Proceed to track_and_decide step with the generated advisory.
+</step>
+
+<step name="track_and_decide">
+Track intervention count for this specific pattern and decide whether to re-spawn agent, delegate to diagnostic specialist, or escalate.
+
+**Per-pattern intervention counters:**
+Maintain separate counters for each pattern:
+- ELIM_THRASHING: count_elim
+- ZERO_SOLUTION_LOOP: count_zero
+- SOLUTION_EXPLOSION: count_explosion
+- CONSTRAINT_CHURNING: count_churning
+- QUALITY_CONVERGENCE_FAILURE: count_quality
+
+**After intervention generated:**
+Increment the counter for THIS pattern only.
+
+**Decision logic:**
+- **If counter for this pattern == 0 or 1:** Basic intervention (diagnose + intervene steps produce advisory, proceed to deliver_advisory step)
+- **If counter for this pattern == 2:** Delegate to diagnostic specialist (proceed to delegate_specialist step)
+- **If counter for this pattern >= 3 and < 10:** Use specialist-informed advisory if analysis/DIAGNOSTIC-REPORT.md exists in compound directory, else fall back to basic advisory (proceed to deliver_advisory step)
+- **If counter for this pattern >= 10:** Escalate to user (proceed to escalate step)
+
+Threshold = 2: basic diagnosis handles common issues (odd sp2, missing H); specialist escalation prevents wasted cycles on complex root causes. Per-pattern counters avoid masking which failure mode recurs.
+
+**Decision for QUALITY_CONVERGENCE_FAILURE:**
+- count_quality == 0: deliver assumption-reexamination advisory (proceed to deliver_advisory_and_results step using quality_convergence_advisory template from advisory-templates.md)
+- count_quality >= 1: honest termination — do NOT escalate to diagnostic specialist
+  (the diagnostic specialist is LSD-focused; quality convergence failure is a peak-picking issue).
+  Send to coordinator: "Assumption re-examination complete. No correctable peak-picking defect found after
+  1 re-examination cycle. Additional experiments may be needed."
+</step>
+
+<step name="escalate">
+After 10 failed intervention cycles for the SAME pattern, escalate to user with structured report.
+
+**Escalation report format:**
+
+```markdown
+## CASE Escalation Required
+
+**Compound:** <compound_path> | **Formula:** <formula> | **Pattern:** <pattern_name> | **Attempts:** 10
+
+### What Was Detected
+<Loop pattern description per detect_loops definitions>
+
+### Diagnostics Attempted
+<List diagnostic approaches across the 10 cycles>
+
+### Current State
+- Solution count: <count> | HMBC used: X/Y | Iterations: <N> | LSD: <latest_filename>
+
+### Supervisor Recommendation
+<Pattern-specific recommendation based on diagnostic findings>
+
+### Next Steps
+Manual review required. See CASE-PROGRESS.md for full iteration history.
+```
+
+**After presenting escalation report:** STOP. User must investigate.
+</step>
+
+<step name="deliver_advisory_and_results">
+Read advisory delivery, result presentation, diagnostic delegation, and anti-pattern templates:
+
+Read file: ~/.claude/commands/lucy-ng/references/advisory-templates.md
+
+This reference covers: advisory message formatting, result presentation (success/incomplete/failed), diagnostic specialist delegation, diagnostic findings extraction, and anti-patterns to avoid.
+</step>
+
+<step name="smoke_test_report">
+Generate smoke test pass/fail report. Only runs when SMOKE_TEST is true.
+
+**Determine result for each checkpoint:**
+- PASS: message received with all required fields validated
+- FAIL: message not received, or validate_message rejected it, or agent error/timeout (> 5 minutes)
+
+**Print report:**
+```
+========================================
+SMOKE TEST RESULTS
+========================================
+
+| Checkpoint               | Status    | Details                    |
+|--------------------------|-----------|----------------------------|
+| Team spawned             | PASS/FAIL | 4 agents created           |
+| NMR-chemist peak pick    | PASS/FAIL | [SETUP-COMPLETE] received  |
+| LSD-engineer build file  | PASS/FAIL | [ITERATION-COMPLETE] received |
+| Devils-advocate validate | PASS/FAIL | [VALIDATION-PASSED/BLOCKED] |
+
+Overall: PASS / FAIL (N/4 checkpoints passed)
+```
+
+**After report:** Proceed to terminate_team step (normal team cleanup).
+</step>
+
+<step name="terminate_team">
+Gracefully shut down all teammates and clean up team resources.
+
+**This step executes after:** present_results (successful or failed CASE), OR escalate (user escalation), OR smoke_test_report (smoke test mode).
+
+**Step 1: Send shutdown requests to all 4 teammates:**
+```
+SendMessage(type="shutdown_request", recipient="nmr-chemist",
+            content="CASE workflow complete. Shutting down team.")
+SendMessage(type="shutdown_request", recipient="lsd-engineer",
+            content="CASE workflow complete. Shutting down team.")
+SendMessage(type="shutdown_request", recipient="solution-analyst",
+            content="CASE workflow complete. Shutting down team.")
+SendMessage(type="shutdown_request", recipient="devils-advocate",
+            content="CASE workflow complete. Shutting down team.")
+```
+
+**Step 2: Wait for shutdown confirmations.**
+Teammates approve shutdown automatically (they have no reason to reject after CASE completes).
+
+**Step 3: Clean up team resources:**
+```
+TeamDelete()
+```
+
+This removes:
+- ~/.claude/teams/case-{compound_name}/
+- ~/.claude/tasks/case-{compound_name}/
+
+**If TeamDelete fails (teammates still active):** Wait 30 seconds and retry. If still failing, report: "Team cleanup incomplete. Manual cleanup may be needed: rm -rf ~/.claude/teams/case-{compound_name} ~/.claude/tasks/case-{compound_name}"
+</step>
+
+</process>
