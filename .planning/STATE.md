@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-20)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a multi-agent team that uses the intended solver pipeline — not a manual bypass
-**Current focus:** v9.0 ship-gate — blind CASE9 re-run (fresh instance) on the decontaminated + FIX-08/09/10-fixed skills. Phases 81 (peak-picking), 82 (skill hygiene + repo migration) and 83 (constraint-hardness guard) all DONE + verified. Remaining content blockers for a full CASE9 solve (separate, not yet scoped): benzene-ring emergence (D-04) and thin HMBC pool.
+**Current focus:** v9.0 ship-gate — complete the Phase-78 AND-gate. **CASE9 (UAT-04) SOLVED 2026-06-11 on Opus 4.8** (`CC(C)OC(=O)c1ccc(C(C)O)cc1` = D202 truth, RDKit-verified, rank 1 MAE 1.17; mechanism = documented ring-BOND escalation, no SKEL/hard-PROP-O). Root cause of prior failures was substantially MODEL-driven: `CLAUDE_CODE_SUBAGENT_MODEL=sonnet` in settings.json silently forced ALL subagents to Sonnet 4.6 (overriding frontmatter/Task model=); now set to `inherit` so the opus-4-8-pinned CASE team actually runs Opus 4.8. Added per-agent model-disclosure + mismatch gate in case.md. **Remaining for v9.0 ship: (1) blind CASE1 (ibuprofen, UAT-03) re-run on Opus 4.8 to complete the AND-gate; (2) FIX-11 (Phase 84) Kekulé-SMILES canonicalize-before-predict — the only confirmed defect from the Opus run.** Still open/separate: emergent-ring (D-04) — the ring still had to be forced via documented BONDs.
 
 ## Current Position
 
