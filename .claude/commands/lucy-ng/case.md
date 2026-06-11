@@ -117,7 +117,7 @@ Task(
   name="nmr-chemist",
   team_name="case-{compound_name}",
   subagent_type="lucy-nmr-chemist",
-  model="opus",
+  model="claude-opus-4-8",
   prompt="You are the NMR chemist for CASE of {formula} at {compound_path}.
           Check TaskList for available tasks. Claim peak-picking task.
           Execute peak picking and statistical detection using lucy CLI.
@@ -129,7 +129,7 @@ Task(
   name="lsd-engineer",
   team_name="case-{compound_name}",
   subagent_type="lucy-lsd-engineer",
-  model="opus",
+  model="claude-opus-4-8",
   prompt="You are the LSD engineer for CASE of {formula} at {compound_path}.
           Wait for peak assignments from nmr-chemist via SendMessage.
           Claim iteration tasks from TaskList as they become available. Build LSD files in
@@ -144,7 +144,7 @@ Task(
   name="solution-analyst",
   team_name="case-{compound_name}",
   subagent_type="lucy-solution-analyst",
-  model="opus",
+  model="claude-opus-4-8",
   prompt="You are the solution analyst for CASE of {formula} at {compound_path}.
           Monitor TaskList for ranking tasks. When solution_count <= 10,
           claim ranking task. Read experimental 13C shifts from the task description
@@ -158,7 +158,7 @@ Task(
   name="devils-advocate",
   team_name="case-{compound_name}",
   subagent_type="lucy-devils-advocate",
-  model="opus",
+  model="claude-opus-4-8",
   prompt="You are the devils advocate for CASE of {formula} at {compound_path}.
           Receive validation requests from lsd-engineer via SendMessage.
           After each validation request:
@@ -169,6 +169,24 @@ Task(
           Report constraint persistence status after every validation."
 )
 ```
+
+**Step 4: Mandatory model disclosure (observability — catches silent model fallback).**
+
+Every teammate MUST disclose its actual runtime model. Append this line VERBATIM to each of the four `prompt=` strings above (it is intentionally identical for all four):
+
+```
+FIRST LINE of your very first SendMessage to the coordinator MUST be exactly: [MODEL] <your exact runtime model id from your environment/system context, e.g. claude-opus-4-8> — copy the real id verbatim, do not guess or use an alias.
+```
+
+**Orchestrator capture + cross-check:** As each teammate's first message arrives, read its `[MODEL]` line and record it. After all four have reported (or at the [SETUP-COMPLETE] boundary), write the `## Team Models` block into CASE-PROGRESS.md per progress-format.md, listing each agent's reported runtime model alongside the INTENDED model (`claude-opus-4-8` — the spawn `model=` value). If ANY reported model differs from `claude-opus-4-8`, emit a prominent WARNING line in that block:
+
+```
+⚠ MODEL MISMATCH: <agent> requested claude-opus-4-8 but is running <reported> — the model pin did not take effect (silent fallback). Results may not reflect the intended reasoning model.
+```
+
+Also record the coordinator's OWN runtime model (read it from your environment/system context) on the `coordinator (orchestrator)` line — the orchestrator has no pin and inherits the session model, so this documents what drives diagnosis/interventions.
+
+This makes the exact model + version of every agent auditable at the top of every run, and surfaces a fallback immediately instead of buried in a footer.
 
 The orchestrator then enters the monitor_progress step, waiting for team messages and polling progress.
 </step>

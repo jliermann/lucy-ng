@@ -27,6 +27,14 @@ Write CASE-PROGRESS.md entries as the sole writer. No agent writes this file dir
 ```markdown
 ## Setup
 
+### Team Models
+<One line per teammate, from each agent's [MODEL] disclosure line. Format: `**<agent>:** <reported runtime model id> (intended: claude-opus-4-8)`. If reported != intended, prefix the line with `⚠ MODEL MISMATCH —`. Also record the coordinator's own runtime model (the orchestrator inherits the session model; no pin).>
+- **coordinator (orchestrator):** <orchestrator's own runtime model id> (inherits session model)
+- **nmr-chemist:** <reported> (intended: claude-opus-4-8)
+- **lsd-engineer:** <reported> (intended: claude-opus-4-8)
+- **solution-analyst:** <reported> (intended: claude-opus-4-8)
+- **devils-advocate:** <reported> (intended: claude-opus-4-8)
+
 ### NMR-Chemist
 **DBE:** <from message>
 **Spectra found:** <from message>
