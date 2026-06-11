@@ -9,7 +9,7 @@ description: >
 tools:
   - Read
   - Bash
-model: inherit
+model: claude-opus-4-8
 ---
 
 # LSD Diagnostic Specialist Agent
