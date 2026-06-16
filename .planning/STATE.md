@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-20)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a multi-agent team that uses the intended solver pipeline — not a manual bypass
-**Current focus:** Phase 85 — hmbc-peak-picking-integrity
+**Current focus:** **FIX-12 (Phase 85) DONE + VERIFIED 2026-06-16** — HMBC picker now has an SNR floor (`lucy pick hmbc --snr-floor`, default SNR mode); on CASE1 it RECOVERS the ring-diagnostic 3J-meta correlations (H4→C2 SNR 22.4, H6→C3 SNR 9.8) that legacy fraction-of-max dropped → the data to close the benzene ring emergently is now in the picked set; suite 1079 passed. Both CASE1 (UAT-03) + CASE9 (UAT-04) already SOLVED on Opus 4.8 (AND-gate substantively met; mechanism caveat = documented ring-BOND escalation). **Remaining: FIX-11 (Phase 84, Kekulé canonicalize — small) + the live test: a blind CASE run on Opus 4.8 to confirm the benzene ring now emerges WITHOUT forced ring-BONDs (D-04).** Then the gate-criterion decision (emergent vs documented forcing) likely resolves in favour of emergent. See .planning/research/D04-emergent-ring/ + 85-VERIFICATION.md.
 
 ## Current Position
 
