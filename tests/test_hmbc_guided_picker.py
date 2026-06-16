@@ -185,13 +185,20 @@ class TestIbuprofenIntegration:
         c13 = BrukerReader.read_1d("data/Ibuprofen/2")
         hsqc = BrukerReader.read_2d("data/Ibuprofen/6")
 
+        # Pin to the legacy fraction-of-max path: this 15-50 envelope was
+        # written for the fraction-of-max picker. FIX-12 changed the default to
+        # the noise-relative SNR floor, which intentionally surfaces many more
+        # weak long-range cross-peaks for downstream curation; the SNR-mode
+        # behaviour (incl. recovery of the ring-diagnostic 3J-meta correlations)
+        # is pinned by the dedicated regression test in plan 85-02.
         result = HMBCGuidedPicker.pick_hmbc_peaks_from_spectra(
             hmbc=hmbc,
             carbon_spectrum=c13,
             hsqc=hsqc,
+            hmbc_use_snr=False,
         )
 
-        # Ibuprofen should have 20-40 HMBC correlations
+        # Ibuprofen should have 20-40 HMBC correlations (fraction-of-max path)
         assert 15 <= result.validated_count <= 50
         assert result.validated_count <= result.raw_peak_count
 

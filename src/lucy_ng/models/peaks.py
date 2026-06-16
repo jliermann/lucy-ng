@@ -34,6 +34,7 @@ class Peak2D(BaseModel):
     intensity: float
     f1_assignment: str | None = None
     f2_assignment: str | None = None
+    snr: float | None = None  # signal-to-noise ratio vs MAD-based 2D sigma (FIX-12)
 
     @property
     def position(self) -> tuple[float, float]:
