@@ -218,8 +218,16 @@ def pick_hsqc(path: str, threshold: float, output_format: str) -> None:
     "--threshold",
     "-t",
     type=float,
-    default=0.05,
-    help="Peak threshold (default: 0.05).",
+    default=None,
+    help="Fraction-of-max peak threshold (legacy mode; SNR mode if not set).",
+)
+@click.option(
+    "--snr-floor",
+    "-s",
+    type=float,
+    default=None,
+    help="SNR floor multiplier k (default: 5.0). Recovers weak long-range "
+    "cross-peaks the fraction-of-max threshold drops (FIX-12).",
 )
 @click.option(
     "--format",
@@ -228,32 +236,64 @@ def pick_hsqc(path: str, threshold: float, output_format: str) -> None:
     default="text",
     help="Output format.",
 )
-def pick_hmbc(path: str, threshold: float, output_format: str) -> None:
-    """Pick raw HMBC peaks above threshold.
+def pick_hmbc(
+    path: str, threshold: float | None, snr_floor: float | None, output_format: str
+) -> None:
+    """Pick raw HMBC peaks.
 
     PATH is the path to the HMBC Bruker experiment directory.
+
+    By default uses a MAD-based SNR floor (the 2D analog of FIX-08): weak but
+    real long-range cross-peaks that sit far below the fraction-of-max threshold
+    are kept when they are SNR>=floor over local 2D noise. An explicit
+    ``-t/--threshold`` falls back to the legacy fraction-of-max path.
 
     Returns raw cross-peaks without cross-validation filtering. The AI agent
     applies HMBC filtering logic using skill knowledge.
     """
     spectrum = BrukerReader.read_2d(path)
-    peaks = PeakPicker2D.pick_peaks(spectrum, threshold=threshold)
+
+    # Explicit -t disables SNR mode (legacy fraction-of-max); otherwise SNR mode.
+    use_snr = threshold is None
+    if threshold is not None:
+        peaks = PeakPicker2D.pick_peaks(spectrum, threshold=threshold, use_snr=False)
+    elif snr_floor is not None:
+        peaks = PeakPicker2D.pick_peaks(spectrum, snr_floor=snr_floor, use_snr=True)
+    else:
+        peaks = PeakPicker2D.pick_peaks(spectrum, use_snr=True)
+
+    # Effective snr_floor for JSON: None in legacy mode, else the value (method
+    # default 5.0 when -s not given).
+    if not use_snr:
+        snr_floor_used: float | None = None
+    elif snr_floor is not None:
+        snr_floor_used = snr_floor
+    else:
+        snr_floor_used = 5.0
 
     if output_format == "json":
         data = {
             "experiment_type": spectrum.experiment_type,
             "count": len(peaks.peaks),
+            "snr_floor_used": snr_floor_used,
             "peaks": [
                 {
                     "f1_position": p.f1_position,
                     "f2_position": p.f2_position,
                     "intensity": p.intensity,
+                    "snr": p.snr,  # None for legacy/explicit-threshold callers
                 }
                 for p in peaks.peaks
             ],
         }
         click.echo(json.dumps(data, indent=2))
     else:
-        click.echo(f"Found {len(peaks.peaks)} peaks in {spectrum.experiment_type}:")
+        mode = f"SNR floor k={snr_floor_used}" if use_snr else "fraction-of-max"
+        click.echo(
+            f"Found {len(peaks.peaks)} peaks in {spectrum.experiment_type} ({mode}):"
+        )
         for p in sorted(peaks.peaks, key=lambda x: (-x.f1_position, x.f2_position)):
-            click.echo(f"  F1: {p.f1_position:7.2f}  F2: {p.f2_position:6.2f}  (int: {p.intensity:.2e})")
+            click.echo(
+                f"  F1: {p.f1_position:7.2f}  F2: {p.f2_position:6.2f}  "
+                f"(int: {p.intensity:.2e})"
+            )

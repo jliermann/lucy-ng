@@ -8,7 +8,7 @@ import numpy as np
 from lucy_ng.models import Peak2D, PeakList2D, Spectrum2D
 
 
-def _compute_2d_noise_sigma(data: np.ndarray) -> float:
+def _compute_2d_noise_sigma(data: "np.ndarray[Any, Any]") -> float:
     """Compute a robust MAD-based noise sigma for a 2D NMR spectrum.
 
     This is the 2D analog of the 1D FIX-08 ``_compute_snr_threshold`` MAD
@@ -108,9 +108,11 @@ class PeakPicker2D:
         # when use_snr is True AND no explicit threshold was provided.
         snr_mode = use_snr and threshold is None
 
+        sigma: float | None
         if snr_mode:
-            sigma: float | None = _compute_2d_noise_sigma(data)
-            abs_threshold = snr_floor * sigma
+            sigma_value = _compute_2d_noise_sigma(data)
+            sigma = sigma_value
+            abs_threshold = snr_floor * sigma_value
         else:
             sigma = None
             frac = threshold if threshold is not None else 0.05

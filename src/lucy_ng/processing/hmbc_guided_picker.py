@@ -79,6 +79,8 @@ class HMBCGuidedPicker:
         proton_tolerance: float = 0.1,
         hmbc_threshold: float = 0.05,
         carbon_threshold: float = 0.02,
+        hmbc_snr_floor: float = 5.0,
+        hmbc_use_snr: bool = True,
     ) -> HMBCGuidedResult:
         """Pick HMBC peaks guided by 13C and HSQC reference data.
 
@@ -89,8 +91,16 @@ class HMBCGuidedPicker:
             hsqc_peaks: HSQC 2D peak list (for valid proton positions)
             carbon_tolerance: Maximum ppm difference for carbon matching
             proton_tolerance: Maximum ppm difference for proton matching
-            hmbc_threshold: Threshold for HMBC peak picking (fraction of max)
+            hmbc_threshold: Threshold for HMBC peak picking (fraction of max),
+                used only when hmbc_use_snr is False (legacy path)
             carbon_threshold: Threshold for 13C peak picking if spectrum provided
+            hmbc_snr_floor: SNR floor multiplier k for the SNR raw-pick path
+                (default 5.0, FIX-12). Recovers weak long-range cross-peaks
+                (e.g. ring-diagnostic 3J-meta correlations at ~0.6 % of max)
+                that the fraction-of-max threshold drops before cross-validation.
+            hmbc_use_snr: If True (default), the raw HMBC pick uses the MAD-based
+                SNR floor (ignoring hmbc_threshold); if False, the legacy
+                fraction-of-max threshold is used.
 
         Returns:
             HMBCGuidedResult with validated peaks and rejection statistics
@@ -128,8 +138,18 @@ class HMBCGuidedPicker:
         # Collect reference proton positions from HSQC
         proton_positions = [p.f2_position for p in hsqc_peaks.peaks]
 
-        # Pick raw HMBC peaks
-        raw_peaks = PeakPicker2D.pick_peaks(hmbc, threshold=hmbc_threshold)
+        # Pick raw HMBC peaks. By default (FIX-12) the raw pick routes through
+        # the MAD-based SNR floor so weak long-range cross-peaks survive to the
+        # cross-validation stage; the legacy fraction-of-max path is used only
+        # when hmbc_use_snr is False.
+        if hmbc_use_snr:
+            raw_peaks = PeakPicker2D.pick_peaks(
+                hmbc, snr_floor=hmbc_snr_floor, use_snr=True
+            )
+        else:
+            raw_peaks = PeakPicker2D.pick_peaks(
+                hmbc, threshold=hmbc_threshold, use_snr=False
+            )
 
         # Filter peaks
         validated: list[Peak2D] = []
@@ -183,6 +203,8 @@ class HMBCGuidedPicker:
         hmbc_threshold: float = 0.05,
         carbon_threshold: float = 0.02,
         hsqc_threshold: float = 0.05,
+        hmbc_snr_floor: float = 5.0,
+        hmbc_use_snr: bool = True,
     ) -> HMBCGuidedResult:
         """Convenience method that picks peaks from all input spectra.
 
@@ -196,9 +218,12 @@ class HMBCGuidedPicker:
             dept135: Optional DEPT-135 spectrum for additional carbon positions
             carbon_tolerance: Maximum ppm difference for carbon matching
             proton_tolerance: Maximum ppm difference for proton matching
-            hmbc_threshold: Threshold for HMBC peak picking
+            hmbc_threshold: Threshold for HMBC peak picking (legacy path only)
             carbon_threshold: Threshold for 13C peak picking
             hsqc_threshold: Threshold for HSQC peak picking
+            hmbc_snr_floor: SNR floor multiplier k for the raw HMBC pick (FIX-12)
+            hmbc_use_snr: If True (default), route the raw HMBC pick through the
+                MAD-based SNR floor; if False, use fraction-of-max
 
         Returns:
             HMBCGuidedResult with validated peaks
@@ -223,4 +248,6 @@ class HMBCGuidedPicker:
             proton_tolerance=proton_tolerance,
             hmbc_threshold=hmbc_threshold,
             carbon_threshold=carbon_threshold,
+            hmbc_snr_floor=hmbc_snr_floor,
+            hmbc_use_snr=hmbc_use_snr,
         )
