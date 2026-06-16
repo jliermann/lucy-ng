@@ -63,6 +63,9 @@ def _is_chemically_plausible(
     # Check 2: DBE consistency (optional — requires formula)
     if formula is not None:
         expected_dbe = _calc_dbe_from_formula(formula)
+        # Relies on RDKit default sanitization for aromaticity perception;
+        # intentionally outside FIX-11 scope (the explicit aromatization
+        # hardening lives in HOSECodeGenerator.prepare_mol on the prediction path).
         mol = Chem.MolFromSmiles(solution.smiles)
         if mol is not None:
             actual_dbe = _calc_dbe_from_mol(mol)
@@ -154,6 +157,9 @@ class SolutionRanker:
 
             # Check for aromatic ring
             has_aromatic = False
+            # Relies on RDKit default sanitization for aromaticity perception;
+            # intentionally outside FIX-11 scope (the explicit aromatization
+            # hardening lives in HOSECodeGenerator.prepare_mol on the prediction path).
             mol = Chem.MolFromSmiles(solution.smiles)
             if mol is not None:
                 has_aromatic = any(atom.GetIsAromatic() for atom in mol.GetAtoms())
