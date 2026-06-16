@@ -88,6 +88,8 @@ lucy predict c13 "<SMILES>" --format json
 
 **Output fields:** predictions (atom_index, shift, confidence), success
 
+**Canonicalize before predicting.** Solver/`outlsd` solution SMILES may arrive in Kekulé form — aromatic rings written with explicit alternating single/double bonds rather than lowercase aromatic atoms. Always canonicalize/aromatize a candidate before predicting (RDKit: `MolToSmiles(MolFromSmiles(s))`, or just confirm the ring is aromatic). An un-aromatized ring predicts as a non-aromatic diene, yielding wrong ring-carbon shifts and a false "structure implausible / not in the solution set" verdict for a structure that is actually a valid solution. If a candidate looks implausible, re-check its canonical aromatic form before escalating.
+
 ### Use Cases
 
 1. **Independent verification:** Predict shifts for top 3-5 ranked candidates. Compare against experimental spectrum to validate ranking.
