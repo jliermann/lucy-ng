@@ -93,16 +93,33 @@ class HOSECodeGenerator:
     def prepare_mol(smiles: str) -> Mol | None:
         """Prepare a molecule from SMILES for HOSE code generation.
 
-        Returns molecule without explicit hydrogens to match the HOSE
-        lookup table format (built without explicit H).
+        Aromaticity is explicitly (re-)perceived via ``Chem.SetAromaticity``
+        so that rings supplied in Kekulé form (aromatic rings written with
+        explicit alternating double bonds, as emitted by ``outlsd`` /
+        ``lucy lsd run``) are transparently aromatized before HOSE codes are
+        generated. Relying on the implicit default sanitization alone is
+        fragile (it could drift across RDKit versions or be silently
+        defeated by a future ``sanitize=False`` refactor); enforcing it here
+        pins the guarantee at the prediction choke point (FIX-11).
+
+        Returns molecule WITHOUT explicit hydrogens (no ``AddHs``) to match
+        the HOSE lookup table format (built without explicit H) — the
+        no-explicit-H invariant from CLAUDE.md.
 
         Args:
             smiles: SMILES string
 
         Returns:
-            RDKit Mol without explicit hydrogens, or None if parsing fails
+            RDKit Mol with aromaticity perceived and no explicit hydrogens,
+            or None if parsing fails
         """
-        return Chem.MolFromSmiles(smiles)
+        mol = Chem.MolFromSmiles(smiles)
+        if mol is None:
+            return None
+        # Enforce aromaticity perception explicitly (RDKit default model).
+        # No AddHs — preserve the no-explicit-H HOSE invariant.
+        Chem.SetAromaticity(mol)
+        return mol
 
     @staticmethod
     def prepare_mol_from_molblock(molblock: str) -> Mol | None:

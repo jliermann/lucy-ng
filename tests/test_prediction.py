@@ -32,6 +32,86 @@ class TestHOSECodeGenerator:
         mol = HOSECodeGenerator.prepare_mol("invalid_smiles_xyz")
         assert mol is None
 
+    def test_prepare_mol_restores_aromaticity_on_unaromatized_input(self):
+        """GUARD: prepare_mol restores aromaticity on a genuinely un-aromatized mol.
+
+        Exercises the Chem.SetAromaticity hardening in prepare_mol (FIX-11).
+        We first prove an un-aromatized state is reachable (parse with
+        sanitize=False, then sanitize everything EXCEPT aromaticity perception
+        -> 0 aromatic atoms), then assert prepare_mol on the same SMILES
+        produces 6 aromatic ring atoms and aromatic-carbon HOSE codes (`*C`).
+
+        This test fails if SetAromaticity is removed AND the parser default
+        ever stops aromatizing — the explicit pin against drift.
+        """
+        # Real outlsd Kekulé benzoate form (aromatic ring as alternating C=C).
+        kekule = "CC(O)C(=C1)C=CC(=C1)C(=O)OC(C)C"
+
+        # Precondition: an un-aromatized state is genuinely reachable.
+        m_unarom = Chem.MolFromSmiles(kekule, sanitize=False)
+        Chem.SanitizeMol(
+            m_unarom,
+            sanitizeOps=Chem.SanitizeFlags.SANITIZE_ALL
+            ^ Chem.SanitizeFlags.SANITIZE_SETAROMATICITY,
+        )
+        assert sum(a.GetIsAromatic() for a in m_unarom.GetAtoms()) == 0
+
+        # prepare_mol must restore aromaticity.
+        mol = HOSECodeGenerator.prepare_mol(kekule)
+        assert mol is not None
+        assert sum(a.GetIsAromatic() for a in mol.GetAtoms()) == 6
+        # No explicit H — HOSE invariant.
+        assert not any(a.GetSymbol() == "H" for a in mol.GetAtoms())
+
+        # A ring carbon's HOSE code must carry the aromatic marker `*C`.
+        gen = HOSECodeGenerator()
+        ring_carbon_idx = next(
+            a.GetIdx()
+            for a in mol.GetAtoms()
+            if a.GetSymbol() == "C" and a.GetIsAromatic()
+        )
+        hose = gen.generate_for_atom(mol, ring_carbon_idx, radius=2)
+        assert "*C" in hose
+
+    def test_kekule_predicts_like_canonical_aromatic(self):
+        """PIN: Kekulé and canonical aromatic forms prepare identically.
+
+        Documents the existing library guarantee — this passes WITH OR
+        WITHOUT the SetAromaticity change (the RDKit default sanitizer
+        already aromatizes the normally-parsed Kekulé form). It is a
+        regression pin, NOT a pre-fix failure.
+        """
+        kekule = "CC(O)C(=C1)C=CC(=C1)C(=O)OC(C)C"
+        canonical = "CC(C)OC(=O)c1ccc(C(C)O)cc1"
+
+        m_k = HOSECodeGenerator.prepare_mol(kekule)
+        m_c = HOSECodeGenerator.prepare_mol(canonical)
+        assert m_k is not None and m_c is not None
+
+        # Canonicalize identically.
+        assert Chem.MolToSmiles(m_k) == Chem.MolToSmiles(m_c)
+        # Both aromatic.
+        assert sum(a.GetIsAromatic() for a in m_k.GetAtoms()) == 6
+        assert sum(a.GetIsAromatic() for a in m_c.GetAtoms()) == 6
+        # Neither carries explicit H.
+        assert not any(a.GetSymbol() == "H" for a in m_k.GetAtoms())
+        assert not any(a.GetSymbol() == "H" for a in m_c.GetAtoms())
+
+        # Ring-carbon HOSE multiset identical and aromatic.
+        gen = HOSECodeGenerator()
+
+        def ring_carbon_hoses(mol):
+            return sorted(
+                gen.generate_for_atom(mol, a.GetIdx(), radius=2)
+                for a in mol.GetAtoms()
+                if a.GetSymbol() == "C" and a.GetIsAromatic()
+            )
+
+        k_hoses = ring_carbon_hoses(m_k)
+        c_hoses = ring_carbon_hoses(m_c)
+        assert k_hoses == c_hoses
+        assert all("*C" in h for h in k_hoses)
+
     def test_generate_for_atom(self):
         """Test HOSE code generation for a single atom."""
         gen = HOSECodeGenerator()
