@@ -4,14 +4,14 @@ milestone: v9.0
 milestone_name: CASE Reliability & Skill Consolidation
 status: executing
 stopped_at: Phase 80 closed at FAILED gate (80-UAT-VERDICT.md written, CASE9 FAIL). Phase 80 mechanism (elim_budget, plausibility filter, skill surgery, SC-3 guard PASS) delivered + unit-green (pytest 1054) but the blind CASE9 UAT failed on an UPSTREAM peak-picking defect. Phase 81 (FIX-08) created with full scope in ROADMAP. v9.0 still does not ship.
-last_updated: "2026-06-10T16:28:36.592Z"
-last_activity: 2026-06-10 -- Phase 83 execution started
+last_updated: "2026-06-16T07:56:49.645Z"
+last_activity: 2026-06-16 -- Phase 85 execution started
 progress:
   total_phases: 11
-  completed_phases: 10
+  completed_phases: 11
   total_plans: 34
-  completed_plans: 32
-  percent: 91
+  completed_plans: 34
+  percent: 100
 ---
 
 # lucy-ng State
@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-20)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a multi-agent team that uses the intended solver pipeline — not a manual bypass
-**Current focus:** **v9.0 AND-gate substantively MET on Opus 4.8** — both CASE1 (UAT-03, ibuprofen) and CASE9 (UAT-04, D202) SOLVED, RDKit-verified, no manual bypass/SKEL, 4J trap overcome. (Prior failures were largely MODEL-driven: `CLAUDE_CODE_SUBAGENT_MODEL=sonnet` silently forced all subagents to Sonnet 4.6 → now `inherit`; per-agent model-disclosure + mismatch gate added to case.md.) Mechanism caveat (both): aromatic ring needed documented ring-BOND escalation. **Emergent ring (D-04) root cause now FOUND = HMBC peak-picking:** `lucy pick hmbc` is fraction-of-max only (no SNR floor); the ring-diagnostic 3J-meta cross-peaks (H4→C2, H6→C3) sit at ~0.6% of max (vs 22% for 2J-ortho) → dropped below the 5% default → ring under-determined. **Active work: FIX-11 (Phase 84, Kekulé canonicalize) + FIX-12 (Phase 85, HMBC SNR-floor → real emergent ring).** Open decision: accept documented ring-BOND forcing as legitimate mechanism vs hold v9.0 for emergent ring (now achievable via FIX-12). See .planning/research/D04-emergent-ring/.
+**Current focus:** Phase 85 — hmbc-peak-picking-integrity
 
 ## Current Position
 
@@ -42,10 +42,10 @@ Phase 83: Constraint-Hardness Guard  [x] DONE + VERIFIED (FIX-10) — advisory r
 
 Progress: [█████████░] 89% (8/10 phases; v9.0 does NOT ship until CASE9 passes)
 
-Phase: 83 (constraint-hardness-guard) — EXECUTING
+Phase: 85 (hmbc-peak-picking-integrity) — EXECUTING
 Plan: 1 of 2
-Status: Executing Phase 83
-Last activity: 2026-06-10 -- Phase 83 execution started
+Status: Executing Phase 85
+Last activity: 2026-06-16 -- Phase 85 execution started
 
 **Phase 77 scope (fixes only — decisions in 77-CONTEXT.md):**
 
