@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-20)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a multi-agent team that uses the intended solver pipeline — not a manual bypass
-**Current focus:** Phase 84 — aromatize-smiles-before-prediction
+**Current focus:** **All v9.0 fix phases DONE + verified** — FIX-08 (81), FIX-09 (82), FIX-10 (83), FIX-12 (85 HMBC SNR-floor), FIX-11 (84 aromatize-before-predict). Both CASE1 (UAT-03) + CASE9 (UAT-04) already SOLVED on Opus 4.8 (AND-gate substantively met; mechanism = documented ring-BOND escalation). The HMBC picker now surfaces the ring-diagnostic 3J-meta correlations (FIX-12). **Next = the EMERGENCE TEST: a fresh blind CASE run on Opus 4.8 (start with CASE1) to confirm the benzene ring now emerges WITHOUT forced ring-BONDs (D-04).** If it does → v9.0 ships cleanly and the gate-criterion question (emergent vs documented forcing) resolves to emergent. See .planning/research/D04-emergent-ring/.
 
 ## Current Position
 
