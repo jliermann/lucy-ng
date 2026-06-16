@@ -87,6 +87,19 @@ carboxylic acid carbonyl (C=O). It is ALWAYS real. Never remove it during manual
 Loss of this peak misallocates DBE, reads the aromatic ring as monosubstituted instead of
 para-disubstituted, and excludes the correct structure before LSD runs.
 
+**Pitfall 12 — HMBC SNR floor; weak long-range correlations are real (CRITICAL):** The HMBC
+pick now applies a noise-relative SNR floor (signal/noise separation), not a fraction-of-max
+threshold alone. This matters because an intense one-bond-leakage or 2-bond cross-peak sets the
+global maximum, so a pure fraction-of-max threshold silently discards genuine long-range
+correlations that sit at a tiny fraction of that maximum. A weak HMBC cross-peak that clears the
+SNR floor is REAL signal — keep it. In particular, **aromatic 3-bond (3J) long-range
+correlations** (a ring proton to a quaternary or substituted ring carbon two or three bonds
+away across the ring) are frequently far weaker than the ortho 2-bond correlations yet are the
+diagnostic correlations that pin ring connectivity. Do NOT dismiss a low-intensity HMBC peak as
+noise merely because it is a small percentage of the strongest peak — judge it by its SNR. Prefer
+the SNR-floor HMBC pick (the default); only fall back to a fraction-of-max threshold as a
+deliberate, documented choice when the SNR pick is demonstrably over-permissive.
+
 ## 3. 4J HMBC Coupling Detection (Aromatic Systems)
 
 ### Heuristic Detection
