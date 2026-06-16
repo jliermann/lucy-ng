@@ -81,6 +81,21 @@ Of the **6 ring edges**, here is what the data actually constrains:
 
 Note also the aromatic-J subtlety: the two ring-internal HMBC are **2J (ortho-CH→ipso)** — exactly the aromatic HMBC class that is **typically weak/unreliable**, while the **strong, diagnostic aromatic 3J (H→meta-Cq, H→para-ipso)** correlations were not in the picked set. So the ring is being asked to close on its weakest, most ambiguous correlations.
 
+## UPDATE — the deeper root cause: HMBC peak-picking drops the ring-diagnostic 3J (FIX-12)
+
+The "only 2 of 6 ring edges pinned" finding above used the correlations the agent *actually had*. But the molecule is genuinely over-determined by HMBC — the missing ring-closing **3J-meta** correlations (H4→C2, H6→C3) **exist in the raw spectrum**; the picker discards them. `lucy pick hmbc` thresholds only on **fraction-of-max** (`-t`, default 0.05) — there is no SNR floor (the FIX-08 problem, never carried over to HMBC).
+
+Raw HMBC (CASE1 expno 7), aromatic ipso×ArH block, intensity vs the global max (7.48e7):
+
+| cross-peak | type | intensity | % of max | picked at default 0.05? |
+|---|---|---|---|---|
+| C140.96 × H7.23 (H6→C2) | 2J ortho | 1.67e7 | 22.3 % | ✓ |
+| C136.88 × H7.11 (H4→C3) | 2J ortho | 1.70e7 | 22.7 % | ✓ |
+| **C140.76 × H7.11 (H4→C2)** | **3J meta** | 4.8e5 | **0.64 %** | ✗ (only at `-t 0.005`) |
+| **C≈137 × H7.23 (H6→C3)** | **3J meta** | ~5e5 | **~0.6 %** | ✗ (only at `-t 0.005`) |
+
+The strong aliphatic/2J peaks set the global max; the diagnostic 3J-meta are ~35× weaker (~0.6 %), ~8× below the 5 % default → systematically dropped. Lowering to `-t 0.005` surfaces them but inside a 165-peak flood (noise at ~0.5–2 %) — **no clean fraction-of-max gap**. A noise-relative **SNR floor** would keep a 0.6%-of-max peak that is SNR≥floor over local 2D noise while rejecting the noise — separable in SNR space, not in fraction-of-max space. **This is the actual emergent-ring blocker:** with H4→C2 and H6→C3 recovered, all 6 ring edges are pinned (2J-ortho + COSY CH–CH + 3J-meta + 2C-symmetry) and the benzene ring can emerge without forced ring-BONDs. Tracked as **FIX-12 / Phase 85**.
+
 ## Implications for a real emergent-ring mechanism
 
 Pure LSD constraint-deduction cannot force this ring, because the data (under honest 2-3J ambiguity, for a 2-CH-environment para ring) does not uniquely determine it. Candidate directions to make emergence real (testable, none answer-biasing):
