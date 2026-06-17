@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: CASE Reliability & Skill Consolidation
-status: milestone-ready
-stopped_at: CASE1 UAT-03 = CLEAN EMERGENT PASS (blind, Opus 4.8, 2026-06-17). Ibuprofen rank 1 (exact InChIKey, RDKit-verified); benzene ring emerged with ZERO ring-BONDs/SKEL/SYME/DEFF-NOT across all 3 iterations; no bypass, 0 coordinator interventions. D-04 resolved to "emergent". Combined with CASE9 UAT-04 (solved) the v9.0 AND-gate is met cleanly — v9.0 is SHIP-READY (run /gsd-complete-milestone). One non-gating residual: lucy lsd rank scoring defect (2.23/8 vs predict c13 0.27/10 for the correct structure).
-last_updated: "2026-06-17"
-last_activity: 2026-06-17 -- CASE1 UAT-03 clean emergent pass (blind), v9.0 ship-ready
+status: Awaiting next milestone
+stopped_at: v9.0 milestone COMPLETE + archived (2026-06-17). AND-gate met cleanly on Opus 4.8 — CASE9 (UAT-04) solved + CASE1 (UAT-03) clean emergent pass (ibuprofen rank 1, exact InChIKey, 0 ring-BONDs/SKEL/SYME/DEFF-NOT). D-04 resolved to "emergent". Tagged v9.0. Next = /gsd-new-milestone. Non-gating residual carried forward: lucy lsd rank scoring defect (todo).
+last_updated: "2026-06-17T17:53:51.347Z"
+last_activity: 2026-06-17 — Milestone v9.0 completed and archived
 progress:
   total_phases: 11
   completed_phases: 11
@@ -21,47 +21,31 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-20)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a multi-agent team that uses the intended solver pipeline — not a manual bypass
-**Current focus:** **v9.0 SHIP-READY — AND-gate met cleanly.** EMERGENCE TEST PASSED: CASE1 UAT-03 blind re-run (Opus 4.8, 2026-06-17) = **CLEAN EMERGENT PASS** — ibuprofen rank 1 (exact InChIKey, independently RDKit-verified), benzene ring emerged from constraints (sp2 MULT + HMBC ring-anchors + 2 cross-ring COSY equiv-pairs + ring3/ring4 exclusion) with **ZERO ring-BONDs / SKEL / SYME / DEFF NOT** across all 3 iterations; `lucy lsd run` throughout, 0 bypass/rescue. FIX-12 (Phase 85 HMBC SNR-floor) surfaced the 3J-meta correlations that close the ring. **D-04 resolved to "emergent"** (no longer only the documented-ring-BOND caveat). Combined with CASE9 UAT-04 (solved) → v9.0 ships. **Next = `/gsd-complete-milestone`.** One non-gating residual for a follow-up: `lucy lsd rank` scoring defect (under-scores the correct structure 2.23/8 vs `lucy predict c13` 0.27/10; NOT a Kekulé/FIX-11 issue). See [[project_case1_uat03_emergent_pass]], [[project_lucy_lsd_rank_scoring_defect]].
+**Current focus:** **v9.0 SHIPPED + archived (2026-06-17).** AND-gate met cleanly on Opus 4.8 — CASE9 (UAT-04) solved + CASE1 (UAT-03) CLEAN EMERGENT PASS (ibuprofen rank 1, exact InChIKey, RDKit-verified; ring emerged with 0 ring-BONDs/SKEL/SYME/DEFF-NOT). D-04 resolved to "emergent". Milestone archived to `milestones/v9.0-{ROADMAP,REQUIREMENTS}.md`, tagged `v9.0`. **Next = `/gsd-new-milestone`.** Carried-forward residual (non-gating): `lucy lsd rank` scoring defect (under-scores the correct structure 2.23/8 vs `lucy predict c13` 0.27/10; NOT a Kekulé/FIX-11 issue) — todo at `.planning/todos/pending/2026-06-17-lucy-lsd-rank-scoring-defect.md`. See [[project_case1_uat03_emergent_pass]], [[project_lucy_lsd_rank_scoring_defect]].
 
 ## Current Position
 
-```
-Phase 72: Design Re-Validation       [x] Complete
-Phase 73: Solution Plumbing Fix      [x] Complete
-Phase 74: Constraint Preservation    [x] Complete
-Phase 75: Skill Consolidation        [x] Complete
-Phase 76: Milestone UAT Gate         [x] Executed — GATE FAILED (CASE1 spirit-fail, CASE9 deferred)
-Phase 77: Fix lucy lsd run + Tooling [x] Complete
-Phase 78: Blind Re-UAT (CASE1+CASE9) [x] Executed — GATE FAILED (CASE1 UAT-03 PASS, CASE9 UAT-04 FAIL)
-Phase 79: Peak-Picking + Symmetry    [x] Complete — carbonyl-masking ELIMINATED (verified live), but CASE9 exposed 4J-HMBC blocker
-Phase 80: Long-Range 4J-HMBC Defect  [~] Mechanism delivered + unit-green; blind UAT GATE FAILED (upstream picker defect) → Phase 81
-Phase 81: Peak-Picking Integrity     [x] Code complete + VERIFIED (FIX-08) — all 5 fixes a–e shipped, suite 1077 passed
-Phase 82: Blind-UAT Skill Hygiene    [x] DONE (FIX-09) — runtime CASE skills decontaminated + migrated into repo/.claude (symlinked); 2026-06-10 CASE9 run invalidated
-Phase 83: Constraint-Hardness Guard  [x] DONE + VERIFIED (FIX-10) — advisory rule + G-PROP-EVIDENCE gate + dominant_element tooling; CASE9 truth not excluded; suite 1071 passed. Blind CASE9 re-run = remaining v9.0 ship-gate
-```
-
-Progress: [██████████] 100% (all phases 72–85 complete + verified; v9.0 AND-gate met)
-
-Phase: — (milestone-ready; next action = /gsd-complete-milestone)
+Phase: Milestone v9.0 complete
 Plan: —
-Status: CASE1 UAT-03 CLEAN EMERGENT PASS + CASE9 UAT-04 SOLVED → v9.0 ship-ready
-Last activity: 2026-06-17 -- CASE1 UAT-03 clean emergent pass (blind, Opus 4.8); D-04 resolved to emergent
+Status: Awaiting next milestone
+Last activity: 2026-06-17 — Milestone v9.0 completed and archived
 
-**Phase 77 scope (fixes only — decisions in 77-CONTEXT.md):**
+## Deferred Items
 
-1. FIX-01: `lucy lsd run` `_invoke_outlsd` — real solutions.smi + fail-loud on outlsd error + regression test. See memory project-lucy-lsd-run-broken-v9.
-2. FIX-02: deterministic cross-ring COSY equivalence emission in tooling → aromatic ring emerges (emergent primary; ring-BOND only as documented escalation per D-77-01/06).
-3. FIX-03: retire deprecated lucy-case-agent.md + targeted skill-creator audit (no full rewrite).
+Items acknowledged and deferred at v9.0 milestone close on 2026-06-17 (none block v9.0; all superseded, from older milestones, or intentionally carried to v9.1):
 
-**Phase 78 (separate):** blind re-UAT CASE1 + CASE9 via fixed mechanism; harness scripts/verify_case_solution.py already built. UAT-03/04.
-
-Wave structure:
-
-- Wave 0: Phase 72 (gate — must complete before all others; answers 4 open design questions)
-- Wave 1: Phase 73 (outlsd/lucy-lsd-run plumbing fix; depends on 72)
-- Wave 2: Phase 74 (constraint preservation + merge; depends on 73)
-- Wave 3: Phase 75 (skill consolidation; depends on 72 design decisions AND 74 fixed tooling)
-- Wave 4: Phase 76 (UAT gate; depends on 75)
+| Category | Item | Status | Note |
+|----------|------|--------|------|
+| todo | 2026-06-17-lucy-lsd-rank-scoring-defect | pending | intentional → v9.1 / /gsd-debug |
+| uat | 54-UAT.md | unknown | v5.0-era artifact, not v9.0 |
+| uat | 78-UAT-CASE1.md / 78-UAT-CASE9.md / 78-UAT-VERDICT.md | superseded | failed gate later overcome (CASE9 solved + CASE1 emergent pass) |
+| uat | 79-HUMAN-UAT.md | superseded | resolved by 2026-06-17 CASE1 emergent pass |
+| uat | 80-UAT-VERDICT.md | superseded | resolved by Phase 81 (FIX-08) |
+| uat | v2.1-UAT.md | testing | v2.1-era artifact (4 open scenarios), not v9.0 |
+| verification | 28-VERIFICATION.md | human_needed | v2.0-era artifact |
+| verification | 54-VERIFICATION.md | gaps_found | v5.0-era artifact |
+| verification | 75-VERIFICATION.md | human_needed | live-run check satisfied by v9.0 blind UATs |
+| verification | 79-VERIFICATION.md | human_needed | live-run check satisfied by 2026-06-17 CASE1 emergent pass |
 
 ## Completed Milestones
 
@@ -160,3 +144,7 @@ Resume with: `/gsd-plan-phase 81` (or `/gsd-discuss-phase 81` first) — 5 fixes
 
 ---
 *Last updated: 2026-06-09 — Phase 79 complete (4/4 plans, FIX-04/05/06 verified, code-review bugs fixed); CASE9 blind UAT exposed 4J-HMBC trap → Phase 80 (FIX-07) added; v9.0 ship-gate moves to Phase 80*
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone

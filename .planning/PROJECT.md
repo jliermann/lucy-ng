@@ -10,32 +10,26 @@ Lucy-ng is an AI-agent skill for Computer-Assisted Structure Elucidation (CASE) 
 
 An AI agent can autonomously determine the structure of an unknown organic compound from its NMR spectra, with a multi-agent architecture that prevents unproductive loops and keeps the elucidation on track.
 
-## Current Milestone: v9.0 CASE Reliability & Skill Consolidation
+## Current Milestone: none (v9.0 shipped 2026-06-17)
 
-**Goal:** Make the pyLSD CASE system actually work end-to-end — fix the tooling bugs the v8.0 UAT exposed, consolidate the skill/tool architecture, and re-answer the open 4J/aromatic design question — verified by a passing blind UAT on CASE1 **and** CASE9.
+**Next:** `/gsd-new-milestone`. Carried-forward, non-gating: `lucy lsd rank` scoring defect (ranker under-scores the correct structure vs `lucy predict c13`; see `.planning/todos/pending/2026-06-17-lucy-lsd-rank-scoring-defect.md`).
 
-**Driver:** v8.0 UAT found the correct structure (ibuprofen) but BYPASSED the entire pyLSD system — merge collected 0 despite thousands of per-permutation solutions, permutation files dropped BOND/SYME/DEFF NOT, and the answer came via direct lsd + forced benzene fragment + ~7 coordinator interventions. Full forensics: `.planning/v8.0-UAT-POSTMORTEM.md`. v9.0 must prove the *mechanism* works, not just the result.
+### v9.0 CASE Reliability & Skill Consolidation — SHIPPED ✅
 
-**Target areas:**
-- **Design re-validation (FIRST):** is pyLSD multi-run the right 4J approach? single vs dual solver path? where does constraint translation live? how is the aromatic ring established? (Phase 65 hypothesis was contradicted — ring had to be forced.)
-- **R1 — tooling foundation:** `lucy lsd run` / outlsd conversion (exit 255; solutions never become SMILES)
-- **R2 — pyLSD constraint preservation + merge:** permutation files must not drop BOND/SYME/DEFF NOT; SolutionMerger must collect solutions
-- **R3 — architecture:** lossless native translation across all solver paths (SYME/DEFF NOT are NOT native LSD commands)
-- **R4 — skill consolidation:** review ALL agent skills; resolve normal-LSD-vs-pyLSD documentation imbalance (hypothesis: agent reverts to the better-documented path)
-- **Gate:** blind UAT re-run on CASE1 + CASE9
+**Goal (met):** Make the CASE system work end-to-end via the intended mechanism — fix the tooling bugs the v8.0 UAT exposed, consolidate the skill/tool architecture, and re-answer the open 4J/aromatic design question — verified by a passing blind UAT on CASE1 **and** CASE9.
 
-**v8.0 status:** shipped infrastructure but UAT failed as validation; superseded/repaired by v9.0 (not archived — artifacts retained as v9.0 reference).
+**Outcome:** AND-gate met cleanly on Opus 4.8. CASE9 (UAT-04) solved (`CC(C)OC(=O)c1ccc(C(C)O)cc1`, MAE 1.17). CASE1 (UAT-03) a CLEAN EMERGENT PASS — ibuprofen rank 1 (exact InChIKey, RDKit-verified), benzene ring emerged from constraints with **0 ring-BONDs / SKEL / SYME / DEFF NOT**, no manual bypass. **D-04 resolved to "emergent."** A substantial earlier-failure root cause turned out to be model-driven (a stale `CLAUDE_CODE_SUBAGENT_MODEL=sonnet` override, now `inherit`). Full archive: `milestones/v9.0-ROADMAP.md`.
 
 ## Current State
 
-**Version:** v6.0 shipped 2026-03-10
-**Codebase:** ~20,974 lines Python, 867 tests, 11 CLI command groups
-**Database:** SQLite v6 schema with 928K compounds, 7.89M HOSE statistics + fragment library (2.4M SSCs, 605 MB)
-**Agent definitions:** ~3,600 lines across 5 agent files + orchestrator skill (~595 lines, factored with 3 reference files)
+**Version:** v9.0 shipped 2026-06-17
+**Codebase:** Python package (`src/lucy_ng/`), test suite 1081 passing at v9.0 close
+**Database:** SQLite with 928K compounds, 7.9M HOSE statistics + fragment library (2.4M SSCs)
+**Agent definitions:** 4-agent CASE team + case.md orchestrator (in `repo/.claude/`, symlinked into `~/.claude`)
 
-**What shipped in v6.0:** Skill quality overhaul — factored case.md, 4J HMBC awareness across 3 agents, message validation, NL trigger phrases, routing decision tree, error recovery, dry-run gate, version check, smoke test mode. All .md skill/agent edits, no Python changes.
+**What shipped in v9.0:** End-to-end CASE reliability — fixed `lucy lsd run`/outlsd plumbing; native-only constraint translation (SYME→BOND/COSY, DEFF NOT→DEFF F/FEXP) across all paths; peak-picking integrity with SNR-floors for 13C (FIX-08) and HMBC (FIX-12); constraint-hardness guard (FIX-10); blind-UAT skill decontamination (FIX-09); Kekulé-aromatize-before-predict (FIX-11). Validated by blind UAT: CASE9 solved + CASE1 clean emergent pass.
 
-**Known limitation:** 4J HMBC couplings through aromatic rings not statistically detected — heuristic flagging added in v6.0 but statistical DB-based detection (4J-01) is still the highest-priority next feature.
+**Known limitation / next:** `lucy lsd rank` scores the correct structure worse than `lucy predict c13` (divergent prediction path) — non-gating, carried to the next milestone.
 
 ## Architecture
 
@@ -232,4 +226,16 @@ Minimum viable spectral data for v1:
 - 2 minor integration gaps from v6.0 audit (INTL-03 aromatic expectation relay, INTL-04 4J status field validation) — cosmetic
 
 ---
-*Last updated: 2026-05-20 — v9.0 milestone started (driven by v8.0-UAT-POSTMORTEM.md)*
+### v9.0 Key Decisions
+
+| Decision | Rationale | Outcome |
+|----------|-----------|---------|
+| Single solver path (D-02) | v8.0 agent reverted to better-documented normal-LSD; one path removes the ambiguity | Good |
+| Native-only constraint translation (D-03) | SYME/DEFF NOT are lucy-ng abstractions, not native LSD-3.4.9; translate to BOND/COSY + DEFF F/FEXP at the boundary | Good |
+| Emergent aromatic ring (D-04) | Ring should arise from sp2 MULT + HMBC anchors + cross-ring COSY + ring-size exclusion, not a forced SKEL/ring-BOND | Good — confirmed by CASE1 UAT-03 (0 ring-BONDs) |
+| SNR-floor peak picking (FIX-08/FIX-12) | Fraction-of-max masks weak quaternary carbonyls (13C) and ring-diagnostic 3J-meta cross-peaks (HMBC) | Good |
+| Constraint-hardness guard (FIX-10) | An uncertain inference must never become a hard, solution-excluding LSD constraint | Good |
+| `CLAUDE_CODE_SUBAGENT_MODEL=inherit` | A stale `=sonnet` override silently forced all subagents to Sonnet 4.6 and drove earlier CASE failures | Good — Opus 4.8 then solved both cases |
+
+---
+*Last updated: 2026-06-17 — v9.0 milestone shipped (CASE Reliability & Skill Consolidation)*

@@ -82,12 +82,50 @@
 
 ---
 
+## Milestone: v9.0 — CASE Reliability & Skill Consolidation
+
+**Shipped:** 2026-06-17
+**Phases:** 14 (72–85) | **Plans:** 34
+
+### What Was Built
+- Solution plumbing: `lucy lsd run`/outlsd produces real ranked SMILES + fails loud; deterministic cross-ring COSY derivation (`lucy detect aromatic-cosy`).
+- Native-only constraint translation (SYME→BOND/COSY, DEFF NOT→DEFF F/FEXP) across all paths + permutation constraint preservation; devils-advocate G5–G8 gates.
+- Peak-picking integrity: SNR-floor for 13C (FIX-08) and HMBC (FIX-12) + overcount guard.
+- Constraint-hardness guard (FIX-10); blind-UAT skill decontamination (FIX-09); Kekulé-aromatize-before-predict (FIX-11).
+- Validation: CASE9 solved (UAT-04) + CASE1 clean emergent pass (UAT-03).
+
+### What Worked
+- **Goal-backward blind UAT as the gate**: repeatedly failing the blind UAT (Phases 76/78/79/80) surfaced the *real* upstream defects (peak-picking) instead of letting a green unit suite mask them.
+- **Independent RDKit verification by a tainted bookkeeper**: kept "found ibuprofen" claims honest (caught the ortho-vs-para distinction and the rank-vs-predict MAE discrepancy).
+- **Fix the model, not just the skill**: the single highest-leverage fix was `CLAUDE_CODE_SUBAGENT_MODEL=inherit` — many "skill" failures were Sonnet-4.6-driven.
+
+### What Was Inefficient
+- **Long chain of failed gates (76→78→79→80→81)**: each blind UAT exposed one more upstream layer (LSD mechanism → carbonyl masking → 4J trap → peak-picking flood). Earlier raw-spectrum inspection would have found the snr_floor=3 noise flood sooner.
+- **Auto-memory contaminated the "blind" UAT**: per-data-dir auto-memory leaked the answer into supposedly-blind runs; required quarantine + `autoMemoryEnabled:false` + workspace-trust to make blind runs repeatable.
+
+### Patterns Established
+- **Blind-UAT hygiene**: quarantine per-data-dir memory + `autoMemoryEnabled:false` before each blind run; orchestrating instance is bookkeeper only.
+- **SNR-floor over fraction-of-max**: noise-relative thresholds for both 1D and 2D pickers so weak-but-real signals survive.
+- **Constraint-hardness discipline**: statistical/uncertain inferences stay advisory; never hard PROP/BOND that can exclude the truth.
+
+### Key Lessons
+1. A green unit suite is not validation — only the end-to-end blind UAT against real spectra caught the upstream peak-picking defects.
+2. Confirm the runtime model before blaming the skill — a silent subagent-model override caused failures no skill edit could fix.
+3. Auto-memory and repeatable blind testing conflict; isolate test fixtures from persistent memory.
+
+### Cost Observations
+- Model mix: Opus 4.8 for CASE runs + orchestration (the model upgrade was itself the decisive fix)
+- Notable: the winning run needed 0 coordinator bypass interventions — the mechanism finally carried the result
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
 
 | Milestone | Sessions | Phases | Key Change |
 |-----------|----------|--------|------------|
+| v9.0 | many | 14 | Blind UAT as the real gate; fix the runtime model, not just the skill; blind-UAT memory hygiene |
 | v7.0 | ~4 | 6 | ABANDONED — calibrate statistical metrics early before building infrastructure |
 | v6.0 | 3 | 4 | Auto-advance pipeline; pure .md editing; integration checker for wiring |
 
@@ -95,6 +133,7 @@
 
 | Milestone | Tests | Coverage | Skill Lines |
 |-----------|-------|----------|-------------|
+| v9.0 | 1081 passing | — | 4-agent team + orchestrator (repo/.claude, symlinked) |
 | v7.0 | 860 (7 skipped) | — | ~4,200 (unchanged — all code reverted) |
 | v6.0 | 867 (unchanged) | — | ~4,200 (skills + agents, factored with references) |
 
@@ -102,3 +141,5 @@
 
 1. Integration wiring is the highest-risk area for multi-agent skill architectures — individual files pass verification but cross-file field relay is where gaps hide
 2. Calibrate statistical approaches on small samples before building full infrastructure — the distribution problem in v7.0 was visible at any scale
+3. A green unit suite ≠ validation — the end-to-end blind UAT against real data is the only gate that catches upstream (peak-picking) defects (v9.0)
+4. Verify the runtime model/config before attributing failures to the skill — a silent subagent-model override drove much of the v9.0 failure chain
