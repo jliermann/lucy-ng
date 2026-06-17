@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: CASE Reliability & Skill Consolidation
-status: executing
-stopped_at: Phase 80 closed at FAILED gate (80-UAT-VERDICT.md written, CASE9 FAIL). Phase 80 mechanism (elim_budget, plausibility filter, skill surgery, SC-3 guard PASS) delivered + unit-green (pytest 1054) but the blind CASE9 UAT failed on an UPSTREAM peak-picking defect. Phase 81 (FIX-08) created with full scope in ROADMAP. v9.0 still does not ship.
-last_updated: "2026-06-16T13:19:34.580Z"
-last_activity: 2026-06-16 -- Phase 84 execution started
+status: milestone-ready
+stopped_at: CASE1 UAT-03 = CLEAN EMERGENT PASS (blind, Opus 4.8, 2026-06-17). Ibuprofen rank 1 (exact InChIKey, RDKit-verified); benzene ring emerged with ZERO ring-BONDs/SKEL/SYME/DEFF-NOT across all 3 iterations; no bypass, 0 coordinator interventions. D-04 resolved to "emergent". Combined with CASE9 UAT-04 (solved) the v9.0 AND-gate is met cleanly — v9.0 is SHIP-READY (run /gsd-complete-milestone). One non-gating residual: lucy lsd rank scoring defect (2.23/8 vs predict c13 0.27/10 for the correct structure).
+last_updated: "2026-06-17"
+last_activity: 2026-06-17 -- CASE1 UAT-03 clean emergent pass (blind), v9.0 ship-ready
 progress:
   total_phases: 11
   completed_phases: 11
@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-20)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a multi-agent team that uses the intended solver pipeline — not a manual bypass
-**Current focus:** **All v9.0 fix phases DONE + verified** — FIX-08 (81), FIX-09 (82), FIX-10 (83), FIX-12 (85 HMBC SNR-floor), FIX-11 (84 aromatize-before-predict). Both CASE1 (UAT-03) + CASE9 (UAT-04) already SOLVED on Opus 4.8 (AND-gate substantively met; mechanism = documented ring-BOND escalation). The HMBC picker now surfaces the ring-diagnostic 3J-meta correlations (FIX-12). **Next = the EMERGENCE TEST: a fresh blind CASE run on Opus 4.8 (start with CASE1) to confirm the benzene ring now emerges WITHOUT forced ring-BONDs (D-04).** If it does → v9.0 ships cleanly and the gate-criterion question (emergent vs documented forcing) resolves to emergent. See .planning/research/D04-emergent-ring/.
+**Current focus:** **v9.0 SHIP-READY — AND-gate met cleanly.** EMERGENCE TEST PASSED: CASE1 UAT-03 blind re-run (Opus 4.8, 2026-06-17) = **CLEAN EMERGENT PASS** — ibuprofen rank 1 (exact InChIKey, independently RDKit-verified), benzene ring emerged from constraints (sp2 MULT + HMBC ring-anchors + 2 cross-ring COSY equiv-pairs + ring3/ring4 exclusion) with **ZERO ring-BONDs / SKEL / SYME / DEFF NOT** across all 3 iterations; `lucy lsd run` throughout, 0 bypass/rescue. FIX-12 (Phase 85 HMBC SNR-floor) surfaced the 3J-meta correlations that close the ring. **D-04 resolved to "emergent"** (no longer only the documented-ring-BOND caveat). Combined with CASE9 UAT-04 (solved) → v9.0 ships. **Next = `/gsd-complete-milestone`.** One non-gating residual for a follow-up: `lucy lsd rank` scoring defect (under-scores the correct structure 2.23/8 vs `lucy predict c13` 0.27/10; NOT a Kekulé/FIX-11 issue). See [[project_case1_uat03_emergent_pass]], [[project_lucy_lsd_rank_scoring_defect]].
 
 ## Current Position
 
@@ -40,12 +40,12 @@ Phase 82: Blind-UAT Skill Hygiene    [x] DONE (FIX-09) — runtime CASE skills d
 Phase 83: Constraint-Hardness Guard  [x] DONE + VERIFIED (FIX-10) — advisory rule + G-PROP-EVIDENCE gate + dominant_element tooling; CASE9 truth not excluded; suite 1071 passed. Blind CASE9 re-run = remaining v9.0 ship-gate
 ```
 
-Progress: [█████████░] 89% (8/10 phases; v9.0 does NOT ship until CASE9 passes)
+Progress: [██████████] 100% (all phases 72–85 complete + verified; v9.0 AND-gate met)
 
-Phase: 84 (aromatize-smiles-before-prediction) — EXECUTING
-Plan: 1 of 1
-Status: Executing Phase 84
-Last activity: 2026-06-16 -- Phase 84 execution started
+Phase: — (milestone-ready; next action = /gsd-complete-milestone)
+Plan: —
+Status: CASE1 UAT-03 CLEAN EMERGENT PASS + CASE9 UAT-04 SOLVED → v9.0 ship-ready
+Last activity: 2026-06-17 -- CASE1 UAT-03 clean emergent pass (blind, Opus 4.8); D-04 resolved to emergent
 
 **Phase 77 scope (fixes only — decisions in 77-CONTEXT.md):**
 
@@ -132,6 +132,8 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Phase 78-FORENSICS]: CASE9 root cause is UPSTREAM of the Phase-77 LSD fix, proven from raw 13C (…/CASE9/12): (1) ester carbonyl at 166.08 ppm SNR≈17 dropped by `lucy pick 1d` because the CDCl₃ triplet (4.6e7 @ 77 ppm) dominates the max-relative threshold → DBE computed without carbonyl → forced extra ring; (2) 13C intensity doubling (129.94/125.31/22.10 = 2C signals) not used as a symmetry indicator → ring read monosubstituted → `lucy detect aromatic-cosy` gets no equivalence pairs → emergent ring disabled. The emergent-COSY mechanism is NOT refuted — it never got correct input. CASE1 lacks a weak quaternary carbonyl in the CDCl₃ shadow, so it was unaffected.
 
 ### Pending Todos
+
+- **[2026-06-17] Fix `lucy lsd rank` scoring defect** (`.planning/todos/pending/2026-06-17-lucy-lsd-rank-scoring-defect.md`) — ranker scores the correct structure 2.23/8-of-10 vs `lucy predict c13` 0.27/10-of-10 (same molecule, Kekulé & canonical alike; NOT a Kekulé/FIX-11 issue). Divergent prediction/matching paths. Non-gating for v9.0; candidate for v9.1 / `/gsd-debug`. Surfaced by CASE1 UAT-03.
 
 - **Phase 79 (next): fix CASE9 defect at TWO layers** (seed: `.planning/phases/79-peak-picking-symmetry-fix/79-SCOPE-SEED.md`). **Layer 1 — tooling:** (a) peak-picker SNR-based / CDCl₃-solvent-aware threshold so weak quaternary carbonyls (166.08 ppm, SNR≈17) aren't masked; (b) 13C intensity as 2C-equivalence indicator → feeds `lucy detect aromatic-cosy`. **Layer 2 — skill feedback loop** (the skill audit found peak-picking is fire-and-forget with NO sensor for clean-but-wrong convergence; the 4 loop-patterns key on solution_count not quality, so CASE9's clean 211→4→18→12 fired nothing): (c) DBE-insaturation self-check in nmr-chemist (DBE deficit + empty 160–220 ppm region → targeted re-pick); (d) new quality loop-pattern (best MAE > threshold OR all solutions IMPLAUSIBLE → reactivate nmr-chemist re-pick, bounded budget) wired into case.md/loop-patterns.md/advisory-templates.md; (e) make intensity-symmetry check procedural in nmr-chemist. Then re-run CASE9 blind (fresh instance, per feedback_blind_uat) and re-apply the AND-gate.
 - Phase 78 blind UAT DONE: CASE1 UAT-03 PASS, CASE9 UAT-04 FAIL. See 78-UAT-VERDICT.md.

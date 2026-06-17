@@ -223,6 +223,8 @@ Plans:
 ---
 *Update 2026-06-16 — v9.0 AND-gate substantively MET on Opus 4.8: CASE1 (UAT-03) + CASE9 (UAT-04) both SOLVED, RDKit-verified, no manual bypass/SKEL, 4J trap overcome. Mechanism caveat (both): aromatic ring required documented ring-BOND escalation — emergent ring (D-04) traced to HMBC peak-picking dropping weak-but-real 3J-meta correlations (FIX-12). Remaining: FIX-11 (Kekulé canonicalize), FIX-12 (HMBC SNR-floor → real emergent ring), plus the gate-criterion decision (accept documented ring-BOND forcing vs hold for emergent).*
 
+*Update 2026-06-17 — **EMERGENCE TEST PASSED → v9.0 SHIP-READY.** CASE1 UAT-03 blind re-run (Opus 4.8, fresh blind instance with prior answer-memory quarantined) = **CLEAN EMERGENT PASS**: ibuprofen rank 1 (`CC(C)Cc1ccc(C(C)C(=O)O)cc1`, exact InChIKey HEFNNWSXXWATRW, independently RDKit-verified). Benzene ring emerged from constraints (sp2 MULT + HMBC ring-anchors 3 4 / 2 6 + 2 cross-ring COSY equiv-pairs 6 5 / 7 4 + ring3/ring4 exclusion) with **0 ring-BONDs / 0 SKEL / 0 SYME / 0 DEFF NOT** across all 3 iterations; `lucy lsd run` throughout, 0 bypass/rescue. FIX-12 surfaced the 3J-meta correlations that close the ring. **D-04 gate-criterion decision RESOLVED to "emergent"** — the documented-ring-BOND caveat no longer applies. With CASE9 UAT-04 already solved, the AND-gate is met cleanly → run `/gsd-complete-milestone`. Non-gating residual for a follow-up phase: `lucy lsd rank` under-scores the correct structure (MAE 2.23 / 8-of-10) vs `lucy predict c13` (0.27 / 10-of-10) for the identical molecule (Kekulé AND canonical alike) — a divergent ranker path, NOT a Kekulé/FIX-11 defect.*
+
 ## Phase Details
 
 ### Phase 72: Design Re-Validation
