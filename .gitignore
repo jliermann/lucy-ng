@@ -69,3 +69,8 @@ outlsd.out
 
 # Large background PDFs — kept locally for reference, deposited elsewhere (DOI/Zenodo) not in git
 background/*.pdf
+
+# Blind-UAT answer keys — keep LOCAL only, never push (public repo).
+# These map CASE datasets to their ground-truth identities / UAT outcomes.
+.planning/CASE-DATASET-IDENTITIES.md
+.planning/CASE-UAT-LOG.md
