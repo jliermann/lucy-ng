@@ -82,6 +82,13 @@ Spawn the 4-agent CASE specialist team via TeamCreate and Task(team_name).
 
 **CRITICAL:** The orchestrator skill IS the team lead (coordinator). Do NOT spawn a coordinator agent -- the skill itself manages the team, creates tasks, delivers advisories, and handles lifecycle.
 
+**COORDINATION PROTOCOL — PUSH, NEVER PULL (critical — prevents the stall):**
+Background teammates go idle between turns and do **NOT** poll the TaskList on their own. A `TaskCreate` by itself will **never** wake an idle agent — the run simply stalls until a message arrives. Therefore the coordinator drives everything by message:
+- After creating/assigning ANY task, the coordinator MUST immediately `SendMessage` the specific assignee an explicit `[BEGIN] <task>` directive. Do this right after each `TaskCreate`, and again immediately after the prerequisite agent reports.
+- `TaskCreate` / `TaskList` / `TaskUpdate` are a STATUS LEDGER for visibility only — never a work queue that agents poll.
+- Agents act ONLY on a received `SendMessage`. They must never "wait for", "monitor", or "claim from" the TaskList.
+- A teammate's reply arrives as a conversation turn and wakes the coordinator, which then immediately pushes the next `[BEGIN]` directive. This message ping-pong is the ONLY thing that keeps the workflow moving — there is no autonomous polling. If you ever find yourself "waiting" after a `TaskCreate` without having sent a `[BEGIN]`, that is the bug: push the directive.
+
 **Step 1: Initialize team namespace** ({compound_name} = last path component, e.g., "MyCompound")
 
 ```
@@ -119,10 +126,10 @@ Task(
   subagent_type="lucy-nmr-chemist",
   model="claude-opus-4-8",
   prompt="You are the NMR chemist for CASE of {formula} at {compound_path}.
-          Check TaskList for available tasks. Claim peak-picking task.
+          Begin ONLY when the coordinator sends you a [BEGIN] peak-picking directive — do NOT poll or wait on the TaskList (idle agents are not woken by tasks, only by messages).
           Execute peak picking and statistical detection using lucy CLI.
           Send [SETUP-COMPLETE] message to coordinator via SendMessage with all peak assignments, detection results, and quality assessment.
-          Mark task completed when done. Check TaskList for more work."
+          Mark the task completed (TaskUpdate, for the status ledger) and then wait for the coordinator's next [BEGIN] directive — never poll the TaskList for more work."
 )
 
 Task(
@@ -131,13 +138,12 @@ Task(
   subagent_type="lucy-lsd-engineer",
   model="claude-opus-4-8",
   prompt="You are the LSD engineer for CASE of {formula} at {compound_path}.
-          Wait for peak assignments from nmr-chemist via SendMessage.
-          Claim iteration tasks from TaskList as they become available. Build LSD files in
-          analysis/iteration_NN/ directories. Run LSD solver.
+          Act ONLY on the coordinator's [BEGIN] lsd-iteration directives sent to you via SendMessage — do NOT poll or wait on the TaskList (idle agents are woken by messages, not by tasks).
+          On each [BEGIN] lsd-iteration-NN directive: build the LSD file in analysis/iteration_NN/, run the LSD solver.
           Send [ITERATION-COMPLETE] message to coordinator via SendMessage after EVERY iteration.
           CRITICAL: Read previous LSD file, never reconstruct from memory.
           Follow incremental HMBC strategy: 3-5 correlations per iteration.
-          Continue claiming tasks from TaskList. You will receive a shutdown_request when CASE is complete."
+          After reporting, wait for the coordinator's next [BEGIN] directive — never poll the TaskList. You will receive a shutdown_request when CASE is complete."
 )
 
 Task(
@@ -146,9 +152,8 @@ Task(
   subagent_type="lucy-solution-analyst",
   model="claude-opus-4-8",
   prompt="You are the solution analyst for CASE of {formula} at {compound_path}.
-          Monitor TaskList for ranking tasks. When solution_count <= 10,
-          claim ranking task. Read experimental 13C shifts from the task description
-          (coordinator embeds the full shift list when creating the ranking task).
+          Act ONLY when the coordinator sends you a [BEGIN] ranking directive via SendMessage — do NOT poll or monitor the TaskList (idle agents are woken by messages, not by tasks).
+          The [BEGIN] ranking directive embeds the full experimental 13C shift list and the solutions.smi path.
           Assess chemical plausibility of top candidates.
           Write analysis/final_results.md with ranked structures.
           Send [RANKING-COMPLETE] message to coordinator via SendMessage with ranking summary."
@@ -160,7 +165,7 @@ Task(
   subagent_type="lucy-devils-advocate",
   model="claude-opus-4-8",
   prompt="You are the devils advocate for CASE of {formula} at {compound_path}.
-          Receive validation requests from lsd-engineer via SendMessage.
+          Act ONLY on validation requests received via SendMessage (from lsd-engineer or the coordinator) — do NOT poll the TaskList.
           After each validation request:
           1. Diff current LSD file against previous iteration
           2. Check for dropped constraints (ring exclusion DEFF F/FEXP, COSY equivalence pairs, grouped notation)
@@ -188,7 +193,20 @@ Also record the coordinator's OWN runtime model (read it from your environment/s
 
 This makes the exact model + version of every agent auditable at the top of every run, and surfaces a fallback immediately instead of buried in a footer.
 
-The orchestrator then enters the monitor_progress step, waiting for team messages and polling progress.
+**Step 5: Kick off (mandatory — the team will NOT start on its own).**
+
+Immediately after spawning, the coordinator MUST push the first directive. The freshly-spawned teammates are idle and will do nothing until messaged:
+
+```
+SendMessage(
+  type="message",
+  recipient="nmr-chemist",
+  content="[BEGIN] peak-picking — start now. Pick 13C/HSQC/HMBC for {compound_path} (formula {formula}), run statistical detection, write the analysis/ structure, then send [SETUP-COMPLETE] with all peak assignments, detection results, and quality assessment. Prepend your first message with the [MODEL] line.",
+  summary="Kick off nmr-chemist peak-picking"
+)
+```
+
+Do NOT proceed to a passive wait. After this push, enter monitor_progress: each teammate reply arrives as a turn that wakes you; on each reply, immediately push the next `[BEGIN]` directive (never rely on the teammate to poll the TaskList).
 </step>
 
 <step name="write_progress">
@@ -244,13 +262,23 @@ On receiving any structured message (identified by `[TAG]` prefix):
 </step>
 
 <step name="monitor_progress">
-Monitor team progress via TaskList polling and incoming SendMessage notifications.
+Monitor team progress via incoming SendMessage notifications (teammate replies arrive as conversation turns and wake you). TaskList is read only as a status ledger — the workflow advances because you PUSH the next `[BEGIN]` directive after each reply, never because a teammate polls.
 
 Before processing any structured message, run validate_message to check for required fields.
 
 **Shift list retention:** When processing [SETUP-COMPLETE] from nmr-chemist, extract and retain the experimental 13C shift list (comma-separated ppm values). This is needed later for creating ranking tasks.
 
-**Monitoring loop:** Receive structured messages from teammates (arrive as conversation turns) + poll `TaskList()` periodically + read `<compound_path>/analysis/CASE-PROGRESS.md` for loop detection. On each structured message ([SETUP-COMPLETE], [ITERATION-COMPLETE], [VALIDATION-PASSED], [VALIDATION-BLOCKED], [RANKING-COMPLETE]): write the corresponding section to CASE-PROGRESS.md per write_progress, then continue monitoring.
+**Push iteration 1 (mandatory after [SETUP-COMPLETE]):** the lsd-iteration-01 task created at spawn will NOT start on its own. Immediately after writing the Setup section, push the lsd-engineer:
+```
+SendMessage(
+  type="message",
+  recipient="lsd-engineer",
+  content="[BEGIN] lsd-iteration-01 — peak assignments are ready (see analysis/CASE-PROGRESS.md ## Setup). Build the initial LSD file in analysis/iteration_01/ (MULT from HSQC, first 3-5 HMBC), request DA validation, run the solver, then send [ITERATION-COMPLETE].",
+  summary="Kick off LSD iteration 1"
+)
+```
+
+**Monitoring loop:** Receive structured messages from teammates (arrive as conversation turns) + optionally read `TaskList()` for status + read `<compound_path>/analysis/CASE-PROGRESS.md` for loop detection. On each structured message ([SETUP-COMPLETE], [ITERATION-COMPLETE], [VALIDATION-PASSED], [VALIDATION-BLOCKED], [RANKING-COMPLETE]): write the corresponding section to CASE-PROGRESS.md per write_progress, **push the next `[BEGIN]` directive** to whichever agent owns the next step, then continue monitoring.
 
 **Parse from CASE-PROGRESS.md:** solution count per iteration, constraints added/removed, sp2 checks, H budget status, HMBC correlations used (X/Y), last iteration number.
 
@@ -318,6 +346,16 @@ SendMessage(
    )
    ```
 
+   **Then immediately push it** (the lsd-engineer is idle and will not pick this up on its own):
+   ```
+   SendMessage(
+     type="message",
+     recipient="lsd-engineer",
+     content="[BEGIN] lsd-iteration-{next_iter:02d} — build iteration {next_iter} now: read analysis/iteration_{current_iter:02d}/compound.lsd, carry ALL constraints forward, add the next HMBC batch, request DA validation, then run the solver and send [ITERATION-COMPLETE].",
+     summary="Kick off LSD iteration {next_iter}"
+   )
+   ```
+
    **Parallel task creation (when solution_count is 10-50 and iterations >= 2):**
    Additionally create an HMBC selection task for nmr-chemist:
    ```
@@ -328,6 +366,16 @@ SendMessage(
                   Apply selection criteria: isolated carbons, unique protons, strong intensity.
                   Send selected batch to lsd-engineer via SendMessage.",
      activeForm="Selecting HMBC batch {next_iter}"
+   )
+   ```
+
+   **Then immediately push it** to nmr-chemist:
+   ```
+   SendMessage(
+     type="message",
+     recipient="nmr-chemist",
+     content="[BEGIN] hmbc-selection-{next_iter:02d} — select the next 3-5 HMBC correlations now (avoid already-used ones in CASE-PROGRESS.md) and send the batch to lsd-engineer.",
+     summary="Kick off HMBC selection {next_iter}"
    )
    ```
 
@@ -350,11 +398,21 @@ SendMessage(
    )
    ```
 
+   **Then immediately push it** to solution-analyst (embed the shift list + path in the message so it never needs the TaskList):
+   ```
+   SendMessage(
+     type="message",
+     recipient="solution-analyst",
+     content="[BEGIN] ranking — rank solutions now. solutions.smi: analysis/iteration_{current_iter:02d}/solutions.smi ; experimental 13C: {shift_list}. Assess plausibility, write analysis/final_results.md, send [RANKING-COMPLETE].",
+     summary="Kick off ranking"
+   )
+   ```
+
 5. **If iterations >= 10 (safety cap) AND solution_count > 10:**
 
-   Create ranking task (same as above) AND proceed to present_results with caveat.
+   Create ranking task (same as above), push the [BEGIN] ranking directive to solution-analyst, AND proceed to present_results with caveat.
 
-Return to monitoring after creating tasks.
+After creating a task you MUST have pushed its `[BEGIN]` directive — then return to monitoring. Never end a turn on a bare `TaskCreate`; an un-pushed task is a stall.
 </step>
 
 <step name="detect_loops">
