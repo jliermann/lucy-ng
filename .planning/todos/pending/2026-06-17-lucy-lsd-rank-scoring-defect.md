@@ -34,6 +34,20 @@ canonicalization for the 0.27 — but that 0.27 came from `predict c13`, not fro
 Evidence: `CASE1/analysis/ranking_results.json`; reproduced directly via
 `lucy lsd rank <smi> --shifts "180.56,140.84,137.00,129.38,127.26,45.03,44.90,30.14,22.37,18.09"`.
 
+## Update 2026-06-18 — reproduced, more severe
+
+Hit again on a later blind CASE run (a conjugated cyclic enone). This time the ranker did
+not merely inflate the MAE — **it placed the WRONG regioisomer at rank 1**. The correct
+structure was only recovered by a manual analyst override using a higher-radius (r6) HOSE
+prediction plus a diagnostic carbon shift. Root cause is the same: the ranker's
+prediction/matching path predicts conjugated carbonyl/olefin carbons poorly (low HOSE radius),
+so structures whose distinctive carbons sit in that regime get mis-scored. A less careful
+agent that trusted the algorithmic rank-1 would have reported the wrong structure.
+
+→ Raises priority. Likely fix: have `lucy lsd rank` use the same prediction path/HOSE radius
+as `lucy predict c13` (which scores these correctly), or escalate radius when a candidate has
+conjugated sp2 systems.
+
 ## Solution
 
 Align `lucy lsd rank` scoring with `lucy predict c13`. Root-cause hypotheses to check:
