@@ -73,7 +73,7 @@ first blind runs of CASE6/7/8 to surface any 4th defect.
   3. When identity cannot be tool-confirmed, the report marks the name as tentative with a confidence qualifier instead of asserting it.
   4. The CASE4/CASE5 naming-hallucination pattern (wrong "literature" reference; indigo↔isoindigo mislabel) is demonstrably caught by the gate on those structures.
 **Plans**: 2 plans
-  - [ ] 87-01-PLAN.md — Extend `verify_case_solution.py` with `derive_identity()` + `check-identity` subcommand (InChIKey-first / SMILES-fallback two-path lookup, tentative/novel verdicts) + CASE4/CASE5 regression tests — the deterministic binding gate (IDENT-01/02/03)
+  - [x] 87-01-PLAN.md — Extend `verify_case_solution.py` with `derive_identity()` + `check-identity` subcommand (InChIKey-first / SMILES-fallback two-path lookup, tentative/novel verdicts) + CASE4/CASE5 regression tests — the deterministic binding gate (IDENT-01/02/03)
   - [ ] 87-02-PLAN.md — Wire the tool into the CASE agents: solution-analyst derivation + tentative-name rendering; devils-advocate post-solution advisory gate G-IDENT (IDENT-01/02/03)
 
 ### Phase 88: Aliphatic Multiplicity Robustness
@@ -104,6 +104,6 @@ first blind runs of CASE6/7/8 to surface any 4th defect.
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 86. Ranker Path Unification | 2/2 | Complete    | 2026-06-23 |
-| 87. Final Identity-Verification Gate | 0/2 | Planned     | - |
+| 87. Final Identity-Verification Gate | 1/2 | In Progress|  |
 | 88. Aliphatic Multiplicity Robustness | 0/? | Not started | - |
 | 89. Blind-UAT Validation Gate | 0/? | Not started | - |

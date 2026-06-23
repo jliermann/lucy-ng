@@ -17,9 +17,9 @@ slip through every existing safety net, proven by blind UATs.
 - [x] **RANK-03**: A regression test pins ranker↔predict agreement on the CASE1 and CASE3 molecules where divergence was measured (2.23 vs 0.27; ranker put the wrong isomer #1).
 
 ### IDENT — Final identity-verification gate
-- [ ] **IDENT-01**: The solution-analyst derives compound identity from the SMILES via a tool (InChIKey / structure lookup), and never asserts a recalled trivial name as fact.
-- [ ] **IDENT-02**: An independent final gate (devils-advocate and/or `verify_case_solution.py`) checks the analyst's name↔structure mapping before results are reported; a mismatch blocks/flags the report.
-- [ ] **IDENT-03**: When identity cannot be tool-confirmed, the report marks the name as tentative (with confidence) rather than asserting it.
+- [x] **IDENT-01**: The solution-analyst derives compound identity from the SMILES via a tool (InChIKey / structure lookup), and never asserts a recalled trivial name as fact.
+- [x] **IDENT-02**: An independent final gate (devils-advocate and/or `verify_case_solution.py`) checks the analyst's name↔structure mapping before results are reported; a mismatch blocks/flags the report.
+- [x] **IDENT-03**: When identity cannot be tool-confirmed, the report marks the name as tentative (with confidence) rather than asserting it.
 
 ### MULT — Aliphatic multiplicity robustness (hardens v9.0 FIX-10)
 - [ ] **MULT-01**: When aliphatic multiplicity is not hard-determinable (non-multiplicity-edited HSQC and/or unreliable/phase-distorted APT/DEPT), the lsd-engineer searches ALL viable multiplicity families (e.g. iPr-path `3×CH₃+CH` AND ethyl-path `2×CH₃+CH₂+CH₂`) rather than hard-coding one.
@@ -56,9 +56,9 @@ slip through every existing safety net, proven by blind UATs.
 | RANK-01 | Phase 86 | Complete |
 | RANK-02 | Phase 86 | Complete |
 | RANK-03 | Phase 86 | Complete |
-| IDENT-01 | Phase 87 | pending |
-| IDENT-02 | Phase 87 | pending |
-| IDENT-03 | Phase 87 | pending |
+| IDENT-01 | Phase 87 | Complete |
+| IDENT-02 | Phase 87 | Complete |
+| IDENT-03 | Phase 87 | Complete |
 | MULT-01 | Phase 88 | pending |
 | MULT-02 | Phase 88 | pending |
 | MULT-03 | Phase 88 | pending |

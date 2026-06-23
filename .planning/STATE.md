@@ -4,13 +4,13 @@ milestone: v9.1
 milestone_name: CASE Final-Answer Correctness & Verification Gates
 status: executing
 stopped_at: Phase 87 context gathered
-last_updated: "2026-06-23T11:20:33.882Z"
-last_activity: 2026-06-23 -- Phase 87 planning complete
+last_updated: "2026-06-23T11:27:36.722Z"
+last_activity: 2026-06-23
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 4
-  completed_plans: 2
+  completed_plans: 3
   percent: 25
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-23)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a multi-agent team that uses the intended solver pipeline — not a manual bypass
-**Current focus:** Phase 87 — final identity verification gate
+**Current focus:** Phase 87 — final-identity-verification-gate
 
 ## Current Position
 
-Phase: 87
-Plan: Not started
+Phase: 87 (final-identity-verification-gate) — EXECUTING
+Plan: 2 of 2
 Status: Ready to execute
-Last activity: 2026-06-23 -- Phase 87 planning complete
+Last activity: 2026-06-23
 
 ## Milestone v9.1 Phases
 
@@ -101,6 +101,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [v9.1-roadmap]: All three v9.1 defects are "clean-but-wrong" — low MAE, plausible, but wrong. None is caught by an existing mechanism (identity gate doesn't help when the structure is wrong; rank/analyst override can't recover a structure absent from the solution set; the MAE>4 quality loop stays silent at MAE 1.75). The fixes target reachability (MULT), independent verification (IDENT), and scoring fidelity (RANK).
 - [v9.1-roadmap]: RANK sequenced first because it is self-contained Python tooling — reproducible without a CASE run, fully unit-testable, no blind instance required. IDENT and MULT are skill-level (agent-definition) edits and therefore can only be fully validated by the blind UAT gate, not unit tests → they precede Phase 89 and gate it.
 - [v9.1-roadmap]: Azulene regiochemistry (CASE4) is explicitly OUT OF SCOPE to resolve by 13C alone — physically unresolvable (top isomers within 0.26 ppm MAE). UAT-01 only requires the correct di-methyl-ethyl *constitution class* to be reachable in the solution set, not unique regiochemistry.
+- [Phase ?]: [87-01]: derive_identity + check-identity added to scripts/verify_case_solution.py — deterministic InChIKey/canonical-SMILES identity with complementary two-path DB lookup (InChIKey-first nmrshiftdb, canonical-SMILES fallback coconut); tolerant token-set name_match over synonyms (not exact/substring); name<->structure mismatch -> 'tentative' + warning, exit 0 always (D-06). CASE4/CASE5 regressions pinned. IDENT-01/02/03 done.
 
 ### Pending Todos
 
@@ -121,7 +122,7 @@ Key v9.0 constraint (still in force): SYME and DEFF NOT are lucy-ng abstractions
 
 ## Session Continuity
 
-Last session: 2026-06-23T10:20:52.451Z
+Last session: 2026-06-23T11:27:11.978Z
 Stopped at: Phase 87 context gathered
 Resume with: `/gsd-plan-phase 86` (RANK — ranker path unification; isolated Python tooling, unit-testable).
 
