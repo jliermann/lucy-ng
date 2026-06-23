@@ -72,7 +72,9 @@ first blind runs of CASE6/7/8 to surface any 4th defect.
   2. An independent final gate (devils-advocate and/or `verify_case_solution.py`) checks the analyst's name↔structure mapping before results are reported; a detected mismatch blocks or flags the report rather than passing silently.
   3. When identity cannot be tool-confirmed, the report marks the name as tentative with a confidence qualifier instead of asserting it.
   4. The CASE4/CASE5 naming-hallucination pattern (wrong "literature" reference; indigo↔isoindigo mislabel) is demonstrably caught by the gate on those structures.
-**Plans**: TBD
+**Plans**: 2 plans
+  - [ ] 87-01-PLAN.md — Extend `verify_case_solution.py` with `derive_identity()` + `check-identity` subcommand (InChIKey-first / SMILES-fallback two-path lookup, tentative/novel verdicts) + CASE4/CASE5 regression tests — the deterministic binding gate (IDENT-01/02/03)
+  - [ ] 87-02-PLAN.md — Wire the tool into the CASE agents: solution-analyst derivation + tentative-name rendering; devils-advocate post-solution advisory gate G-IDENT (IDENT-01/02/03)
 
 ### Phase 88: Aliphatic Multiplicity Robustness
 **Goal**: When aliphatic CH/CH2/CH3 multiplicity cannot be hard-determined, the search covers every viable multiplicity family so the correct constitution is reachable — hardening v9.0 FIX-10 which does not cover multiplicity.
@@ -102,6 +104,6 @@ first blind runs of CASE6/7/8 to surface any 4th defect.
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 86. Ranker Path Unification | 2/2 | Complete    | 2026-06-23 |
-| 87. Final Identity-Verification Gate | 0/? | Not started | - |
+| 87. Final Identity-Verification Gate | 0/2 | Planned     | - |
 | 88. Aliphatic Multiplicity Robustness | 0/? | Not started | - |
 | 89. Blind-UAT Validation Gate | 0/? | Not started | - |
