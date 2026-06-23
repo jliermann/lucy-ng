@@ -59,7 +59,9 @@ first blind runs of CASE6/7/8 to surface any 4th defect.
   2. On the CASE1 (ibuprofen) and CASE3 (pulegone) molecules where divergence was measured, the ranker's MAE/match-count for the correct structure agrees with `lucy predict c13` within a defined tolerance (ranker no longer reports 2.23/8-of-10 where predict reports 0.27/10-of-10).
   3. The ranker places the correct structure ahead of the wrong isomer it previously ranked #1 on those molecules.
   4. A committed regression test pins ranker↔predict agreement on the CASE1 and CASE3 molecules; `pytest` is green.
-**Plans**: TBD
+**Plans**: 2 plans
+  - [ ] 86-01-PLAN.md — Add SolutionRanker.from_database + shared resolve_c13_predictor() DB-first backend helper (RANK-01 building blocks)
+  - [ ] 86-02-PLAN.md — Wire lsd rank + predict c13 through the shared resolver (--db/--max-radius parity) + RANK-01/02/03 regression on CASE1/CASE3
 
 ### Phase 87: Final Identity-Verification Gate
 **Goal**: The reported compound name is derived from the structure by a tool and independently checked, so a recalled-from-memory wrong trivial name can no longer be asserted as fact.
