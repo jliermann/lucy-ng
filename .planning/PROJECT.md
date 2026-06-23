@@ -37,7 +37,7 @@ An AI agent can autonomously determine the structure of an unknown organic compo
 
 **What shipped in v9.0:** End-to-end CASE reliability — fixed `lucy lsd run`/outlsd plumbing; native-only constraint translation (SYME→BOND/COSY, DEFF NOT→DEFF F/FEXP) across all paths; peak-picking integrity with SNR-floors for 13C (FIX-08) and HMBC (FIX-12); constraint-hardness guard (FIX-10); blind-UAT skill decontamination (FIX-09); Kekulé-aromatize-before-predict (FIX-11). Validated by blind UAT: CASE9 solved + CASE1 clean emergent pass.
 
-**Known limitation / next:** `lucy lsd rank` scores the correct structure worse than `lucy predict c13` (divergent prediction path) — non-gating, carried to the next milestone.
+**Resolved in v9.1 (Phase 86 — Ranker Path Unification):** `lucy lsd rank` and `lucy predict c13` now share a single DB-first prediction path (`resolve_c13_predictor` + `SolutionRanker.from_database`); the ranker no longer under-scores the truth (ibuprofen MAE 2.23/8-matched → 0.24/13-matched). Pinned by regression tests on CASE1/CASE3. RANK-01/02/03 validated.
 
 ## Architecture
 
@@ -246,4 +246,4 @@ Minimum viable spectral data for v1:
 | `CLAUDE_CODE_SUBAGENT_MODEL=inherit` | A stale `=sonnet` override silently forced all subagents to Sonnet 4.6 and drove earlier CASE failures | Good — Opus 4.8 then solved both cases |
 
 ---
-*Last updated: 2026-06-23 — v9.1 milestone started (CASE Final-Answer Correctness & Verification Gates)*
+*Last updated: 2026-06-23 — Phase 86 (Ranker Path Unification) complete; RANK-01/02/03 validated*
