@@ -49,11 +49,20 @@ slip through every existing safety net, proven by blind UATs.
 
 ## Traceability
 
-*(filled by roadmap — each REQ-ID mapped to exactly one phase)*
+*(each REQ-ID mapped to exactly one phase — 13/13 mapped)*
 
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
-| RANK-01..03 | — | pending |
-| IDENT-01..03 | — | pending |
-| MULT-01..04 | — | pending |
-| UAT-01..03 | — | pending |
+| RANK-01 | Phase 86 | pending |
+| RANK-02 | Phase 86 | pending |
+| RANK-03 | Phase 86 | pending |
+| IDENT-01 | Phase 87 | pending |
+| IDENT-02 | Phase 87 | pending |
+| IDENT-03 | Phase 87 | pending |
+| MULT-01 | Phase 88 | pending |
+| MULT-02 | Phase 88 | pending |
+| MULT-03 | Phase 88 | pending |
+| MULT-04 | Phase 88 | pending |
+| UAT-01 | Phase 89 | pending |
+| UAT-02 | Phase 89 | pending |
+| UAT-03 | Phase 89 | pending |
