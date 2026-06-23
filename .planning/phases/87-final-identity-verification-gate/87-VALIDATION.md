@@ -39,21 +39,22 @@ created: 2026-06-23
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
 | 87-01 / Task 0 | 87-01 | 1 | IDENT-01/02/03 | T-87-01/02 | malformed SMILES → graceful; parameterized SQL | unit+regression scaffold | `pytest tests/test_verify_case_identity.py --co -q` | ❌ W0 (creates `tests/test_verify_case_identity.py`) | ⬜ pending |
-| 87-01 / Task 1 | 87-01 | 1 | IDENT-01, IDENT-03 | T-87-01 | parameterized `?` SQL; read-only DB | unit | `pytest tests/test_verify_case_identity.py -k "inchikey or novel or coconut or indigo" -x -q` | ✅ after Task 0 | ⬜ pending |
-| 87-01 / Task 1 | 87-01 | 1 | IDENT-02 (binding) | T-87-02 | mismatch → verdict tentative + warning, no crash | unit+regression | `pytest tests/test_verify_case_identity.py -k "mismatch or chamazulene or indigo_mislabel" -x -q` | ✅ after Task 0 | ⬜ pending |
+| 87-01 / Task 1 | 87-01 | 1 | IDENT-01, IDENT-03 | T-87-01 | parameterized `?` SQL; read-only DB | unit | `pytest tests/test_verify_case_identity.py -k "inchikey or novel or coconut or indigo_found" -x -q` | ✅ after Task 0 | ⬜ pending |
+| 87-01 / Task 1 | 87-01 | 1 | IDENT-02 (binding) | T-87-02 | mismatch → verdict tentative + warning, no crash | unit+regression | `pytest tests/test_verify_case_identity.py -k "indigo_mislabel or chamazulene_asserted" -x -q` | ✅ after Task 0 | ⬜ pending |
+| 87-01 / Task 1 | 87-01 | 1 | IDENT-02 (binding) | T-87-01 | name_match tolerant (no false-fail / no false-substring-pass) | unit | `pytest tests/test_verify_case_identity.py -k "tolerant or false_substring" -x -q` | ✅ after Task 0 | ⬜ pending |
 | 87-01 / Task 1 | 87-01 | 1 | IDENT-01/02/03 | — | existing behavior preserved | regression | `pytest tests/test_verify_case_solution.py -q` | ✅ existing | ⬜ pending |
 | 87-02 / Task 1 | 87-02 | 2 | IDENT-01, IDENT-03 | T-87-02 | analyst reads verdict/warning | source-assertion (grep) | `grep -q "check-identity" .claude/agents/lucy-solution-analyst.md && grep -q "(tentative, unverified)" .claude/agents/lucy-solution-analyst.md` | ✅ file exists | ⬜ pending |
 | 87-02 / Task 2 | 87-02 | 2 | IDENT-02 (advisory) | T-87-04 | advisory only, never blocks | source-assertion (grep) | `grep -q "G-IDENT" .claude/agents/lucy-devils-advocate.md && grep -qi "post-solution" .claude/agents/lucy-devils-advocate.md` | ✅ file exists | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
-*Note: gate-effectiveness on CASE4 (chamazulene) / CASE5 (indigo↔isoindigo, indirubin) is the Success-Criterion-4 regression fixture — pinned as deterministic test cases in `tests/test_verify_case_identity.py` (chamazulene `FVZVDQVUOAAMCG-UHFFFAOYSA-N` no-hit; indigo `COHYTHOBJLSHDF-BUHFOSPRSA-N` InChIKey hit + isoindigo mislabel mismatch).*
+*Note: gate-effectiveness on CASE4 (chamazulene) / CASE5 (indigo↔isoindigo, indirubin) is the Success-Criterion-4 regression fixture — pinned as deterministic test cases in `tests/test_verify_case_identity.py`: chamazulene `FVZVDQVUOAAMCG-UHFFFAOYSA-N` no-hit (asserted name → tentative, test `*chamazulene_asserted*`); indigo `COHYTHOBJLSHDF-BUHFOSPRSA-N` InChIKey hit + isoindigo mislabel mismatch (test `test_indigo_mislabel_mismatch`); tolerant token-match against the ';'-delimited DB name "2,2'-Bis(...); Indigo" (test `*tolerant*`).*
 
 ---
 
 ## Wave 0 Requirements
 
-- [ ] `tests/test_verify_case_identity.py` — stubs for IDENT-01/02/03 + CASE4/CASE5 fixtures (created in 87-01 Task 0)
+- [ ] `tests/test_verify_case_identity.py` — stubs for IDENT-01/02/03 + CASE4/CASE5 fixtures + tolerant-match / no-false-substring cases (created in 87-01 Task 0)
 - [ ] DB-dependent tests guarded with `skipif(DatabaseFinder.find_derep_database() is None)` so CI without the 2.8 GB DB still passes
 - [ ] Existing pytest infrastructure (pyproject.toml) covers framework — no new install
 
