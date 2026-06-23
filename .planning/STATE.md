@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v9.0
-milestone_name: CASE Reliability & Skill Consolidation
-status: Awaiting next milestone
-stopped_at: v9.0 milestone COMPLETE + archived (2026-06-17). AND-gate met cleanly on Opus 4.8 — CASE9 (UAT-04) solved + CASE1 (UAT-03) clean emergent pass (ibuprofen rank 1, exact InChIKey, 0 ring-BONDs/SKEL/SYME/DEFF-NOT). D-04 resolved to "emergent". Tagged v9.0. Next = /gsd-new-milestone. Non-gating residual carried forward: lucy lsd rank scoring defect (todo).
-last_updated: "2026-06-17T17:53:51.347Z"
-last_activity: 2026-06-17 — Milestone v9.0 completed and archived
+milestone: v9.1
+milestone_name: CASE Final-Answer Correctness
+status: planning
+last_updated: "2026-06-23T07:13:07.440Z"
+last_activity: 2026-06-23
 progress:
-  total_phases: 11
-  completed_phases: 11
-  total_plans: 34
-  completed_plans: 34
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # lucy-ng State
@@ -25,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-05-20)
 
 ## Current Position
 
-Phase: Milestone v9.0 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-06-17 — Milestone v9.0 completed and archived
+Status: Defining requirements
+Last activity: 2026-06-23 — Milestone v9.1 started
 
 ## Deferred Items
 

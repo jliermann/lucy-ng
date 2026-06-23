@@ -10,9 +10,17 @@ Lucy-ng is an AI-agent skill for Computer-Assisted Structure Elucidation (CASE) 
 
 An AI agent can autonomously determine the structure of an unknown organic compound from its NMR spectra, with a multi-agent architecture that prevents unproductive loops and keeps the elucidation on track.
 
-## Current Milestone: none (v9.0 shipped 2026-06-17)
+## Current Milestone: v9.1 CASE Final-Answer Correctness & Verification Gates
 
-**Next:** `/gsd-new-milestone`. Carried-forward, non-gating: `lucy lsd rank` scoring defect (ranker under-scores the correct structure vs `lucy predict c13`; see `.planning/todos/pending/2026-06-17-lucy-lsd-rank-scoring-defect.md`).
+**Goal:** Ensure the final reported structure is correct AND independently verified — close the three "clean-but-wrong" defect classes that let a wrong final answer slip through every existing safety net (low MAE, plausible, but wrong), proven by blind UATs.
+
+**Target features:**
+- **Ranker correctness** — `lucy lsd rank` converges with `lucy predict c13` on the same molecule; the ranker no longer under-scores the truth (confirmed 4×; only the analyst override recovered it each time).
+- **Final identity-verification gate** — a tool-based check that derives identity from SMILES/InChIKey rather than parametric model memory, stopping the naming hallucination (CASE4/5) and adding an independent final gate on the analyst's output.
+- **Aliphatic multiplicity robustness** — when multiplicity is not hard-determinable (non-edited HSQC / phase-distorted APT), search BOTH multiplicity families in parallel; add an MAE-independent clean-but-wrong guardrail; a devils-advocate "evidence FOR model X" flag must force model X into the search. (Hardens v9.0 FIX-10, which does not cover multiplicity.)
+- **Blind-UAT validation gate** — CASE5 re-run + CASE6/7/8 first blind runs prove the fixes (and surface a 4th defect if one exists).
+
+**Key context:** All three defects are "clean-but-wrong" — none is caught by an existing mechanism. The identity gate does not help when the structure itself is wrong; the rank/analyst override cannot recover a structure absent from the solution set; the MAE>4 quality loop stays silent at MAE 1.75. Defect bookkeeping: the three `.planning/todos/pending/2026-06-{17,21,23}-*.md`; full blind-UAT audit in the (gitignored) `CASE-UAT-LOG.md`.
 
 ### v9.0 CASE Reliability & Skill Consolidation — SHIPPED ✅
 
@@ -238,4 +246,4 @@ Minimum viable spectral data for v1:
 | `CLAUDE_CODE_SUBAGENT_MODEL=inherit` | A stale `=sonnet` override silently forced all subagents to Sonnet 4.6 and drove earlier CASE failures | Good — Opus 4.8 then solved both cases |
 
 ---
-*Last updated: 2026-06-17 — v9.0 milestone shipped (CASE Reliability & Skill Consolidation)*
+*Last updated: 2026-06-23 — v9.1 milestone started (CASE Final-Answer Correctness & Verification Gates)*
