@@ -13,8 +13,8 @@ slip through every existing safety net, proven by blind UATs.
 
 ### RANK — Ranker correctness (`lucy lsd rank` ↔ `lucy predict c13`)
 - [x] **RANK-01**: `lucy lsd rank` and `lucy predict c13` produce the same per-shift 13C prediction for an identical molecule (single prediction path; no divergent code).
-- [ ] **RANK-02**: For a correct structure, the ranker no longer systematically under-scores the truth — its MAE / match-count agrees with `lucy predict c13` within a defined tolerance.
-- [ ] **RANK-03**: A regression test pins ranker↔predict agreement on the CASE1 and CASE3 molecules where divergence was measured (2.23 vs 0.27; ranker put the wrong isomer #1).
+- [x] **RANK-02**: For a correct structure, the ranker no longer systematically under-scores the truth — its MAE / match-count agrees with `lucy predict c13` within a defined tolerance.
+- [x] **RANK-03**: A regression test pins ranker↔predict agreement on the CASE1 and CASE3 molecules where divergence was measured (2.23 vs 0.27; ranker put the wrong isomer #1).
 
 ### IDENT — Final identity-verification gate
 - [ ] **IDENT-01**: The solution-analyst derives compound identity from the SMILES via a tool (InChIKey / structure lookup), and never asserts a recalled trivial name as fact.
@@ -54,8 +54,8 @@ slip through every existing safety net, proven by blind UATs.
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
 | RANK-01 | Phase 86 | Complete |
-| RANK-02 | Phase 86 | pending |
-| RANK-03 | Phase 86 | pending |
+| RANK-02 | Phase 86 | Complete |
+| RANK-03 | Phase 86 | Complete |
 | IDENT-01 | Phase 87 | pending |
 | IDENT-02 | Phase 87 | pending |
 | IDENT-03 | Phase 87 | pending |

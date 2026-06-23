@@ -43,7 +43,7 @@ first blind runs of CASE6/7/8 to surface any 4th defect.
 
 ## Phases
 
-- [ ] **Phase 86: Ranker Path Unification (RANK)** - Make `lucy lsd rank` and `lucy predict c13` share one prediction path so the ranker stops under-scoring the truth.
+- [x] **Phase 86: Ranker Path Unification (RANK)** - Make `lucy lsd rank` and `lucy predict c13` share one prediction path so the ranker stops under-scoring the truth. (completed 2026-06-23)
 - [ ] **Phase 87: Final Identity-Verification Gate (IDENT)** - Tool-derived identity + an independent name↔structure gate that blocks naming hallucination.
 - [ ] **Phase 88: Aliphatic Multiplicity Robustness (MULT)** - Enumerate all viable multiplicity families when multiplicity is not hard-determinable; MAE-independent clean-but-wrong guardrail.
 - [ ] **Phase 89: Blind-UAT Validation Gate (UAT)** - Blind CASE4/5 re-runs + CASE6/7/8 first runs prove the IDENT/MULT fixes and surface any 4th defect.
@@ -61,7 +61,7 @@ first blind runs of CASE6/7/8 to surface any 4th defect.
   4. A committed regression test pins ranker↔predict agreement on the CASE1 and CASE3 molecules; `pytest` is green.
 **Plans**: 2 plans
   - [x] 86-01-PLAN.md — Add SolutionRanker.from_database + shared resolve_c13_predictor() DB-first backend helper (RANK-01 building blocks)
-  - [ ] 86-02-PLAN.md — Wire lsd rank + predict c13 through the shared resolver (--db/--max-radius parity) + RANK-01/02/03 regression on CASE1/CASE3
+  - [x] 86-02-PLAN.md — Wire lsd rank + predict c13 through the shared resolver (--db/--max-radius parity) + RANK-01/02/03 regression on CASE1/CASE3
 
 ### Phase 87: Final Identity-Verification Gate
 **Goal**: The reported compound name is derived from the structure by a tool and independently checked, so a recalled-from-memory wrong trivial name can no longer be asserted as fact.
@@ -101,7 +101,7 @@ first blind runs of CASE6/7/8 to surface any 4th defect.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 86. Ranker Path Unification | 1/2 | In Progress|  |
+| 86. Ranker Path Unification | 2/2 | Complete   | 2026-06-23 |
 | 87. Final Identity-Verification Gate | 0/? | Not started | - |
 | 88. Aliphatic Multiplicity Robustness | 0/? | Not started | - |
 | 89. Blind-UAT Validation Gate | 0/? | Not started | - |
