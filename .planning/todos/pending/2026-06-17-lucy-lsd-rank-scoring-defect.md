@@ -2,6 +2,7 @@
 created: 2026-06-17
 title: Fix lucy lsd rank scoring defect (divergent from predict c13)
 area: tooling
+resolves_phase: 86
 files:
   - src/lucy_ng/ranking/ranker.py
   - src/lucy_ng/prediction/hose.py

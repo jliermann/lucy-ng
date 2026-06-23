@@ -2,6 +2,7 @@
 created: 2026-06-21
 title: Add a tool-based final identity-verification gate (stop parametric naming hallucination)
 area: skill
+resolves_phase: 87
 files:
   - .claude/agents/lucy-solution-analyst.md
   - .claude/agents/lucy-devils-advocate.md

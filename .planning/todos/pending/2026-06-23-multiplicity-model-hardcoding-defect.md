@@ -2,6 +2,7 @@
 created: 2026-06-23
 title: Solver hard-codes one aliphatic multiplicity model under degraded 2D data (truth excluded from search space)
 area: skill
+resolves_phase: 88
 files:
   - .claude/agents/lucy-nmr-chemist.md
   - .claude/agents/lucy-lsd-engineer.md
