@@ -44,7 +44,7 @@ first blind runs of CASE6/7/8 to surface any 4th defect.
 ## Phases
 
 - [x] **Phase 86: Ranker Path Unification (RANK)** - Make `lucy lsd rank` and `lucy predict c13` share one prediction path so the ranker stops under-scoring the truth. (completed 2026-06-23)
-- [ ] **Phase 87: Final Identity-Verification Gate (IDENT)** - Tool-derived identity + an independent name↔structure gate that blocks naming hallucination.
+- [x] **Phase 87: Final Identity-Verification Gate (IDENT)** - Tool-derived identity + an independent name↔structure gate that blocks naming hallucination. (completed 2026-06-23)
 - [ ] **Phase 88: Aliphatic Multiplicity Robustness (MULT)** - Enumerate all viable multiplicity families when multiplicity is not hard-determinable; MAE-independent clean-but-wrong guardrail.
 - [ ] **Phase 89: Blind-UAT Validation Gate (UAT)** - Blind CASE4/5 re-runs + CASE6/7/8 first runs prove the IDENT/MULT fixes and surface any 4th defect.
 
@@ -74,7 +74,7 @@ first blind runs of CASE6/7/8 to surface any 4th defect.
   4. The CASE4/CASE5 naming-hallucination pattern (wrong "literature" reference; indigo↔isoindigo mislabel) is demonstrably caught by the gate on those structures.
 **Plans**: 2 plans
   - [x] 87-01-PLAN.md — Extend `verify_case_solution.py` with `derive_identity()` + `check-identity` subcommand (InChIKey-first / SMILES-fallback two-path lookup, tentative/novel verdicts) + CASE4/CASE5 regression tests — the deterministic binding gate (IDENT-01/02/03)
-  - [ ] 87-02-PLAN.md — Wire the tool into the CASE agents: solution-analyst derivation + tentative-name rendering; devils-advocate post-solution advisory gate G-IDENT (IDENT-01/02/03)
+  - [x] 87-02-PLAN.md — Wire the tool into the CASE agents: solution-analyst derivation + tentative-name rendering; devils-advocate post-solution advisory gate G-IDENT (IDENT-01/02/03)
 
 ### Phase 88: Aliphatic Multiplicity Robustness
 **Goal**: When aliphatic CH/CH2/CH3 multiplicity cannot be hard-determined, the search covers every viable multiplicity family so the correct constitution is reachable — hardening v9.0 FIX-10 which does not cover multiplicity.
@@ -104,6 +104,6 @@ first blind runs of CASE6/7/8 to surface any 4th defect.
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 86. Ranker Path Unification | 2/2 | Complete    | 2026-06-23 |
-| 87. Final Identity-Verification Gate | 1/2 | In Progress|  |
+| 87. Final Identity-Verification Gate | 2/2 | Complete   | 2026-06-23 |
 | 88. Aliphatic Multiplicity Robustness | 0/? | Not started | - |
 | 89. Blind-UAT Validation Gate | 0/? | Not started | - |

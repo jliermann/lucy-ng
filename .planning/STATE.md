@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v9.1
 milestone_name: CASE Final-Answer Correctness & Verification Gates
-status: executing
-stopped_at: Phase 87 context gathered
-last_updated: "2026-06-23T11:27:36.722Z"
+status: verifying
+stopped_at: Completed 87-02-PLAN.md (Phase 87 ready_for_verification)
+last_updated: "2026-06-23T11:33:55.772Z"
 last_activity: 2026-06-23
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 4
-  completed_plans: 3
-  percent: 25
+  completed_plans: 4
+  percent: 50
 ---
 
 # lucy-ng State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-06-23)
 
 Phase: 87 (final-identity-verification-gate) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-06-23
 
 ## Milestone v9.1 Phases
@@ -82,7 +82,8 @@ Items acknowledged and deferred at v9.0 milestone close on 2026-06-17 (the rank-
 - Total plans completed: 156 across 11 milestones (10 shipped + 1 abandoned) — v9.0 added 34 plans
 - v9.0: 14 phases (72-85), 34 plans, 41 tasks; shipped 2026-06-17
 - v9.1 Phase 86 (Ranker Path Unification): 2 plans, 4 tasks; 86-02 ~8 min, 3 files, 2 commits
-- Cumulative: 86 phases total
+- v9.1 Phase 87 (Final Identity-Verification Gate): 2 plans; 87-02 ~6 min, 2 files (agent prompt edits), 2 commits
+- Cumulative: 87 phases total
 
 ## Accumulated Context
 
@@ -102,6 +103,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [v9.1-roadmap]: RANK sequenced first because it is self-contained Python tooling — reproducible without a CASE run, fully unit-testable, no blind instance required. IDENT and MULT are skill-level (agent-definition) edits and therefore can only be fully validated by the blind UAT gate, not unit tests → they precede Phase 89 and gate it.
 - [v9.1-roadmap]: Azulene regiochemistry (CASE4) is explicitly OUT OF SCOPE to resolve by 13C alone — physically unresolvable (top isomers within 0.26 ppm MAE). UAT-01 only requires the correct di-methyl-ethyl *constitution class* to be reachable in the solution set, not unique regiochemistry.
 - [Phase ?]: [87-01]: derive_identity + check-identity added to scripts/verify_case_solution.py — deterministic InChIKey/canonical-SMILES identity with complementary two-path DB lookup (InChIKey-first nmrshiftdb, canonical-SMILES fallback coconut); tolerant token-set name_match over synonyms (not exact/substring); name<->structure mismatch -> 'tentative' + warning, exit 0 always (D-06). CASE4/CASE5 regressions pinned. IDENT-01/02/03 done.
+- [Phase 87]: [87-02]: Wired check-identity into the CASE agents. Analyst derives identity from the tool before writing the report header (verdict-keyed: confirmed name plain; confirmed-structure/novel/tentative => InChIKey+canonical SMILES primary, trivial name '(tentative, unverified)'). Devils-advocate gained G-IDENT, a POST-SOLUTION advisory gate on final_results.md (distinct lifecycle from pre-solver gates) that reasons independently about name<->structure and does NOT call the deterministic tool (preserving D-05 independence); CASE4/CASE5 worked triggers. Markdown prompt edits; fresh session needed to reload; functional validation by Phase 89 blind UAT. IDENT-01/02(advisory)/03 done.
 
 ### Pending Todos
 
@@ -122,8 +124,8 @@ Key v9.0 constraint (still in force): SYME and DEFF NOT are lucy-ng abstractions
 
 ## Session Continuity
 
-Last session: 2026-06-23T11:27:11.978Z
-Stopped at: Phase 87 context gathered
+Last session: 2026-06-23T11:33:55.768Z
+Stopped at: Completed 87-02-PLAN.md (Phase 87 ready_for_verification)
 Resume with: `/gsd-plan-phase 86` (RANK — ranker path unification; isolated Python tooling, unit-testable).
 
 ---
