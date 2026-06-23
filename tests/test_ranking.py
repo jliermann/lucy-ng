@@ -1179,3 +1179,342 @@ class TestRankCLIBackendWiring:
         assert data["smiles"] == "CCO"
 
 
+# ============================================================================
+# RANK-01 / RANK-02 / RANK-03 regression — CASE1 (ibuprofen) + CASE3 (pulegone)
+#
+# Responsibility split (anti-circularity, per plan 86-02):
+#   * The DETERMINISTIC temp_db tests below pin RANK-01 (per-shift parity: the
+#     ranker's predictor and predict c13's predictor give bit-identical
+#     PredictedShift lists) and RANK-02 (ranker MAE/match-count agree with a
+#     directly-recomputed MAE). The deterministic RANK-03 ordering test is a
+#     PARITY / no-ordering-regression guard: it asserts the wrong isomer's HOSE
+#     codes GENUINELY DIFFER from the correct structure's BEFORE asserting the
+#     correct structure outranks it, so a passing test cannot be a seeding
+#     artifact ("whatever I seeded wins").
+#   * The skipif-guarded REAL-DB integration test is the TRUE carrier of the
+#     RANK-03 ordering-fix intent: against the production 7.9M-entry DB it
+#     asserts BOTH (a) correct-structure MAE <= ~0.5 AND matched_count ==
+#     total_carbons (reproducing 0.24 / 13/13 vs the old 2.23 / 8/13), AND
+#     (b) the correct isomer ranks strictly ahead of the prior wrong isomer.
+#
+# HOSE invariant (CLAUDE.md): HOSE codes are generated on the no-AddHs prepared
+# mol — _carbon_hose_codes() below uses HOSECodeGenerator.prepare_mol +
+# Chem.RemoveHs and never calls AddHs.
+#
+# matched_count is over PREDICTIONS, not experimental peaks (research Pitfall 4):
+# assertions use sol.matched_count and sol.mae directly — never a hand-derived
+# "/10" denominator.
+# ============================================================================
+
+# Verified molecule identities (orchestrator answer-key context):
+IBUPROFEN_SMILES = "CC(C)Cc1ccc(cc1)C(C)C(=O)O"  # CASE1, para-substituted
+IBUPROFEN_WRONG_SMILES = "CC(C)Cc1cccc(c1)C(C)C(=O)O"  # meta isomer (wrong constitution)
+PULEGONE_SMILES = "CC(C)=C1CCC(C)CC1=O"  # CASE3, conjugated cyclic enone
+PULEGONE_WRONG_SMILES = "CC(C)=C1CCCC(C)C1=O"  # ring-methyl shifted (wrong constitution)
+
+
+def _carbon_hose_codes(smiles, max_radius=6):
+    """Generate per-carbon HOSE codes at all radii on the no-AddHs prepared mol.
+
+    Returns dict[atom_index -> dict[radius -> hose_code]]. Honours the CLAUDE.md
+    "HOSE Codes: NO Explicit Hydrogens" invariant (prepare_mol does not AddHs;
+    predict_from_mol's RemoveHs is mirrored here).
+    """
+    from rdkit import Chem
+
+    from lucy_ng.prediction.hose import HOSECodeGenerator
+
+    gen = HOSECodeGenerator()
+    mol = HOSECodeGenerator.prepare_mol(smiles)
+    assert mol is not None
+    mol = Chem.RemoveHs(mol)  # mirror predict_from_mol; NO AddHs
+
+    codes: dict[int, dict[int, str]] = {}
+    for atom in mol.GetAtoms():
+        if atom.GetSymbol() != "C":
+            continue
+        idx = atom.GetIdx()
+        codes[idx] = {}
+        for radius in range(1, max_radius + 1):
+            try:
+                codes[idx][radius] = gen.generate_for_atom(mol, idx, radius=radius)
+            except Exception:
+                pass
+    return codes
+
+
+def _seed_db_for_smiles(db_path, smiles, shifts, seed_radius=6):
+    """Seed a SQLite DB so `smiles` predicts exactly the given per-carbon `shifts`.
+
+    `shifts` maps atom_index -> expected 13C shift. Only the FULL-radius
+    (``seed_radius``, default 6) HOSE code of each carbon is inserted with
+    mean == the expected shift, so:
+      * the correct structure matches every carbon at r6 -> MAE ~0;
+      * a constitutional isomer whose r6 HOSE codes differ (verified zero
+        overlap in the ordering test) finds NO r6 match, falls back through
+        r5..r1 (none seeded) and is left unranked / poorly ranked.
+    Seeding only the full-radius code is what makes the ordering test
+    non-circular: low-radius collisions between isomers cannot give the wrong
+    isomer a spurious perfect score.
+    """
+    from lucy_ng.database import DatabaseManager
+    from lucy_ng.database.models import HOSEStatsRecord
+
+    db = DatabaseManager(db_path)
+    db.create_tables()
+
+    records: list = []
+    codes = _carbon_hose_codes(smiles, max_radius=seed_radius)
+    for atom_idx, radius_codes in codes.items():
+        hose_code = radius_codes.get(seed_radius)
+        if hose_code is None:
+            continue
+        records.append(
+            HOSEStatsRecord(
+                hose_code=hose_code,
+                radius=seed_radius,
+                mean=shifts[atom_idx],
+                std=0.5,
+                count=100,
+            )
+        )
+    db.insert_hose_stats_batch(records)
+    db.close()
+
+
+# Synthetic-but-distinct per-carbon shifts (atom_index -> ppm) used to seed the
+# deterministic DB. Values need not be the real assignment — only that each
+# carbon gets a stable shift so MAE is well-defined and reproducible.
+_IBUPROFEN_SHIFTS = {
+    0: 22.4, 1: 30.2, 2: 22.4, 3: 45.0, 4: 137.0, 5: 129.4, 6: 127.1,
+    7: 129.4, 8: 127.1, 9: 129.4, 10: 45.6, 11: 18.1, 12: 180.5,
+}
+_PULEGONE_SHIFTS = {
+    0: 23.0, 1: 147.5, 2: 22.5, 3: 35.0, 4: 33.5, 5: 50.5,
+    6: 25.5, 7: 33.5, 8: 21.5, 9: 199.0,
+}
+
+
+@pytest.fixture
+def ibuprofen_db(tmp_path):
+    """Deterministic DB that makes ibuprofen predict its seeded shifts exactly."""
+    db_path = tmp_path / "ibuprofen.db"
+    _seed_db_for_smiles(db_path, IBUPROFEN_SMILES, _IBUPROFEN_SHIFTS)
+    return db_path
+
+
+@pytest.fixture
+def pulegone_db(tmp_path):
+    """Deterministic DB that makes pulegone predict its seeded shifts exactly."""
+    db_path = tmp_path / "pulegone.db"
+    _seed_db_for_smiles(db_path, PULEGONE_SMILES, _PULEGONE_SHIFTS)
+    return db_path
+
+
+def _predicted_shifts_sorted(predictor, smiles):
+    """Return the molecule's PredictedShift list sorted by atom_index."""
+    result = predictor.predict_from_smiles(smiles)
+    return sorted(result.predictions, key=lambda p: p.atom_index)
+
+
+class TestRankPredictParity:
+    """RANK-01: the ranker's predictor and predict c13's predictor are identical."""
+
+    @pytest.mark.parametrize(
+        "fixture_name,smiles",
+        [
+            ("ibuprofen_db", IBUPROFEN_SMILES),
+            ("pulegone_db", PULEGONE_SMILES),
+        ],
+    )
+    def test_rank01_path_parity_per_shift(self, request, fixture_name, smiles):
+        """Both paths (ranker predictor vs C13Predictor.from_database) give
+        bit-identical per-carbon PredictedShift lists (RANK-01)."""
+        from lucy_ng.prediction.predictor import C13Predictor
+        from lucy_ng.prediction.resolver import resolve_c13_predictor
+
+        db_path = request.getfixturevalue(fixture_name)
+
+        # Path A: the SHARED resolver (what `lucy lsd rank` + `predict c13` use)
+        resolver_pred = resolve_c13_predictor(db=db_path)
+        # Path B: the direct factory (what predict c13 used before unification)
+        direct_pred = C13Predictor.from_database(db_path)
+
+        a = _predicted_shifts_sorted(resolver_pred, smiles)
+        b = _predicted_shifts_sorted(direct_pred, smiles)
+
+        assert len(a) == len(b)
+        assert len(a) > 0
+        for pa, pb in zip(a, b, strict=True):
+            assert pa.atom_index == pb.atom_index
+            assert abs(pa.shift - pb.shift) < 1e-6
+            assert pa.radius_used == pb.radius_used
+
+
+class TestRankMAEAgreement:
+    """RANK-02: ranker MAE/match-count agrees with a directly-recomputed MAE."""
+
+    @pytest.mark.parametrize(
+        "fixture_name,smiles,shift_map",
+        [
+            ("ibuprofen_db", IBUPROFEN_SMILES, _IBUPROFEN_SHIFTS),
+            ("pulegone_db", PULEGONE_SMILES, _PULEGONE_SHIFTS),
+        ],
+    )
+    def test_rank02_agreement(self, request, fixture_name, smiles, shift_map):
+        """Ranker sol.mae equals a hand-recomputed MAE within 0.05 ppm and
+        matched_count agrees exactly (RANK-02)."""
+        from lucy_ng.prediction.resolver import resolve_c13_predictor
+
+        db_path = request.getfixturevalue(fixture_name)
+        experimental = sorted(set(shift_map.values()))
+
+        ranker = SolutionRanker.from_database(db_path, tolerance=3.0)
+        solutions = [LSDSolution(index=1, smiles=smiles)]
+        result = ranker.rank(solutions, experimental)
+        assert result.ranked_count == 1
+        sol = result.solutions[0]
+
+        # Recompute MAE directly from the predictor's predictions vs experimental:
+        # mean over ALL predictions of |pred - closest experimental| (no cutoff),
+        # exactly mirroring SolutionRanker._match_shifts (which is NOT modified).
+        predictor = resolve_c13_predictor(db=db_path)
+        preds = _predicted_shifts_sorted(predictor, smiles)
+        errors = [min(abs(p.shift - e) for e in experimental) for p in preds]
+        recomputed_mae = sum(errors) / len(errors)
+        recomputed_matched = sum(1 for err in errors if err <= 3.0)
+
+        assert abs(sol.mae - recomputed_mae) <= 0.05
+        assert sol.matched_count == recomputed_matched
+        # matched_count is over PREDICTIONS (Pitfall 4), so it equals the carbon count here
+        assert sol.total_carbons == len(preds)
+
+
+class TestRankOrderingNonCircular:
+    """RANK-03 deterministic guard: correct outranks a genuinely-different wrong
+    isomer (parity / no ordering regression — NOT a seeding artifact)."""
+
+    @pytest.mark.parametrize(
+        "fixture_name,correct,wrong,shift_map",
+        [
+            ("ibuprofen_db", IBUPROFEN_SMILES, IBUPROFEN_WRONG_SMILES, _IBUPROFEN_SHIFTS),
+            ("pulegone_db", PULEGONE_SMILES, PULEGONE_WRONG_SMILES, _PULEGONE_SHIFTS),
+        ],
+    )
+    def test_rank03_deterministic_ordering(
+        self, request, fixture_name, correct, wrong, shift_map
+    ):
+        """Correct isomer ranks #1 over a wrong isomer whose HOSE codes DIFFER.
+
+        Anti-circularity: assert the wrong-isomer HOSE codes are genuinely
+        different from the correct structure's at the seeded carbons BEFORE the
+        ordering assertion, so the result proves ordering rather than a seeding
+        artifact. The deterministic DB carries RANK-01/02 parity; the real-DB
+        test below carries the RANK-03 ordering-FIX validation.
+        """
+        # Anti-circularity pre-condition: HOSE environments must genuinely differ.
+        correct_hoses = {
+            r6 for codes in _carbon_hose_codes(correct).values()
+            if (r6 := codes.get(6)) is not None
+        }
+        wrong_hoses = {
+            r6 for codes in _carbon_hose_codes(wrong).values()
+            if (r6 := codes.get(6)) is not None
+        }
+        assert correct_hoses != wrong_hoses
+        # Stronger: zero overlap at r6 for these constitutional isomers.
+        assert not (correct_hoses & wrong_hoses)
+
+        db_path = request.getfixturevalue(fixture_name)
+        experimental = sorted(set(shift_map.values()))
+
+        ranker = SolutionRanker.from_database(db_path, tolerance=3.0)
+        solutions = [
+            LSDSolution(index=1, smiles=wrong),
+            LSDSolution(index=2, smiles=correct),
+        ]
+        result = ranker.rank(solutions, experimental)
+
+        # The correct structure (seeded from its own HOSE codes) must rank first.
+        # This is a PARITY / no-ordering-regression guard, so the assertion is on
+        # ORDERING, not an absolute MAE (low-radius HOSE-code collisions between
+        # symmetry-equivalent carbons in the tiny DB can perturb the absolute MAE;
+        # the real-DB test below carries the absolute MAE-reproduction intent).
+        assert result.solutions[0].smiles == correct
+        correct_sol = next(s for s in result.solutions if s.smiles == correct)
+        wrong_sol = next((s for s in result.solutions if s.smiles == wrong), None)
+        # Either the wrong isomer is ranked strictly worse, or it is unrankable
+        # (no HOSE matches in this tiny DB) — both prove correct outranks wrong.
+        if wrong_sol is not None:
+            assert correct_sol.mae < wrong_sol.mae
+
+
+@pytest.mark.skipif(
+    __import__("lucy_ng.database.finder", fromlist=["DatabaseFinder"])
+    .DatabaseFinder.find_hose_database() is None,
+    reason="real HOSE DB not present (run: lucy database download)",
+)
+class TestRankRealDBOrderingFix:
+    """RANK-03 ordering-fix validation against the production HOSE DB.
+
+    True carrier of the ordering-fix intent: reproduces 0.24 / 13-13 for the
+    correct structure (vs the old 2.23 / 8-13 from the sparse JSON table) and
+    proves the correct isomer outranks the prior wrong isomer.
+    """
+
+    @pytest.mark.parametrize(
+        "correct,wrong,experimental,total_carbons,mae_max,assert_full_match",
+        [
+            (
+                IBUPROFEN_SMILES,
+                IBUPROFEN_WRONG_SMILES,
+                # Ibuprofen experimental 13C shifts (the bug-report set).
+                [180.5, 140.8, 137.0, 129.4, 127.1, 45.1, 40.4, 30.2, 22.4, 18.2],
+                13,
+                0.5,  # reproduces the empirical 0.244 (vs old 2.230) — tight bound
+                True,  # 13/13 matched (vs old 8/13)
+            ),
+            (
+                PULEGONE_SMILES,
+                PULEGONE_WRONG_SMILES,
+                # Pulegone (CASE3) experimental 13C shifts (literature).
+                # The conjugated-enone carbons predict less tightly than ibuprofen;
+                # the empirically-verified MAE<=0.5/full-match reproduction is
+                # ibuprofen-specific (plan 86-02: pulegone tight assertion only
+                # "where available"). For pulegone the real-DB test asserts the
+                # ORDERING FIX + a plausible MAE bound, not the 0.5/full-match pin.
+                [199.0, 147.5, 127.0, 50.5, 35.0, 33.5, 25.5, 22.5, 23.0, 21.5],
+                10,
+                3.0,  # loose, conjugated-enone bound (correct still clearly fits)
+                False,  # full-match not asserted for the harder conjugated case
+            ),
+        ],
+    )
+    def test_rank03_real_db_ordering_fix(
+        self, correct, wrong, experimental, total_carbons, mae_max, assert_full_match
+    ):
+        from lucy_ng.database.finder import DatabaseFinder
+
+        db_path = DatabaseFinder.find_hose_database()
+        ranker = SolutionRanker.from_database(db_path, tolerance=3.0)
+        solutions = [
+            LSDSolution(index=1, smiles=wrong),
+            LSDSolution(index=2, smiles=correct),
+        ]
+        result = ranker.rank(solutions, experimental)
+
+        correct_sol = next(s for s in result.solutions if s.smiles == correct)
+        # (a) correct-structure MAE within the molecule's reproduced bound.
+        #     (ibuprofen: <=0.5 reproducing 0.244 vs old 2.230; matched_count over
+        #     PREDICTIONS == total_carbons, reproducing 13/13 vs old 8/13.)
+        assert correct_sol.mae <= mae_max
+        assert correct_sol.total_carbons == total_carbons
+        if assert_full_match:
+            assert correct_sol.matched_count == total_carbons
+        # (b) correct isomer outranks the prior wrong isomer (the ordering FIX).
+        assert result.solutions[0].smiles == correct
+        wrong_sol = next((s for s in result.solutions if s.smiles == wrong), None)
+        if wrong_sol is not None:
+            assert correct_sol.mae < wrong_sol.mae
+
+
