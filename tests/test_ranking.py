@@ -1024,7 +1024,9 @@ class TestResolveC13Predictor:
             DatabaseFinder, "find_hose_table", staticmethod(lambda: None)
         )
         # Force the replicated shipped-table candidate paths to a location with no table
-        monkeypatch.setattr(resolver, "_shipped_table_candidates", lambda: [tmp_path / "nope.json.gz"])
+        monkeypatch.setattr(
+            resolver, "_shipped_table_candidates", lambda: [tmp_path / "nope.json.gz"]
+        )
 
         with pytest.raises(Exception, match="lucy database download"):
             resolve_c13_predictor()
