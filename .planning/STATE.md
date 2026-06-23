@@ -2,13 +2,14 @@
 gsd_state_version: 1.0
 milestone: v9.1
 milestone_name: CASE Final-Answer Correctness & Verification Gates
-status: planning
-last_updated: "2026-06-23T07:13:07.440Z"
-last_activity: 2026-06-23
+status: executing
+stopped_at: roadmap + traceability + state written; no phases planned yet.
+last_updated: "2026-06-23T09:03:34.888Z"
+last_activity: 2026-06-23 -- Phase 86 planning complete
 progress:
   total_phases: 4
   completed_phases: 0
-  total_plans: 0
+  total_plans: 2
   completed_plans: 0
   percent: 0
 ---
@@ -26,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-06-23)
 
 Phase: 86 (not started)
 Plan: —
-Status: Roadmap created — ready for `/gsd-plan-phase 86`
-Last activity: 2026-06-23 — v9.1 roadmap written (phases 86-89, 13/13 requirements mapped)
+Status: Ready to execute
+Last activity: 2026-06-23 -- Phase 86 planning complete
 
 ## Milestone v9.1 Phases
 

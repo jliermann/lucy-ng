@@ -1,8 +1,8 @@
 ---
 phase: 86
 slug: ranker-path-unification
-status: draft
-nyquist_compliant: false
+status: approved
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-06-23
 ---
@@ -38,9 +38,12 @@ created: 2026-06-23
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| TBD | TBD | TBD | RANK-01/02/03 | — | N/A (offline dev tooling) | unit | `pytest -k "rank or predict"` | ❌ W0 | ⬜ pending |
+| 86-01-01 | 01 | 1 | RANK-01 | — | N/A (offline dev tooling) | unit | `pytest tests/test_ranking.py -k from_database -x` | ❌ W0 | ⬜ pending |
+| 86-01-02 | 01 | 1 | RANK-01 | — | N/A | unit | `pytest tests/test_ranking.py -k "resolver or resolve" -x` | ❌ W0 | ⬜ pending |
+| 86-02-01 | 02 | 2 | RANK-01 | — | N/A | unit | `pytest tests/test_ranking.py -k "cli" -x && pytest tests/test_prediction.py -k "predict_c13 or from_database" -x` | ❌ W0 | ⬜ pending |
+| 86-02-02 | 02 | 2 | RANK-01, RANK-02, RANK-03 | — | N/A | unit + skipif real-DB | `pytest tests/test_ranking.py -k "regression or rank01 or rank02 or rank03 or parity or agreement" -x` | ❌ W0 | ⬜ pending |
 
-*Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky — planner fills exact task IDs.*
+*Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky. Note: deterministic temp_db tests pin RANK-01/02 path-parity in CI; the wrong-isomer ordering fix (success criteria 2 & 3 / RANK-03 intent) is carried by the `skipif(find_hose_database() is None)` real-DB test — the executor's environment MUST have the real HOSE DB so that test runs (not silently skips) before the phase is marked complete.*
 
 ---
 
