@@ -1,6 +1,11 @@
 """Solution ranking by 13C spectrum prediction."""
 
+from typing import TYPE_CHECKING
+
 from rdkit import Chem
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 from lucy_ng.lsd.parser import LSDSolution
 from lucy_ng.prediction import C13Predictor, PredictedShift
@@ -320,4 +325,30 @@ class SolutionRanker:
         from pathlib import Path
 
         predictor = C13Predictor.from_table_file(Path(table_path), max_radius=max_radius)
+        return cls(predictor, tolerance=tolerance)
+
+    @classmethod
+    def from_database(
+        cls,
+        db_path: "str | Path",
+        tolerance: float = 3.0,
+        max_radius: int = 6,
+    ) -> "SolutionRanker":
+        """Create a SolutionRanker from a SQLite database with HOSE statistics.
+
+        Convenience method that creates the C13Predictor from the SQLite
+        database backend (the same 7.9M-entry DB used by ``lucy predict c13``),
+        mirroring ``from_table_file`` but using the richer DB lookup.
+
+        Args:
+            db_path: Path to SQLite database with HOSE statistics
+            tolerance: Maximum ppm difference for matching (default: 3.0)
+            max_radius: Maximum HOSE radius for prediction (default: 6)
+
+        Returns:
+            Configured SolutionRanker instance
+        """
+        from pathlib import Path
+
+        predictor = C13Predictor.from_database(Path(db_path), max_radius=max_radius)
         return cls(predictor, tolerance=tolerance)

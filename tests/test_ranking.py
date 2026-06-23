@@ -906,3 +906,146 @@ class TestPlausibilityFilterOrdering:
         assert result.solutions[1].smiles == low_match_smiles
 
 
+@pytest.fixture
+def temp_db(tmp_path):
+    """Create a small deterministic SQLite DB with HOSE statistics.
+
+    Mirrors the temp_db_with_ethanol pattern in tests/test_prediction.py:622-644
+    so SolutionRanker.from_database / resolve_c13_predictor can be exercised
+    without the 3.97 GB production database.
+    """
+    from lucy_ng.database import DatabaseManager
+    from lucy_ng.database.models import HOSEStatsRecord
+
+    db_path = tmp_path / "test_rank.db"
+    db = DatabaseManager(db_path)
+    db.create_tables()
+    test_stats = [
+        HOSEStatsRecord(hose_code="C-4;HHHC(//", radius=1, mean=15.0, std=2.0, count=100),
+        HOSEStatsRecord(hose_code="C-4;C(O//)//", radius=2, mean=14.5, std=1.5, count=50),
+        HOSEStatsRecord(hose_code="C-4;HHOC(//", radius=1, mean=60.0, std=3.0, count=80),
+        HOSEStatsRecord(hose_code="C-4;O(//C(//))", radius=2, mean=58.0, std=2.5, count=40),
+    ]
+    db.insert_hose_stats_batch(test_stats)
+    db.close()
+    return db_path
+
+
+class TestSolutionRankerFromDatabase:
+    """Tests for SolutionRanker.from_database factory method (RANK-01)."""
+
+    def test_from_database_returns_db_backed_ranker(self, temp_db):
+        """from_database returns a ranker whose predictor uses a DatabaseHOSELookup."""
+        from lucy_ng.prediction.db_lookup import DatabaseHOSELookup
+
+        ranker = SolutionRanker.from_database(temp_db)
+
+        assert isinstance(ranker, SolutionRanker)
+        assert isinstance(ranker.predictor.lookup, DatabaseHOSELookup)
+
+    def test_from_database_propagates_tolerance_and_max_radius(self, temp_db):
+        """tolerance reaches the ranker; max_radius reaches the predictor."""
+        ranker = SolutionRanker.from_database(temp_db, tolerance=2.0, max_radius=4)
+
+        assert ranker.tolerance == 2.0
+        assert ranker.predictor._max_radius == 4
+
+    def test_from_database_can_rank_smiles(self, temp_db):
+        """A DB-backed ranker can rank a trivial SMILES list without raising (smoke)."""
+        ranker = SolutionRanker.from_database(temp_db)
+        solutions = [LSDSolution(index=1, smiles="CCO")]
+        experimental = [60.0, 15.0]
+
+        # Smoke test: ranking completes and returns a populated result object.
+        # (Whether the trivial SMILES is ranked or skipped depends on HOSE-code
+        # coverage in the tiny temp_db; the contract under test is "does not raise".)
+        result = ranker.rank(solutions, experimental)
+
+        assert isinstance(result, RankingResult)
+        assert result.total_solutions == 1
+
+
+class TestResolveC13Predictor:
+    """Tests for the shared resolve_c13_predictor backend ladder (RANK-01)."""
+
+    def _make_json_table(self, tmp_path):
+        """Build a minimal on-disk JSON HOSE lookup table the loader accepts."""
+        from lucy_ng.prediction.lookup import HOSELookupTable
+
+        table = HOSELookupTable()
+        table.add_entry("C-4;HHHC(//", 15.0)
+        table.add_entry("C-4;HHOC(//", 60.0)
+        table_path = tmp_path / "hose_table.json.gz"
+        table.save(table_path, compress=True)
+        return table_path
+
+    def test_resolve_explicit_db(self, temp_db):
+        """Explicit db= yields a DB-backed predictor (priority 1)."""
+        from lucy_ng.prediction.db_lookup import DatabaseHOSELookup
+        from lucy_ng.prediction.resolver import resolve_c13_predictor
+
+        predictor = resolve_c13_predictor(db=temp_db)
+
+        assert isinstance(predictor.lookup, DatabaseHOSELookup)
+
+    def test_resolve_explicit_table(self, tmp_path):
+        """Explicit table= yields a table-backed predictor (priority 2)."""
+        from lucy_ng.prediction.lookup import HOSELookupTable
+        from lucy_ng.prediction.resolver import resolve_c13_predictor
+
+        table_path = self._make_json_table(tmp_path)
+        predictor = resolve_c13_predictor(table=table_path)
+
+        assert isinstance(predictor.lookup, HOSELookupTable)
+
+    def test_resolve_autodetect_prefers_database(self, temp_db, monkeypatch):
+        """With no explicit args, an auto-detected DB wins over any table (priority 3)."""
+        from lucy_ng.database.finder import DatabaseFinder
+        from lucy_ng.prediction.db_lookup import DatabaseHOSELookup
+        from lucy_ng.prediction.resolver import resolve_c13_predictor
+
+        monkeypatch.setattr(
+            DatabaseFinder, "find_hose_database", staticmethod(lambda: temp_db)
+        )
+        predictor = resolve_c13_predictor()
+
+        assert isinstance(predictor.lookup, DatabaseHOSELookup)
+
+    def test_resolve_no_backend_raises(self, monkeypatch, tmp_path):
+        """No db/table and no auto-detected backend raises a clear error."""
+        from lucy_ng.database.finder import DatabaseFinder
+        from lucy_ng.prediction import resolver
+        from lucy_ng.prediction.resolver import resolve_c13_predictor
+
+        monkeypatch.setattr(
+            DatabaseFinder, "find_hose_database", staticmethod(lambda: None)
+        )
+        monkeypatch.setattr(
+            DatabaseFinder, "find_hose_table", staticmethod(lambda: None)
+        )
+        # Force the replicated shipped-table candidate paths to a location with no table
+        monkeypatch.setattr(resolver, "_shipped_table_candidates", lambda: [tmp_path / "nope.json.gz"])
+
+        with pytest.raises(Exception, match="lucy database download"):
+            resolve_c13_predictor()
+
+    def test_resolve_propagates_max_radius(self, temp_db):
+        """max_radius is propagated to the constructed predictor."""
+        from lucy_ng.prediction.resolver import resolve_c13_predictor
+
+        predictor = resolve_c13_predictor(db=temp_db, max_radius=3)
+
+        assert predictor._max_radius == 3
+
+    def test_resolver_no_cli_layering_inversion(self):
+        """The resolver module must not import from lucy_ng.cli (layering guard)."""
+        import lucy_ng.prediction.resolver as resolver_mod
+
+        source = Path(resolver_mod.__file__).read_text()
+        import_lines = [
+            line for line in source.splitlines()
+            if line.strip().startswith(("import ", "from "))
+        ]
+        assert not any("lucy_ng.cli" in line for line in import_lines)
+
+
