@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v9.1
 milestone_name: CASE Final-Answer Correctness & Verification Gates
-status: verifying
-stopped_at: roadmap + traceability + state written; no phases planned yet.
-last_updated: "2026-06-23T09:31:44.961Z"
+status: ready_to_plan
+stopped_at: Phase 86 complete (2/2) — ready to discuss Phase 87
+last_updated: 2026-06-23T09:41:57.797Z
 last_activity: 2026-06-23
 progress:
   total_phases: 4
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-23)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a multi-agent team that uses the intended solver pipeline — not a manual bypass
-**Current focus:** Phase 86 — Ranker Path Unification
+**Current focus:** Phase 87 — final identity verification gate
 
 ## Current Position
 
-Phase: 86 (Ranker Path Unification) — COMPLETE (ready for verification)
-Plan: 2 of 2 (both executed)
-Status: Phase complete — RANK-01/02/03 satisfied; next `/gsd-verify-work 86` or `/gsd-plan-phase 87`
-Last activity: 2026-06-23 -- Plan 86-02 executed (CLI wiring + regression tests)
+Phase: 87
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-06-23
 
 ## Milestone v9.1 Phases
 
@@ -79,7 +79,7 @@ Items acknowledged and deferred at v9.0 milestone close on 2026-06-17 (the rank-
 
 **Velocity:**
 
-- Total plans completed: 154 across 11 milestones (10 shipped + 1 abandoned) — v9.0 added 34 plans
+- Total plans completed: 156 across 11 milestones (10 shipped + 1 abandoned) — v9.0 added 34 plans
 - v9.0: 14 phases (72-85), 34 plans, 41 tasks; shipped 2026-06-17
 - v9.1 Phase 86 (Ranker Path Unification): 2 plans, 4 tasks; 86-02 ~8 min, 3 files, 2 commits
 - Cumulative: 86 phases total
