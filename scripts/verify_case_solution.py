@@ -28,9 +28,12 @@ from rdkit.Chem import rdMolDescriptors
 
 _TOP_N = 3
 
-# COCONUT accession pattern (e.g. "CNP0220816"): a DB hit whose name is an
-# accession means the structure is known but no human/trivial name is stored.
-_COCONUT_ACCESSION_RE = re.compile(r"^CNP\d+$", re.IGNORECASE)
+# COCONUT accession pattern (e.g. "CNP0220816" or the dot-suffixed
+# "CNP0220816.1"): a DB hit whose name is an accession means the structure is
+# known but no human/trivial name is stored. ~55% of COCONUT rows carry the
+# ".N" suffix, so the optional suffix MUST be matched or those hits leak the
+# accession into the trivial-name slot and the name gate false-trips.
+_COCONUT_ACCESSION_RE = re.compile(r"^CNP\d+(?:\.\d+)?$", re.IGNORECASE)
 
 # Generic filler tokens dropped before token-set name comparison.
 _NAME_FILLER_TOKENS = frozenset({"dye", "the", "a", "an", "of"})
@@ -203,8 +206,12 @@ def derive_identity(smiles: str, db_path: str | Path | None = None) -> dict:
         "inchi_key": inchi_key,
         "canonical_smiles": canonical_smiles,
     }
-    # COCONUT-accession name => structure known, but no human/trivial name.
-    if name is not None and _COCONUT_ACCESSION_RE.match(name.strip()):
+    # Structure known but no human/trivial name => structure-only confidence.
+    # Covers COCONUT accessions (incl. dot-suffixed) AND empty/None stored names
+    # (e.g. ~7.9k nmrshiftdb rows with a blank name); both must NOT be reported
+    # as a confirmed trivial name.
+    stripped = name.strip() if name else ""
+    if not stripped or _COCONUT_ACCESSION_RE.match(stripped):
         result["confidence"] = "confirmed-structure"
         result["trivial_name_confirmed"] = False
     else:
@@ -296,7 +303,11 @@ def _check_identity(args: argparse.Namespace) -> None:
         )
     elif (matched and name_match is False) or (not matched and reported_name is not None):
         verdict = "tentative"
-        derived_label = derived.get("name") or "none (structure not in DB)"
+        derived_label = derived.get("name") or (
+            "none (structure in DB but no trivial name stored)"
+            if matched
+            else "none (structure not in DB)"
+        )
         warning = (
             f"WARNING: reported name '{reported_name}' does not match "
             f"tool-derived identity '{derived_label}'; name downgraded to tentative."

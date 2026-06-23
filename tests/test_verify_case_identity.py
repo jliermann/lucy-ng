@@ -197,3 +197,68 @@ def test_novel_no_asserted_name_is_clean() -> None:
     assert data["verdict"] == "novel"
     assert data["warning"] is None
     assert data["name_match"] is None
+
+
+# ---------------------------------------------------------------------------
+# Accession / empty-name handling (WR-01/02/03 regressions) — structure-only
+# ---------------------------------------------------------------------------
+
+
+def test_dotsuffixed_coconut_accession_is_recognised() -> None:
+    """~55% of COCONUT names are dot-suffixed (CNP….N); the regex MUST match
+    them, else the accession leaks into the trivial-name slot (WR-01/WR-02)."""
+    assert verify_case_solution._COCONUT_ACCESSION_RE.match("CNP0220816")
+    assert verify_case_solution._COCONUT_ACCESSION_RE.match("CNP0220816.1")
+    assert verify_case_solution._COCONUT_ACCESSION_RE.match("CNP0220816.12")
+    # An accession (suffixed or not) must contribute NO name-match tokens.
+    assert verify_case_solution._normalize_name("CNP0220816.1") == set()
+    assert verify_case_solution._normalize_name("CNP0220816") == set()
+
+
+@db_required
+def test_dotsuffixed_coconut_row_is_structure_only() -> None:
+    """A live dot-suffixed COCONUT row → confirmed-structure, not confirmed."""
+    con = sqlite3.connect(f"file:{_DB}?mode=ro", uri=True)
+    con.row_factory = sqlite3.Row
+    row = con.execute(
+        "SELECT smiles FROM compounds "
+        "WHERE smiles != '' AND source = 'coconut' AND name LIKE 'CNP%.%' LIMIT 1"
+    ).fetchone()
+    con.close()
+    if row is None:
+        pytest.skip("no dot-suffixed coconut row found")
+    out = derive_identity(row["smiles"])
+    assert out["matched"] is True
+    assert out["confidence"] == "confirmed-structure"
+    assert out.get("trivial_name_confirmed") is False
+
+
+def test_empty_name_match_warns_in_db_not_absent(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A matched structure whose DB row has an empty name must NOT produce the
+    'structure not in DB' warning (WR-03) — the structure IS in the DB."""
+    import argparse
+
+    monkeypatch.setattr(
+        verify_case_solution,
+        "derive_identity",
+        lambda *a, **k: {
+            "matched": True,
+            "name": "",
+            "source": "nmrshiftdb",
+            "inchi_key": "X",
+            "canonical_smiles": "CCO",
+            "confidence": "confirmed-structure",
+            "trivial_name_confirmed": False,
+        },
+    )
+    ns = argparse.Namespace(smiles="CCO", reported_name="ethanol", db=None)
+    with pytest.raises(SystemExit) as exc:
+        verify_case_solution._check_identity(ns)
+    assert exc.value.code == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["verdict"] == "tentative"
+    assert data["warning"] is not None
+    assert "not in DB" not in data["warning"]
+    assert "no trivial name" in data["warning"]
