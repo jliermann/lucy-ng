@@ -8,6 +8,7 @@ import jsonschema
 
 from lucy_ng.lsd import LSDRunner, LSDSolutionAnalyzer
 from lucy_ng.lsd.parser import LSDOutputParser
+from lucy_ng.prediction.resolver import resolve_c13_predictor
 from lucy_ng.processing import AdaptivePeakPicker
 from lucy_ng.ranking import SolutionRanker
 from lucy_ng.readers import BrukerReader
@@ -212,6 +213,8 @@ def _perform_ranking(
     table: str | Path | None = None,
     output_format: str = "text",
     _silent: bool = False,
+    db: str | Path | None = None,
+    max_radius: int = 6,
 ) -> dict | None:
     """Rank LSD solutions by 13C spectrum similarity.
 
@@ -219,12 +222,18 @@ def _perform_ranking(
     command (Plan 02) can call ranking logic as a direct Python function call
     without spawning a subprocess (D-14).
 
+    The 13C predictor backing the ranker is resolved through the SHARED
+    ``resolve_c13_predictor`` ladder (RANK-01) — the exact same DB-first
+    4-tier priority used by ``lucy predict c13`` — so the two CLIs produce
+    identical per-shift predictions for the same molecule. Backend selection
+    lives ONLY in that helper; this function does not branch on db/table.
+
     Args:
         smiles_file: Path to a file containing SMILES strings (one per line).
         experimental_shifts: List of experimental 13C shift values in ppm.
         top: Number of top solutions to return.
         tolerance: Tolerance in ppm for shift matching.
-        table: Path to HOSE lookup table; auto-detected when None.
+        table: Explicit JSON HOSE lookup table path (backend priority 2).
         output_format: 'text' (echo to stdout, return None) or 'json'
             (echo JSON to stdout AND return the data dict for callers).
         _silent: When True, suppress click.echo output (used by pylsd_run to
@@ -232,6 +241,9 @@ def _perform_ranking(
             JSON to stdout when output_format='json', and pylsd_run would then
             echo a second outer wrapper — passing _silent=True prevents the
             inner echo so only the outer wrapper is written).
+        db: Explicit SQLite HOSE database path (backend priority 1).
+        max_radius: Maximum HOSE radius for prediction (default 6; must match
+            ``predict c13`` for identical predictions).
 
     Returns:
         When output_format == 'json': the data dict (for pylsd_run embedding).
@@ -239,7 +251,7 @@ def _perform_ranking(
 
     Raises:
         SystemExit(1): On file not found, parse failure, empty solutions,
-            table not found, or ranker init failure.
+            no resolvable backend, or ranker init failure.
     """
     # Load solutions from SMILES file
     try:
@@ -255,26 +267,17 @@ def _perform_ranking(
         click.echo("Error: No SMILES found in file", err=True)
         raise SystemExit(1)
 
-    # Get table path
-    table_path: Path
-    if table:
-        table_path = Path(table)
-    else:
-        try:
-            table_path = _get_default_table_path()
-        except FileNotFoundError as e:
-            click.echo(f"Error: {e}", err=True)
-            raise SystemExit(1)
-
-    # Create ranker and rank solutions
+    # Resolve the 13C predictor through the SHARED backend ladder (RANK-01),
+    # then build the ranker on it. Backend selection (explicit db -> explicit
+    # table -> auto-detect DB -> auto-detect JSON table) lives only in
+    # resolve_c13_predictor, so this path is identical to predict c13.
     try:
-        ranker = SolutionRanker.from_table_file(
-            table_path=str(table_path),
-            tolerance=tolerance,
-        )
+        predictor = resolve_c13_predictor(db=db, table=table, max_radius=max_radius)
     except Exception as e:
-        click.echo(f"Error loading HOSE table: {e}", err=True)
+        click.echo(f"Error: {e}", err=True)
         raise SystemExit(1)
+
+    ranker = SolutionRanker(predictor, tolerance=tolerance)
 
     result = ranker.rank(solutions, experimental_shifts, top_n=top)
 
@@ -602,10 +605,23 @@ def lsd_validate_inventory(lsd_file: str, output_format: str) -> None:
     help="Tolerance in ppm for shift matching.",
 )
 @click.option(
+    "--db",
+    type=click.Path(exists=True),
+    default=None,
+    help="Path to SQLite HOSE database (auto-detected if not set).",
+)
+@click.option(
     "--table",
     type=click.Path(exists=True),
     default=None,
     help="Path to HOSE lookup table (auto-detected if not set).",
+)
+@click.option(
+    "--max-radius",
+    type=int,
+    default=6,
+    help="Maximum HOSE radius (default 6; must match predict c13 for "
+    "identical predictions).",
 )
 @click.option(
     "--format",
@@ -620,7 +636,9 @@ def lsd_rank(
     shifts: str | None,
     top: int,
     tolerance: float,
+    db: str | None,
     table: str | None,
+    max_radius: int,
     output_format: str,
 ) -> None:
     """Rank LSD solutions by 13C spectrum similarity.
@@ -630,6 +648,10 @@ def lsd_rank(
 
     Provide experimental shifts via --spectrum (Bruker 13C directory) or
     --shifts (comma-separated ppm values).
+
+    Backend priority mirrors ``lucy predict c13`` (RANK-01): explicit --db,
+    then explicit --table, then auto-detect the SQLite DB, then auto-detect
+    the shipped JSON table.
 
     Examples:
 
@@ -672,7 +694,16 @@ def lsd_rank(
         click.echo("Error: No experimental shifts found", err=True)
         raise SystemExit(1)
 
-    _perform_ranking(smiles_file, experimental_shifts, top, tolerance, table, output_format)
+    _perform_ranking(
+        smiles_file,
+        experimental_shifts,
+        top,
+        tolerance,
+        table,
+        output_format,
+        db=db,
+        max_radius=max_radius,
+    )
 
 
 @lsd.command("analyze")

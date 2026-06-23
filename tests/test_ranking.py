@@ -1,5 +1,6 @@
 """Tests for LSD solution ranking."""
 
+import json
 import pytest
 from unittest.mock import MagicMock, patch
 from pathlib import Path
@@ -1049,5 +1050,132 @@ class TestResolveC13Predictor:
             if line.strip().startswith(("import ", "from "))
         ]
         assert not any("lucy_ng.cli" in line for line in import_lines)
+
+
+@pytest.fixture
+def cli_runner():
+    """Create a Click CLI test runner (mirrors tests/test_prediction.py:456)."""
+    from click.testing import CliRunner
+
+    return CliRunner()
+
+
+@pytest.fixture
+def smiles_file(tmp_path):
+    """Write a one-SMILES-per-line file (the lsd_rank SMILES_FILE argument)."""
+    path = tmp_path / "solutions.smi"
+    path.write_text("CCO\n")
+    return path
+
+
+class TestRankCLIBackendWiring:
+    """RANK-01: `lucy lsd rank` resolves its predictor through resolve_c13_predictor.
+
+    These CLI-level tests pin that the ranker command honours --db / --table /
+    --max-radius and auto-detects the SQLite DB first, exactly like predict c13.
+    """
+
+    def test_cli_db_uses_database_backend(self, cli_runner, temp_db, smiles_file):
+        """`lucy lsd rank --db <temp_db>` ranks via the DB backend (JSON output parses)."""
+        from lucy_ng.cli import cli
+
+        result = cli_runner.invoke(
+            cli,
+            [
+                "lsd", "rank", str(smiles_file),
+                "--shifts", "60.0,15.0",
+                "--db", str(temp_db),
+                "--format", "json",
+            ],
+        )
+        assert result.exit_code == 0, result.output
+        data = json.loads(result.output)
+        assert data["total_solutions"] == 1
+        assert "solutions" in data
+
+    def test_cli_table_uses_table_backend(self, cli_runner, tmp_path, smiles_file):
+        """`lucy lsd rank --table <json>` ranks via the JSON table backend."""
+        from lucy_ng.cli import cli
+        from lucy_ng.prediction.lookup import HOSELookupTable
+
+        table = HOSELookupTable()
+        table.add_entry("C-4;HHHC(//", 15.0)
+        table.add_entry("C-4;HHOC(//", 60.0)
+        table_path = tmp_path / "hose_table.json.gz"
+        table.save(table_path, compress=True)
+
+        result = cli_runner.invoke(
+            cli,
+            [
+                "lsd", "rank", str(smiles_file),
+                "--shifts", "60.0,15.0",
+                "--table", str(table_path),
+                "--format", "json",
+            ],
+        )
+        assert result.exit_code == 0, result.output
+        data = json.loads(result.output)
+        assert data["total_solutions"] == 1
+
+    def test_cli_autodetect_prefers_database(
+        self, cli_runner, temp_db, smiles_file, monkeypatch
+    ):
+        """With no --db/--table, the rank command auto-detects the DB first (priority 3)."""
+        from lucy_ng.cli import cli
+        from lucy_ng.database.finder import DatabaseFinder
+
+        monkeypatch.setattr(
+            DatabaseFinder, "find_hose_database", staticmethod(lambda: temp_db)
+        )
+        result = cli_runner.invoke(
+            cli,
+            [
+                "lsd", "rank", str(smiles_file),
+                "--shifts", "60.0,15.0",
+                "--format", "json",
+            ],
+        )
+        assert result.exit_code == 0, result.output
+        data = json.loads(result.output)
+        assert data["total_solutions"] == 1
+
+    def test_cli_max_radius_option_accepted(self, cli_runner, temp_db, smiles_file):
+        """`lucy lsd rank --max-radius 4` is accepted and propagated without error."""
+        from lucy_ng.cli import cli
+
+        result = cli_runner.invoke(
+            cli,
+            [
+                "lsd", "rank", str(smiles_file),
+                "--shifts", "60.0,15.0",
+                "--db", str(temp_db),
+                "--max-radius", "4",
+                "--format", "json",
+            ],
+        )
+        assert result.exit_code == 0, result.output
+        data = json.loads(result.output)
+        assert data["total_solutions"] == 1
+
+    def test_cli_help_lists_db_and_max_radius(self, cli_runner):
+        """`lucy lsd rank --help` advertises both --db and --max-radius (parity surface)."""
+        from lucy_ng.cli import cli
+
+        result = cli_runner.invoke(cli, ["lsd", "rank", "--help"])
+        assert result.exit_code == 0
+        assert "--db" in result.output
+        assert "--max-radius" in result.output
+
+    def test_cli_predict_c13_db_path_still_works(self, cli_runner, temp_db):
+        """RANK-01 parity: predict c13 --db still works after the shared-helper refactor."""
+        from lucy_ng.cli import cli
+
+        result = cli_runner.invoke(
+            cli,
+            ["predict", "c13", "CCO", "--db", str(temp_db), "--format", "json"],
+        )
+        assert result.exit_code == 0, result.output
+        data = json.loads(result.output)
+        assert data["smiles"] == "CCO"
 
 

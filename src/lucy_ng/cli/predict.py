@@ -6,7 +6,8 @@ from pathlib import Path
 import click
 
 from lucy_ng.database import DatabaseFinder
-from lucy_ng.prediction import C13Predictor, HOSELookupTable
+from lucy_ng.prediction import HOSELookupTable
+from lucy_ng.prediction.resolver import resolve_c13_predictor
 
 
 @click.group()
@@ -69,49 +70,13 @@ def predict_c13(
 
         lucy predict c13 "CC(C)Cc1ccc(cc1)C(C)C(=O)O"
     """
-    predictor: C13Predictor | None = None
-
-    # Priority 1: Explicit database path
-    if db:
-        try:
-            predictor = C13Predictor.from_database(Path(db), max_radius=max_radius)
-        except Exception as e:
-            click.echo(f"Error loading database: {e}", err=True)
-            raise SystemExit(1)
-
-    # Priority 2: Explicit table path
-    elif table:
-        try:
-            predictor = C13Predictor.from_table_file(Path(table), max_radius=max_radius)
-        except Exception as e:
-            click.echo(f"Error loading lookup table: {e}", err=True)
-            raise SystemExit(1)
-
-    # Priority 3: Auto-detect database
-    elif (db_path := DatabaseFinder.find_hose_database()):
-        try:
-            predictor = C13Predictor.from_database(db_path, max_radius=max_radius)
-        except Exception as e:
-            click.echo(f"Error loading database at {db_path}: {e}", err=True)
-            raise SystemExit(1)
-
-    # Priority 4: Auto-detect table
-    elif (table_path := DatabaseFinder.find_hose_table()):
-        try:
-            predictor = C13Predictor.from_table_file(table_path, max_radius=max_radius)
-        except Exception as e:
-            click.echo(f"Error loading lookup table at {table_path}: {e}", err=True)
-            raise SystemExit(1)
-
-    # No backend found
-    else:
-        click.echo(
-            "Error: No prediction backend found.\n\n"
-            "Options:\n"
-            "  1. Download database: lucy database download\n"
-            "  2. Build JSON table: lucy predict build-table <coconut.sd>",
-            err=True,
-        )
+    # Resolve the predictor through the SHARED backend ladder (RANK-01) so
+    # `lucy predict c13` and `lucy lsd rank` use literally the same code path
+    # (explicit --db -> explicit --table -> auto-detect DB -> auto-detect JSON).
+    try:
+        predictor = resolve_c13_predictor(db=db, table=table, max_radius=max_radius)
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
         raise SystemExit(1)
 
     # Predict
