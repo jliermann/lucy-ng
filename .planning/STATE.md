@@ -4,14 +4,14 @@ milestone: v9.1
 milestone_name: CASE Final-Answer Correctness & Verification Gates
 status: executing
 stopped_at: roadmap + traceability + state written; no phases planned yet.
-last_updated: "2026-06-23T09:03:34.888Z"
-last_activity: 2026-06-23 -- Phase 86 planning complete
+last_updated: "2026-06-23T09:19:03.789Z"
+last_activity: 2026-06-23
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 2
-  completed_plans: 0
-  percent: 0
+  completed_plans: 1
+  percent: 50
 ---
 
 # lucy-ng State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-23)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a multi-agent team that uses the intended solver pipeline — not a manual bypass
-**Current focus:** **v9.1 roadmap created (2026-06-23) — phases 86-89.** Closing the three "clean-but-wrong" defect classes that slip every existing safety net: RANK (ranker under-scores the truth — `lucy lsd rank` 2.23/8-of-10 vs `lucy predict c13` 0.27/10-of-10, divergent prediction paths), IDENT (naming hallucination — CASE4/5 wrong trivial names asserted from model memory), MULT (aliphatic multiplicity not hard-determinable → only one family searched, hardens v9.0 FIX-10). Proven by blind UATs (CASE4/5 re-run + CASE6/7/8 first runs). RANK first (isolated Python tooling), then IDENT + MULT (skill-level, parallel-able), then the UAT gate. Next = `/gsd-plan-phase 86`. See [[project_lucy_lsd_rank_scoring_defect]], [[project_case4_azulene_fail]], [[feedback_blind_uat]].
+**Current focus:** Phase 86 — Ranker Path Unification
 
 ## Current Position
 
-Phase: 86 (not started)
-Plan: —
-Status: Ready to execute
-Last activity: 2026-06-23 -- Phase 86 planning complete
+Phase: 86 (Ranker Path Unification) — EXECUTING
+Plan: 2 of 2
+Status: Plan 86-01 complete (from_database + resolve_c13_predictor); 86-02 (CLI wiring) next
+Last activity: 2026-06-23 -- Plan 86-01 executed (RANK-01 building blocks)
 
 ## Milestone v9.1 Phases
 
@@ -93,6 +93,8 @@ Items acknowledged and deferred at v9.0 milestone close on 2026-06-17 (the rank-
 
 Decisions are logged in PROJECT.md Key Decisions table.
 
+- [86-01]: Ranker gained `SolutionRanker.from_database` + a shared `resolve_c13_predictor()` DB-first 4-tier backend ladder (in `prediction/resolver.py`, never importing from `cli/`). `_match_shifts`/MAE left byte-identical. The JSON fallback replicates lsd.py's three shipped-table candidate paths to defeat the `hose_nmrshiftdb.json.gz` filename trap. CLI wiring (`lucy lsd rank --db/--table/--max-radius`) is Plan 86-02.
+
 - [v9.1-roadmap]: All three v9.1 defects are "clean-but-wrong" — low MAE, plausible, but wrong. None is caught by an existing mechanism (identity gate doesn't help when the structure is wrong; rank/analyst override can't recover a structure absent from the solution set; the MAE>4 quality loop stays silent at MAE 1.75). The fixes target reachability (MULT), independent verification (IDENT), and scoring fidelity (RANK).
 - [v9.1-roadmap]: RANK sequenced first because it is self-contained Python tooling — reproducible without a CASE run, fully unit-testable, no blind instance required. IDENT and MULT are skill-level (agent-definition) edits and therefore can only be fully validated by the blind UAT gate, not unit tests → they precede Phase 89 and gate it.
 - [v9.1-roadmap]: Azulene regiochemistry (CASE4) is explicitly OUT OF SCOPE to resolve by 13C alone — physically unresolvable (top isomers within 0.26 ppm MAE). UAT-01 only requires the correct di-methyl-ethyl *constitution class* to be reachable in the solution set, not unique regiochemistry.
@@ -116,7 +118,7 @@ Key v9.0 constraint (still in force): SYME and DEFF NOT are lucy-ng abstractions
 
 ## Session Continuity
 
-Last session: 2026-06-23 — v9.1 roadmap created (phases 86-89, 13/13 requirements mapped).
+Last session: 2026-06-23T09:19:03.784Z
 Stopped at: roadmap + traceability + state written; no phases planned yet.
 Resume with: `/gsd-plan-phase 86` (RANK — ranker path unification; isolated Python tooling, unit-testable).
 

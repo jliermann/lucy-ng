@@ -12,7 +12,7 @@ slip through every existing safety net, proven by blind UATs.
 ## v9.1 Requirements
 
 ### RANK — Ranker correctness (`lucy lsd rank` ↔ `lucy predict c13`)
-- [ ] **RANK-01**: `lucy lsd rank` and `lucy predict c13` produce the same per-shift 13C prediction for an identical molecule (single prediction path; no divergent code).
+- [x] **RANK-01**: `lucy lsd rank` and `lucy predict c13` produce the same per-shift 13C prediction for an identical molecule (single prediction path; no divergent code).
 - [ ] **RANK-02**: For a correct structure, the ranker no longer systematically under-scores the truth — its MAE / match-count agrees with `lucy predict c13` within a defined tolerance.
 - [ ] **RANK-03**: A regression test pins ranker↔predict agreement on the CASE1 and CASE3 molecules where divergence was measured (2.23 vs 0.27; ranker put the wrong isomer #1).
 
@@ -53,7 +53,7 @@ slip through every existing safety net, proven by blind UATs.
 
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
-| RANK-01 | Phase 86 | pending |
+| RANK-01 | Phase 86 | Complete |
 | RANK-02 | Phase 86 | pending |
 | RANK-03 | Phase 86 | pending |
 | IDENT-01 | Phase 87 | pending |
