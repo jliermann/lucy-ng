@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v9.1
 milestone_name: CASE Final-Answer Correctness & Verification Gates
-status: ready_to_plan
-stopped_at: Phase 86 complete (2/2) — ready to discuss Phase 87
-last_updated: 2026-06-23T09:41:57.797Z
+status: planning
+stopped_at: Phase 87 context gathered
+last_updated: "2026-06-23T10:20:52.456Z"
 last_activity: 2026-06-23
 progress:
   total_phases: 4
@@ -121,8 +121,8 @@ Key v9.0 constraint (still in force): SYME and DEFF NOT are lucy-ng abstractions
 
 ## Session Continuity
 
-Last session: 2026-06-23T09:31:44.957Z
-Stopped at: roadmap + traceability + state written; no phases planned yet.
+Last session: 2026-06-23T10:20:52.451Z
+Stopped at: Phase 87 context gathered
 Resume with: `/gsd-plan-phase 86` (RANK — ranker path unification; isolated Python tooling, unit-testable).
 
 ---
