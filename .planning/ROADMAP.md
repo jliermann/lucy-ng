@@ -72,9 +72,11 @@ first blind runs of CASE6/7/8 to surface any 4th defect.
   2. An independent final gate (devils-advocate and/or `verify_case_solution.py`) checks the analyst's name↔structure mapping before results are reported; a detected mismatch blocks or flags the report rather than passing silently.
   3. When identity cannot be tool-confirmed, the report marks the name as tentative with a confidence qualifier instead of asserting it.
   4. The CASE4/CASE5 naming-hallucination pattern (wrong "literature" reference; indigo↔isoindigo mislabel) is demonstrably caught by the gate on those structures.
-**Plans**: 2 plans
+**Plans**: 4 plans (2 original + 2 gap-closure for GAP-87-A runtime reachability)
   - [x] 87-01-PLAN.md — Extend `verify_case_solution.py` with `derive_identity()` + `check-identity` subcommand (InChIKey-first / SMILES-fallback two-path lookup, tentative/novel verdicts) + CASE4/CASE5 regression tests — the deterministic binding gate (IDENT-01/02/03)
   - [x] 87-02-PLAN.md — Wire the tool into the CASE agents: solution-analyst derivation + tentative-name rendering; devils-advocate post-solution advisory gate G-IDENT (IDENT-01/02/03)
+  - [ ] 87-03-PLAN.md — Gap closure (GAP-87-A): move the deterministic identity core into the installed package (`lucy_ng.identity`) + add a `lucy identify --format json` subcommand reachable from a CASE data dir; repoint `verify_case_solution.py` to import it (one shared path, D-05) (IDENT-01/02)
+  - [ ] 87-04-PLAN.md — Gap closure (GAP-87-A): repoint the solution-analyst + devils-advocate G-IDENT from the repo-relative `scripts/...` path to the installed `lucy identify` command; IDENT-03 rendering + advisory gate preserved (IDENT-01/02/03)
 
 ### Phase 88: Aliphatic Multiplicity Robustness
 **Goal**: When aliphatic CH/CH2/CH3 multiplicity cannot be hard-determined, the search covers every viable multiplicity family so the correct constitution is reachable — hardening v9.0 FIX-10 which does not cover multiplicity.
