@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v9.1
 milestone_name: CASE Final-Answer Correctness & Verification Gates
-status: executing
-stopped_at: Completed 87-04-PLAN.md (Phase 87 all plans done — ready_for_verification)
-last_updated: "2026-06-24T14:33:40.142Z"
+status: ready_to_plan
+stopped_at: Phase 87 complete (4/4) — ready to discuss Phase 88
+last_updated: 2026-06-24T19:37:25.202Z
 last_activity: 2026-06-24 -- Phase 87 planning complete
 progress:
   total_phases: 4
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-23)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a multi-agent team that uses the intended solver pipeline — not a manual bypass
-**Current focus:** Phase 87 — final-identity-verification-gate
+**Current focus:** Phase 88 — aliphatic multiplicity robustness
 
 ## Current Position
 
-Phase: 87 (final-identity-verification-gate) — ALL PLANS COMPLETE
-Plan: 4 of 4 (gap-closure 87-03/04 done)
-Status: Ready to execute
-Last activity: 2026-06-24 -- Phase 87 planning complete
+Phase: 88
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-06-24
 
 ## Milestone v9.1 Phases
 
@@ -79,7 +79,7 @@ Items acknowledged and deferred at v9.0 milestone close on 2026-06-17 (the rank-
 
 **Velocity:**
 
-- Total plans completed: 156 across 11 milestones (10 shipped + 1 abandoned) — v9.0 added 34 plans
+- Total plans completed: 160 across 11 milestones (10 shipped + 1 abandoned) — v9.0 added 34 plans
 - v9.0: 14 phases (72-85), 34 plans, 41 tasks; shipped 2026-06-17
 - v9.1 Phase 86 (Ranker Path Unification): 2 plans, 4 tasks; 86-02 ~8 min, 3 files, 2 commits
 - v9.1 Phase 87 (Final Identity-Verification Gate): 2 plans + 2 gap-closure (87-03/04); 87-02 ~6 min, 2 files; 87-03 ~3 min, 6 files (3 created), 3 commits
