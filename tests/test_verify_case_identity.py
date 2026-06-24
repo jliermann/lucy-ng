@@ -1,12 +1,16 @@
-"""Tests for the identity-derivation core and name<->structure gate in
-``scripts/verify_case_solution.py``.
+"""Tests for the identity-derivation core and name<->structure gate.
+
+The deterministic identity core now lives in the installed package
+(``lucy_ng.identity``, D-05). These tests import it directly. The
+``check-identity`` subprocess invocations exercise the thin
+``scripts/verify_case_solution.py`` adapter that imports the same core, so the
+back-compat CLI contract stays locked.
 
 Two layers are exercised:
 
-1. Direct import of ``derive_identity`` (and the ``_normalize_name`` token
-   helper) from ``scripts.verify_case_solution`` — mirrors the sys.path trick
-   used by the black-box subprocess test, but imports the module so the
-   in-process unit assertions can run.
+1. Direct import of ``derive_identity`` / ``check_identity_result`` (and the
+   ``_normalize_name`` token helper + ``_COCONUT_ACCESSION_RE`` constant) from
+   ``lucy_ng.identity``.
 2. A subprocess invocation of ``check-identity`` to lock the CLI contract.
 
 Regression fixtures (VERIFIED against the live DB, see 87-RESEARCH.md):
@@ -23,7 +27,6 @@ DB-dependent tests are skipped cleanly when
 
 from __future__ import annotations
 
-import importlib.util
 import json
 import sqlite3
 import subprocess
@@ -32,21 +35,11 @@ from pathlib import Path
 
 import pytest
 
+from lucy_ng import identity as lucy_identity
 from lucy_ng.database.finder import DatabaseFinder
+from lucy_ng.identity import derive_identity
 
 SCRIPT = Path(__file__).parent.parent / "scripts" / "verify_case_solution.py"
-
-# --- import derive_identity / _normalize_name directly from the script -------
-_spec = importlib.util.spec_from_file_location("verify_case_solution", SCRIPT)
-assert _spec is not None and _spec.loader is not None
-verify_case_solution = importlib.util.module_from_spec(_spec)
-sys.modules["verify_case_solution"] = verify_case_solution
-_spec.loader.exec_module(verify_case_solution)
-
-# Bound at call time via the helper below so the module stays collectable
-# (``pytest --co`` exits 0) even before Task 1 lands ``derive_identity`` (RED).
-def derive_identity(*args: object, **kwargs: object) -> dict:
-    return verify_case_solution.derive_identity(*args, **kwargs)
 
 # --- fixtures ----------------------------------------------------------------
 CHAMAZULENE_SMILES = "CCc1ccc2ccc(C)c-2c(C)c1"
@@ -207,12 +200,12 @@ def test_novel_no_asserted_name_is_clean() -> None:
 def test_dotsuffixed_coconut_accession_is_recognised() -> None:
     """~55% of COCONUT names are dot-suffixed (CNP….N); the regex MUST match
     them, else the accession leaks into the trivial-name slot (WR-01/WR-02)."""
-    assert verify_case_solution._COCONUT_ACCESSION_RE.match("CNP0220816")
-    assert verify_case_solution._COCONUT_ACCESSION_RE.match("CNP0220816.1")
-    assert verify_case_solution._COCONUT_ACCESSION_RE.match("CNP0220816.12")
+    assert lucy_identity._COCONUT_ACCESSION_RE.match("CNP0220816")
+    assert lucy_identity._COCONUT_ACCESSION_RE.match("CNP0220816.1")
+    assert lucy_identity._COCONUT_ACCESSION_RE.match("CNP0220816.12")
     # An accession (suffixed or not) must contribute NO name-match tokens.
-    assert verify_case_solution._normalize_name("CNP0220816.1") == set()
-    assert verify_case_solution._normalize_name("CNP0220816") == set()
+    assert lucy_identity._normalize_name("CNP0220816.1") == set()
+    assert lucy_identity._normalize_name("CNP0220816") == set()
 
 
 @db_required
@@ -234,14 +227,12 @@ def test_dotsuffixed_coconut_row_is_structure_only() -> None:
 
 
 def test_empty_name_match_warns_in_db_not_absent(
-    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """A matched structure whose DB row has an empty name must NOT produce the
     'structure not in DB' warning (WR-03) — the structure IS in the DB."""
-    import argparse
-
     monkeypatch.setattr(
-        verify_case_solution,
+        lucy_identity,
         "derive_identity",
         lambda *a, **k: {
             "matched": True,
@@ -253,11 +244,7 @@ def test_empty_name_match_warns_in_db_not_absent(
             "trivial_name_confirmed": False,
         },
     )
-    ns = argparse.Namespace(smiles="CCO", reported_name="ethanol", db=None)
-    with pytest.raises(SystemExit) as exc:
-        verify_case_solution._check_identity(ns)
-    assert exc.value.code == 0
-    data = json.loads(capsys.readouterr().out)
+    data = lucy_identity.check_identity_result("CCO", reported_name="ethanol")
     assert data["verdict"] == "tentative"
     assert data["warning"] is not None
     assert "not in DB" not in data["warning"]
