@@ -249,3 +249,19 @@ def test_empty_name_match_warns_in_db_not_absent(
     assert data["warning"] is not None
     assert "not in DB" not in data["warning"]
     assert "no trivial name" in data["warning"]
+
+
+def test_corrupt_db_degrades_gracefully(tmp_path: Path) -> None:
+    """A corrupt/non-DB file passed as db_path must NOT raise (D-06): the gate
+    degrades to db_unavailable + novel, never crashes the report (CR-01)."""
+    bogus = tmp_path / "not_a_real.db"
+    bogus.write_text("this is plainly not a sqlite database")
+    out = derive_identity("CCO", db_path=bogus)
+    assert out["matched"] is False
+    assert out.get("db_unavailable") is True
+    assert out["confidence"] == "novel"
+    # The structural identity is still firm even when the DB is unreadable.
+    assert out["inchi_key"] == ETHANOL_KEY
+    # And the full gate still exits-0-equivalent (returns, never raises).
+    data = lucy_identity.check_identity_result("CCO", reported_name="ethanol", db_path=bogus)
+    assert data["verdict"] in ("novel", "tentative")

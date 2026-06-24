@@ -114,24 +114,38 @@ def derive_identity(smiles: str, db_path: str | Path | None = None) -> dict[str,
             "db_unavailable": True,
         }
 
-    con = sqlite3.connect(f"file:{resolved_db}?mode=ro", uri=True)
-    con.row_factory = sqlite3.Row
     try:
-        # Path 1: InChIKey-first (reaches nmrshiftdb partition).
-        row = con.execute(
-            "SELECT name, source FROM compounds "
-            "WHERE inchi_key = ? AND inchi_key != '' LIMIT 1",
-            (inchi_key,),
-        ).fetchone()
-        # Path 2: canonical-SMILES fallback (reaches coconut partition).
-        if row is None:
+        con = sqlite3.connect(f"file:{resolved_db}?mode=ro", uri=True)
+        con.row_factory = sqlite3.Row
+        try:
+            # Path 1: InChIKey-first (reaches nmrshiftdb partition).
             row = con.execute(
                 "SELECT name, source FROM compounds "
-                "WHERE smiles = ? AND smiles != '' LIMIT 1",
-                (canonical_smiles,),
+                "WHERE inchi_key = ? AND inchi_key != '' LIMIT 1",
+                (inchi_key,),
             ).fetchone()
-    finally:
-        con.close()
+            # Path 2: canonical-SMILES fallback (reaches coconut partition).
+            if row is None:
+                row = con.execute(
+                    "SELECT name, source FROM compounds "
+                    "WHERE smiles = ? AND smiles != '' LIMIT 1",
+                    (canonical_smiles,),
+                ).fetchone()
+        finally:
+            con.close()
+    except sqlite3.Error as exc:
+        # Corrupt / truncated / non-DB file (a documented failure mode for the
+        # ~830 MB bundled DB): degrade gracefully — NEVER hard-fail the gate
+        # (D-06). The structural identity is still firm; only the name lookup
+        # is unavailable.
+        return {
+            "matched": False,
+            "inchi_key": inchi_key,
+            "canonical_smiles": canonical_smiles,
+            "confidence": "novel",
+            "db_unavailable": True,
+            "error": f"db read failed: {exc}",
+        }
 
     if row is None:
         return {

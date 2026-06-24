@@ -1,24 +1,28 @@
 ---
 phase: 87-final-identity-verification-gate
-reviewed: 2026-06-23T00:00:00Z
+reviewed: 2026-06-24T00:00:00Z
 depth: deep
-files_reviewed: 2
+files_reviewed: 6
 files_reviewed_list:
   - scripts/verify_case_solution.py
   - tests/test_verify_case_identity.py
+  - src/lucy_ng/identity.py
+  - src/lucy_ng/cli/identify.py
+  - src/lucy_ng/cli/main.py
+  - tests/test_cli_identify.py
 findings:
-  critical: 0
+  critical: 1
   warning: 3
   info: 3
-  total: 6
+  total: 7
 status: issues_found
 ---
 
 # Phase 87: Code Review Report
 
-**Reviewed:** 2026-06-23
+**Reviewed:** 2026-06-23 (original 87-01) / 2026-06-24 (gap-closure 87-03/87-04)
 **Depth:** deep (cross-checked against live dereplication DB schema + content)
-**Files Reviewed:** 2
+**Files Reviewed:** 6
 **Status:** issues_found
 
 ## Summary
@@ -65,119 +69,203 @@ regex does not match, producing wrong verdicts. Details below.
 `CNP0220816` but NOT the suffixed forms `CNP0220816.1`, `CNP0220816.2`.
 Confirmed against the live DB: of 895,099 COCONUT rows, **489,191 (55%)** have
 dot-suffixed names like `CNP0220816.1`, and **0 COCONUT rows have a real
-trivial name** (every COCONUT name is an accession). Consequences when a
-dot-suffixed COCONUT structure is hit via Path 2 (the common case):
+trivial name** (every COCONUT name is an accession).
 
-- `derive_identity` falls into the `else` branch at line 210-211 and returns
-  `confidence: "confirmed"` with `name: "CNP0220816.1"`, instead of the
-  intended `confidence: "confirmed-structure"` / `trivial_name_confirmed:
-  False`. The bare accession is presented as a confirmed trivial name.
-- In `check-identity`, the verdict for such a hit becomes `confirmed`, and if a
-  reported name is supplied it is gated against the accession token-set (see
-  WR-02), so a correct trivial name on a known COCONUT structure is reported as
-  `tentative` with a warning that the "tool-derived identity" is `CNP0220816.1`.
-
-Empirically reproduced: `derive_identity(<dot-suffixed coconut smiles>)` →
-`matched=True, confidence='confirmed', name='CNP0220816.1'`. The existing test
-`test_coconut_found_via_smiles_fallback` only exercises a `LIMIT 1` row that
-happens to be a non-suffixed `CNP…`, so it passes and masks the defect.
-
-**Fix:** widen the pattern to accept the optional version suffix, and apply it
-consistently in `derive_identity`, `_normalize_name`, and `_synonym_token_sets`:
-```python
-_COCONUT_ACCESSION_RE = re.compile(r"^CNP\d+(?:\.\d+)?$", re.IGNORECASE)
-```
-Add a regression test that picks a `name LIKE 'CNP%.%'` COCONUT row and asserts
-`confidence == "confirmed-structure"` and `trivial_name_confirmed is False`.
+**Status (2026-06-24): FIXED in gap-closure 87-03.** The moved core
+`src/lucy_ng/identity.py:33` now uses `re.compile(r"^CNP\d+(?:\.\d+)?$",
+re.IGNORECASE)`; regression `test_dotsuffixed_coconut_accession_is_recognised`
+and DB-guarded `test_dotsuffixed_coconut_row_is_structure_only` lock it.
 
 ### WR-02: `_normalize_name` leaks accession tokens for dot-suffixed names — pollutes name-match comparison
 
 **File:** `scripts/verify_case_solution.py:215-235` and `:238-251`
 **Issue:** Both `_normalize_name` and `_synonym_token_sets` drop a synonym only
-if `_COCONUT_ACCESSION_RE.match(synonym)` is true (lines 229, 245). Because that
-regex (WR-01) does not match `CNP0220816.1`, the accession is NOT dropped;
-instead the punctuation-substitution `re.sub(r"[,()'\-–—.]", " ", ...)` splits
-it into tokens `{"cnp0220816", "1"}`. Verified:
-`_normalize_name("CNP0220816.1") == {'1', 'cnp0220816'}`. These accession-derived
-tokens then participate in `_name_match`, so the name gate compares a reported
-trivial name against an accession fragment — guaranteeing a spurious `False`
-(tentative) for any dot-suffixed COCONUT hit. This is a direct correctness
-defect in the name<->structure gate that is the entire purpose of the phase.
+if `_COCONUT_ACCESSION_RE.match(synonym)` is true; the un-suffixed regex did not
+match `CNP0220816.1`, so the accession leaked into the token set.
 
-**Fix:** fix the regex per WR-01 (the dropping then works). Defensively, also
-consider dropping any token matching `^cnp\d+$` after tokenisation, in case
-suffix formats vary.
+**Status (2026-06-24): FIXED in gap-closure 87-03.** Same regex fix resolves it;
+`_normalize_name("CNP0220816.1") == set()` is asserted by
+`test_dotsuffixed_coconut_accession_is_recognised`
+(`src/lucy_ng/identity.py:179`, `:195`).
 
 ### WR-03: nmrshiftdb hit with empty stored name yields `confidence: "confirmed"` and a misleading "structure not in DB" warning
 
 **File:** `scripts/verify_case_solution.py:198-211`, `:299-303`
-**Issue:** 7,861 nmrshiftdb rows have an empty `name` (verified against the live
-DB). When such a structure is hit via Path 1, `name` is `""` (not `None`, and
-the accession regex does not match `""`), so line 210-211 assigns
-`confidence: "confirmed"` even though there is no trivial name to confirm — it
-should be treated like the accession case (`confirmed-structure` /
-`trivial_name_confirmed: False`). Additionally, if a reported name is supplied
-for such a hit, `_check_identity` computes `name_match=False` (empty token set),
-falls into the `tentative` branch (line 297), and emits a warning saying the
-reported name "does not match tool-derived identity 'none (structure not in
-DB)'" (line 299) — but the structure IS in the DB (`matched=True`). The message
-is factually wrong and could mislead an operator into discarding a correct name.
+**Issue:** ~7,861 nmrshiftdb rows have an empty `name`; an empty-name hit was
+labelled `confirmed` and the mismatch warning falsely claimed the structure was
+"not in DB".
 
-**Fix:** treat an empty/whitespace name as a no-trivial-name hit:
-```python
-stripped = (name or "").strip()
-if not stripped or _COCONUT_ACCESSION_RE.match(stripped):
-    result["confidence"] = "confirmed-structure"
-    result["trivial_name_confirmed"] = False
-else:
-    result["confidence"] = "confirmed"
-```
-And in `_check_identity`, derive the warning label from the actual hit state
-(matched vs. structure-only) rather than a flat "structure not in DB" string.
+**Status (2026-06-24): FIXED in gap-closure 87-03.** `src/lucy_ng/identity.py:156-161`
+now does `stripped = name.strip() if name else ""; if not stripped or
+_COCONUT_ACCESSION_RE.match(stripped): confirmed-structure`, and
+`check_identity_result` (`:268-272`) emits `"none (structure in DB but no
+trivial name stored)"` for a matched-but-nameless hit. Locked by
+`test_empty_name_match_warns_in_db_not_absent`.
 
 ## Info
 
 ### IN-01: `_check_smiles` re-parses the SMILES already validated by `_parse_top3`
 
 **File:** `scripts/verify_case_solution.py:78`
-**Issue:** `_parse_top3` calls `Chem.MolFromSmiles(smiles)` (line 58) to validate,
-discards the mol, and `_check_smiles` parses the same string again (line 78).
-Harmless and pre-existing (not introduced this phase), but redundant. Not a
-correctness issue. Out of scope as a perf concern; noted only for hygiene.
-**Fix:** optionally have `_parse_top3` return `(smiles, mol)` pairs.
+**Issue:** `_parse_top3` calls `Chem.MolFromSmiles(smiles)` to validate, discards
+the mol, and `_check_smiles` parses the same string again. Harmless,
+pre-existing. **(Unchanged by gap-closure; legacy mode untouched.)**
 
 ### IN-02: `import os` inside the exception fallback in `_resolve_db_path`
 
-**File:** `scripts/verify_case_solution.py:109`
-**Issue:** `os` is imported lazily inside the `except` block. It works, but the
-module already imports `sqlite3`, `json`, etc. at top level; a function-local
-import in a rarely-taken branch is mildly surprising and is excluded from
-coverage (`# pragma: no cover`). Minor style point.
-**Fix:** move `import os` to the module top.
+**File:** `src/lucy_ng/identity.py:55` (moved from script)
+**Issue:** `os` is imported lazily inside the `except` block (`# pragma: no
+cover`). Works; minor style point. Carried over verbatim in the move.
 
-### IN-03: Test helper `derive_identity` wrapper / module-import shim is dead-code scaffolding now that the function exists
+### IN-03: Test helper module-import shim removed in gap-closure
 
-**File:** `tests/test_verify_case_identity.py:46-48`
-**Issue:** The comment (lines 44-45) and the thin `derive_identity(*args,
-**kwargs)` wrapper exist to keep the module collectable during the RED phase
-before the function landed. The function now exists, so the wrapper adds an
-extra indirection layer for no runtime benefit. Not a defect; cleanup only.
-**Fix:** call `verify_case_solution.derive_identity` directly, or keep the alias
-without the comment.
+**File:** `tests/test_verify_case_identity.py`
+**Status (2026-06-24): RESOLVED.** The RED-phase wrapper is gone; the test now
+imports `derive_identity` / `check_identity_result` directly from
+`lucy_ng.identity` (lines 38-40). Cleanup complete.
 
 ---
 
-## Test-coverage gap (cross-cutting)
+## Gap-Closure Review (87-03 / 87-04)
 
-The three warnings above all survive the current test suite because no test
-exercises a **dot-suffixed COCONUT name** (the 55% majority) or an
-**empty-name nmrshiftdb hit**. `test_coconut_found_via_smiles_fallback` uses
-`LIMIT 1`, which returns a non-suffixed accession and so passes. Recommend
-adding the two targeted regression fixtures described in WR-01 and WR-03 before
-relying on this gate for COCONUT/nmrshiftdb identity reporting.
+**Scope:** commits `2549eb5`, `648f62c`, `d04aaa7` (src), `602f54c`, `8cb6ef5`
+(agent `.md` prompt edits — not reviewed as code). Diff base `283b06a..HEAD`.
+
+### Move integrity — VERIFIED FAITHFUL (D-05: one implementation)
+
+A line-level diff of the old script's identity core (`283b06a:scripts/verify_case_solution.py`
+lines 36-328) against `src/lucy_ng/identity.py` shows the logic is **byte-identical**
+except for three deliberate, behaviour-neutral edits:
+
+1. Type-annotation tightening: `dict` → `dict[str, object]` (`identity.py:75`, `:145`, `:224`).
+2. A `# type: ignore[no-untyped-call]` on `Chem.MolToInchiKey` (`identity.py:105`).
+3. Refactor of `_check_identity(args)` (print + `sys.exit(0)`) into the **pure**
+   `check_identity_result(smiles, reported_name, db_path)` (`identity.py:224-287`)
+   that returns the dict and neither prints nor exits — plus a defensive
+   `isinstance(derived_name, str)` guard before `_name_match` (`identity.py:254-256`).
+
+The four focus invariants survived the move UNCHANGED and now carry the
+WR-01/02/03 fixes:
+
+- COCONUT regex `^CNP\d+(?:\.\d+)?$` — `identity.py:33`
+- empty-name → confirmed-structure branch — `identity.py:156-161`
+- `_NAME_FILLER_TOKENS = frozenset({"dye","the","a","an","of"})` — `identity.py:36` (identical)
+- tolerant token-set `_name_match` (whole-token subset/equality) — `identity.py:204-221`
+
+**Exactly one implementation now.** `scripts/verify_case_solution.py:31-38`
+imports the six symbols from `lucy_ng.identity` (with `# noqa: F401` re-export for
+back-compat) and contains **zero** duplicate identity logic — `_resolve_db_path`,
+`derive_identity`, `_normalize_name`, `_synonym_token_sets`, `_name_match`, and the
+verdict logic are all gone from the script. The adapter retains only legacy
+positional helpers (`_parse_top3`, `_check_smiles`) and a thin `_check_identity`
+that calls `check_identity_result` then `sys.exit(0)`.
+
+**SQL still parameterized** — `identity.py:121-132`, `?` placeholders, RO `file:`
+URI connection. No injection surface introduced by the move.
+
+**No import-cycle risk** — `lucy_ng.identity` imports only `re`, `sqlite3`,
+`pathlib`, and `rdkit.Chem` at module top. `DatabaseFinder` is imported lazily
+**inside** `_resolve_db_path` (`identity.py:51`), so importing the module does
+not pull in heavy package internals. `python -c "import lucy_ng.identity;
+import lucy_ng.cli.identify"` succeeds with no cycle.
+
+**JSON schema parity** — verified empirically. `lucy identify --format json`
+emits exactly `{mode, reported_name, derived, name_match, verdict, warning}`
+with `derived = {canonical_smiles, confidence, inchi_key, matched, name,
+source}` — identical to the old `check-identity` output. `verdict` ∈
+{confirmed, confirmed-structure, tentative, novel}.
+
+**Back-compat** — legacy `verify_case_solution.py <merged_smi> <formula>` runs
+green (exit 0, keys `{pass, formula, top_n_checked, checks}`); `check-identity`
+subprocess path still parsed by `tests/test_verify_case_identity.py`.
+
+**`lucy identify` registered** — `cli/main.py:12,53` imports and `add_command`s
+`identify`; help text line 36 present.
+
+**Tests** — `tests/test_cli_identify.py` (8) + `tests/test_verify_case_identity.py`
+(repointed): **19 passed** locally. mypy on the two new files: **0 errors in
+identity.py / cli/identify.py** (the 108 project-wide errors are pre-existing in
+unrelated modules: database.py, ranker.py, predict.py, lsd.py, pylsd.py).
+
+### Critical Issues
+
+#### CR-01: Corrupt / non-DB `--database` file (or partially-downloaded bundled DB) raises an uncaught `sqlite3.DatabaseError`, crashing `lucy identify` with a traceback and nonzero exit — violates the D-06 "always exits 0" contract
+
+**File:** `src/lucy_ng/identity.py:117-134` (raises at `:121`); reached via
+`src/lucy_ng/cli/identify.py:66`
+
+**Issue:** `--database` is declared `click.Path(exists=True)`
+(`cli/identify.py:37`), which validates only that the path **exists**, not that
+it is a valid SQLite database. `_resolve_db_path` returns any existing path
+unchecked (`identity.py:46-48`). `sqlite3.connect(...uri=True)` is lazy and
+succeeds, but the first `con.execute(...)` at `identity.py:121` raises
+`sqlite3.DatabaseError: file is not a database`. Nothing in `derive_identity`,
+`check_identity_result`, or the CLI catches it, so the exception propagates to
+the top and the command **crashes with a Python traceback and a nonzero exit
+code**. Reproduced:
+
+```
+$ lucy identify --smiles CCO --database /tmp/not_a_db.smi --format json
+Traceback (most recent call last):
+  ...
+  File ".../identity.py", line 121, in derive_identity
+    row = con.execute(
+sqlite3.DatabaseError: file is not a database
+```
+
+This is a real, reachable failure, not theoretical:
+- An operator pointing `--database` at the wrong file (e.g. a `.smi`, a `.txt`,
+  or a half-downloaded `.db`) gets a stack trace instead of a graceful verdict.
+- The **auto-resolve** path is equally exposed: if the bundled
+  `lucy-ng-derep.db` is present but **truncated/corrupt** (a known failure mode
+  for a ~830 MB download — see CLAUDE.md "Database Reference"), `DatabaseFinder`
+  returns the path and the same uncaught error fires inside a CASE run.
+
+The module docstring and `cli/identify.py:11,60` explicitly promise D-06
+("identity never hard-fails — always exits 0"). The only handled DB failure is
+**missing** DB (`identity.py:108-115` → `db_unavailable`); a **corrupt/invalid**
+DB is not handled. `test_identify_invalid_smiles_exits_zero` only covers bad
+SMILES, never a bad DB, so the gap is unguarded by tests.
+
+**Fix:** wrap the lookup in a try/except for `sqlite3.Error` and degrade to the
+same graceful "DB unavailable" result instead of propagating:
+
+```python
+# identity.py — in derive_identity, replacing lines 117-142
+try:
+    con = sqlite3.connect(f"file:{resolved_db}?mode=ro", uri=True)
+    con.row_factory = sqlite3.Row
+    try:
+        row = con.execute(
+            "SELECT name, source FROM compounds "
+            "WHERE inchi_key = ? AND inchi_key != '' LIMIT 1",
+            (inchi_key,),
+        ).fetchone()
+        if row is None:
+            row = con.execute(
+                "SELECT name, source FROM compounds "
+                "WHERE smiles = ? AND smiles != '' LIMIT 1",
+                (canonical_smiles,),
+            ).fetchone()
+    finally:
+        con.close()
+except sqlite3.Error as exc:
+    return {
+        "matched": False,
+        "inchi_key": inchi_key,
+        "canonical_smiles": canonical_smiles,
+        "confidence": "novel",
+        "db_unavailable": True,
+        "error": f"db error: {exc}",
+    }
+```
+
+Add a regression test: write a few bytes of non-SQLite content to a tmp file,
+invoke `lucy identify --smiles CCO --database <that file> --format json`, and
+assert `exit_code == 0` with `verdict == "novel"` and `db_unavailable is True`.
 
 ---
 
-_Reviewed: 2026-06-23_
+_Reviewed: 2026-06-23 (original) / 2026-06-24 (gap-closure)_
 _Reviewer: Claude (gsd-code-reviewer)_
 _Depth: deep_
