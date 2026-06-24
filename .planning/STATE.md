@@ -4,8 +4,8 @@ milestone: v9.1
 milestone_name: CASE Final-Answer Correctness & Verification Gates
 status: executing
 stopped_at: Completed 87-04-PLAN.md (Phase 87 all plans done — ready_for_verification)
-last_updated: "2026-06-24T14:21:37.923Z"
-last_activity: 2026-06-24
+last_updated: "2026-06-24T14:33:40.142Z"
+last_activity: 2026-06-24 -- Phase 87 planning complete
 progress:
   total_phases: 4
   completed_phases: 2
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-06-23)
 
 Phase: 87 (final-identity-verification-gate) — ALL PLANS COMPLETE
 Plan: 4 of 4 (gap-closure 87-03/04 done)
-Status: ready_for_verification
-Last activity: 2026-06-24 -- 87-04 executed (agents repointed to lucy identify; GAP-87-A closed end to end)
+Status: Ready to execute
+Last activity: 2026-06-24 -- Phase 87 planning complete
 
 ## Milestone v9.1 Phases
 
