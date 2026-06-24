@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v9.1
 milestone_name: CASE Final-Answer Correctness & Verification Gates
-status: executing
-stopped_at: Completed 87-02-PLAN.md (Phase 87 ready_for_verification)
-last_updated: "2026-06-24T14:03:24.061Z"
-last_activity: 2026-06-24 -- Phase 87 planning complete
+status: verifying
+stopped_at: Completed 87-03-PLAN.md (gap-closure; 87-04 remaining)
+last_updated: "2026-06-24T14:16:57.390Z"
+last_activity: 2026-06-24
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 6
-  completed_plans: 4
+  completed_plans: 5
   percent: 25
 ---
 
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-06-23)
 ## Current Position
 
 Phase: 87 (final-identity-verification-gate) — EXECUTING
-Plan: 2 of 2
-Status: Ready to execute
-Last activity: 2026-06-24 -- Phase 87 planning complete
+Plan: 3 of 4 (gap-closure 87-03/04)
+Status: 87-03 complete (lucy identify delivered) — 87-04 remaining
+Last activity: 2026-06-24 -- 87-03 executed (lucy identify + lucy_ng.identity)
 
 ## Milestone v9.1 Phases
 
@@ -82,7 +82,7 @@ Items acknowledged and deferred at v9.0 milestone close on 2026-06-17 (the rank-
 - Total plans completed: 156 across 11 milestones (10 shipped + 1 abandoned) — v9.0 added 34 plans
 - v9.0: 14 phases (72-85), 34 plans, 41 tasks; shipped 2026-06-17
 - v9.1 Phase 86 (Ranker Path Unification): 2 plans, 4 tasks; 86-02 ~8 min, 3 files, 2 commits
-- v9.1 Phase 87 (Final Identity-Verification Gate): 2 plans; 87-02 ~6 min, 2 files (agent prompt edits), 2 commits
+- v9.1 Phase 87 (Final Identity-Verification Gate): 2 plans + 2 gap-closure (87-03/04); 87-02 ~6 min, 2 files; 87-03 ~3 min, 6 files (3 created), 3 commits
 - Cumulative: 87 phases total
 
 ## Accumulated Context
@@ -98,6 +98,8 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [86-01]: Ranker gained `SolutionRanker.from_database` + a shared `resolve_c13_predictor()` DB-first 4-tier backend ladder (in `prediction/resolver.py`, never importing from `cli/`). `_match_shifts`/MAE left byte-identical. The JSON fallback replicates lsd.py's three shipped-table candidate paths to defeat the `hose_nmrshiftdb.json.gz` filename trap. CLI wiring (`lucy lsd rank --db/--table/--max-radius`) is Plan 86-02.
 
 - [86-02]: `lucy lsd rank` and `lucy predict c13` now share ONE prediction path via `resolve_c13_predictor` (RANK-01) — `_perform_ranking` and `predict_c13` both call the helper; rank gained `--db`/`--max-radius` parity. Backend selection lives only in the helper (no CLI re-branch). RANK-01/02/03 regression tests pin per-shift parity (abs diff <1e-6), MAE/match-count agreement (≤0.05 ppm), and the wrong-isomer ordering fix on ibuprofen (real-DB MAE 0.24 / 13-13 vs old 2.23 / 8-13) + pulegone (ordering-fix). Deterministic test seeds only r6 HOSE codes to keep ordering non-circular. mypy/ruff clean-delta; 110 ranking+prediction tests green.
+
+- [87-03]: GAP-87-A closed — the 87-01 deterministic identity core was moved VERBATIM into the installed package as `lucy_ng.identity` and exposed via a new `lucy identify` subcommand (`--smiles/--reported-name/--database/--format json`), reachable from any data dir (cf. `lucy lsd rank`). D-05 upheld: exactly one implementation; both `cli/identify.py` and the thinned `scripts/verify_case_solution.py check-identity` import it (back-compat preserved). `check_identity_result` is a pure no-print/no-exit verdict function; `lucy identify` always exits 0 (D-06). 27 identity+CLI tests green; ruff/mypy clean on touched src. 87-04 (skill wiring of `lucy identify` into the analyst/binding gate) remains.
 
 - [v9.1-roadmap]: All three v9.1 defects are "clean-but-wrong" — low MAE, plausible, but wrong. None is caught by an existing mechanism (identity gate doesn't help when the structure is wrong; rank/analyst override can't recover a structure absent from the solution set; the MAE>4 quality loop stays silent at MAE 1.75). The fixes target reachability (MULT), independent verification (IDENT), and scoring fidelity (RANK).
 - [v9.1-roadmap]: RANK sequenced first because it is self-contained Python tooling — reproducible without a CASE run, fully unit-testable, no blind instance required. IDENT and MULT are skill-level (agent-definition) edits and therefore can only be fully validated by the blind UAT gate, not unit tests → they precede Phase 89 and gate it.
@@ -124,7 +126,7 @@ Key v9.0 constraint (still in force): SYME and DEFF NOT are lucy-ng abstractions
 
 ## Session Continuity
 
-Last session: 2026-06-23T11:33:55.768Z
+Last session: 2026-06-24T14:16:57.385Z
 Stopped at: Completed 87-02-PLAN.md (Phase 87 ready_for_verification)
 Resume with: `/gsd-plan-phase 86` (RANK — ranker path unification; isolated Python tooling, unit-testable).
 
