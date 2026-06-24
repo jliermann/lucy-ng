@@ -419,7 +419,7 @@ CRITICAL message template:
 
 *Fires:* Once, post-solution, after `analysis/final_results.md` exists (the analyst's [RANKING-COMPLETE]/final report stage). The coordinator triggers this review pass; if no explicit trigger arrives, run it before the run is declared complete.
 
-*Purpose (the genuinely INDEPENDENT advisory layer, per D-04/D-05):* The deterministic `scripts/verify_case_solution.py check-identity` tool is the BINDING name↔structure agreement check — it confirms the analyst did not override the tool with a recalled name. **G-IDENT is the second, human-style reasoning cross-check.** It does NOT call `derive_identity` / `check-identity` (that would collapse the two layers into one and destroy independence). Instead, you REASON independently about whether the reported compound name in `final_results.md` plausibly matches the structure drawn from the top SMILES.
+*Purpose (the genuinely INDEPENDENT advisory layer, per D-04/D-05):* The deterministic installed `lucy identify` command is the analyst's BINDING name↔structure agreement check — it confirms the analyst did not override the tool with a recalled name. **G-IDENT is the second, human-style reasoning cross-check.** It does NOT call `lucy identify` / `derive_identity` (that would collapse the two layers into one and destroy independence). Instead, you REASON independently about whether the reported compound name in `final_results.md` plausibly matches the structure drawn from the top SMILES.
 
 *Severity:* **WARNING / advisory — NEVER blocks** (consistent with D-06: the structural result SMILES/rank/MAE always reports; only an *asserted* name is downgraded). If you find a name↔structure mismatch, flag it and instruct that the reported trivial name be downgraded to `(tentative, unverified)`.
 
@@ -566,6 +566,6 @@ Action required: lsd-engineer must fix CRITICAL issues before solver run
 
 Steps 1–12 are the PRE-SOLVER, per-iteration constraint-validation workflow. The G-IDENT gate runs on a DIFFERENT trigger and DIFFERENT input:
 
-13. **After the solution-analyst writes `analysis/final_results.md`** (post-solution), run the G-IDENT gate (Section 5, Check 5): read the reported name + top SMILES, independently reason about whether the name plausibly matches the drawn structure (do NOT call the deterministic `check-identity` tool — that is the analyst's binding layer; G-IDENT is the independent second opinion). If the reported trivial name does not match the structure, send a WARNING (advisory, never blocks) recommending the name be downgraded to `(tentative, unverified)`. Apply the CASE4 (wrong-isomer/literature name) and CASE5 (indigo↔isoindigo↔indirubin) worked triggers.
+13. **After the solution-analyst writes `analysis/final_results.md`** (post-solution), run the G-IDENT gate (Section 5, Check 5): read the reported name + top SMILES, independently reason about whether the name plausibly matches the drawn structure (do NOT call the deterministic `lucy identify` tool — that is the analyst's binding layer; G-IDENT is the independent second opinion). If the reported trivial name does not match the structure, send a WARNING (advisory, never blocks) recommending the name be downgraded to `(tentative, unverified)`. Apply the CASE4 (wrong-isomer/literature name) and CASE5 (indigo↔isoindigo↔indirubin) worked triggers.
 
 </workflow>
