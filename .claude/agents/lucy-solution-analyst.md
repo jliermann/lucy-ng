@@ -169,12 +169,13 @@ Write to: `analysis/final_results.md`
 After ranking has selected the top solution, and BEFORE you write the `# CASE Results:` header or any name into `analysis/final_results.md`, run the deterministic identity tool on the top solution's SMILES:
 
 ```bash
-python scripts/verify_case_solution.py check-identity \
+lucy identify \
   --smiles '<top solution canonical SMILES>' \
-  --reported-name '<any trivial name you are inclined to report — OR omit this flag entirely>'
+  --reported-name '<any trivial name you are inclined to report — OR omit this flag entirely>' \
+  --format json
 ```
 
-(If the script is not on the relative path from the CASE working dir, use its absolute repo path; it always exits 0.) Parse the JSON it emits:
+(`lucy identify` is an installed `lucy` subcommand reachable from the CASE data directory exactly like `lucy lsd rank` — no repo-relative or absolute script path is needed; it always exits 0.) Parse the JSON it emits:
 
 ```json
 { "mode": "identity",
@@ -262,7 +263,7 @@ You do NOT write CASE-PROGRESS.md. Send structured messages to the coordinator, 
 [RANKING-COMPLETE] Iteration N
 Solutions: N total converted and ranked
 Top solution: Rank #1: <tool-derived identity — derived name or InChIKey, NEVER a recalled name> — SMILES: <smiles>, MAE: N ppm, Matched: N/N
-Identity: <verdict from check-identity (confirmed | confirmed-structure | tentative | novel)> — <derived DB name on "confirmed", else InChIKey> <(tentative, unverified) if any model-suggested name is reported>
+Identity: <verdict from `lucy identify` (confirmed | confirmed-structure | tentative | novel)> — <derived DB name on "confirmed", else InChIKey> <(tentative, unverified) if any model-suggested name is reported>
 Strained rings: None / found in solutions <list>
 Aromatic warning: None / WARNING: <N> solutions non-aromatic despite <N> shifts in 110-160 ppm — check for potential 4J HMBC couplings (aromatic-to-aliphatic)
 Aromatic verification: <"CONFIRMED — top N candidates show M aromatic carbons (predicted)" / "INCONSISTENT — top N candidates lack aromatic carbons despite M experimental shifts in 110-160 ppm" / "N/A — no aromatic expectation">
@@ -299,7 +300,7 @@ Recommendation: <converge (stop) / continue (more HMBC) / escalate (problem dete
        Flag structural inconsistency if candidate lacks aromatic carbons that experimental data expects.
 5. Assess chemical plausibility for each top candidate (5 checks)
 6. Compute confidence scores: per-atom 3-factor model, then per-structure derivation
-6a. **Derive identity (MANDATORY, before writing the report header — Section 6.0):** run `python scripts/verify_case_solution.py check-identity --smiles '<top solution SMILES>' [--reported-name '<name>']` on the rank-#1 SMILES and parse the JSON `verdict`/`derived`/`warning`. The reported identity is DERIVED from this tool output, NEVER from recalled/parametric knowledge.
+6a. **Derive identity (MANDATORY, before writing the report header — Section 6.0):** run `lucy identify --smiles '<top solution SMILES>' [--reported-name '<name>'] --format json` (an installed `lucy` subcommand, reachable from the CASE data dir like `lucy lsd rank`) on the rank-#1 SMILES and parse the JSON `verdict`/`derived`/`warning`. The reported identity is DERIVED from this tool output, NEVER from recalled/parametric knowledge.
 7. Write `analysis/final_results.md` with full report — render the `# CASE Results:` header and the `## Identity` block per the verdict-keyed Identity Rendering Rule (Section 6.1); mark any non-confirmed trivial name `(tentative, unverified)`
 8. Save ranking data to `analysis/ranking_results.json`
 9. Send [RANKING-COMPLETE] message to coordinator via SendMessage with all labeled fields (see CASE-PROGRESS.md Contribution Protocol section)
