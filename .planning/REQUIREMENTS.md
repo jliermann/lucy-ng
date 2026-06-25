@@ -22,7 +22,7 @@ slip through every existing safety net, proven by blind UATs.
 - [x] **IDENT-03**: When identity cannot be tool-confirmed, the report marks the name as tentative (with confidence) rather than asserting it.
 
 ### MULT — Aliphatic multiplicity robustness (hardens v9.0 FIX-10)
-- [ ] **MULT-01**: When aliphatic multiplicity is not hard-determinable (non-multiplicity-edited HSQC and/or unreliable/phase-distorted APT/DEPT), the lsd-engineer searches ALL viable multiplicity families (e.g. iPr-path `3×CH₃+CH` AND ethyl-path `2×CH₃+CH₂+CH₂`) rather than hard-coding one.
+- [x] **MULT-01**: When aliphatic multiplicity is not hard-determinable (non-multiplicity-edited HSQC and/or unreliable/phase-distorted APT/DEPT), the lsd-engineer searches ALL viable multiplicity families (e.g. iPr-path `3×CH₃+CH` AND ethyl-path `2×CH₃+CH₂+CH₂`) rather than hard-coding one.
 - [ ] **MULT-02**: An MAE-independent clean-but-wrong guardrail: if ≥2 viable multiplicity families exist but only one was searched, the run does not accept — it reopens and searches the other(s).
 - [ ] **MULT-03**: A devils-advocate "evidence FOR model X" multiplicity flag forces model X into the search space; it cannot be dismissed by the convergence narrative.
 - [x] **MULT-04**: The nmr-chemist emits an explicit "multiplicity-ambiguous → enumerate families" signal when HSQC is not multiplicity-edited, so the lsd-engineer acts on it deterministically.
@@ -59,7 +59,7 @@ slip through every existing safety net, proven by blind UATs.
 | IDENT-01 | Phase 87 | Complete |
 | IDENT-02 | Phase 87 | Complete |
 | IDENT-03 | Phase 87 | Complete |
-| MULT-01 | Phase 88 | pending |
+| MULT-01 | Phase 88 | Complete |
 | MULT-02 | Phase 88 | pending |
 | MULT-03 | Phase 88 | pending |
 | MULT-04 | Phase 88 | Complete |

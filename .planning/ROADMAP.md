@@ -89,7 +89,7 @@ first blind runs of CASE6/7/8 to surface any 4th defect.
   4. A devils-advocate "evidence FOR model X" multiplicity flag forces model X into the search space and cannot be dismissed by the convergence narrative.
 **Plans**: 3 plans
 - [x] 88-01-PLAN.md — Python seam: `multiplicity_edited` + `negative_crosspeak_count` on `lucy pick hsqc` (deterministic D-05 trigger, unit-tested) [MULT-04]
-- [ ] 88-02-PLAN.md — nmr-chemist `[MULTIPLICITY-AMBIGUOUS]` + viable families; lsd-engineer per-family LSD runs + deduped union ranking [MULT-04, MULT-01]
+- [x] 88-02-PLAN.md — nmr-chemist `[MULTIPLICITY-AMBIGUOUS]` + viable families; lsd-engineer per-family LSD runs + deduped union ranking [MULT-04, MULT-01]
 - [ ] 88-03-PLAN.md — orchestrator pre-accept coverage gate (MAE-independent, SEARCHED-not-RANKED) + binding DA `[MULT-EVIDENCE-FOR]` flag [MULT-02, MULT-03]
 
 ### Phase 89: Blind-UAT Validation Gate
@@ -110,5 +110,5 @@ first blind runs of CASE6/7/8 to surface any 4th defect.
 |-------|----------------|--------|-----------|
 | 86. Ranker Path Unification | 2/2 | Complete    | 2026-06-23 |
 | 87. Final Identity-Verification Gate | 4/4 | Complete    | 2026-06-24 |
-| 88. Aliphatic Multiplicity Robustness | 1/3 | In Progress|  |
+| 88. Aliphatic Multiplicity Robustness | 2/3 | In Progress|  |
 | 89. Blind-UAT Validation Gate | 0/? | Not started | - |

@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v9.1
 milestone_name: CASE Final-Answer Correctness & Verification Gates
 status: executing
-stopped_at: Completed 88-01-PLAN.md
-last_updated: "2026-06-25T09:53:41.818Z"
-last_activity: 2026-06-25 -- 88-01 multiplicity_edited detector complete
+stopped_at: Completed 88-02-PLAN.md (CASE producer-agent multiplicity wiring)
+last_updated: "2026-06-25T10:09:33.260Z"
+last_activity: 2026-06-25 -- 88-02 nmr-chemist [MULTIPLICITY-AMBIGUOUS] + lsd-engineer per-family/union wiring complete
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 9
-  completed_plans: 7
+  completed_plans: 8
   percent: 50
 ---
 
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-06-23)
 ## Current Position
 
 Phase: 88 (Aliphatic Multiplicity Robustness) — EXECUTING
-Plan: 2 of 3
-Status: Executing Phase 88 (88-01 complete)
-Last activity: 2026-06-25 -- 88-01 multiplicity_edited detector complete
+Plan: 3 of 3
+Status: Executing Phase 88 (88-01 + 88-02 complete; 88-03 coverage gate next)
+Last activity: 2026-06-25 -- 88-02 producer-agent multiplicity wiring complete (MULT-04 + MULT-01)
 
 ## Milestone v9.1 Phases
 
@@ -110,6 +110,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Phase ?]: [87-01]: derive_identity + check-identity added to scripts/verify_case_solution.py — deterministic InChIKey/canonical-SMILES identity with complementary two-path DB lookup (InChIKey-first nmrshiftdb, canonical-SMILES fallback coconut); tolerant token-set name_match over synonyms (not exact/substring); name<->structure mismatch -> 'tentative' + warning, exit 0 always (D-06). CASE4/CASE5 regressions pinned. IDENT-01/02/03 done.
 - [Phase 87]: [87-02]: Wired check-identity into the CASE agents. Analyst derives identity from the tool before writing the report header (verdict-keyed: confirmed name plain; confirmed-structure/novel/tentative => InChIKey+canonical SMILES primary, trivial name '(tentative, unverified)'). Devils-advocate gained G-IDENT, a POST-SOLUTION advisory gate on final_results.md (distinct lifecycle from pre-solver gates) that reasons independently about name<->structure and does NOT call the deterministic tool (preserving D-05 independence); CASE4/CASE5 worked triggers. Markdown prompt edits; fresh session needed to reload; functional validation by Phase 89 blind UAT. IDENT-01/02(advisory)/03 done.
 - [Phase ?]: [87-04]: Re-pointed both CASE agents from scripts/verify_case_solution.py check-identity to the installed lucy identify --format json (GAP-87-A runtime closure); invocation-path-only edit, JSON verdict contract + IDENT-03 rendering + G-IDENT independence (D-05) preserved. Validated by next blind CASE5 UAT, not unit tests.
+- [Phase ?]: 88-02: multiplicity-ambiguity signal combines programmatic multiplicity_edited with chemist APT/DEPT reliability verdict; lsd-engineer runs per-family iteration_NN_<family> runs + deduped union rank
 
 ### Pending Todos
 
@@ -130,7 +131,7 @@ Key v9.0 constraint (still in force): SYME and DEFF NOT are lucy-ng abstractions
 
 ## Session Continuity
 
-Last session: 2026-06-25T09:53:41.813Z
+Last session: 2026-06-25T10:09:15.319Z
 Stopped at: Completed 88-01-PLAN.md (multiplicity_edited detector)
 Resume with: `/gsd-execute-phase 88` (plan 88-02 — nmr-chemist `[MULTIPLICITY-AMBIGUOUS]` signal + lsd-engineer per-family runs).
 
