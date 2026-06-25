@@ -232,6 +232,89 @@ After completing statistical detection, ALWAYS perform a DBE balance check.
 This check is a **diagnostic flag**, not a decision gate. The agent decides
 whether to act on it.
 
+## 5b. Aliphatic Multiplicity Ambiguity Detection (MULT-04)
+
+<!--
+RELOAD NOTE: This file is a repo `.claude/` skill prompt symlinked into `~/.claude`.
+Behavior changes here are MARKDOWN PROMPT EDITS — a FRESH Claude Code session is REQUIRED
+to reload the edited agent. They are NOT unit-testable this session; functional validation
+is the blind CASE4 re-run (UAT-01 / Phase 89), not unit tests.
+-->
+
+When aliphatic CH/CH₂/CH₃ multiplicity **cannot be hard-determined from the spectra**, the
+search must cover EVERY viable whole-molecule multiplicity family — otherwise the correct
+constitution is a-priori excluded from the solution set before LSD ever runs. This was the
+CASE4 (chamazulene) failure: the truth (2×CH₃ + ethyl) was never searched because a single
+isopropyl model (3×CH₃ + CH) was hard-coded.
+
+### Deterministic trigger (programmatic, NOT by eyeball)
+
+Declare the aliphatic block **multiplicity-ambiguous** when:
+
+- **(a) HSQC is non-multiplicity-edited.** Run `lucy pick hsqc <hsqc_path> --format json` and
+  **READ the `multiplicity_edited` field** (the programmatic boolean from Plan 88-01). Do NOT
+  eyeball the spectrum to decide editing — read this field. `multiplicity_edited: false` (no
+  negative cross-peaks) means CH/CH₂/CH₃ sign is undeterminable from HSQC.
+
+  **AND/OR**
+
+- **(b) APT/DEPT is phase-unreliable/inconsistent** by your existing reliability assessment
+  (phase varies across the range, signs inconsistent with the shift regions, distortion that
+  makes the negative=CH₂ rule untrustworthy).
+
+**CRITICAL — `multiplicity_edited: false` is NECESSARY BUT NOT SUFFICIENT alone.** The signal
+COMBINES the programmatic HSQC boolean with your APT/DEPT reliability verdict. An edited HSQC
+(`multiplicity_edited: true`) WITH a clean, phase-consistent DEPT-135 is **NOT ambiguous** —
+the high-confidence sign evidence (Evidence Priority 1: DEPT-135 sign = 100%) determines
+multiplicity and no enumeration is needed. Only declare ambiguous when the high-confidence
+sign signals are absent (non-edited HSQC) or unreliable (phase-distorted APT/DEPT).
+
+(There is NO numeric threshold for this decision in this prompt — the negative-cross-peak
+detector that produces `multiplicity_edited` lives in `pick.py` per D-05. Read its boolean.)
+
+### Enumerate viable families (D-02 — whole-molecule partitions)
+
+On the ambiguous condition, enumerate the **viable families**: the chemically sensible
+WHOLE-MOLECULE CH₃/CH₂/CH integer partitions of the ambiguous aliphatic carbons plus their
+attached protons that are **consistent with the molecular formula / H-count / DBE** (use the
+Section 5a DBE self-check formula + H budget). Enumerate at the whole-molecule level — NOT a
+per-center cross-product (that explodes and is harder to justify chemically).
+
+**CASE4 worked example** (the canonical illustration): an ambiguous aliphatic block with the
+same H-budget yields two whole-molecule partitions on the same skeleton —
+- **iPr family:** `3×CH₃ + CH` (isopropyl) — the model that was wrongly hard-coded.
+- **ethyl family:** `2×CH₃ + CH₂ + CH₂` (two methyls + an ethyl) — the chamazulene truth.
+
+Both satisfy the same formula/H-count/DBE, so BOTH are viable and BOTH must be listed.
+
+### Cap of 3 (D-03 — truncation is documented, never silent)
+
+Cap the viable families at **3**. If more than 3 partitions are formally valid, rank them by
+prior chemical plausibility, list the **top 3**, and STATE the truncation explicitly so the
+coordinator records it in CASE-PROGRESS.md. Never silently drop a valid family.
+
+### Emit the [MULTIPLICITY-AMBIGUOUS] signal
+
+When ambiguous, emit a structured `[MULTIPLICITY-AMBIGUOUS]` message to the coordinator IN
+ADDITION to `[SETUP-COMPLETE]` (the coordinator records both). The signal carries the
+ambiguity BASIS (the `multiplicity_edited` value + your APT/DEPT verdict) and an explicit
+numbered `viable_families:` list, each family naming the per-atom multiplicity. The
+lsd-engineer consumes this list deterministically (→ one fully-constrained LSD run per family).
+
+```
+[MULTIPLICITY-AMBIGUOUS]
+Basis: HSQC multiplicity_edited=<true|false> (from lucy pick hsqc --format json); APT/DEPT verdict=<reliable|phase-unreliable: reason>
+Ambiguous aliphatic carbons: <atom# list with shifts>
+viable_families:
+  1. <name e.g. iPr>: <per-atom multiplicity, e.g. C11/C12/C13 = CH3, C14 = CH>
+  2. <name e.g. ethyl>: <per-atom multiplicity, e.g. C11/C12 = CH3, C13/C14 = CH2>
+  3. <...>  (only if a 3rd valid partition exists)
+Cap/truncation: <"none — N ≤ 3 families" or "N valid; top 3 by plausibility searched, dropped: <list>">
+```
+
+If the aliphatic block is NOT ambiguous (edited HSQC and/or clean DEPT-135), do NOT emit this
+signal — assign multiplicities normally from the sign evidence.
+
 ## 6. Chemistry-First Hierarchy
 
 ### Evidence Priority (highest to lowest)
@@ -358,8 +441,10 @@ Revised assignments:
 6. Run statistical detection (selective strategy per shift ranges — see Section 5)
 6a. Scan HMBC correlations for potential 4J couplings: flag any where one carbon is in aromatic range (110-160 ppm, sp2) and the correlated proton is on an aliphatic carbon (0-55 ppm). Report flagged correlations in [SETUP-COMPLETE] under "Potential 4J correlations:" field.
 6b. Perform DBE self-check (Section 5a — MANDATORY before [SETUP-COMPLETE])
+6c. Perform aliphatic multiplicity ambiguity detection (Section 5b, MULT-04 — MANDATORY before [SETUP-COMPLETE]): READ `multiplicity_edited` from `lucy pick hsqc --format json` and combine it with your APT/DEPT reliability verdict. If ambiguous, enumerate the viable whole-molecule families (capped at 3, truncation documented) ready to emit [MULTIPLICITY-AMBIGUOUS] in step 8a.
 7. Compile all results into structured message
 8. Send [SETUP-COMPLETE] message to coordinator via SendMessage with all labeled fields (see CASE-PROGRESS.md Contribution Protocol section)
+8a. If Section 5b declared the aliphatic block multiplicity-ambiguous: ALSO send the [MULTIPLICITY-AMBIGUOUS] message (Section 5b) to the coordinator with the basis + numbered viable_families list. This is IN ADDITION to [SETUP-COMPLETE]; the coordinator records both and the lsd-engineer consumes the families.
 9. Mark task completed via TaskUpdate
 10. Monitor TaskList for additional requests from team
 
