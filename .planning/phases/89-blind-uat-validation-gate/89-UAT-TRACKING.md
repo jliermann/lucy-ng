@@ -33,7 +33,7 @@ For each blind run, when its result arrives:
 
 ## UAT-01 — CASE4 (blind) → acceptance test for MULT (Phase 88)
 
-**Status:** ⏳ RUNNING (blind run started 2026-06-25)
+**Status:** 🟡 CONDITIONAL (2026-06-25, orchestrator RDKit-verified) — MULT fix VALIDATED (di-methyl-ethyl class reachable, machinery fired), but exact truth regiochemistry still absent (NEW azulene-regiochemistry defect → todo `2026-06-25-case4-azulene-regiochemistry-enumeration-gap`).
 
 - **Truth:** Chamazulene = 7-ethyl-1,4-dimethylazulene, **C14H16**.
   Truth InChIKey `FVZVDQVUOAAMCG-UHFFFAOYSA-N` (block1 `FVZVDQVUOAAMCG`), SMILES `CCc1ccc2ccc(C)c-2c(C)c1`.
@@ -48,13 +48,15 @@ For each blind run, when its result arrives:
   emit `[MULTIPLICITY-AMBIGUOUS]`? did the DA `[MULT-EVIDENCE-FOR] model=ethyl` flag fire on the
   HMBC-11→13 evidence and force the ethyl family? did the coverage gate hold?
 
-**Result (fill in):**
-- Reported top SMILES: `______`
-- RDKit InChIKey / block1: `______`
-- Di-methyl-ethyl azulene present in solution set? `______`
-- [MULTIPLICITY-AMBIGUOUS] emitted / families searched: `______`
-- DA [MULT-EVIDENCE-FOR] fired + forced ethyl: `______`
-- Verdict: `______`
+**Result (2026-06-25, orchestrator RDKit-verified):**
+- Reported top SMILES (azulene-aware best): `CCc2ccc(C)cc1cc(C)cc12` (block1 `AGJIEFIKCFPZLY`, [5,7] azulene, C14H16) — a di-methyl-ethyl azulene, but NOT chamazulene.
+- Final solution set: **15 [5,7] di-methyl-ethyl azulenes** (`iteration_07_anchor_recovery/solutions.smi`), all RDKit-confirmed [5,7] + C14H16 + ethyl+2×methyl.
+- **Di-methyl-ethyl azulene CLASS present in solution set?** ✅ YES (all 15). → the MULT-targeted defect (only mono-methyl-iPr class searched) is FIXED.
+- **Exact truth chamazulene (`FVZVDQVUOAAMCG`, 7-Et-1,4-diMe) present?** ❌ NO — not among the 15, nor in any searched family. Truth regiochemistry still unreachable.
+- **MULT machinery fired:** ✅ `[MULTIPLICITY-AMBIGUOUS]` emitted (HSQC not mult-edited); 3 ethyl families (ethyl33/ethyl24/ethyl_low) enumerated + ALL searched in own dirs; `## Multiplicity Coverage` ledger + coverage_gate verdict PASS; deduped union ranked. iPr class correctly excluded by H-budget (11 aliphatic H → 3×CH₃+1×CH₂).
+- **DA [MULT-EVIDENCE-FOR]:** not emitted — direct HMBC evidence (C33.86↔H1.38 mutual) resolved the CH₂ placement to ethyl33 without needing the binding flag.
+- **IDENT bonus:** `lucy identify` ran on candidates → verdict novel; name NOT asserted (chamazulene explicitly held tentative). Minor: the analyst's prose cited a WRONG chamazulene reference key `UPRCJVNLNOWREJ` (≠ truth `FVZVDQVUOAAMCG`) — IDENT discipline still held.
+- **Verdict:** 🟡 **CONDITIONAL.** Phase-88 MULT acceptance MET (di-methyl-ethyl class now searched/reachable; machinery verified). The strict "exact truth reachable" reading FAILS — chamazulene's specific regiochemistry is absent due to a NEW, separate defect (azulene regiochemistry enumeration / degraded 2D + azulene HOSE-unreliability), captured as a todo. Not a v9.1 blocker (UAT-03 spirit: new defect class need not be fixed in v9.1).
 
 ---
 
