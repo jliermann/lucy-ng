@@ -165,12 +165,13 @@ Task(
   subagent_type="lucy-devils-advocate",
   model="claude-opus-4-8",
   prompt="You are the devils advocate for CASE of {formula} at {compound_path}.
-          Act ONLY on validation requests received via SendMessage (from lsd-engineer or the coordinator) — do NOT poll the TaskList.
-          After each validation request:
+          Act ONLY on requests received via SendMessage (from lsd-engineer or the coordinator) — do NOT poll the TaskList.
+          On a PRE-SOLVER validation request:
           1. Diff current LSD file against previous iteration
           2. Check for dropped constraints (ring exclusion DEFF F/FEXP, COSY equivalence pairs, grouped notation)
           3. Verify sp2 count is even, H budget matches formula
           4. Send [VALIDATION-PASSED] or [VALIDATION-BLOCKED] to coordinator via SendMessage.
+          On a POST-SOLUTION [BEGIN] G-IDENT request (after analysis/final_results.md exists): run ONLY the G-IDENT gate — read the reported trivial name + top SMILES, reason INDEPENDENTLY about whether the name matches the structure (do NOT call lucy identify), apply the CASE4/CASE5 triggers, and reply [G-IDENT-PASSED] or [G-IDENT-FLAGGED] with a one-line rationale.
           Report constraint persistence status after every validation."
 )
 ```
@@ -273,12 +274,23 @@ Before processing any structured message, run validate_message to check for requ
 SendMessage(
   type="message",
   recipient="lsd-engineer",
-  content="[BEGIN] lsd-iteration-01 — peak assignments are ready (see analysis/CASE-PROGRESS.md ## Setup). Build the initial LSD file in analysis/iteration_01/ (MULT from HSQC, first 3-5 HMBC), request DA validation, run the solver, then send [ITERATION-COMPLETE].",
+  content="[BEGIN] lsd-iteration-01 — peak assignments are ready (see analysis/CASE-PROGRESS.md ## Setup). Build the initial LSD file in analysis/iteration_01/ (MULT from HSQC, first 3-5 HMBC), request DA validation, run the solver. Send [ITERATION-COMPLETE] with the solution count the INSTANT the solver exits — do NOT block it on SMILES conversion (skip conversion if the count is large); ending your turn after a solver run without [ITERATION-COMPLETE] hangs the whole run.",
   summary="Kick off LSD iteration 1"
 )
 ```
 
 **Monitoring loop:** Receive structured messages from teammates (arrive as conversation turns) + optionally read `TaskList()` for status + read `<compound_path>/analysis/CASE-PROGRESS.md` for loop detection. On each structured message ([SETUP-COMPLETE], [ITERATION-COMPLETE], [VALIDATION-PASSED], [VALIDATION-BLOCKED], [RANKING-COMPLETE]): write the corresponding section to CASE-PROGRESS.md per write_progress, **push the next `[BEGIN]` directive** to whichever agent owns the next step, then continue monitoring.
+
+**Stall recovery (missing [ITERATION-COMPLETE]) — self-rescue when you are awoken:**
+The primary defence is the lsd-engineer sending [ITERATION-COMPLETE] the instant the solver
+exits (reinforced in every lsd-iteration directive). As a backstop: whenever you are awoken
+for ANY reason (another teammate's message, a user nudge) and an lsd-iteration directive is
+still outstanding with no [ITERATION-COMPLETE], do NOT passively wait again — check the
+filesystem directly: if `analysis/iteration_NN/solncounter` (or a `*.sol` file) exists and no
+LSD process is running, the solver already finished and the engineer stalled before signalling.
+Read the solution count from `solncounter` yourself, write the [ITERATION-COMPLETE] section to
+CASE-PROGRESS.md from the filesystem, and resume the workflow (push the next directive). This
+converts an indefinite hang into an immediate recovery.
 
 **Parse from CASE-PROGRESS.md:** solution count per iteration, constraints added/removed, sp2 checks, H budget status, HMBC correlations used (X/Y), last iteration number.
 
@@ -293,7 +305,9 @@ When all 3 checkpoints are complete (or any checkpoint fails with error/timeout 
 - Do NOT proceed to ranking
 - Proceed directly to smoke_test_report step
 
-**Completion signals (normal mode only, when SMOKE_TEST is false):** solution_count <= 10 → present_results | ranking task completed → present_results | 10 iterations reached → present_results with caveats | DA flags issue → detect_loops.
+**Completion signals (normal mode only, when SMOKE_TEST is false):** solution_count <= 10 → ranking (then identity_gate) | [RANKING-COMPLETE] received → **identity_gate** (post-solution G-IDENT review) → present_results | 10 iterations reached → ranking → identity_gate → present_results with caveats | DA flags issue → detect_loops.
+
+**IMPORTANT — never go straight from [RANKING-COMPLETE] to present_results/terminate_team.** Once `analysis/final_results.md` exists, the run is NOT done until the post-solution identity_gate step has run (the devils-advocate's independent G-IDENT name↔structure cross-check). Skipping it silently drops the D-04 advisory layer (the failure observed in the CASE5 run, where the DA was never re-invoked post-solution).
 
 **Iteration management (create next tasks):**
 
@@ -351,7 +365,7 @@ SendMessage(
    SendMessage(
      type="message",
      recipient="lsd-engineer",
-     content="[BEGIN] lsd-iteration-{next_iter:02d} — build iteration {next_iter} now: read analysis/iteration_{current_iter:02d}/compound.lsd, carry ALL constraints forward, add the next HMBC batch, request DA validation, then run the solver and send [ITERATION-COMPLETE].",
+     content="[BEGIN] lsd-iteration-{next_iter:02d} — build iteration {next_iter} now: read analysis/iteration_{current_iter:02d}/compound.lsd, carry ALL constraints forward, add the next HMBC batch, request DA validation, then run the solver. Send [ITERATION-COMPLETE] with the solution count the INSTANT the solver exits — do NOT block it on SMILES conversion (skip conversion if the count is large); ending your turn after a solver run without [ITERATION-COMPLETE] hangs the whole run.",
      summary="Kick off LSD iteration {next_iter}"
    )
    ```
@@ -613,6 +627,32 @@ Manual review required. See CASE-PROGRESS.md for full iteration history.
 ```
 
 **After presenting escalation report:** STOP. User must investigate.
+</step>
+
+<step name="identity_gate">
+**Post-solution G-IDENT review (mandatory before present_results — the D-04 independent advisory layer).**
+
+This step runs ONCE, after `[RANKING-COMPLETE]` (i.e. `analysis/final_results.md` exists) and BEFORE `deliver_advisory_and_results` / `terminate_team`. It is the genuinely independent second opinion on the reported name↔structure mapping. The solution-analyst's own run of the deterministic `lucy identify` is the BINDING check; this G-IDENT pass is the separate LLM cross-check (it must NOT re-run `lucy identify`).
+
+The devils-advocate is idle and will not act on its own — you MUST push the trigger:
+
+```
+SendMessage(
+  type="message",
+  recipient="devils-advocate",
+  content="[BEGIN] G-IDENT — post-solution name↔structure review. analysis/final_results.md is written. Run ONLY the G-IDENT gate (Section 5 / post-solution): read the reported trivial name + the top SMILES, reason INDEPENDENTLY about whether the name plausibly matches the drawn structure — do NOT call lucy identify / derive_identity (that is the analyst's binding layer). Apply the CASE4 (wrong-isomer/literature name) and CASE5 (indigo↔isoindigo↔indirubin) triggers. Reply [G-IDENT-PASSED] or [G-IDENT-FLAGGED] with a one-line rationale.",
+  summary="Post-solution G-IDENT review"
+)
+```
+
+Then wait for the devils-advocate's reply (it arrives as a turn and wakes you). On reply:
+- Write a `### Devils-Advocate (G-IDENT post-solution)` entry into CASE-PROGRESS.md with the verdict + rationale.
+- **[G-IDENT-FLAGGED]** is advisory and NEVER blocks the report. If flagged, ensure the reported trivial name in `final_results.md` is rendered `(tentative, unverified)` and carry the DA's concern into the results presentation. Then proceed.
+- **[G-IDENT-PASSED]**: proceed.
+
+If the devils-advocate errors or does not reply within a reasonable window, note "G-IDENT review unavailable" in CASE-PROGRESS.md and proceed (advisory, non-blocking) — do NOT hang the run waiting on it.
+
+After recording the G-IDENT outcome, proceed to deliver_advisory_and_results.
 </step>
 
 <step name="deliver_advisory_and_results">

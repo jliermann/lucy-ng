@@ -566,6 +566,8 @@ Action required: lsd-engineer must fix CRITICAL issues before solver run
 
 Steps 1–12 are the PRE-SOLVER, per-iteration constraint-validation workflow. The G-IDENT gate runs on a DIFFERENT trigger and DIFFERENT input:
 
-13. **After the solution-analyst writes `analysis/final_results.md`** (post-solution), run the G-IDENT gate (Section 5, Check 5): read the reported name + top SMILES, independently reason about whether the name plausibly matches the drawn structure (do NOT call the deterministic `lucy identify` tool — that is the analyst's binding layer; G-IDENT is the independent second opinion). If the reported trivial name does not match the structure, send a WARNING (advisory, never blocks) recommending the name be downgraded to `(tentative, unverified)`. Apply the CASE4 (wrong-isomer/literature name) and CASE5 (indigo↔isoindigo↔indirubin) worked triggers.
+13. **After the solution-analyst writes `analysis/final_results.md`** (post-solution), the coordinator sends you a `[BEGIN] G-IDENT` request. Run the G-IDENT gate (Section 5, Check 5): read the reported name + top SMILES, independently reason about whether the name plausibly matches the drawn structure (do NOT call the deterministic `lucy identify` tool — that is the analyst's binding layer; G-IDENT is the independent second opinion). Apply the CASE4 (wrong-isomer/literature name) and CASE5 (indigo↔isoindigo↔indirubin) worked triggers. **Reply to the coordinator via SendMessage with exactly one of:**
+    - `[G-IDENT-PASSED]` + a one-line rationale — the reported name plausibly matches the structure.
+    - `[G-IDENT-FLAGGED]` + a one-line rationale — the name does not match; recommend it be downgraded to `(tentative, unverified)`. This is advisory and NEVER blocks the report.
 
 </workflow>
