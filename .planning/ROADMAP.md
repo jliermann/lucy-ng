@@ -45,7 +45,7 @@ first blind runs of CASE6/7/8 to surface any 4th defect.
 
 - [x] **Phase 86: Ranker Path Unification (RANK)** - Make `lucy lsd rank` and `lucy predict c13` share one prediction path so the ranker stops under-scoring the truth. (completed 2026-06-23)
 - [x] **Phase 87: Final Identity-Verification Gate (IDENT)** - Tool-derived identity + an independent name↔structure gate that blocks naming hallucination. (completed 2026-06-23)
-- [ ] **Phase 88: Aliphatic Multiplicity Robustness (MULT)** - Enumerate all viable multiplicity families when multiplicity is not hard-determinable; MAE-independent clean-but-wrong guardrail.
+- [x] **Phase 88: Aliphatic Multiplicity Robustness (MULT)** - Enumerate all viable multiplicity families when multiplicity is not hard-determinable; MAE-independent clean-but-wrong guardrail. (completed 2026-06-25)
 - [ ] **Phase 89: Blind-UAT Validation Gate (UAT)** - Blind CASE4/5 re-runs + CASE6/7/8 first runs prove the IDENT/MULT fixes and surface any 4th defect.
 
 ## Phase Details
@@ -90,7 +90,7 @@ first blind runs of CASE6/7/8 to surface any 4th defect.
 **Plans**: 3 plans
 - [x] 88-01-PLAN.md — Python seam: `multiplicity_edited` + `negative_crosspeak_count` on `lucy pick hsqc` (deterministic D-05 trigger, unit-tested) [MULT-04]
 - [x] 88-02-PLAN.md — nmr-chemist `[MULTIPLICITY-AMBIGUOUS]` + viable families; lsd-engineer per-family LSD runs + deduped union ranking [MULT-04, MULT-01]
-- [ ] 88-03-PLAN.md — orchestrator pre-accept coverage gate (MAE-independent, SEARCHED-not-RANKED) + binding DA `[MULT-EVIDENCE-FOR]` flag [MULT-02, MULT-03]
+- [x] 88-03-PLAN.md — orchestrator pre-accept coverage gate (MAE-independent, SEARCHED-not-RANKED) + binding DA `[MULT-EVIDENCE-FOR]` flag [MULT-02, MULT-03]
 
 ### Phase 89: Blind-UAT Validation Gate
 **Goal**: Independent blind CASE runs prove the RANK/IDENT/MULT fixes hold end-to-end and surface any remaining "clean-but-wrong" defect class.
@@ -110,5 +110,5 @@ first blind runs of CASE6/7/8 to surface any 4th defect.
 |-------|----------------|--------|-----------|
 | 86. Ranker Path Unification | 2/2 | Complete    | 2026-06-23 |
 | 87. Final Identity-Verification Gate | 4/4 | Complete    | 2026-06-24 |
-| 88. Aliphatic Multiplicity Robustness | 2/3 | In Progress|  |
+| 88. Aliphatic Multiplicity Robustness | 3/3 | Complete   | 2026-06-25 |
 | 89. Blind-UAT Validation Gate | 0/? | Not started | - |

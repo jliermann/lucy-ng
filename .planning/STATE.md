@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v9.1
 milestone_name: CASE Final-Answer Correctness & Verification Gates
-status: executing
-stopped_at: Completed 88-02-PLAN.md (CASE producer-agent multiplicity wiring)
-last_updated: "2026-06-25T10:09:33.260Z"
-last_activity: 2026-06-25 -- 88-02 nmr-chemist [MULTIPLICITY-AMBIGUOUS] + lsd-engineer per-family/union wiring complete
+status: verifying
+stopped_at: Completed 88-03-PLAN.md (multiplicity coverage gate + binding DA flag)
+last_updated: "2026-06-25T10:22:36.076Z"
+last_activity: 2026-06-25 -- 88-03 MAE-independent coverage gate (case.md) + binding G-MULT (devils-advocate) complete; Phase 88 done
 progress:
   total_phases: 4
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 9
-  completed_plans: 8
-  percent: 50
+  completed_plans: 9
+  percent: 75
 ---
 
 # lucy-ng State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-06-23)
 
 ## Current Position
 
-Phase: 88 (Aliphatic Multiplicity Robustness) — EXECUTING
-Plan: 3 of 3
-Status: Executing Phase 88 (88-01 + 88-02 complete; 88-03 coverage gate next)
-Last activity: 2026-06-25 -- 88-02 producer-agent multiplicity wiring complete (MULT-04 + MULT-01)
+Phase: 88 (Aliphatic Multiplicity Robustness) — COMPLETE
+Plan: 3 of 3 (all complete)
+Status: Phase 88 complete (88-01 detector + 88-02 producer wiring + 88-03 coverage gate/binding DA flag) — ready for verification; next = Phase 89 blind UAT
+Last activity: 2026-06-25 -- 88-03 MAE-independent coverage gate + binding G-MULT complete (MULT-02 + MULT-03)
 
 ## Milestone v9.1 Phases
 
@@ -83,7 +83,7 @@ Items acknowledged and deferred at v9.0 milestone close on 2026-06-17 (the rank-
 - v9.0: 14 phases (72-85), 34 plans, 41 tasks; shipped 2026-06-17
 - v9.1 Phase 86 (Ranker Path Unification): 2 plans, 4 tasks; 86-02 ~8 min, 3 files, 2 commits
 - v9.1 Phase 87 (Final Identity-Verification Gate): 2 plans + 2 gap-closure (87-03/04); 87-02 ~6 min, 2 files; 87-03 ~3 min, 6 files (3 created), 3 commits
-- v9.1 Phase 88 (Aliphatic Multiplicity Robustness): 88-01 ~6 min, 2 files, 2 commits (feat e747531 + test c0dfe3b)
+- v9.1 Phase 88 (Aliphatic Multiplicity Robustness): 88-01 ~6 min, 2 files, 2 commits (feat e747531 + test c0dfe3b); 88-02 ~12 min, 2 files, 2 commits (636ad5a + ae8b3dc); 88-03 ~11 min, 4 files, 3 commits (d1810d0 + b9d6f9f + a090ae0) — Phase 88 COMPLETE
 - Cumulative: 87 phases total
 
 ## Accumulated Context
@@ -111,6 +111,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Phase 87]: [87-02]: Wired check-identity into the CASE agents. Analyst derives identity from the tool before writing the report header (verdict-keyed: confirmed name plain; confirmed-structure/novel/tentative => InChIKey+canonical SMILES primary, trivial name '(tentative, unverified)'). Devils-advocate gained G-IDENT, a POST-SOLUTION advisory gate on final_results.md (distinct lifecycle from pre-solver gates) that reasons independently about name<->structure and does NOT call the deterministic tool (preserving D-05 independence); CASE4/CASE5 worked triggers. Markdown prompt edits; fresh session needed to reload; functional validation by Phase 89 blind UAT. IDENT-01/02(advisory)/03 done.
 - [Phase ?]: [87-04]: Re-pointed both CASE agents from scripts/verify_case_solution.py check-identity to the installed lucy identify --format json (GAP-87-A runtime closure); invocation-path-only edit, JSON verdict contract + IDENT-03 rendering + G-IDENT independence (D-05) preserved. Validated by next blind CASE5 UAT, not unit tests.
 - [Phase ?]: 88-02: multiplicity-ambiguity signal combines programmatic multiplicity_edited with chemist APT/DEPT reliability verdict; lsd-engineer runs per-family iteration_NN_<family> runs + deduped union rank
+- [Phase ?]: [88-03]: MAE-independent multiplicity guardrails — case.md coverage_gate (PASS iff viable_families ⊆ searched_families AND every DA-mandated model searched, SEARCHED-not-RANKED, guarded by [MULTIPLICITY-AMBIGUOUS]); devils-advocate binding G-MULT [MULT-EVIDENCE-FOR] model=X closeable only by an actual iteration_NN_X/ search. Closes CASE4 silent-guardrail defeat (MULT-02/03). Prompt edits; fresh session; validated by blind CASE4 UAT-01.
 
 ### Pending Todos
 
@@ -131,13 +132,13 @@ Key v9.0 constraint (still in force): SYME and DEFF NOT are lucy-ng abstractions
 
 ## Session Continuity
 
-Last session: 2026-06-25T10:09:15.319Z
-Stopped at: Completed 88-01-PLAN.md (multiplicity_edited detector)
-Resume with: `/gsd-execute-phase 88` (plan 88-02 — nmr-chemist `[MULTIPLICITY-AMBIGUOUS]` signal + lsd-engineer per-family runs).
+Last session: 2026-06-25T10:22:10.302Z
+Stopped at: Completed 88-03-PLAN.md (multiplicity coverage gate + binding DA flag) — Phase 88 COMPLETE
+Resume with: verify Phase 88, then `/gsd-plan-phase 89` (Blind-UAT Validation Gate; UAT-01 = blind CASE4 is the MULT acceptance test). Phase 89 MUST run on a FRESH BLIND instance.
 
 ---
-*Last updated: 2026-06-25 — 88-01 complete (multiplicity_edited detector, MULT-04 detection basis)*
+*Last updated: 2026-06-25 — 88-03 complete (MAE-independent coverage gate + binding G-MULT; Phase 88 done, MULT-01..04 satisfied at prompt level)*
 
 ## Operator Next Steps
 
-- Execute the next plan with `/gsd-execute-phase 88` (88-02)
+- Verify Phase 88, then plan the blind-UAT gate with `/gsd-plan-phase 89`.
