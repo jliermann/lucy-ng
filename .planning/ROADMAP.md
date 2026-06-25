@@ -87,7 +87,10 @@ first blind runs of CASE6/7/8 to surface any 4th defect.
   2. The nmr-chemist emits an explicit "multiplicity-ambiguous → enumerate families" signal when HSQC is not multiplicity-edited, and the lsd-engineer acts on it deterministically.
   3. An MAE-independent clean-but-wrong guardrail fires: if ≥2 viable multiplicity families exist but only one was searched, the run does not accept — it reopens and searches the other(s).
   4. A devils-advocate "evidence FOR model X" multiplicity flag forces model X into the search space and cannot be dismissed by the convergence narrative.
-**Plans**: TBD
+**Plans**: 3 plans
+- [ ] 88-01-PLAN.md — Python seam: `multiplicity_edited` + `negative_crosspeak_count` on `lucy pick hsqc` (deterministic D-05 trigger, unit-tested) [MULT-04]
+- [ ] 88-02-PLAN.md — nmr-chemist `[MULTIPLICITY-AMBIGUOUS]` + viable families; lsd-engineer per-family LSD runs + deduped union ranking [MULT-04, MULT-01]
+- [ ] 88-03-PLAN.md — orchestrator pre-accept coverage gate (MAE-independent, SEARCHED-not-RANKED) + binding DA `[MULT-EVIDENCE-FOR]` flag [MULT-02, MULT-03]
 
 ### Phase 89: Blind-UAT Validation Gate
 **Goal**: Independent blind CASE runs prove the RANK/IDENT/MULT fixes hold end-to-end and surface any remaining "clean-but-wrong" defect class.
