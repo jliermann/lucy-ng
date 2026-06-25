@@ -2,9 +2,10 @@
 
 import json
 
+import numpy as np
 from click.testing import CliRunner
 
-from lucy_ng.cli.pick import pick
+from lucy_ng.cli.pick import _detect_multiplicity_edited, pick
 
 
 class TestPick1D:
@@ -180,6 +181,54 @@ class TestPickHSQC:
             assert "f1_position" in data["peaks"][0]
             assert "f2_position" in data["peaks"][0]
             assert "intensity" in data["peaks"][0]
+
+    def test_pick_hsqc_not_multiplicity_edited(self) -> None:
+        """A non-edited HSQC (data/Ibuprofen/6) reports multiplicity_edited False.
+
+        Mirrors test_pick_1d_c13_no_negative: no significant negative
+        cross-peaks => NOT multiplicity-edited => sign-ambiguous.
+        """
+        runner = CliRunner()
+        result = runner.invoke(
+            pick, ["hsqc", "data/Ibuprofen/6", "--format", "json"]
+        )
+        assert result.exit_code == 0, f"CLI failed: {result.output}"
+        data = json.loads(result.output)
+        assert data["multiplicity_edited"] is False, data
+        assert data["negative_crosspeak_count"] == 0, data
+
+
+class TestDetectMultiplicityEdited:
+    """Unit tests for the deterministic _detect_multiplicity_edited helper."""
+
+    def test_detect_multiplicity_edited_true(self) -> None:
+        """Synthesized HSQC with a negative CH2 cross-peak => True, count > 0.
+
+        A multiplicity-edited HSQC phases CH2 cross-peaks with opposite sign,
+        producing genuine negative intensity below -0.05 * max_abs.
+        """
+        data = np.zeros((64, 256))
+        # Positive CH cross-peak (sets max_abs).
+        data[10, 50] = 1000.0
+        # Negative CH2 cross-peak well below -0.05 * max_abs (= -50.0).
+        data[30, 120] = -1000.0
+        multiplicity_edited, count = _detect_multiplicity_edited(data)
+        assert multiplicity_edited is True
+        assert count > 0
+
+    def test_detect_multiplicity_edited_false_on_zeros(self) -> None:
+        """All-zero data degrades to the safe default (False, 0) without raising."""
+        data = np.zeros((64, 256))
+        multiplicity_edited, count = _detect_multiplicity_edited(data)
+        assert multiplicity_edited is False
+        assert count == 0
+
+    def test_detect_multiplicity_edited_empty(self) -> None:
+        """Empty data degrades to the safe default (False, 0) without raising (T-88-01)."""
+        data = np.empty((0, 0))
+        multiplicity_edited, count = _detect_multiplicity_edited(data)
+        assert multiplicity_edited is False
+        assert count == 0
 
 
 class TestPickHMBC:
