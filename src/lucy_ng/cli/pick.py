@@ -33,19 +33,25 @@ def _detect_multiplicity_edited(data: "np.ndarray[Any, Any]") -> tuple[bool, int
 
     Returns:
         Tuple of (multiplicity_edited, negative_crosspeak_count). Degrades to
-        the safe default ``(False, 0)`` on empty/all-zero data without raising
-        (mirrors the ``_compute_2d_noise_sigma`` ``data.size == 0`` guard).
+        the safe default ``(False, 0)`` on empty / all-zero / all-non-finite
+        data without raising. NaN/inf pixels are excluded so a single non-finite
+        value can neither mask real negative cross-peaks nor poison the
+        magnitude scale; the boolean is derived from the count so the two can
+        never disagree (T-88-01; code-review WR-01).
     """
-    # Malformed/empty-data degrade-to-safe-default: never call np.min on an
-    # empty array or divide by a zero max (T-88-01).
     if data.size == 0:
         return False, 0
-    max_abs = float(np.max(np.abs(data)))
+    # Only finite pixels contribute to the scale and the negative test — a NaN
+    # or inf must not change the verdict.
+    finite = np.isfinite(data)
+    if not bool(finite.any()):
+        return False, 0
+    max_abs = float(np.max(np.abs(data[finite])))
     if max_abs == 0.0:
         return False, 0
     cutoff = -0.05 * max_abs
-    multiplicity_edited = bool(np.min(data) < cutoff)
-    negative_crosspeak_count = int(np.count_nonzero(data < cutoff))
+    negative_crosspeak_count = int(np.count_nonzero(finite & (data < cutoff)))
+    multiplicity_edited = negative_crosspeak_count > 0
     return multiplicity_edited, negative_crosspeak_count
 
 

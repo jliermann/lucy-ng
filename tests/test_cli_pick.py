@@ -230,6 +230,40 @@ class TestDetectMultiplicityEdited:
         assert multiplicity_edited is False
         assert count == 0
 
+    def test_detect_multiplicity_edited_nan_with_real_negative(self) -> None:
+        """A NaN pixel must NOT mask a genuine negative cross-peak (WR-01).
+
+        The boolean is derived from the count over finite pixels, so a stray
+        NaN cannot flip an edited HSQC to (False, 0).
+        """
+        data = np.zeros((64, 256))
+        data[10, 50] = 1000.0
+        data[30, 120] = -1000.0  # genuine negative CH2 cross-peak
+        data[5, 5] = np.nan
+        multiplicity_edited, count = _detect_multiplicity_edited(data)
+        assert multiplicity_edited is True
+        assert count == 1
+
+    def test_detect_multiplicity_edited_inf_does_not_poison_scale(self) -> None:
+        """An inf pixel must not poison max_abs and mask real negatives (WR-01)."""
+        data = np.zeros((64, 256))
+        data[10, 50] = 1000.0
+        data[30, 120] = -1000.0  # genuine negative cross-peak
+        data[0, 0] = np.inf
+        multiplicity_edited, count = _detect_multiplicity_edited(data)
+        assert multiplicity_edited is True
+        assert count == 1
+
+    def test_detect_multiplicity_edited_boolean_count_consistent(self) -> None:
+        """Boolean and count never disagree: edited iff count > 0."""
+        for data in (
+            np.zeros((8, 8)),
+            np.array([[1.0, -1.0], [np.nan, np.inf]]),
+            np.full((4, 4), np.nan),
+        ):
+            edited, count = _detect_multiplicity_edited(data)
+            assert edited == (count > 0)
+
 
 class TestPickHMBC:
     """Tests for lucy pick hmbc command."""
