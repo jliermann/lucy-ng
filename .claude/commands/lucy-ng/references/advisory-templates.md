@@ -288,6 +288,60 @@ floor is already at k=3.
 
 </step>
 
+<step name="multiplicity_coverage_reopen_advisory">
+
+## Advisory: Multiplicity Coverage Gap (reopen)
+
+<!--
+RELOAD NOTE: this reference is a repo `.claude/` skill file symlinked into `~/.claude`. This is a
+MARKDOWN PROMPT EDIT — a FRESH Claude Code session is REQUIRED to reload. NOT unit-testable this
+session; functional validation is the blind CASE4 re-run (UAT-01 / Phase 89).
+-->
+
+**Deliver to:** lsd-engineer via SendMessage.
+
+**When to use:** the case.md `coverage_gate` step returned FAIL — a `[MULTIPLICITY-AMBIGUOUS]`
+run is about to accept but a viable multiplicity family (`viable_families ⊄ searched_families`)
+or a Devils-Advocate `[MULT-EVIDENCE-FOR] model=X` was never searched. This is COVERAGE-triggered,
+NOT MAE-triggered — do not wait for a poor MAE.
+
+**Advisory text (WHAT not HOW — name the missing family/model and the search requirement; do NOT
+dictate the MULT lines):**
+
+```
+[SUPERVISOR ADVISORY - MULTIPLICITY COVERAGE GAP]
+
+The run cannot accept yet: a viable aliphatic multiplicity family was identified but never
+searched. Coverage check (CASE-PROGRESS.md ## Multiplicity Coverage) is the source of truth.
+
+Missing from the searched set: <family/model name(s), e.g. "ethyl (2×CH₃+CH₂+CH₂)" and/or a
+DA-mandated model X from [MULT-EVIDENCE-FOR]>.
+
+Required action:
+- Search EACH missing family/model in its OWN iteration_NN_<family>/ dir, fully constrained
+  (same HSQC/HMBC/ring-exclusion/BOND/COSY/fragment/inventory constraints; differ ONLY in the
+  MULT block). Read your existing constraint set — do NOT reconstruct from scratch.
+- A family counts as SEARCHED once its LSD run produces an [ITERATION-COMPLETE] — even if you
+  skip solutions.smi conversion for size (SEARCHED-not-RANKED). Do not drop a large family.
+- After the missing run(s) complete, the coordinator re-runs the deduped union rank and
+  re-enters the coverage gate.
+
+This is a COVERAGE requirement, independent of MAE/plausibility: a low-MAE leading model does
+NOT close a missing family. A Devils-Advocate [MULT-EVIDENCE-FOR] flag is closeable ONLY by an
+actual search of that model — never by argument or convergence narrative.
+
+Do NOT restart from scratch. Add the missing family(ies) alongside the families already searched.
+```
+
+**SendMessage target:** lsd-engineer (the coverage defect is a missing search, not a picking
+defect). Optionally notify devils-advocate to confirm each [MULT-EVIDENCE-FOR] model is now in
+the searched set.
+**After delivering advisory:** Return to monitor_progress. On the missing family/model's
+[ITERATION-COMPLETE], update searched_families in the ledger, re-run the union rank, and
+re-enter the coverage_gate. Do not proceed to identity_gate until coverage_gate PASSES.
+
+</step>
+
 <anti_patterns>
 
 ## What NOT to Do

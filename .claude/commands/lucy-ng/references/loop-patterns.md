@@ -87,4 +87,48 @@ this is the characteristic false-convergence trap for this pattern.
 **Budget:** Exactly 1 re-examination cycle. After that, honest termination.
 Do NOT escalate to the diagnostic specialist (it is LSD-focused, not pick-focused).
 
+### Multiplicity Coverage Gap
+
+<!--
+RELOAD NOTE: this reference is a repo `.claude/` skill file symlinked into `~/.claude`. This is
+a MARKDOWN PROMPT EDIT — a FRESH Claude Code session is REQUIRED to reload. NOT unit-testable
+this session; functional validation is the blind CASE4 re-run (UAT-01 / Phase 89).
+-->
+
+**Definition:** A `[MULTIPLICITY-AMBIGUOUS]` run is about to accept while a viable aliphatic
+multiplicity family — or a Devils-Advocate mandated model — was never actually searched. This is
+the coverage analogue of Quality Convergence Failure: it REOPENS the converged run, but its
+trigger is missing COVERAGE, not a poor MAE/plausibility.
+
+**Trigger (COVERAGE-triggered, NOT MAE-triggered):**
+- A `[MULTIPLICITY-AMBIGUOUS]` record exists AND `viable_families ⊄ searched_families`
+  (some enumerated family has no `iteration_NN_<family>/` run), **OR**
+- A Devils-Advocate `[MULT-EVIDENCE-FOR] model=X` (G-MULT) was emitted and model X is not in
+  `searched_families`.
+
+**Data source:** the CASE-PROGRESS.md `## Multiplicity Coverage` section (viable_families /
+searched_families / DA-mandated models / gate verdict). This pattern is evaluated by the
+case.md `coverage_gate` step, not by detect_loops' MAE/count heuristics.
+
+**Counting rule — SEARCHED, not RANKED:** a family counts as searched once it has its own
+constrained LSD run + `[ITERATION-COMPLETE]`. A family whose `solutions.smi` conversion was
+skipped because the count was large (the anti-stall rule) STILL counts as searched — do NOT drop
+it from coverage just because it produced no ranked `solutions.smi`. Never key this off MAE.
+
+**Action — REOPEN:** push the lsd-engineer (via the multiplicity-coverage reopen advisory in
+advisory-templates.md — WHAT not HOW) to run the missing family(ies)/model(s), each in its own
+`iteration_NN_<family>/` dir with its own full MULT constraints. When their `[ITERATION-COMPLETE]`s
+arrive, re-run the deduped union rank, update searched_families, and re-enter the coverage gate.
+Do NOT accept until `viable_families ⊆ searched_families` AND every DA-mandated model is searched.
+
+**Why this is different from Patterns 1–5:** Patterns 1–4 are LSD-level symptoms; Pattern 5 fires
+on poor quality (MAE/plausibility) of a converged run. Multiplicity Coverage Gap fires when the
+run looks *fully healthy* — converged, low-MAE, plausible — but a whole multiplicity CLASS was
+never in the search space (the CASE4 trap: the iPr class scored MAE 1.75 "PLAUSIBLE" while the
+ethyl truth was never searched). MAE cannot see a class that was never searched; only coverage can.
+
+**Budget:** Reopen as many times as needed to cover every viable family + DA-mandated model
+(bounded by the nmr-chemist's hard family cap, ≤3–4). The gate is deterministic — it terminates
+once coverage is complete.
+
 </loop_detection_reference>
