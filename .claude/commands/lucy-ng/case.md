@@ -216,6 +216,33 @@ Read the full CASE-PROGRESS.md format template before writing any progress entri
 Read file: ~/.claude/commands/lucy-ng/references/progress-format.md
 
 The orchestrator is the SOLE AUTHOR of CASE-PROGRESS.md. Create it at `<compound_path>/analysis/CASE-PROGRESS.md` after receiving [SETUP-COMPLETE] from nmr-chemist. Update after every [ITERATION-COMPLETE], [VALIDATION-PASSED/BLOCKED], and [RANKING-COMPLETE] message.
+
+<!--
+RELOAD NOTE: case.md is a repo `.claude/` skill prompt symlinked into `~/.claude`. Behavior
+changes here are MARKDOWN PROMPT EDITS — a FRESH Claude Code session is REQUIRED to reload the
+edited orchestrator. They are NOT unit-testable this session; functional validation is the blind
+CASE4 re-run (UAT-01 / Phase 89).
+-->
+
+**`## Multiplicity Coverage` ledger (only when a `[MULTIPLICITY-AMBIGUOUS]` record exists).**
+When the nmr-chemist has emitted a `[MULTIPLICITY-AMBIGUOUS]` signal (see lucy-nmr-chemist.md
+Section 5b), maintain a `## Multiplicity Coverage` section in CASE-PROGRESS.md as the single
+source of truth the pre-accept coverage gate reads. Record four things:
+
+- **viable_families** — the numbered list from the nmr-chemist's `[MULTIPLICITY-AMBIGUOUS]`
+  signal (e.g. `iPr (3×CH₃+CH)`, `ethyl (2×CH₃+CH₂+CH₂)`).
+- **searched_families** — one entry per family that produced **its own `iteration_NN_<family>/`
+  run + a matching `[ITERATION-COMPLETE]`**. Count a family as SEARCHED **even if its
+  `solutions.smi` conversion was skipped** because the count was large (the SEARCHED-not-RANKED
+  rule from Plan 88-02). Do NOT require a ranked `solutions.smi` and do NOT key this off MAE or
+  plausibility — searched means the constrained LSD run ran and signalled, nothing more.
+- **DA-mandated models** — every model X from a Devils-Advocate `[MULT-EVIDENCE-FOR] model=X`
+  message (G-MULT). These are binding mandatory-search items closeable ONLY by an actual
+  `iteration_NN_X/` search.
+- **gate verdict** — PASS / FAIL written by the coverage_gate step (see below).
+
+If no `[MULTIPLICITY-AMBIGUOUS]` record exists, omit this section entirely — the single-family
+flow is unaffected.
 </step>
 
 <step name="validate_message">
@@ -305,9 +332,9 @@ When all 3 checkpoints are complete (or any checkpoint fails with error/timeout 
 - Do NOT proceed to ranking
 - Proceed directly to smoke_test_report step
 
-**Completion signals (normal mode only, when SMOKE_TEST is false):** solution_count <= 10 → ranking (then identity_gate) | [RANKING-COMPLETE] received → **identity_gate** (post-solution G-IDENT review) → present_results | 10 iterations reached → ranking → identity_gate → present_results with caveats | DA flags issue → detect_loops.
+**Completion signals (normal mode only, when SMOKE_TEST is false):** solution_count <= 10 → ranking → **coverage_gate** (when ambiguous) → identity_gate | [RANKING-COMPLETE] received → **coverage_gate** (when ambiguous) → **identity_gate** (post-solution G-IDENT review) → present_results | 10 iterations reached → ranking → coverage_gate (when ambiguous) → identity_gate → present_results with caveats | DA flags issue → detect_loops.
 
-**IMPORTANT — never go straight from [RANKING-COMPLETE] to present_results/terminate_team.** Once `analysis/final_results.md` exists, the run is NOT done until the post-solution identity_gate step has run (the devils-advocate's independent G-IDENT name↔structure cross-check). Skipping it silently drops the D-04 advisory layer (the failure observed in the CASE5 run, where the DA was never re-invoked post-solution).
+**IMPORTANT — never go straight from [RANKING-COMPLETE] to present_results/terminate_team.** Once `analysis/final_results.md` exists, the run is NOT done until (a) — **when a `[MULTIPLICITY-AMBIGUOUS]` record exists** — the pre-accept **coverage_gate** step has PASSED, and (b) the post-solution identity_gate step has run (the devils-advocate's independent G-IDENT name↔structure cross-check). The coverage_gate runs FIRST (it can REOPEN the run to search a missing family); only once it passes does identity_gate run. Skipping the identity_gate silently drops the D-04 advisory layer (the CASE5 failure); skipping the coverage_gate silently accepts a run where a viable multiplicity family was never searched (the CASE4 failure).
 
 **Iteration management (create next tasks):**
 
@@ -627,6 +654,57 @@ Manual review required. See CASE-PROGRESS.md for full iteration history.
 ```
 
 **After presenting escalation report:** STOP. User must investigate.
+</step>
+
+<step name="coverage_gate">
+**Pre-accept multiplicity coverage gate (D-04 / MULT-02 — deterministic, MAE-INDEPENDENT).**
+
+<!--
+RELOAD NOTE: case.md is symlinked into ~/.claude. This is a MARKDOWN PROMPT EDIT — a FRESH
+Claude Code session is REQUIRED to reload. NOT unit-testable this session; functional
+validation is the blind CASE4 re-run (UAT-01 / Phase 89).
+-->
+
+**Guard — when this step runs:** ONLY when a `[MULTIPLICITY-AMBIGUOUS]` record exists for this
+run (i.e. a `## Multiplicity Coverage` ledger is present in CASE-PROGRESS.md). If there is no
+`[MULTIPLICITY-AMBIGUOUS]` record, **SKIP this step entirely** and proceed straight to
+identity_gate — the single-family flow is completely unaffected.
+
+**Lifecycle position:** This runs at the SAME pre-accept lifecycle point as identity_gate —
+after the union has been ranked and `analysis/final_results.md` exists, BEFORE accept /
+present_results — and it runs BEFORE identity_gate (it may REOPEN the run, so it must resolve
+first). It is the COVERAGE-triggered analogue of detect_loops Pattern 5 "Quality Convergence
+Failure" (which reopens on MAE); coverage_gate reopens on missing-family COVERAGE, not MAE.
+
+**The gate is deterministic and MAE-INDEPENDENT.** It does NOT look at MAE, plausibility, or
+rank. (The CASE4 wrong-class structure scored MAE 1.75 "PLAUSIBLE" and the MAE>4 quality loop
+stayed silent — that is exactly why this gate must NOT key off MAE.) Read the
+`## Multiplicity Coverage` ledger and evaluate two set-containment conditions:
+
+1. `viable_families ⊆ searched_families` — every family the nmr-chemist enumerated has its own
+   `iteration_NN_<family>/` run + `[ITERATION-COMPLETE]`. Count by **SEARCHED, not RANKED**: a
+   family whose `solutions.smi` conversion was skipped for size still counts as searched (do NOT
+   require a ranked `solutions.smi`).
+2. every **DA-mandated model** (each `[MULT-EVIDENCE-FOR] model=X` from G-MULT) `∈ searched_families`.
+
+**Verdict:**
+
+- **PASS** — both conditions hold. Write `gate verdict: PASS` to the `## Multiplicity Coverage`
+  ledger and proceed to identity_gate.
+- **FAIL** — any viable family OR any DA-mandated model is NOT in searched_families. The run
+  does **NOT accept**. Write `gate verdict: FAIL — missing: <family/model list>` to the ledger,
+  then **REOPEN**: push the lsd-engineer (via the multiplicity-coverage reopen advisory in
+  references/advisory-templates.md — WHAT not HOW: name the missing family/model and that it
+  must be searched in its own `iteration_NN_<family>/` dir) to run the missing family(ies)/
+  model(s). When their `[ITERATION-COMPLETE]`s arrive, re-run the deduped union rank
+  (per the lsd-engineer's union-ranking contract), update searched_families in the ledger, and
+  **re-enter coverage_gate**. Do not advance to identity_gate until the gate PASSES.
+
+This gate triggers on COVERAGE, never on MAE. A converged, plausible-looking, low-MAE run is
+STILL rejected if a viable family or a DA-mandated model was never searched. See
+references/loop-patterns.md "Multiplicity Coverage Gap" for the reopen pattern.
+
+After the gate PASSES, proceed to identity_gate.
 </step>
 
 <step name="identity_gate">
