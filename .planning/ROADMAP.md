@@ -110,5 +110,5 @@ first blind runs of CASE6/7/8 to surface any 4th defect.
 |-------|----------------|--------|-----------|
 | 86. Ranker Path Unification | 2/2 | Complete    | 2026-06-23 |
 | 87. Final Identity-Verification Gate | 4/4 | Complete    | 2026-06-24 |
-| 88. Aliphatic Multiplicity Robustness | 3/3 | Complete   | 2026-06-25 |
+| 88. Aliphatic Multiplicity Robustness | 3/3 | Complete    | 2026-06-25 |
 | 89. Blind-UAT Validation Gate | 0/? | Not started | - |

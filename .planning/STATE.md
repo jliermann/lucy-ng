@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v9.1
 milestone_name: CASE Final-Answer Correctness & Verification Gates
-status: verifying
-stopped_at: Completed 88-03-PLAN.md (multiplicity coverage gate + binding DA flag)
-last_updated: "2026-06-25T10:22:36.076Z"
+status: ready_to_plan
+stopped_at: Phase 88 complete (3/3) — ready to discuss Phase 89
+last_updated: 2026-06-25T10:34:39.850Z
 last_activity: 2026-06-25 -- 88-03 MAE-independent coverage gate (case.md) + binding G-MULT (devils-advocate) complete; Phase 88 done
 progress:
   total_phases: 4
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-23)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a multi-agent team that uses the intended solver pipeline — not a manual bypass
-**Current focus:** Phase 88 — Aliphatic Multiplicity Robustness
+**Current focus:** Phase 89 — blind uat validation gate
 
 ## Current Position
 
-Phase: 88 (Aliphatic Multiplicity Robustness) — COMPLETE
-Plan: 3 of 3 (all complete)
-Status: Phase 88 complete (88-01 detector + 88-02 producer wiring + 88-03 coverage gate/binding DA flag) — ready for verification; next = Phase 89 blind UAT
-Last activity: 2026-06-25 -- 88-03 MAE-independent coverage gate + binding G-MULT complete (MULT-02 + MULT-03)
+Phase: 89
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-06-25
 
 ## Milestone v9.1 Phases
 
@@ -79,7 +79,7 @@ Items acknowledged and deferred at v9.0 milestone close on 2026-06-17 (the rank-
 
 **Velocity:**
 
-- Total plans completed: 160 across 11 milestones (10 shipped + 1 abandoned) — v9.0 added 34 plans
+- Total plans completed: 163 across 11 milestones (10 shipped + 1 abandoned) — v9.0 added 34 plans
 - v9.0: 14 phases (72-85), 34 plans, 41 tasks; shipped 2026-06-17
 - v9.1 Phase 86 (Ranker Path Unification): 2 plans, 4 tasks; 86-02 ~8 min, 3 files, 2 commits
 - v9.1 Phase 87 (Final Identity-Verification Gate): 2 plans + 2 gap-closure (87-03/04); 87-02 ~6 min, 2 files; 87-03 ~3 min, 6 files (3 created), 3 commits
