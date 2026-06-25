@@ -1,6 +1,7 @@
 """CLI commands for peak picking from NMR spectra."""
 
 import json
+from typing import Any
 
 import click
 import numpy as np
@@ -16,6 +17,36 @@ from lucy_ng.readers import BrukerReader
 def pick() -> None:
     """Peak picking from spectra."""
     pass
+
+
+def _detect_multiplicity_edited(data: "np.ndarray[Any, Any]") -> tuple[bool, int]:
+    """Detect whether an HSQC is multiplicity-edited (deterministic, no LLM).
+
+    Ported verbatim from the proven ``lucy pick 1d`` ``negative_detected``
+    detector (np.min(data) < -0.05 * max_abs). A multiplicity-edited HSQC
+    phases CH2 cross-peaks with opposite sign, producing genuine negative
+    intensity well below the noise floor; no negatives => NOT edited =>
+    sign-ambiguous.
+
+    Args:
+        data: The 2D HSQC intensity matrix (``Spectrum2D.data``).
+
+    Returns:
+        Tuple of (multiplicity_edited, negative_crosspeak_count). Degrades to
+        the safe default ``(False, 0)`` on empty/all-zero data without raising
+        (mirrors the ``_compute_2d_noise_sigma`` ``data.size == 0`` guard).
+    """
+    # Malformed/empty-data degrade-to-safe-default: never call np.min on an
+    # empty array or divide by a zero max (T-88-01).
+    if data.size == 0:
+        return False, 0
+    max_abs = float(np.max(np.abs(data)))
+    if max_abs == 0.0:
+        return False, 0
+    cutoff = -0.05 * max_abs
+    multiplicity_edited = bool(np.min(data) < cutoff)
+    negative_crosspeak_count = int(np.count_nonzero(data < cutoff))
+    return multiplicity_edited, negative_crosspeak_count
 
 
 @pick.command("1d")
@@ -192,10 +223,19 @@ def pick_hsqc(path: str, threshold: float, output_format: str) -> None:
     spectrum = BrukerReader.read_2d(path)
     peaks = PeakPicker2D.pick_peaks(spectrum, threshold=threshold)
 
+    # Deterministic multiplicity-editing detector (MULT-04 / D-05), ported
+    # from the proven pick_1d negative_detected path. Independent of the
+    # peak-picking --threshold (uses the fixed 0.05 fraction).
+    multiplicity_edited, negative_crosspeak_count = _detect_multiplicity_edited(
+        spectrum.data
+    )
+
     if output_format == "json":
         data = {
             "experiment_type": spectrum.experiment_type,
             "count": len(peaks.peaks),
+            "multiplicity_edited": multiplicity_edited,
+            "negative_crosspeak_count": negative_crosspeak_count,
             "peaks": [
                 {
                     "f1_position": p.f1_position,
@@ -207,7 +247,13 @@ def pick_hsqc(path: str, threshold: float, output_format: str) -> None:
         }
         click.echo(json.dumps(data, indent=2))
     else:
-        click.echo(f"Found {len(peaks.peaks)} peaks in {spectrum.experiment_type}:")
+        edit_note = (
+            "multiplicity-edited" if multiplicity_edited else "not multiplicity-edited"
+        )
+        click.echo(
+            f"Found {len(peaks.peaks)} peaks in {spectrum.experiment_type} "
+            f"({edit_note}):"
+        )
         for p in sorted(peaks.peaks, key=lambda x: (-x.f1_position, x.f2_position)):
             click.echo(f"  F1: {p.f1_position:7.2f}  F2: {p.f2_position:6.2f}  (int: {p.intensity:.2e})")
 
