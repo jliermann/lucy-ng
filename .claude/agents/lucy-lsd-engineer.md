@@ -177,6 +177,91 @@ Rationale: With `ELIM N 0` (P2=0, no bond-distance limit), a plain `COSY X Y` is
 
 `outlsd` is still used internally by the runner; `lucy lsd check` verifies it is available.
 
+### Per-Family Multiplicity Search (MULT-01)
+
+<!--
+RELOAD NOTE: This file is a repo `.claude/` skill prompt symlinked into `~/.claude`.
+Behavior changes here are MARKDOWN PROMPT EDITS — a FRESH Claude Code session is REQUIRED
+to reload the edited agent. They are NOT unit-testable this session; functional validation
+is the blind CASE4 re-run (UAT-01 / Phase 89), not unit tests.
+-->
+
+This section is wired to the nmr-chemist's `[MULTIPLICITY-AMBIGUOUS]` signal (Section 5b of
+lucy-nmr-chemist.md). When aliphatic CH/CH₂/CH₃ multiplicity is NOT hard-determinable, the
+nmr-chemist emits that signal with a numbered `viable_families:` list. **DO NOT hard-code a
+single leading multiplicity model.** Hard-coding one model is the exact CASE4 defeat: the
+isopropyl family (`3×CH₃ + CH`) was searched, scored MAE 1.75 ("PLAUSIBLE"), and the ethyl
+truth (`2×CH₃ + CH₂ + CH₂`) was never handed to LSD — so chamazulene was a-priori excluded.
+
+#### Run ONE fully-constrained LSD run PER FAMILY
+
+On receiving `[MULTIPLICITY-AMBIGUOUS]`, run **each viable family as a SEPARATE LSD run**, each
+in its OWN iteration sub-directory named `iteration_NN_<family>` (e.g.
+`analysis/iteration_03_iPr/`, `analysis/iteration_03_ethyl/`).
+
+- **NOT** a single relaxed-MULT run (LSD may not enumerate the intended families cleanly +
+  explosion risk).
+- **NOT sequential-with-fallback** — explicitly REJECTED. Sequential-with-fallback (search the
+  leading family, only fall back to the next if it looks "poor") IS the CASE4 failure mode: the
+  leading iPr family scored MAE 1.75 PLAUSIBLE and the truth was silently excluded. Every viable
+  family gets its own fair, fully-constrained search regardless of how good another family looks.
+
+Each per-family `compound.lsd` is FULLY CONSTRAINED and carries forward ALL identical
+constraints per the read-previous-never-reconstruct rule (HSQC, HMBC, ring exclusion
+DEFF F1/F2/FEXP, BOND C=O, COSY equiv pairs, fragment DEFF/FEXP, inventory block). The runs
+differ ONLY in their MULT block, which you author by hand from each family's per-atom
+multiplicity (CH₃ = `MULT i C 3 3`, CH₂ = `MULT i C 3 2`, CH = `MULT i C 3 1`).
+
+**CASE4 two-block illustration** (same skeleton, only the aliphatic MULT lines differ):
+
+```
+; iteration_NN_iPr/compound.lsd — isopropyl family (3×CH3 + CH)
+MULT 11 C 3 3    ; CH3
+MULT 12 C 3 3    ; CH3
+MULT 13 C 3 3    ; CH3
+MULT 14 C 3 1    ; CH
+
+; iteration_NN_ethyl/compound.lsd — ethyl family (2×CH3 + CH2 + CH2)
+MULT 11 C 3 3    ; CH3
+MULT 12 C 3 3    ; CH3
+MULT 13 C 3 2    ; CH2
+MULT 14 C 3 2    ; CH2
+```
+
+(The diagnostic HMBC 11→13 is genuine EVIDENCE FOR the ethyl family — a CH₃–CH₂ gives a real
+2–3J, and in 1,4-dimethylazulene the two methyls are far apart. It must NOT be re-explained
+away as gem-dimethyl coupling; that rationalization is the CASE4 mistake.)
+
+#### SEARCHED-not-RANKED coverage rule (the coverage trap)
+
+A family counts as **SEARCHED** once it has its OWN `iteration_NN_<family>/` directory with a
+real LSD run AND it sent an `[ITERATION-COMPLETE]` reporting its solution count. Coverage is by
+SEARCHED family, NEVER by RANKED family.
+
+CRITICAL: the existing anti-stall conversion-skip rule (a family with a large solution count,
+> ~50, does NOT convert to `solutions.smi`) does NOT remove that family from coverage. A family
+whose `solutions.smi` conversion was skipped because the count is large is STILL SEARCHED — it
+must NOT be dropped from coverage or from the union just because it produced no `solutions.smi`.
+In that family's `[ITERATION-COMPLETE]`, note `"searched, N solutions, conversion deferred"`.
+(Downstream, the Plan 88-03 coverage gate enforces that every viable family was searched.)
+
+#### Union ranking — concatenate-then-ONE-rank, deduped by canonical SMILES (D-01)
+
+Once each family that produced a tractable solution set has a `solutions.smi`:
+
+1. Build a deduped union file `analysis/union_solutions.smi` by CONCATENATING the per-family
+   `solutions.smi` files.
+2. **DEDUPLICATE by canonical SMILES.** The `lucy lsd rank` parser does NOT dedup (RESEARCH
+   Pitfall 1) — duplicate SMILES across families would distort counts and rank. Canonicalize
+   each SMILES and keep one copy per canonical form before ranking.
+3. Run ONE rank across the union:
+   ```bash
+   lucy lsd rank analysis/union_solutions.smi --shifts "<13C list>" --format json
+   ```
+   (Ranking is across the UNION, never per-family-then-pick-the-best-looking-family.)
+4. Report the **family identity** of the top-ranked solution (which family it came from), so
+   coverage and the winning model are both traceable.
+
 ### Solution Count Interpretation
 
 | Count | Meaning | Action |
@@ -519,6 +604,7 @@ After writing all MULT, HSQC, first HMBC batch, BOND, and ring exclusion (DEFF F
 
 1. Claim LSD iteration task from TaskList
 2. Read peak assignments from nmr-chemist's message
+2a. Check for a `[MULTIPLICITY-AMBIGUOUS]` signal from the nmr-chemist. If present: do NOT hard-code a single multiplicity model — instead run ONE fully-constrained LSD run per viable family in its own `iteration_NN_<family>/` sub-dir, record each as SEARCHED (even if conversion is skipped), and rank across the deduped union (see "Per-Family Multiplicity Search (MULT-01)" in Section 1). The per-family runs follow all the steps below (validation, solver, [ITERATION-COMPLETE]); they differ only in the MULT block.
 3. If iteration 1: Initialize constraint inventory (see Section 5C). Note: the coordinator writes CASE-PROGRESS.md — you do NOT create it.
 4. If iteration > 1: **Read previous LSD file** (NEVER reconstruct from memory). **Extract inventory JSON** from comment block (between `; === CONSTRAINT INVENTORY v2 ===` and `; === END CONSTRAINT INVENTORY ===` delimiters).
 5. Fragment search (run at start of EVERY iteration):
