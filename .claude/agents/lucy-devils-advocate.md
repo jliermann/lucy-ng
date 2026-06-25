@@ -438,6 +438,74 @@ CRITICAL message template:
 
 ---
 
+**G-MULT: Multiplicity Evidence — BINDING mandatory-search flag (MULT-03 / D-06)**
+
+<!--
+RELOAD NOTE: This file is a repo `.claude/` skill prompt symlinked into `~/.claude`.
+Behavior changes here are MARKDOWN PROMPT EDITS — a FRESH Claude Code session is REQUIRED
+to reload the edited agent. They are NOT unit-testable this session; functional validation
+is the blind CASE4 re-run (UAT-01 / Phase 89), not unit tests.
+-->
+
+> **LIFECYCLE + SEVERITY — READ FIRST. This gate differs from G-IDENT on BOTH axes.**
+> G-IDENT is **POST-SOLUTION** and **advisory** (it downgrades a name, never blocks).
+> **G-MULT is PRE-ACCEPT and BINDING.** It fires while aliphatic CH/CH₂/CH₃ multiplicity is
+> ambiguous (the nmr-chemist has emitted, or should have emitted, a `[MULTIPLICITY-AMBIGUOUS]`
+> signal — see lucy-nmr-chemist.md Section 5b). Its output is a **mandatory-search item**, not
+> a comment: a model you flag here MUST enter the LSD search space and the run CANNOT accept
+> until it has been actually searched. This is the ONE Devils-Advocate gate whose finding the
+> convergence narrative is NOT permitted to close.
+
+*Fires:* During the ambiguous-multiplicity branch, whenever you find positive spectral evidence
+FOR a specific whole-molecule aliphatic multiplicity model X that the leading/searched model
+cannot explain. Re-fire on every iteration the evidence stands and model X has not yet been
+searched.
+
+*Purpose:* Close the exact CASE4 defeat. There, the Devils-Advocate DID flag the ethyl model
+("evidence for ethyl"), and that flag was then **rationalized away** as gem-dimethyl coupling
+within isopropyl — so the ethyl family was never searched and the truth was a-priori excluded.
+G-MULT makes that rationalization structurally impossible: the flag is closeable ONLY by an
+actual search, never by argument.
+
+**Trigger condition:** A measured correlation (typically an HMBC or COSY) is a *genuine 2–3J*
+under multiplicity model X but the currently-leading model cannot produce it as a real short-range
+coupling. The canonical case: an HMBC/COSY between two carbons that a **CH₃–CH₂ (ethyl)** pairing
+would give as a real 2–3J, while the leading model has them too far apart to couple short-range.
+
+**What you emit — a structured message naming model X and its evidence:**
+
+```
+[MULT-EVIDENCE-FOR] model=<X>
+correlation: <the supporting HMBC/COSY, e.g. HMBC 11→13>
+why it is evidence FOR X: <the 2–3J path X produces that the leading model cannot>
+required action: model <X> MUST be searched in its own iteration_NN_<X>/ run before accept
+```
+
+**The BINDING rule (state it, do not soften it):**
+- Model X becomes a **MANDATORY-search item**. The coordinator records it under the
+  CASE-PROGRESS.md `## Multiplicity Coverage` ledger as a DA-mandated model, and the pre-accept
+  coverage gate in `case.md` enforces it.
+- The flag is closeable **ONLY** by demonstrating model X was *actually searched* — i.e. an
+  `iteration_NN_<X>/` run exists with a matching `[ITERATION-COMPLETE]`. It is **NOT** closeable
+  by a convergence narrative, by a better MAE on another model, by plausibility argument, or by
+  re-explaining the diagnostic correlation away. If model X is searched and simply ranks lower,
+  the flag is satisfied; if it is never searched, the run does not accept.
+
+**CASE4 worked example (embed verbatim — this is the defeat the gate prevents):**
+HMBC 11→13 is genuine **evidence FOR the ethyl model**: in 7-ethyl-1,4-dimethylazulene the two
+ring methyls (positions 1 and 4) are far apart and cannot give a short-range CH₃↔CH₃ coupling,
+whereas a CH₃–CH₂ ethyl group gives a real 2–3J between the methyl and methylene carbons. This
+correlation **MUST NOT be re-explained away as 3-bond gem-dimethyl coupling within an isopropyl
+group** to keep the leading iPr model — that is exactly the rationalization that excluded the
+chamazulene truth. Emit `[MULT-EVIDENCE-FOR] model=ethyl`; the ethyl family must be searched in
+its own `iteration_NN_ethyl/` run, and only that search closes the flag.
+
+*Severity:* **BINDING / mandatory-search** — a new severity class above WARNING. It does not
+block a *solver run* (it is not a per-run constraint defect like the pre-run CRITICAL gates);
+it blocks **ACCEPT** until the coverage gate confirms model X was searched.
+
+---
+
 **Summary of Check 5 gates:**
 
 _Pre-run gates_ (run on `compound.lsd` before the solver):
@@ -452,6 +520,12 @@ _Post-solution gates_ (run on `analysis/final_results.md` AFTER a structure is s
 | Gate | When | Severity | Trigger |
 |------|------|----------|---------|
 | G-IDENT | Post-solution, after `final_results.md` written | WARNING (advisory, never blocks) | Reported trivial name does not plausibly match the structure read from the top SMILES (independent reasoning; does NOT call the deterministic tool). Worked triggers: CASE4 wrong-isomer/"literature" name; CASE5 indigo↔isoindigo↔indirubin linkage/symmetry mismatch. Action: downgrade name to `(tentative, unverified)`. |
+
+_Pre-accept BINDING gate_ (fires during the ambiguous-multiplicity branch; blocks ACCEPT, not the solver run — distinct from both the pre-run and post-solution gates above):
+
+| Gate | When | Severity | Trigger |
+|------|------|----------|---------|
+| G-MULT | Pre-accept, while a `[MULTIPLICITY-AMBIGUOUS]` record stands | BINDING / mandatory-search (blocks ACCEPT) | Positive spectral evidence FOR an aliphatic multiplicity model X (genuine 2–3J under X that the leading model cannot explain — CASE4: HMBC 11→13 = CH₃–CH₂ ethyl). Emits `[MULT-EVIDENCE-FOR] model=X`. Closeable ONLY by an actual `iteration_NN_X/` search ([ITERATION-COMPLETE]); NEVER by the convergence narrative / rationalizing the correlation away. |
 
 
 
