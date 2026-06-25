@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v9.1
 milestone_name: CASE Final-Answer Correctness & Verification Gates
 status: executing
-stopped_at: Phase 88 context gathered
-last_updated: "2026-06-25T09:49:01.374Z"
-last_activity: 2026-06-25 -- Phase 88 planning complete
+stopped_at: Completed 88-01-PLAN.md
+last_updated: "2026-06-25T09:53:41.818Z"
+last_activity: 2026-06-25 -- 88-01 multiplicity_edited detector complete
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 9
-  completed_plans: 6
+  completed_plans: 7
   percent: 50
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-23)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a multi-agent team that uses the intended solver pipeline — not a manual bypass
-**Current focus:** Phase 88 — aliphatic multiplicity robustness
+**Current focus:** Phase 88 — Aliphatic Multiplicity Robustness
 
 ## Current Position
 
-Phase: 88
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-06-25 -- Phase 88 planning complete
+Phase: 88 (Aliphatic Multiplicity Robustness) — EXECUTING
+Plan: 2 of 3
+Status: Executing Phase 88 (88-01 complete)
+Last activity: 2026-06-25 -- 88-01 multiplicity_edited detector complete
 
 ## Milestone v9.1 Phases
 
@@ -83,6 +83,7 @@ Items acknowledged and deferred at v9.0 milestone close on 2026-06-17 (the rank-
 - v9.0: 14 phases (72-85), 34 plans, 41 tasks; shipped 2026-06-17
 - v9.1 Phase 86 (Ranker Path Unification): 2 plans, 4 tasks; 86-02 ~8 min, 3 files, 2 commits
 - v9.1 Phase 87 (Final Identity-Verification Gate): 2 plans + 2 gap-closure (87-03/04); 87-02 ~6 min, 2 files; 87-03 ~3 min, 6 files (3 created), 3 commits
+- v9.1 Phase 88 (Aliphatic Multiplicity Robustness): 88-01 ~6 min, 2 files, 2 commits (feat e747531 + test c0dfe3b)
 - Cumulative: 87 phases total
 
 ## Accumulated Context
@@ -98,6 +99,8 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [86-01]: Ranker gained `SolutionRanker.from_database` + a shared `resolve_c13_predictor()` DB-first 4-tier backend ladder (in `prediction/resolver.py`, never importing from `cli/`). `_match_shifts`/MAE left byte-identical. The JSON fallback replicates lsd.py's three shipped-table candidate paths to defeat the `hose_nmrshiftdb.json.gz` filename trap. CLI wiring (`lucy lsd rank --db/--table/--max-radius`) is Plan 86-02.
 
 - [86-02]: `lucy lsd rank` and `lucy predict c13` now share ONE prediction path via `resolve_c13_predictor` (RANK-01) — `_perform_ranking` and `predict_c13` both call the helper; rank gained `--db`/`--max-radius` parity. Backend selection lives only in the helper (no CLI re-branch). RANK-01/02/03 regression tests pin per-shift parity (abs diff <1e-6), MAE/match-count agreement (≤0.05 ppm), and the wrong-isomer ordering fix on ibuprofen (real-DB MAE 0.24 / 13-13 vs old 2.23 / 8-13) + pulegone (ordering-fix). Deterministic test seeds only r6 HOSE codes to keep ordering non-circular. mypy/ruff clean-delta; 110 ranking+prediction tests green.
+
+- [88-01]: `lucy pick hsqc --format json` now reports a deterministic `multiplicity_edited` boolean + `negative_crosspeak_count` (MULT-04), ported verbatim from the proven `pick_1d` `negative_detected` detector (`np.min(data) < -0.05*max_abs`). Factored into a pure helper `_detect_multiplicity_edited(data) -> (bool,int)` (plan approach (b)) so the True/empty cases are unit-testable without a Bruker fixture; empty/all-zero data degrades to safe default (False,0) without raising (T-88-01). Unit-tested true/false/zeros/empty (21 pick tests green); conftest fixture not needed; mypy clean on pick.py, ruff clean-delta (2 pre-existing E501). `pick_2d`/`pick_hmbc` untouched. Skill-level wiring of the flag is 88-02/88-03; full validation is Phase 89 blind CASE4 UAT (UAT-01).
 
 - [87-03]: GAP-87-A closed — the 87-01 deterministic identity core was moved VERBATIM into the installed package as `lucy_ng.identity` and exposed via a new `lucy identify` subcommand (`--smiles/--reported-name/--database/--format json`), reachable from any data dir (cf. `lucy lsd rank`). D-05 upheld: exactly one implementation; both `cli/identify.py` and the thinned `scripts/verify_case_solution.py check-identity` import it (back-compat preserved). `check_identity_result` is a pure no-print/no-exit verdict function; `lucy identify` always exits 0 (D-06). 27 identity+CLI tests green; ruff/mypy clean on touched src. 87-04 (skill wiring of `lucy identify` into the analyst/binding gate) remains.
 
@@ -127,13 +130,13 @@ Key v9.0 constraint (still in force): SYME and DEFF NOT are lucy-ng abstractions
 
 ## Session Continuity
 
-Last session: 2026-06-25T09:28:19.271Z
-Stopped at: Phase 88 context gathered
-Resume with: `/gsd-plan-phase 86` (RANK — ranker path unification; isolated Python tooling, unit-testable).
+Last session: 2026-06-25T09:53:41.813Z
+Stopped at: Completed 88-01-PLAN.md (multiplicity_edited detector)
+Resume with: `/gsd-execute-phase 88` (plan 88-02 — nmr-chemist `[MULTIPLICITY-AMBIGUOUS]` signal + lsd-engineer per-family runs).
 
 ---
-*Last updated: 2026-06-23 — v9.1 roadmap created (phases 86-89: RANK → IDENT/MULT → UAT gate)*
+*Last updated: 2026-06-25 — 88-01 complete (multiplicity_edited detector, MULT-04 detection basis)*
 
 ## Operator Next Steps
 
-- Plan the first phase with `/gsd-plan-phase 86`
+- Execute the next plan with `/gsd-execute-phase 88` (88-02)

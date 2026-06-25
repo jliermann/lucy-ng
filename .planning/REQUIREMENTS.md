@@ -25,7 +25,7 @@ slip through every existing safety net, proven by blind UATs.
 - [ ] **MULT-01**: When aliphatic multiplicity is not hard-determinable (non-multiplicity-edited HSQC and/or unreliable/phase-distorted APT/DEPT), the lsd-engineer searches ALL viable multiplicity families (e.g. iPr-path `3×CH₃+CH` AND ethyl-path `2×CH₃+CH₂+CH₂`) rather than hard-coding one.
 - [ ] **MULT-02**: An MAE-independent clean-but-wrong guardrail: if ≥2 viable multiplicity families exist but only one was searched, the run does not accept — it reopens and searches the other(s).
 - [ ] **MULT-03**: A devils-advocate "evidence FOR model X" multiplicity flag forces model X into the search space; it cannot be dismissed by the convergence narrative.
-- [ ] **MULT-04**: The nmr-chemist emits an explicit "multiplicity-ambiguous → enumerate families" signal when HSQC is not multiplicity-edited, so the lsd-engineer acts on it deterministically.
+- [x] **MULT-04**: The nmr-chemist emits an explicit "multiplicity-ambiguous → enumerate families" signal when HSQC is not multiplicity-edited, so the lsd-engineer acts on it deterministically.
 
 ### UAT — Blind-UAT validation gate (proves the fixes; surfaces a 4th defect if any)
 - [ ] **UAT-01**: CASE4 re-run blind → chamazulene's di-methyl-ethyl constitution is present in the solution set (truth reachable), regardless of which regioisomer ranks #1. (Direct acceptance test for MULT.)
@@ -62,7 +62,7 @@ slip through every existing safety net, proven by blind UATs.
 | MULT-01 | Phase 88 | pending |
 | MULT-02 | Phase 88 | pending |
 | MULT-03 | Phase 88 | pending |
-| MULT-04 | Phase 88 | pending |
+| MULT-04 | Phase 88 | Complete |
 | UAT-01 | Phase 89 | pending |
 | UAT-02 | Phase 89 | pending |
 | UAT-03 | Phase 89 | pending |
