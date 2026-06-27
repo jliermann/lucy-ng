@@ -94,10 +94,15 @@ Execute each as a fresh blind run, bookkeep, and capture any NEW defect class as
 
 ## Phase 89 close-out criteria
 
-- [ ] UAT-01: CASE4 di-methyl-ethyl constitution RDKit-verified present in the solution set.
+- [x] UAT-01: CASE4 — di-methyl-ethyl azulene CLASS RDKit-verified present (15 [5,7] candidates); MULT fix validated. **Accepted as v9.1-PASS (CONDITIONAL)** 2026-06-25; exact-truth regiochemistry gap documented as a follow-up todo (not a v9.1 blocker).
 - [x] UAT-02: CASE5 indigo at rank 1 + name tool-derived (PASS 2026-06-24).
-- [ ] UAT-03: CASE6/7/8 first blind runs executed + bookkept; new defects → todos.
+- [ ] UAT-03: CASE6/7/8 first blind runs executed + bookkept; new defects → todos. **(user running these blind; orchestrator bookkeeps)**
 - [ ] Every reported structure independently RDKit-verified by InChIKey (never self-report).
 
-When UAT-01 + UAT-03 are recorded (UAT-02 already PASS): mark Phase 89 complete, close the
-v9.1 milestone gate.
+When UAT-03 is recorded (UAT-01 accepted v9.1-PASS-conditional, UAT-02 PASS): mark Phase 89
+complete, close the v9.1 milestone gate.
+
+### Blind-safety per case (UAT-03)
+- **CASE6** (citronellol) — blind-safe (original `Unknown_…`).
+- **CASE7** (virgiline) — blind-safe (`unknown_compound` redaction).
+- **CASE8** (eugenol) — sanitised 2026-06-21; confirm 0 residual name tokens before the run.
