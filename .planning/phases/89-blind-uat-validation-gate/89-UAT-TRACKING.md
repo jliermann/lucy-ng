@@ -84,7 +84,7 @@ Execute each as a fresh blind run, bookkeep, and capture any NEW defect class as
 
 | Case | Truth | Formula | Truth InChIKey (block1) | Status | Reported / verdict |
 |------|-------|---------|--------------------------|--------|--------------------|
-| CASE6 | (R)-Citronellol (3,7-dimethyloct-6-en-1-ol) | C10H20O | `QMVPMAAFGQKVCJ` | ⬜ pending | `______` |
+| CASE6 | (R)-Citronellol (3,7-dimethyloct-6-en-1-ol) | C10H20O | `QMVPMAAFGQKVCJ` | ✅ CLEAN PASS (06-27) | top `CC(C)=CCCC(C)CCO` → block1 `QMVPMAAFGQKVCJ` (RDKit-verified = truth), rank 1, MAE 0.52, 10/10. IDENT: name "citronellol" tool-downgraded to tentative (COCONUT CNP0152105, no stored name — DB-coverage gap, not a real mismatch). **G-IDENT advisory gate FIRED → [G-IDENT-PASSED]** (first live confirmation of the case.md identity_gate wiring, commit 87db328). MULT machinery correctly DORMANT (HSQC mult-edited + DEPT-90 clean → not ambiguous, no false-trigger). No new defect. |
 | CASE7 | Virgiline (lupin alkaloid, lactam + sec-OH) | C15H24N2O2 | `UGCQEPKCDSOOAO` | ⬜ pending | `______` |
 | CASE8 | Eugenol | C10H12O2 | `RRAFCDWBNXTKKO` | ⬜ pending | `______` |
 
