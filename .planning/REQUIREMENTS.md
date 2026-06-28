@@ -28,9 +28,9 @@ slip through every existing safety net, proven by blind UATs.
 - [x] **MULT-04**: The nmr-chemist emits an explicit "multiplicity-ambiguous → enumerate families" signal when HSQC is not multiplicity-edited, so the lsd-engineer acts on it deterministically.
 
 ### UAT — Blind-UAT validation gate (proves the fixes; surfaces a 4th defect if any)
-- [ ] **UAT-01**: CASE4 re-run blind → chamazulene's di-methyl-ethyl constitution is present in the solution set (truth reachable), regardless of which regioisomer ranks #1. (Direct acceptance test for MULT.)
-- [ ] **UAT-02**: CASE5 re-run blind on sanitised data passes — correct structure at rank 1 AND name correctly derived from structure (acceptance for IDENT).
-- [ ] **UAT-03**: CASE6, CASE7, CASE8 first blind runs executed and bookkept; any new defect class surfaced is captured as a todo (does not have to be fixed in v9.1).
+- [x] **UAT-01**: CASE4 re-run blind → chamazulene's di-methyl-ethyl constitution is present in the solution set (truth reachable), regardless of which regioisomer ranks #1. (Direct acceptance test for MULT.)
+- [x] **UAT-02**: CASE5 re-run blind on sanitised data passes — correct structure at rank 1 AND name correctly derived from structure (acceptance for IDENT).
+- [x] **UAT-03**: CASE6, CASE7, CASE8 first blind runs executed and bookkept; any new defect class surfaced is captured as a todo (does not have to be fixed in v9.1).
 
 ---
 
@@ -63,6 +63,6 @@ slip through every existing safety net, proven by blind UATs.
 | MULT-02 | Phase 88 | Complete |
 | MULT-03 | Phase 88 | Complete |
 | MULT-04 | Phase 88 | Complete |
-| UAT-01 | Phase 89 | pending |
-| UAT-02 | Phase 89 | pending |
-| UAT-03 | Phase 89 | pending |
+| UAT-01 | Phase 89 | Complete |
+| UAT-02 | Phase 89 | Complete |
+| UAT-03 | Phase 89 | Complete |

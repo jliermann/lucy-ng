@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v9.1
 milestone_name: CASE Final-Answer Correctness & Verification Gates
-status: ready_to_plan
-stopped_at: Phase 88 complete (3/3) — ready to discuss Phase 89
-last_updated: 2026-06-25T10:34:39.850Z
+status: milestone_complete
+stopped_at: Milestone complete (Phase 89 was final phase)
+last_updated: 2026-06-28T11:41:32.749Z
 last_activity: 2026-06-25 -- 88-03 MAE-independent coverage gate (case.md) + binding G-MULT (devils-advocate) complete; Phase 88 done
 progress:
   total_phases: 4
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-23)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a multi-agent team that uses the intended solver pipeline — not a manual bypass
-**Current focus:** Phase 89 — blind uat validation gate
+**Current focus:** Milestone complete
 
 ## Current Position
 
 Phase: 89
 Plan: Not started
-Status: Ready to plan
-Last activity: 2026-06-25
+Status: Milestone complete
+Last activity: 2026-06-28
 
 ## Milestone v9.1 Phases
 

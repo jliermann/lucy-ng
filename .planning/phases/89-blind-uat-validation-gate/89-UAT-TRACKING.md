@@ -1,7 +1,8 @@
 ---
 phase: 89-blind-uat-validation-gate
-status: in_progress
+status: complete
 created: 2026-06-25
+completed: 2026-06-28
 requirements: [UAT-01, UAT-02, UAT-03]
 ---
 
@@ -86,7 +87,7 @@ Execute each as a fresh blind run, bookkeep, and capture any NEW defect class as
 |------|-------|---------|--------------------------|--------|--------------------|
 | CASE6 | (R)-Citronellol (3,7-dimethyloct-6-en-1-ol) | C10H20O | `QMVPMAAFGQKVCJ` | ✅ CLEAN PASS (06-27) | top `CC(C)=CCCC(C)CCO` → block1 `QMVPMAAFGQKVCJ` (RDKit-verified = truth), rank 1, MAE 0.52, 10/10. IDENT: name "citronellol" tool-downgraded to tentative (COCONUT CNP0152105, no stored name — DB-coverage gap, not a real mismatch). **G-IDENT advisory gate FIRED → [G-IDENT-PASSED]** (first live confirmation of the case.md identity_gate wiring, commit 87db328). MULT machinery correctly DORMANT (HSQC mult-edited + DEPT-90 clean → not ambiguous, no false-trigger). No new defect. |
 | CASE7 | Virgiline (lupin alkaloid, lactam + sec-OH) | C15H24N2O2 | `UGCQEPKCDSOOAO` | ✅ CLEAN PASS (06-28) | top `O=C1C2CC(CN3CCC(O)CC23)C2CCCCN12` → block1 `UGCQEPKCDSOOAO` (RDKit-verified = truth virgiline), rank 1, MAE 0.78, 14/15, decisive 0.34 gap. COCONUT CNP0175444 (confirmed-structure). **IDENT gate did its job:** analyst recalled name "hydroxymatrine" → `lucy identify` returned tentative + warning, AND **G-IDENT FIRED → [G-IDENT-FLAGGED]** (independent reasoning: 0.78 MAE doesn't fix the specific OH-regio/stereo; concurs with the tool) → name held `(tentative, unverified)`, NO hallucination asserted, structure reported by InChIKey/SMILES. Best live demonstration of the parametric-naming defense (this is the [G-IDENT-FLAGGED] branch; CASE6 showed [G-IDENT-PASSED]). MULT correctly dormant ([MULTIPLICITY-FIRM]; N-oxide family excluded by firm ruling, not unsearched). Autonomous iter2→iter3 self-correction (wrong N-oxide MAE 3.22 → correct lactam+carbinol MAE 0.78). No new defect. |
-| CASE8 | Eugenol | C10H12O2 | `RRAFCDWBNXTKKO` | ⬜ pending | `______` |
+| CASE8 | Eugenol | C10H12O2 | `RRAFCDWBNXTKKO` | ✅ CLEAN PASS (06-28) | top `C=CCc1ccc(O)c(OC)c1` → block1 `RRAFCDWBNXTKKO` (RDKit-verified = truth eugenol), rank 1, MAE 0.40, 10/10. Correctly distinguished from isoeugenol (`BJIOGJUNALELMI`) + O-regioisomer. **IDENT `confirmed` branch (first across UATs):** `lucy identify` returned verdict `confirmed` (NMRShiftDB hit with name "2-Methoxy-4-(2-propenyl)phenol") → name stated plainly (D-07). **G-IDENT FIRED → [G-IDENT-PASSED]** (independent reasoning explicitly ruling out isoeugenol's 1-propenyl). MULT correctly dormant (edited HSQC). Minor obs (not a defect): supplying the literal token "eugenol" gave tentative (DB synonym-list miss); a clean run gave confirmed via the canonical name — conservative/safe. No new defect. |
 
 (CASE6 = blind-safe; CASE7 = blind-safe; CASE8 needs the sanitise check confirmed before the run — see [[project_case_datasets_not_sanitised]].)
 
@@ -96,13 +97,17 @@ Execute each as a fresh blind run, bookkeep, and capture any NEW defect class as
 
 - [x] UAT-01: CASE4 — di-methyl-ethyl azulene CLASS RDKit-verified present (15 [5,7] candidates); MULT fix validated. **Accepted as v9.1-PASS (CONDITIONAL)** 2026-06-25; exact-truth regiochemistry gap documented as a follow-up todo (not a v9.1 blocker).
 - [x] UAT-02: CASE5 indigo at rank 1 + name tool-derived (PASS 2026-06-24).
-- [ ] UAT-03: CASE6/7/8 first blind runs executed + bookkept; new defects → todos. **(user running these blind; orchestrator bookkeeps)**
-- [ ] Every reported structure independently RDKit-verified by InChIKey (never self-report).
+- [x] UAT-03: CASE6 (citronellol), CASE7 (virgiline), CASE8 (eugenol) — all CLEAN PASS, RDKit-verified; no new defect class surfaced (one minor DB-synonym observation on eugenol, non-blocking).
+- [x] Every reported structure independently RDKit-verified by InChIKey (never self-report).
 
-When UAT-03 is recorded (UAT-01 accepted v9.1-PASS-conditional, UAT-02 PASS): mark Phase 89
-complete, close the v9.1 milestone gate.
+**PHASE 89 COMPLETE 2026-06-28.** v9.1 milestone gate closed: UAT-01 v9.1-PASS (conditional —
+documented azulene-regiochemistry follow-up todo), UAT-02 PASS, UAT-03 3/3 CLEAN PASS. The
+RANK (86) / IDENT (87) / MULT (88) fixes hold end-to-end on independent blind runs. Live-confirmed
+across the gate: `lucy identify` all three verdict branches (confirmed=CASE8, structure-only/tentative=CASE6/7,
+name↔structure flag), and the new post-solution G-IDENT gate firing both [G-IDENT-PASSED] (CASE6/8)
+and [G-IDENT-FLAGGED] (CASE7).
 
 ### Blind-safety per case (UAT-03)
 - **CASE6** (citronellol) — blind-safe (original `Unknown_…`).
 - **CASE7** (virgiline) — blind-safe (`unknown_compound` redaction).
-- **CASE8** (eugenol) — sanitised 2026-06-21; confirm 0 residual name tokens before the run.
+- **CASE8** (eugenol) — sanitised 2026-06-21; **blind-validity re-confirmed read-only 2026-06-28: 0 residual "eugenol" tokens in Bruker metadata, no NAME2/3 leak, no stale analysis dir.** Run in progress.
