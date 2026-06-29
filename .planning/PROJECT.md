@@ -10,17 +10,15 @@ Lucy-ng is an AI-agent skill for Computer-Assisted Structure Elucidation (CASE) 
 
 An AI agent can autonomously determine the structure of an unknown organic compound from its NMR spectra, with a multi-agent architecture that prevents unproductive loops and keeps the elucidation on track.
 
-## Current Milestone: v9.1 CASE Final-Answer Correctness & Verification Gates
+## Current Milestone: none — planning next (run `/gsd-new-milestone`)
 
-**Goal:** Ensure the final reported structure is correct AND independently verified — close the three "clean-but-wrong" defect classes that let a wrong final answer slip through every existing safety net (low MAE, plausible, but wrong), proven by blind UATs.
+**Carried seed:** CASE4 azulene-regiochemistry-enumeration gap (4th defect class surfaced by the v9.1 blind UAT) — the di-methyl-ethyl class is now searched, but the exact chamazulene regiochemistry is not enumerated. See `.planning/todos/pending/2026-06-25-case4-azulene-regiochemistry-enumeration-gap.md`.
 
-**Target features:**
-- **Ranker correctness** — `lucy lsd rank` converges with `lucy predict c13` on the same molecule; the ranker no longer under-scores the truth (confirmed 4×; only the analyst override recovered it each time).
-- **Final identity-verification gate** — a tool-based check that derives identity from SMILES/InChIKey rather than parametric model memory, stopping the naming hallucination (CASE4/5) and adding an independent final gate on the analyst's output.
-- **Aliphatic multiplicity robustness** — when multiplicity is not hard-determinable (non-edited HSQC / phase-distorted APT), search BOTH multiplicity families in parallel; add an MAE-independent clean-but-wrong guardrail; a devils-advocate "evidence FOR model X" flag must force model X into the search. (Hardens v9.0 FIX-10, which does not cover multiplicity.)
-- **Blind-UAT validation gate** — CASE5 re-run + CASE6/7/8 first blind runs prove the fixes (and surface a 4th defect if one exists).
+### v9.1 CASE Final-Answer Correctness & Verification Gates — SHIPPED ✅ (2026-06-29)
 
-**Key context:** All three defects are "clean-but-wrong" — none is caught by an existing mechanism. The identity gate does not help when the structure itself is wrong; the rank/analyst override cannot recover a structure absent from the solution set; the MAE>4 quality loop stays silent at MAE 1.75. Defect bookkeeping: the three `.planning/todos/pending/2026-06-{17,21,23}-*.md`; full blind-UAT audit in the (gitignored) `CASE-UAT-LOG.md`.
+**Goal (met):** Close the three "clean-but-wrong" CASE failure classes (low MAE, plausible, but wrong) with verification gates, proven end-to-end by blind UATs.
+
+**Outcome:** Three defect classes fixed + blind-validated. **RANK** — `lucy lsd rank` + `lucy predict c13` unified onto one DB-first prediction path. **IDENT** — installed `lucy identify` (shared deterministic core, reachable from any CASE data dir) + analyst tentative-naming + post-solution devils-advocate `G-IDENT` gate stop parametric naming hallucination. **MULT** — per-family multiplicity search + MAE-independent SEARCHED-not-RANKED `coverage_gate` + binding DA `G-MULT` flag close the wrong-class exclusion. **Blind-UAT gate** — five blind runs (RDKit-verified): CASE5 indigo / CASE6 citronellol / CASE7 virgiline / CASE8 eugenol PASS; CASE4 chamazulene conditional. Live-confirmed: `lucy identify` all 3 verdict branches; `G-IDENT` both branches; MULT fires/dormant correctly. Full archive: `milestones/v9.1-ROADMAP.md` + audit `milestones/v9.1-MILESTONE-AUDIT.md`. One deferred follow-up (the carried seed above).
 
 ### v9.0 CASE Reliability & Skill Consolidation — SHIPPED ✅
 
@@ -30,14 +28,17 @@ An AI agent can autonomously determine the structure of an unknown organic compo
 
 ## Current State
 
-**Version:** v9.0 shipped 2026-06-17
-**Codebase:** Python package (`src/lucy_ng/`), test suite 1081 passing at v9.0 close
+**Version:** v9.1 shipped 2026-06-29 (v9.0 shipped 2026-06-17)
+**Codebase:** Python package (`src/lucy_ng/`), test suite **1131 passing** at v9.1 close
 **Database:** SQLite with 928K compounds, 7.9M HOSE statistics + fragment library (2.4M SSCs)
 **Agent definitions:** 4-agent CASE team + case.md orchestrator (in `repo/.claude/`, symlinked into `~/.claude`)
+**New CLI (v9.1):** `lucy identify` (structure→identity gate); `lucy pick hsqc` now reports `multiplicity_edited`; `lucy lsd rank` unified onto the shared 13C predictor.
 
-**What shipped in v9.0:** End-to-end CASE reliability — fixed `lucy lsd run`/outlsd plumbing; native-only constraint translation (SYME→BOND/COSY, DEFF NOT→DEFF F/FEXP) across all paths; peak-picking integrity with SNR-floors for 13C (FIX-08) and HMBC (FIX-12); constraint-hardness guard (FIX-10); blind-UAT skill decontamination (FIX-09); Kekulé-aromatize-before-predict (FIX-11). Validated by blind UAT: CASE9 solved + CASE1 clean emergent pass.
+**What shipped in v9.1:** Three "clean-but-wrong" CASE failure classes closed with verification gates, blind-validated end-to-end. RANK (ranker↔predict unified, ibuprofen MAE 2.23→0.24); IDENT (`lucy identify` + post-solution `G-IDENT` gate stop naming hallucination); MULT (per-family multiplicity search + MAE-independent `coverage_gate` + binding `G-MULT` flag). Validated by 5 blind UATs (CASE5/6/7/8 PASS, CASE4 conditional), each RDKit-verified.
 
-**Resolved in v9.1 (Phase 86 — Ranker Path Unification):** `lucy lsd rank` and `lucy predict c13` now share a single DB-first prediction path (`resolve_c13_predictor` + `SolutionRanker.from_database`); the ranker no longer under-scores the truth (ibuprofen MAE 2.23/8-matched → 0.24/13-matched). Pinned by regression tests on CASE1/CASE3. RANK-01/02/03 validated.
+**What shipped in v9.0:** End-to-end CASE reliability — `lucy lsd run`/outlsd plumbing; native-only constraint translation (SYME→BOND/COSY, DEFF NOT→DEFF F/FEXP); peak-picking SNR-floors (FIX-08/12); constraint-hardness guard (FIX-10); blind-UAT skill decontamination (FIX-09). Validated: CASE9 solved + CASE1 clean emergent pass.
+
+**Known deferred:** CASE4 azulene-regiochemistry-enumeration gap (4th defect class; exact chamazulene regiochemistry not yet reachable). See STATE.md Deferred Items.
 
 ## Architecture
 
@@ -107,8 +108,17 @@ An AI agent can autonomously determine the structure of an unknown organic compo
 - Dry-run confirmation gate in sanitise, HOSE miss recovery in predict, 0-match guidance in dereplicate — v6.0
 - Version compatibility check in status skill, smoke test mode in CASE orchestrator — v6.0
 
+### Validated (v9.0 / v9.1)
+
+- End-to-end CASE reliability: lsd-run/outlsd plumbing, native-only constraints, peak-picking SNR-floors, constraint-hardness guard, blind-UAT skill decontamination — v9.0
+- Ranker↔predict unification: one DB-first 13C prediction path (RANK-01/02/03) — v9.1
+- Tool-derived identity gate: installed `lucy identify` + analyst tentative-naming + post-solution devils-advocate `G-IDENT` (IDENT-01/02/03) — v9.1
+- Aliphatic multiplicity coverage: per-family LSD search + MAE-independent `coverage_gate` + binding `G-MULT` flag + `pick hsqc multiplicity_edited` detector (MULT-01/02/03/04) — v9.1
+- Blind-UAT validation gate: 5 RDKit-verified blind runs (CASE5/6/7/8 pass, CASE4 conditional) (UAT-01/02/03) — v9.1
+
 ### Deferred
 
+- [ ] CASE4 azulene-regiochemistry-enumeration gap — exact chamazulene regiochemistry not reachable (di-methyl-ethyl class is searched). 4th defect class surfaced by v9.1 UAT-01. (todo `2026-06-25-case4-azulene-regiochemistry-enumeration-gap`)
 - [ ] 4J HMBC coupling handling via pyLSD (Priority 1 — v7.0 statistical approach failed, pyLSD solver-based approach next)
 - [ ] Multi-compound CASE comparison UAT (blocked on 4J handling or non-aromatic test compounds)
 - [ ] Support for COSY correlations in LSD constraints (Priority 3)
@@ -246,4 +256,4 @@ Minimum viable spectral data for v1:
 | `CLAUDE_CODE_SUBAGENT_MODEL=inherit` | A stale `=sonnet` override silently forced all subagents to Sonnet 4.6 and drove earlier CASE failures | Good — Opus 4.8 then solved both cases |
 
 ---
-*Last updated: 2026-06-23 — Phase 86 (Ranker Path Unification) complete; RANK-01/02/03 validated*
+*Last updated: 2026-06-29 — v9.1 milestone shipped (RANK/IDENT/MULT + blind-UAT gate); planning next milestone*

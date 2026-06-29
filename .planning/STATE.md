@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v9.1
 milestone_name: CASE Final-Answer Correctness & Verification Gates
-status: milestone_complete
-stopped_at: Milestone complete (Phase 89 was final phase)
-last_updated: 2026-06-28T11:41:32.749Z
-last_activity: 2026-06-25 -- 88-03 MAE-independent coverage gate (case.md) + binding G-MULT (devils-advocate) complete; Phase 88 done
+status: Awaiting next milestone
+stopped_at: v9.1 milestone SHIPPED 2026-06-29 (phases 86-89; RANK/IDENT/MULT + blind-UAT gate) — planning next milestone
+last_updated: "2026-06-29T10:33:52.276Z"
+last_activity: 2026-06-29 — Milestone v9.1 completed and archived
 progress:
   total_phases: 4
   completed_phases: 3
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-06-23)
 
 ## Current Position
 
-Phase: 89
-Plan: Not started
-Status: Milestone complete
-Last activity: 2026-06-28
+Phase: Milestone v9.1 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-06-29 — Milestone v9.1 completed and archived
 
 ## Milestone v9.1 Phases
 
@@ -43,11 +43,18 @@ Last activity: 2026-06-28
 
 ## Deferred Items
 
-Items acknowledged and deferred at v9.0 milestone close on 2026-06-17 (the rank-scoring todo is now ACTIVE as Phase 86):
+Items acknowledged and deferred at **v9.1 milestone close on 2026-06-29**:
 
 | Category | Item | Status | Note |
 |----------|------|--------|------|
-| todo | 2026-06-17-lucy-lsd-rank-scoring-defect | active → Phase 86 | now in scope as RANK |
+| todo | 2026-06-25-case4-azulene-regiochemistry-enumeration-gap | deferred | NEW 4th defect class from v9.1 UAT-01; di-methyl-ethyl class now searched, exact chamazulene regiochemistry still unreachable. Carried-seed for next milestone. |
+| uat | 87-HUMAN-UAT.md | passed (0 pending) | v9.1 IDENT acceptance — PASSED, surfaced only because the HUMAN-UAT file exists |
+
+Items acknowledged and deferred at v9.0 milestone close on 2026-06-17 (the rank-scoring todo was resolved in v9.1 as Phase 86):
+
+| Category | Item | Status | Note |
+|----------|------|--------|------|
+| todo | 2026-06-17-lucy-lsd-rank-scoring-defect | RESOLVED in v9.1 (Phase 86) | shipped as RANK |
 | uat | 54-UAT.md | unknown | v5.0-era artifact, not v9.0 |
 | uat | 78-UAT-CASE1.md / 78-UAT-CASE9.md / 78-UAT-VERDICT.md | superseded | failed gate later overcome (CASE9 solved + CASE1 emergent pass) |
 | uat | 79-HUMAN-UAT.md | superseded | resolved by 2026-06-17 CASE1 emergent pass |
@@ -141,4 +148,4 @@ Resume with: verify Phase 88, then `/gsd-plan-phase 89` (Blind-UAT Validation Ga
 
 ## Operator Next Steps
 
-- Verify Phase 88, then plan the blind-UAT gate with `/gsd-plan-phase 89`.
+- Start the next milestone with /gsd-new-milestone

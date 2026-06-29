@@ -1,5 +1,22 @@
 # Project Milestones: lucy-ng
 
+## v9.1 CASE Final-Answer Correctness & Verification Gates (Shipped: 2026-06-29)
+
+**Delivered:** Closed three "clean-but-wrong" CASE failure classes with verification gates, then proved the fixes hold end-to-end on independent blind CASE runs.
+
+**Phases completed:** 4 phases (86–89), 9 plans. Timeline: 2026-06-23 → 2026-06-29 (~52 commits). Tests: full suite 1131 passing.
+
+**Key accomplishments:**
+
+- **RANK (86) — ranker path unification:** `lucy lsd rank` and `lucy predict c13` now share one DB-first prediction path (`resolve_c13_predictor` / `SolutionRanker`), so ranking uses the same backend as prediction — fixing the rank-scoring defect (ibuprofen MAE 2.23→0.24).
+- **IDENT (87) — tool-derived identity gate:** new installed `lucy identify` CLI (shared deterministic core in `src/lucy_ng/identity.py`, reachable from any CASE data dir) derives identity from the solved SMILES; the analyst marks unconfirmed names `(tentative, unverified)`; a post-solution devils-advocate `G-IDENT` gate independently cross-checks name↔structure — stopping parametric naming hallucination (the CASE4/CASE5 mode).
+- **MULT (88) — aliphatic multiplicity coverage:** when multiplicity is not hard-determinable, the nmr-chemist emits `[MULTIPLICITY-AMBIGUOUS]` and the lsd-engineer searches EACH viable whole-molecule family as its own fully-constrained LSD run (deduped union ranking); a deterministic MAE-independent pre-accept `coverage_gate` (SEARCHED-not-RANKED) + a binding devils-advocate `G-MULT` flag close the CASE4 wrong-class exclusion. New `lucy pick hsqc multiplicity_edited` detector underpins the trigger.
+- **Blind-UAT gate (89) — independent end-to-end validation:** five blind CASE runs on fresh blind instances, each RDKit-verified by InChIKey: CASE5 indigo, CASE6 citronellol, CASE7 virgiline, CASE8 eugenol all PASS; CASE4 chamazulene v9.1-PASS (conditional). Live-confirmed: `lucy identify` reachable + all three verdict branches; `G-IDENT` both branches ([PASSED]/[FLAGGED]); MULT machinery fires-when-ambiguous / dormant-when-firm.
+
+**Known deferred items at close:** 1 (CASE4 azulene-regiochemistry-enumeration gap — a NEW 4th defect class surfaced by UAT-01; the exact chamazulene regiochemistry remains unreachable while the di-methyl-ethyl class is now searched. Carried to a future milestone. See STATE.md Deferred Items + todo `2026-06-25-case4-azulene-regiochemistry-enumeration-gap`).
+
+---
+
 ## v9.0 CASE Reliability & Skill Consolidation (Shipped: 2026-06-17)
 
 **Delivered:** Made the CASE pipeline actually work end-to-end via the intended mechanism (no manual bypass) — validated by a blind UAT in which CASE9 (UAT-04) was solved and CASE1 (UAT-03) reached a CLEAN EMERGENT PASS on Opus 4.8, with the benzene ring emerging from constraints rather than forced ring-BONDs.
