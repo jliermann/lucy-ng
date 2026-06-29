@@ -119,6 +119,38 @@
 
 ---
 
+## Milestone: v9.1 — CASE Final-Answer Correctness & Verification Gates
+
+**Shipped:** 2026-06-29
+**Phases:** 4 (86–89) | **Plans:** 9 | **Timeline:** 6 days (2026-06-23 → 06-29) | **Tests:** 1131 passing
+
+### What Was Built
+Three "clean-but-wrong" CASE failure classes closed with verification gates: RANK (ranker↔predict unified onto one DB-first predictor), IDENT (installed `lucy identify` + post-solution `G-IDENT` gate stop naming hallucination), MULT (per-family multiplicity search + MAE-independent `coverage_gate` + binding `G-MULT` flag). A blind-UAT gate (89) validated all three end-to-end on independent blind instances.
+
+### What Worked
+- **Blind UATs as the real acceptance test.** Each fix was a skill-prompt edit not unit-testable in-session; the fresh-blind-instance runs (RDKit-verified by InChIKey) were the only honest validation — and caught what static checks couldn't.
+- **The gap-closure loop inside a phase.** Phase 87's first blind UAT exposed GAP-87-A (`verify_case_solution.py` unreachable from a CASE data dir); a same-phase `--gaps` closure (move core into installed `lucy identify`) fixed it and the re-run passed. Defects found by the UAT became immediate, scoped closures.
+- **Code review on the small Python seams paid off** (WR-01 dot-suffix accession, CR-01 corrupt-DB crash, WR NaN/inf detector) — each a real correctness fix on the load-bearing deterministic pieces.
+
+### What Was Inefficient
+- **CASE runs stalled ~5.5 h** (lsd-engineer went idle after the solver without signalling) before the anti-stall + coordinator filesystem-recovery hardening — a message-driven-orchestration footgun only visible in a real long run.
+- The `lucy identify` reachability gap should have been caught at plan time (the deferred `lucy identify` CLI was the actual delivery mechanism all along) — the blind UAT, not planning, surfaced it.
+
+### Patterns Established
+- **Verification gate triad:** binding deterministic tool (`lucy identify` / `coverage_gate`) + independent LLM advisory (`G-IDENT` / `G-MULT`) + blind-UAT acceptance. SEARCHED-not-RANKED and MAE-independent guardrails as a pattern for "wrong-class" defects.
+- **Orchestrator-as-bookkeeper for blind UATs:** contaminated session verifies (RDKit) + records, never runs the CASE.
+
+### Key Lessons
+- For skill-prompt fixes, **a fixture that exercises the live agent (blind UAT) is the acceptance test** — in-repo unit tests only cover the Python seams.
+- A passing in-repo verification can still hide a **delivery/reachability** gap (repo-only script vs installed CLI). Ask "can the runtime actually reach this?" at plan time.
+- New defect classes surface from real runs (CASE4 azulene regiochemistry) — budget for a "surface, don't necessarily fix" UAT lane (UAT-03 spirit).
+
+### Cost Observations
+- Model mix: Opus for planning + blind CASE runs; Sonnet for executor/checker/verifier subagents.
+- Notable: the milestone was driven phase-by-phase with `--chain` (plan→execute), with the human running the blind UATs out-of-session.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
