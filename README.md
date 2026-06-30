@@ -131,6 +131,11 @@ Real experimental data with proper filtering provides much stronger constraints 
 
 ## Installation
 
+> **Setting up a server to run the full CASE skill `/lucy-ng:case` (e.g. a headless
+> compute host)?** Follow **[docs/SERVER_BOOTSTRAP.md](docs/SERVER_BOOTSTRAP.md)** or run
+> `scripts/bootstrap_case_host.sh` — it provisions Python+deps, LSD, the reference DB, and
+> the CASE commands **and team agents**. The steps below cover the `lucy` CLI only.
+
 ### From GitHub
 
 ```bash
@@ -169,16 +174,18 @@ pip install git+https://github.com/Ratsemaat/HOSE_code_generator.git --no-deps
 # Extract and add to PATH, or specify location when running
 ```
 
-### Reference Databases
+### Reference Database
 
-For dereplication, download one or both databases:
+Dereplication, 13C prediction, and CASE ranking all use one pre-built SQLite DB
+(928K compounds + 7.9M HOSE statistics, ~830 MB → ~2.8 GB). Download it with the CLI:
 
-| Database | Size | Entries | Download |
-|----------|------|---------|----------|
-| COCONUT | ~4.8 GB | ~895,000 | [coconut.naturalproducts.net](https://coconut.naturalproducts.net/) |
-| NMRShiftDB | ~100 MB | ~33,000 | [nmrshiftdb.nmr.uni-koeln.de](https://nmrshiftdb.nmr.uni-koeln.de/) |
+```bash
+lucy database download -o data/reference/lucy-ng-derep.db
+lucy database info data/reference/lucy-ng-derep.db
+```
 
-Place in `data/reference/` or `~/.lucy/` for auto-discovery.
+Auto-discovered at `data/reference/lucy-ng-derep.db`. See
+[docs/INSTALLATION.md](docs/INSTALLATION.md#reference-database) for detail.
 
 ## Quick Start
 

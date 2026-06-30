@@ -223,44 +223,36 @@ pyLSD is a Python wrapper around LSD with additional features. Install separatel
 pip install pylsd
 ```
 
-## Reference Databases
+## Reference Database
 
-Lucy-ng supports two reference databases for dereplication. At least one is required for the `dereplicate` command.
+Lucy-ng uses **one pre-built SQLite database** for BOTH dereplication and 13C
+prediction (formula-indexed compound lookup + HOSE-based shift prediction). It is
+required for the `dereplicate`, `predict c13`, and CASE-ranking paths. You do **not**
+build it from raw SD files for a normal install — download the pre-built one:
 
-### COCONUT Database (Recommended)
+```bash
+mkdir -p data/reference
+lucy database download -o data/reference/lucy-ng-derep.db   # ~830 MB → ~2.8 GB
+lucy database info data/reference/lucy-ng-derep.db          # verify row counts
+```
 
-The COCONUT database contains ~895,000 natural products with predicted 13C NMR shifts.
-
-1. Download from: https://coconut.naturalproducts.net/
-2. Look for the SD file with predicted NMR data (typically `coconut_predicted.sd`)
-3. Place in one of these locations:
-   - `data/reference/coconut_predicted.sd` (project directory)
-   - `~/.lucy/coconut_predicted.sd` (user directory)
-
-**Note**: The COCONUT file is ~4.8 GB. Lucy-ng uses streaming mode to handle it efficiently.
-
-### NMRShiftDB (Smaller Alternative)
-
-NMRShiftDB contains ~33,000 compounds with experimental 13C shifts.
-
-1. Download from: https://nmrshiftdb.nmr.uni-koeln.de/
-2. Look for `nmrshiftdb2withsignals.sd`
-3. Place in:
-   - `data/reference/nmrshiftdb2withsignals.sd`
-   - `~/.lucy/nmrshiftdb.sd`
+| Property | Value |
+|----------|-------|
+| Source | Figshare, DOI [10.6084/m9.figshare.31073554](https://doi.org/10.6084/m9.figshare.31073554) |
+| Default path | `data/reference/lucy-ng-derep.db` |
+| Contents | 928,443 compounds (COCONUT + NMRShiftDB), 7.9M HOSE statistics |
 
 ### Auto-Discovery
 
-Lucy-ng automatically discovers databases in this order:
-1. `data/reference/coconut_predicted.sd`
-2. `data/reference/nmrshiftdb2withsignals.sd`
-3. `~/.lucy/coconut_predicted.sd`
-4. `~/.lucy/nmrshiftdb.sd`
+`DatabaseFinder` discovers `data/reference/lucy-ng-derep.db` automatically (including
+from a CASE data directory outside the repo). Override explicitly with `--database`:
 
-You can also specify the database explicitly:
 ```bash
-lucy dereplicate c13 spectrum_path formula --database /path/to/database.sd
+lucy dereplicate c13 spectrum_path formula --database /path/to/lucy-ng-derep.db
 ```
+
+> The raw COCONUT/NMRShiftDB SD files are only needed to **rebuild** the SQLite DB from
+> source (a maintenance task) — not for running lucy-ng.
 
 ## Verification
 
@@ -406,65 +398,70 @@ pip install git+https://github.com/Ratsemaat/HOSE_code_generator.git --no-deps
 
 ## Claude Code Skill Installation
 
-Lucy-ng includes Claude Code integration for AI-assisted structure elucidation. This provides:
-- A **skill** (`/lucy-ng`) that auto-triggers when you mention NMR structure elucidation
-- **Commands** (`/lucy-ng:CASE`, `/lucy-ng:dereplicate`, `/lucy-ng:sanitize`) for specific workflows
+Lucy-ng's Claude Code integration is the `/lucy-ng:*` **commands** plus the **CASE team
+agents** that `/lucy-ng:case` spawns. Both must be present, and an environment flag must
+be set, or CASE fails at its prerequisite gate.
 
-### Install the Skill and Commands
+> For a fresh headless server (e.g. provisioning the `sheldon` compute host), follow the
+> end-to-end **[SERVER_BOOTSTRAP.md](SERVER_BOOTSTRAP.md)** guide (or run
+> `scripts/bootstrap_case_host.sh`) — it does the steps below plus Python/LSD/DB.
 
-Copy the files to your Claude Code directories:
+### Install the commands and agents
+
+Symlink the repo's `.claude/` content into `~/.claude` (edits stay in sync; use `cp -r`
+for a frozen snapshot):
 
 ```bash
-# Clone or download the repository
 git clone https://github.com/steinbeck/lucy-ng.git
 cd lucy-ng
+mkdir -p ~/.claude/agents ~/.claude/commands
 
-# Install the main skill (auto-triggers on NMR/CASE questions)
-mkdir -p ~/.claude/skills/lucy-ng
-cp skill/SKILL.md ~/.claude/skills/lucy-ng/
+# Commands (case, dereplicate, predict, sanitise, status + references/)
+ln -sfn "$PWD/.claude/commands/lucy-ng" ~/.claude/commands/lucy-ng
 
-# Install the commands (explicit /lucy-ng:CASE, etc.)
-mkdir -p ~/.claude/commands/lucy-ng
-cp commands/lucy-ng/*.md ~/.claude/commands/lucy-ng/
+# CASE team agents — REQUIRED for /lucy-ng:case to spawn its team
+for a in "$PWD"/.claude/agents/lucy-*.md; do
+  ln -sfn "$a" ~/.claude/agents/"$(basename "$a")"
+done
 ```
 
-### Verify Installation
+### Enable agent teams
 
-After restarting Claude Code, verify the commands are available:
+`/lucy-ng:case` runs a multi-agent team — Claude Code needs this experimental flag:
+
+```bash
+echo 'export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1' >> ~/.bashrc   # or ~/.zshrc
+export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
+```
+
+### Verify
+
+After restarting Claude Code, the commands are available:
 
 ```
-/lucy-ng:CASE
-/lucy-ng:dereplicate
-/lucy-ng:sanitize
+/lucy-ng:case        /lucy-ng:dereplicate        /lucy-ng:predict
+/lucy-ng:sanitise    /lucy-ng:status
 ```
 
-### Available Commands
+### Available commands
 
 | Command | Purpose |
 |---------|---------|
-| `/lucy-ng` | Main skill - auto-triggers, performs dereplication then CASE if needed |
-| `/lucy-ng:CASE` | Skip dereplication, perform full de novo structure elucidation |
+| `/lucy-ng:case` | Full de novo structure elucidation (spawns the 4-agent team) |
 | `/lucy-ng:dereplicate` | Database matching only |
-| `/lucy-ng:sanitize` | Remove compound identity from datasets for blind CASE |
+| `/lucy-ng:predict` | Predict 13C shifts for a SMILES |
+| `/lucy-ng:sanitise` | Remove compound identity from datasets for blind CASE |
+| `/lucy-ng:status` | Check environment readiness (lucy/LSD/DB) |
 
-### File Structure
+### CASE team agents (in `~/.claude/agents/`)
 
-After installation, your Claude Code directories should have:
-
-```
-~/.claude/skills/lucy-ng/
-└── SKILL.md              # Main skill (auto-triggers)
-
-~/.claude/commands/lucy-ng/
-├── CASE.md               # /lucy-ng:CASE command
-├── dereplicate.md        # /lucy-ng:dereplicate command
-└── sanitize.md           # /lucy-ng:sanitize command
-```
-
-### Why Both Skills and Commands?
-
-- **Skill** (`~/.claude/skills/lucy-ng/SKILL.md`): Loads automatically when Claude detects you're asking about NMR structure elucidation
-- **Commands** (`~/.claude/commands/lucy-ng/*.md`): Invoked explicitly with `/lucy-ng:CASE` etc. for specific workflows
+| Agent | Role |
+|-------|------|
+| `lucy-nmr-chemist` | Peak picking, statistical detection, spectral QA |
+| `lucy-lsd-engineer` | LSD constraint building + solver runs |
+| `lucy-solution-analyst` | Solution ranking + identity reporting |
+| `lucy-devils-advocate` | Pre-run validation + post-solution G-IDENT/G-MULT gates |
+| `lucy-diagnostic` | Deep LSD-failure diagnosis (escalation only) |
 
 ## Next Steps
 
