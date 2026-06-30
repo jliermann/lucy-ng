@@ -5,502 +5,339 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-lucy-ng is a next-generation structure elucidation system designed for AI-agent driven workflows. Unlike traditional GUI-focused NMR processing tools, lucy-ng is built for programmatic, unattended operation where an AI agent (such as Claude) can iterate through the elucidation process until a structure is determined.
+lucy-ng determines the structure of an unknown organic natural product from its NMR
+spectra. Its centrepiece is a **team of cooperating AI agents** that runs the full
+Computer-Assisted Structure Elucidation (CASE) workflow autonomously — picking peaks,
+extracting constraints, driving the LSD solver, ranking candidates, and critiquing its
+own work — the way a group of human spectroscopists would, but unattended.
+
+Underneath the team sits the `lucy` command-line toolkit: a complete, scriptable NMR
+processing and structure-elucidation pipeline that the agents (and you) call directly.
+
+> lucy-ng is the successor to the original *Lucy* CASE program written by the project
+> author and later acquired by Bruker. It rebuilds that decades-old experience around an
+> agent-driven, fully programmable core.
+
+---
 
 ## Table of Contents
 
-- [Vision](#vision)
-- [Key Features](#key-features)
-- [Scientific Background](#scientific-background)
+- [The CASE Agent Team](#the-case-agent-team)
+- [Running a CASE Elucidation](#running-a-case-elucidation)
+- [The `lucy` CLI](#the-lucy-cli)
 - [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Usage](#usage)
-  - [Command-Line Interface](#command-line-interface)
-  - [Python API](#python-api)
-  - [MCP Server (AI Integration)](#mcp-server-ai-integration)
+- [Scientific Background](#scientific-background)
 - [Architecture](#architecture)
 - [Supported Data](#supported-data)
 - [Development](#development)
-- [License](#license)
+- [License & Citation](#license--citation)
 
-## Vision
+---
 
-Lucy-ng represents a complete reimagining of Computer-Assisted Structure Elucidation (CASE) for the AI era. The original Lucy software was created by the project author and sold to Bruker. Lucy-ng builds on decades of CASE experience but prioritizes:
+## The CASE Agent Team
 
-1. **AI-First Design**: Every feature is accessible via structured APIs suitable for LLM agents
-2. **Unattended Operation**: No human intervention required during the elucidation process
-3. **Iterative Refinement**: AI agents can run multiple cycles of hypothesis generation and testing
-4. **Transparent Reasoning**: All processing steps are logged and explainable
+Structure elucidation is not a single algorithm — it is an iterative, judgement-heavy
+process where evidence from several spectra has to be weighed, constraints have to be
+built carefully, and wrong turns have to be caught before they waste a solver run.
+lucy-ng models this as a **specialist team led by an orchestrator**, rather than as one
+monolithic prompt.
 
-### The Problem We Solve
+When you start a run, the orchestrator (`/lucy-ng:case`) spawns four specialists and
+supervises them as team lead. Each owns a part of the workflow:
 
-Existing NMR processing tools like NMRium are GUI-focused, making it difficult for AI agents to interact with them programmatically. Structure elucidation typically requires:
+| Agent | Role |
+|-------|------|
+| 🧪 **NMR Chemist** (`lucy-nmr-chemist`) | Peak picking, multiplicity assignment, statistical detection (hybridisation, neighbours), spectral-quality assessment. Establishes the chemistry-first evidence hierarchy. |
+| 🔧 **LSD Engineer** (`lucy-lsd-engineer`) | Builds LSD constraint files, runs the solver, manages the constraint inventory across iterations, adds HMBC correlations incrementally, converts solutions to structures. |
+| 📊 **Solution Analyst** (`lucy-solution-analyst`) | Ranks candidate structures by 13C-shift prediction, derives and verifies identity, assesses chemical plausibility, and reports the final result. |
+| 😈 **Devil's Advocate** (`lucy-devils-advocate`) | Quality gate. Validates **every** LSD file before the solver runs, checks that constraints persist across iterations, and flags loss or over-constraint — the primary defence against silent failure modes. |
 
-- Loading multiple NMR spectra (1D and 2D)
-- Peak picking with appropriate thresholds
-- Cross-validation between experiments
-- Generation of structural constraints
-- Execution of constraint-based solvers
-- Validation of proposed structures
+A fifth agent, the **Diagnostic specialist** (`lucy-diagnostic`), is held in reserve and
+called only when a run gets stuck (zero solutions or a solution explosion) and basic
+intervention has failed.
 
-Lucy-ng automates this entire pipeline while exposing each step as a programmable tool.
-
-## Key Features
-
-### NMR Data Processing
-- **Bruker Format Support**: Read 1D and 2D NMR spectra from Bruker TopSpin format
-- **Automatic Experiment Detection**: Identifies 1H, 13C, DEPT, COSY, HSQC, HMBC from pulse programs
-- **Processed Data Reading**: Works with processed spectra (pdata/1/) for immediate use
-
-### Intelligent Peak Picking
-- **Adaptive Peak Picker**: Automatically adjusts minimum distance based on line width (FWHM)
-- **DEPT-Guided HSQC Picking**: Uses DEPT-135 as ground truth to ensure all protonated carbons are found
-- **HMBC-Guided Filtering**: Removes noise peaks by validating against known carbon and proton positions
-- **Multiplicity Assignment**: Automatically determines CH, CH2, CH3 from DEPT-135/90
-
-### Dereplication
-- **COCONUT Database**: Match against ~895,000 natural products with predicted 13C shifts
-- **NMRShiftDB**: Fallback database with ~33,000 experimental spectra
-- **Streaming Mode**: Efficiently handles multi-GB databases without loading into memory
-- **Formula-Based Filtering**: Only processes compounds matching the target molecular formula
-
-### Structure Elucidation
-- **LSD Integration**: Generate input files and execute the LSD solver
-- **Symmetry Detection**: Identifies equivalent atoms from hydrogen budget and intensity analysis
-- **Constraint Generation**: Automatic MULT, HSQC, HMBC, BOND constraints from spectroscopic data
-- **Solution Ranking**: Rank LSD solutions by comparing predicted vs experimental 13C spectra
-
-### 13C Shift Prediction
-- **HOSE Code Prediction**: Predict 13C shifts from molecular structure using HOSE codes
-- **Fallback Strategy**: Automatic radius reduction (6→1) for maximum coverage
-- **Pre-built Lookup Table**: Fast predictions using nmrshiftdb2 reference data
-
-### AI Integration
-- **MCP Server**: Model Context Protocol tools for Claude Desktop and other AI agents
-- **CLI Interface**: Full command-line interface for scripting and testing
-- **Python API**: Direct library access for custom workflows
-
-## Scientific Background
-
-### The CASE Workflow
-
-Computer-Assisted Structure Elucidation follows a systematic approach:
+### How a run unfolds
 
 ```
-NMR Spectra → Peak Picking → Constraint Extraction → Solver → Candidate Structures → Validation
+                       ┌─────────────────────────────┐
+                       │   Orchestrator  /lucy-ng:case │
+                       │   (team lead + supervision)   │
+                       └──────────────┬────────────────┘
+            spawns + supervises ──────┼──────────────────────────
+                  │                   │                   │
+        ┌─────────▼──────┐  ┌─────────▼────────┐  ┌───────▼────────┐
+        │  NMR Chemist   │  │  LSD Engineer    │  │ Solution Analyst│
+        │  peaks/multipl.│→ │  constraints/LSD │→ │  rank + identify │
+        └────────────────┘  └─────────┬────────┘  └────────────────┘
+                                       │ every LSD file
+                              ┌────────▼─────────┐
+                              │ Devil's Advocate  │  ← validate before each solver run
+                              │  (quality gate)   │
+                              └───────────────────┘
 ```
 
-Lucy-ng implements each step with careful attention to scientific accuracy:
+The orchestrator monitors progress, detects unproductive loops, intervenes with
+**advisory** constraints (telling the team *what* is wrong, not *how* to fix it, so the
+specialists keep their autonomy), and escalates to you only after repeated intervention
+cycles fail. It never does dereplication and never short-cuts the elucidation — a CASE
+run always starts from the raw spectra.
 
-#### 1. Peak Picking Strategy
+The agents live in [`.claude/`](.claude/) (`agents/lucy-*.md` and
+`commands/lucy-ng/`) and are loaded as Claude Code skills.
 
-Raw 2D peak picking produces many noise peaks and artifacts. Lucy-ng uses a **guided peak picking** strategy:
+---
 
-- **DEPT as Ground Truth**: DEPT-135 definitively shows all protonated carbons
-- **Adaptive Thresholding**: HSQC threshold is lowered iteratively until all DEPT carbons are matched
-- **Cross-Validation**: HMBC peaks are filtered to require matching carbon (from 13C) AND proton (from HSQC)
+## Running a CASE Elucidation
 
-This dramatically reduces false correlations that would otherwise produce thousands of incorrect structures.
-
-#### 2. Handling Molecular Symmetry
-
-Equivalent carbons due to molecular symmetry appear as single NMR signals:
-
-```
-Ibuprofen (C13H18O2):
-- Expected carbons from formula: 13
-- Observed 13C signals: 10-11
-- Reason: Para-disubstituted benzene has 2 pairs of equivalent carbons
-```
-
-Lucy-ng detects symmetry by:
-- Comparing molecular formula H count with observed C-H count
-- Analyzing relative peak intensities (doubled signals have ~2x intensity)
-- Recognizing common symmetric motifs
-
-#### 3. Constraint Quality
-
-The number of LSD solutions depends heavily on constraint quality:
-
-| Constraint Source | Typical Solutions |
-|-------------------|-------------------|
-| Manual HMBC (16 correlations) | 900+ structures |
-| Guided HMBC (28-30 correlations) | 1-10 structures |
-
-Real experimental data with proper filtering provides much stronger constraints than manually constructed correlations.
-
-## Installation
-
-> **Setting up a server to run the full CASE skill `/lucy-ng:case` (e.g. a headless
-> compute host)?** Follow **[docs/SERVER_BOOTSTRAP.md](docs/SERVER_BOOTSTRAP.md)** or run
-> `scripts/bootstrap_case_host.sh` — it provisions Python+deps, LSD, the reference DB, and
-> the CASE commands **and team agents**. The steps below cover the `lucy` CLI only.
-
-### From GitHub
-
-```bash
-# Basic installation
-pip install "lucy-ng @ git+https://github.com/steinbeck/lucy-ng.git"
-
-# With MCP server support (recommended)
-pip install "lucy-ng[mcp] @ git+https://github.com/steinbeck/lucy-ng.git"
-```
-
-> **Note for macOS/zsh users**: The quotes are required because zsh interprets square brackets as glob patterns.
-
-### Development Installation
+The team runs inside [Claude Code](https://claude.com/claude-code). The fastest path on a
+fresh machine is the CASE-host bootstrap, which provisions Python + dependencies, the LSD
+solver, the reference database, **and** the CASE commands and team agents:
 
 ```bash
 git clone https://github.com/steinbeck/lucy-ng.git
 cd lucy-ng
-pip install -e ".[dev,mcp]"
+./scripts/bootstrap_case_host.sh
 ```
 
-### 13C Prediction Support (Python 3.12)
+See **[docs/SERVER_BOOTSTRAP.md](docs/SERVER_BOOTSTRAP.md)** for a headless/compute-host
+walkthrough.
 
-The 13C shift prediction feature requires the `hose-code-generator` package. On Python 3.12, install it separately:
+Then, from a directory holding your Bruker NMR data, start Claude Code and run:
+
+```
+/lucy-ng:case
+```
+
+The orchestrator picks up the spectra in the current directory, asks for the molecular
+formula if it cannot infer one, assembles the team, and runs to completion. Other
+commands in the same family:
+
+| Command | Purpose |
+|---------|---------|
+| `/lucy-ng:case` | Full autonomous CASE elucidation (the agent team) |
+| `/lucy-ng:dereplicate` | Match a 13C spectrum against the reference database |
+| `/lucy-ng:predict` | Predict 13C shifts for a candidate SMILES |
+| `/lucy-ng:sanitise` | Strip identifiers from a dataset for blind evaluation |
+| `/lucy-ng:status` | Check environment readiness (LSD, database, install) |
+
+---
+
+## The `lucy` CLI
+
+Everything the agents do is available directly through the `lucy` command. Every
+subcommand supports `--format json` for scripting. The command groups:
+
+| Group | What it does |
+|-------|--------------|
+| `lucy read` | Read 1D / 2D Bruker spectra |
+| `lucy pick` | Peak picking (1D, DEPT-guided HSQC, guided HMBC) |
+| `lucy analyze` | Symmetry detection and structural analysis |
+| `lucy detect` | Statistical detection (hybridisation, neighbours) |
+| `lucy dereplicate` | Match a spectrum against the reference database |
+| `lucy identify` | Derive a deterministic identity (SMILES → InChIKey + DB name) |
+| `lucy predict` | Predict 13C shifts from structure (HOSE codes) |
+| `lucy lsd` | Generate LSD input, run the solver, rank solutions |
+| `lucy pylsd` | Multi-run LSD orchestration for 4J-HMBC handling |
+| `lucy fragment` | Fragment-library build / search |
+| `lucy visualize` | NMR correlation diagrams |
+| `lucy fetch` | Fetch datasets from external repositories |
+| `lucy database` | Download and inspect the reference database |
+
+A few representative invocations:
+
+```bash
+# Inspect a carbon spectrum
+lucy read 1d data/Ibuprofen/2
+
+# DEPT-guided HSQC picking (DEPT-135 as ground truth)
+lucy pick hsqc data/Ibuprofen/6 --dept135 data/Ibuprofen/3
+
+# Guided HMBC picking (cross-validated against 13C and HSQC)
+lucy pick hmbc data/Ibuprofen/7 --c13 data/Ibuprofen/2 --hsqc data/Ibuprofen/6
+
+# Dereplicate against the reference database
+lucy dereplicate c13 data/Ibuprofen/2 C13H18O2
+
+# Generate constraints, solve, and rank
+lucy lsd generate data/Ibuprofen C13H18O2 -o ibuprofen.lsd
+lucy lsd run ibuprofen.lsd
+lucy lsd rank output/ data/Ibuprofen/2 --top 10
+
+# Predict 13C shifts for a candidate
+lucy predict c13 "CC(C)Cc1ccc(cc1)C(C)C(=O)O"
+```
+
+A Python API mirrors the CLI for custom workflows — see
+[docs/USER_GUIDE.md](docs/USER_GUIDE.md).
+
+---
+
+## Installation
+
+### CLI only
+
+```bash
+pip install "lucy-ng @ git+https://github.com/steinbeck/lucy-ng.git"
+```
+
+> **macOS / zsh:** the quotes are required because zsh expands square brackets.
+
+### Development
+
+```bash
+git clone https://github.com/steinbeck/lucy-ng.git
+cd lucy-ng
+pip install -e ".[dev]"
+```
+
+### 13C prediction support
+
+13C prediction needs the `hose-code-generator` package, which has a broken test
+dependency on modern Python. Install it without that dependency:
 
 ```bash
 pip install git+https://github.com/Ratsemaat/HOSE_code_generator.git --no-deps
+pip install rdkit
 ```
 
-> **Note**: The `--no-deps` flag skips a broken test dependency (`xmlrunner`) that doesn't work with Python 3.12. The prediction feature works fine without it.
+### LSD solver
 
-### External Dependencies
+The [LSD solver](http://eos.univ-reims.fr/LSD/) by Jean-Marc Nuzillard does the actual
+structure generation. Download it, extract it, and add its `bin/` directory to `PATH`.
+Verify with:
 
-**LSD Solver** (optional, for structure generation):
 ```bash
-# Download from http://eos.univ-reims.fr/LSD/
-# Extract and add to PATH, or specify location when running
+lucy lsd check     # must report both LSD and outlsd on PATH
 ```
 
-### Reference Database
+### Reference database
 
-Dereplication, 13C prediction, and CASE ranking all use one pre-built SQLite DB
-(928K compounds + 7.9M HOSE statistics, ~830 MB → ~2.8 GB). Download it with the CLI:
+Dereplication, 13C prediction, and CASE ranking all share one pre-built SQLite database:
+**928,443 compounds** (COCONUT + NMRShiftDB) and **7.9 M HOSE-code statistics**
+(~830 MB download → ~2.8 GB uncompressed).
 
 ```bash
 lucy database download -o data/reference/lucy-ng-derep.db
 lucy database info data/reference/lucy-ng-derep.db
 ```
 
-Auto-discovered at `data/reference/lucy-ng-derep.db`. See
+It is auto-discovered at `data/reference/lucy-ng-derep.db`. DOI:
+[10.6084/m9.figshare.31073554](https://doi.org/10.6084/m9.figshare.31073554). See
 [docs/INSTALLATION.md](docs/INSTALLATION.md#reference-database) for detail.
 
-## Quick Start
+---
 
-### Read a Spectrum
+## Scientific Background
 
-```python
-from lucy_ng import BrukerReader
-
-# Read 1D carbon spectrum
-spectrum = BrukerReader.read_1d("data/Ibuprofen/2")
-print(f"Nucleus: {spectrum.nucleus}")
-print(f"Points: {len(spectrum.data)}")
-print(f"PPM range: {spectrum.ppm_scale.min():.1f} - {spectrum.ppm_scale.max():.1f}")
-```
-
-### Pick Peaks
-
-```python
-from lucy_ng import BrukerReader, AdaptivePeakPicker
-
-spectrum = BrukerReader.read_1d("data/Ibuprofen/2")
-peaks = AdaptivePeakPicker.pick_peaks(spectrum, threshold=0.05)
-
-for peak in peaks.peaks[:5]:
-    print(f"{peak.position:.2f} ppm, intensity: {peak.intensity:.2e}")
-```
-
-### DEPT-Guided HSQC Picking
-
-```python
-from lucy_ng import BrukerReader
-from lucy_ng.processing import DEPTGuidedPicker
-
-hsqc = BrukerReader.read_2d("data/Ibuprofen/6")
-dept135 = BrukerReader.read_1d("data/Ibuprofen/3")
-
-result = DEPTGuidedPicker.pick_hsqc_peaks(hsqc, dept135)
-print(result.summary())
-# Access: result.peaks, result.carbon_multiplicities
-```
-
-### Dereplication
-
-```bash
-lucy dereplicate c13 data/Ibuprofen/2 C13H18O2
-```
-
-```python
-from lucy_ng.dereplication import DereplicationService, NMRShiftDBLoader
-from lucy_ng import BrukerReader
-
-spectrum = BrukerReader.read_1d("data/Ibuprofen/2")
-loader = NMRShiftDBLoader("data/reference/nmrshiftdb2withsignals.sd")
-loader.load()
-
-service = DereplicationService(loader)
-result = service.dereplicate_from_spectrum(spectrum, "C13H18O2")
-
-if result.is_match:
-    print(f"Match found: {result.top_matches[0].entry.name}")
-```
-
-## Usage
-
-### Command-Line Interface
-
-Lucy-ng provides a comprehensive CLI with five command groups:
-
-#### Read Spectra
-```bash
-# Read 1D spectrum
-lucy read 1d data/Ibuprofen/2
-
-# Read 2D spectrum
-lucy read 2d data/Ibuprofen/6
-
-# Output as JSON
-lucy read 1d data/Ibuprofen/2 --format json
-```
-
-#### Pick Peaks
-```bash
-# 1D peak picking
-lucy pick 1d data/Ibuprofen/2
-
-# DEPT-guided HSQC picking
-lucy pick hsqc data/Ibuprofen/6 --dept135 data/Ibuprofen/3
-
-# With DEPT-90 for CH/CH3 disambiguation
-lucy pick hsqc data/Ibuprofen/6 --dept135 data/Ibuprofen/3 --dept90 data/Ibuprofen/4
-
-# Guided HMBC picking
-lucy pick hmbc data/Ibuprofen/7 --c13 data/Ibuprofen/2 --hsqc data/Ibuprofen/6
-```
-
-#### Analyze Symmetry
-```bash
-lucy analyze symmetry data/Ibuprofen C13H18O2
-```
-
-#### Dereplication
-```bash
-# Default uses COCONUT database
-lucy dereplicate c13 data/Ibuprofen/2 C13H18O2
-
-# Specify database
-lucy dereplicate c13 data/Ibuprofen/2 C13H18O2 --database data/reference/nmrshiftdb2withsignals.sd
-```
-
-#### LSD Integration
-```bash
-# Generate LSD input file
-lucy lsd generate data/Ibuprofen C13H18O2 -o ibuprofen.lsd
-
-# Run LSD solver
-lucy lsd run ibuprofen.lsd
-
-# Rank solutions by 13C prediction
-lucy lsd rank output/ data/Ibuprofen/2 --top 10
-
-# Check LSD availability
-lucy lsd check
-```
-
-#### 13C Shift Prediction
-```bash
-# Predict shifts from SMILES
-lucy predict c13 "CC(C)Cc1ccc(cc1)C(C)C(=O)O"
-
-# Build lookup table (one-time setup)
-lucy predict build-table data/reference/nmrshiftdb2withsignals.sd
-
-# Show table info
-lucy predict table-info
-```
-
-### Python API
-
-See [docs/USER_GUIDE.md](docs/USER_GUIDE.md) for comprehensive Python API documentation.
-
-### Claude Code Integration
-
-Lucy-ng works seamlessly with [Claude Code](https://claude.ai/claude-code) for interactive structure elucidation. Copy this prompt to set up a new machine:
+CASE follows a systematic pipeline:
 
 ```
-Set up this machine for NMR structure elucidation with lucy-ng:
-
-1. Check/install lucy-ng: `lucy --version || pip install lucy-ng`
-2. Check LSD solver: `lucy lsd check` - if missing, install from http://eos.univ-reims.fr/LSD/
-3. Download CLAUDE.md to .claude/CLAUDE.md: https://raw.githubusercontent.com/steinbeck/lucy-ng/master/CLAUDE.md
-4. Create .claude/settings.json with: {"permissions":{"allow":["Bash(lucy:*)","Bash(python3:*)"]}}
-
-Once ready, place Bruker NMR data in a folder and I'll perform complete structure elucidation.
+NMR Spectra → Peak Picking → Constraint Extraction → Solver → Candidate Structures → Ranking
 ```
 
-After setup, simply ask:
-```
-Perform structure elucidation on the NMR data in this folder. Molecular formula: C13H18O2
-```
+Two design choices matter most for getting correct answers:
 
-Claude will automatically run dereplication, pick peaks, analyze symmetry, generate LSD constraints, solve structures, and rank solutions by 13C shift prediction.
+### Guided peak picking
 
-### MCP Server (AI Integration)
+Raw 2D peak picking produces many noise peaks and artefacts. lucy-ng uses DEPT-135 as
+ground truth (it definitively shows all protonated carbons), lowers the HSQC threshold
+until every DEPT carbon is matched, and filters HMBC peaks to require a matching carbon
+(from 13C) **and** proton (from HSQC). This removes the false correlations that would
+otherwise generate thousands of incorrect structures.
 
-Lucy-ng includes an MCP (Model Context Protocol) server for AI agent integration.
+| Constraint source | Typical LSD solutions |
+|-------------------|-----------------------|
+| Manual HMBC (~16 correlations) | 900+ structures |
+| Guided HMBC (28–30 correlations) | 1–10 structures |
 
-#### Available Tools
+### Molecular symmetry
 
-| Tool | Description |
-|------|-------------|
-| `read_spectrum_1d` | Read 1D NMR spectrum metadata |
-| `read_spectrum_2d` | Read 2D NMR spectrum metadata |
-| `pick_peaks_1d` | Pick peaks from 1D spectrum |
-| `pick_hsqc_peaks` | DEPT-guided HSQC peak picking |
-| `pick_hmbc_peaks` | Guided HMBC peak picking |
-| `analyze_symmetry` | Detect molecular symmetry |
-| `dereplicate_c13` | Match against reference database |
-| `generate_lsd_input` | Generate LSD input from NMR data |
-| `run_lsd` | Execute LSD solver |
-| `check_lsd_availability` | Check if LSD is installed |
-| `rank_lsd_solutions` | Rank solutions by 13C prediction similarity |
-| `predict_c13_shifts` | Predict 13C shifts from SMILES |
+Equivalent carbons appear as single signals, so the observed carbon count is often below
+the formula count (e.g. a para-disubstituted benzene shows two pairs of equivalent
+carbons). lucy-ng detects this by comparing the formula's hydrogen budget with the
+observed C–H count and by analysing relative peak intensities, then encodes it as solver
+constraints rather than guessing.
 
-#### Claude Desktop Integration
-
-Add to `~/.config/Claude/claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "lucy-ng": {
-      "command": "lucy-mcp"
-    }
-  }
-}
-```
-
-Then ask Claude: *"Use lucy-ng to analyze the NMR data in data/Ibuprofen and identify the compound"*
-
-See [docs/MCP_INTEGRATION.md](docs/MCP_INTEGRATION.md) for detailed setup instructions.
-
-**AI Agent Guide**: For comprehensive guidance on structure elucidation workflow, pitfalls, and best practices, see [CLAUDE.md](CLAUDE.md).
+---
 
 ## Architecture
 
 ```
 lucy-ng/
 ├── src/lucy_ng/
-│   ├── models/          # Pydantic data models (Spectrum1D, Peak1D, etc.)
+│   ├── models/          # Pydantic v2 data models (Spectrum1D/2D, Peak1D, …)
 │   ├── readers/         # NMR file readers (BrukerReader)
-│   ├── processing/      # Peak picking and signal processing
-│   │   ├── peak_picker.py       # AdaptivePeakPicker
-│   │   ├── peak_picker_2d.py    # PeakPicker2D
-│   │   ├── dept_guided_picker.py # DEPTGuidedPicker
-│   │   └── hmbc_guided_picker.py # HMBCGuidedPicker
-│   ├── analysis/        # Symmetry analysis tools
-│   ├── dereplication/   # Database matching
-│   │   ├── coconut.py   # COCONUT loader (streaming)
-│   │   ├── nmrshiftdb.py # NMRShiftDB loader
-│   │   └── service.py   # DereplicationService
-│   ├── lsd/             # LSD solver integration
-│   │   ├── generator.py # LSD input file generation
-│   │   └── runner.py    # LSD execution
-│   ├── prediction/      # 13C shift prediction
-│   │   ├── hose.py      # HOSE code generation
-│   │   ├── lookup.py    # Lookup table management
-│   │   └── predictor.py # C13Predictor
-│   ├── ranking/         # Solution ranking
-│   │   └── ranker.py    # SolutionRanker
-│   ├── cli/             # Click-based CLI
-│   └── mcp/             # MCP server
-│       └── server.py    # FastMCP tools (12 tools)
-├── tests/               # pytest test suite
-├── data/                # Test NMR datasets
-└── docs/                # Documentation
+│   ├── processing/      # peak picking, signal processing
+│   ├── detection/       # statistical detection (hybridisation, neighbours)
+│   ├── analysis/        # symmetry / signal-grouping analysis
+│   ├── dereplication/   # formula-indexed compound DB matching
+│   ├── prediction/      # HOSE-code 13C shift prediction
+│   ├── ranking/         # candidate solution ranking
+│   ├── lsd/             # LSD solver integration + bundled fragment filters
+│   ├── identity.py      # deterministic identity derivation (lucy identify)
+│   └── cli/             # the `lucy` Click CLI
+├── .claude/             # CASE orchestrator command + team agents (skills)
+├── tests/               # pytest suite
+├── data/                # local test NMR datasets (Bruker format)
+└── docs/                # documentation
 ```
 
-### Design Principles
+### Design principles
 
-1. **Static Methods for Convenience**: Core operations like `AdaptivePeakPicker.pick_peaks()` are static for easy use
-2. **Pydantic Models**: All data structures use Pydantic v2 for validation and serialization
-3. **Structured Results**: Every operation returns a result object with success status and detailed data
-4. **Error Tolerance**: Operations return error information rather than raising exceptions
+1. **Structured results** — every operation returns a result object with a success flag
+   and detailed data, rather than raising on the common error paths.
+2. **Pydantic models** — all data structures use Pydantic v2 for validation and
+   serialisation.
+3. **HOSE codes use molecules without explicit hydrogens** — a hard invariant shared
+   between database generation and prediction; mixing the two causes prediction
+   mismatches (see [CLAUDE.md](CLAUDE.md)).
+
+For the AI-agent workflow, pitfalls, and best practices, see [CLAUDE.md](CLAUDE.md).
+
+---
 
 ## Supported Data
 
-### Input Formats
-- Bruker TopSpin 1D and 2D spectra (processed data from pdata/1/)
-- SD files for reference databases
+**Input:** Bruker TopSpin 1D and 2D spectra (processed data from `pdata/1/`); SD files
+for reference databases.
 
-### Experiment Types
-| Type | Detection | Notes |
-|------|-----------|-------|
+| Experiment | Detection | Notes |
+|------------|-----------|-------|
 | 1H | Nucleus | Proton spectrum |
 | 13C | Nucleus | Carbon spectrum |
 | DEPT-135 | Pulse program | CH/CH3 up, CH2 down |
 | DEPT-90 | Pulse program | CH only |
-| COSY | Pulse program | H-H correlations |
-| HSQC | Pulse program (inv4) | Direct C-H |
-| HMBC | Pulse program (inv4*lr*) | Long-range C-H |
+| COSY | Pulse program | H–H correlations |
+| HSQC | Pulse program (inv4) | Direct C–H |
+| HMBC | Pulse program (inv4·lr) | Long-range C–H |
+
+---
 
 ## Development
 
-### Running Tests
-
 ```bash
-# All tests
-pytest
-
-# With coverage
-pytest --cov=lucy_ng
-
-# Excluding slow dereplication tests
-pytest --ignore=tests/test_dereplication.py
+pytest                    # run tests
+pytest --cov=lucy_ng      # with coverage
+mypy src/lucy_ng          # type checking (strict)
+ruff check src tests      # linting
+hatch build               # build the package
 ```
 
-### Code Quality
+---
 
-```bash
-# Type checking
-mypy src/lucy_ng
+## License & Citation
 
-# Linting
-ruff check src tests
+MIT License — see [LICENSE](LICENSE).
 
-# Format checking
-ruff format --check src tests
-```
-
-### Building
-
-```bash
-hatch build
-```
-
-## License
-
-MIT License - see [LICENSE](LICENSE) for details.
-
-## Acknowledgments
-
-- Original Lucy concept by Christoph Steinbeck
-- LSD solver by Jean-Marc Nuzillard
-- nmrglue library for NMR file parsing
-- COCONUT and NMRShiftDB for reference data
-
-## Citation
-
-If you use lucy-ng in your research, please cite:
+**Acknowledgments:** original Lucy concept by Christoph Steinbeck · LSD solver by
+Jean-Marc Nuzillard · nmrglue for NMR file parsing · COCONUT and NMRShiftDB for reference
+data.
 
 ```bibtex
 @software{lucy-ng,
   author = {Steinbeck, Christoph},
-  title = {lucy-ng: AI-Agent Powered Computer-Assisted Structure Elucidation},
-  url = {https://github.com/steinbeck/lucy-ng},
-  year = {2026}
+  title  = {lucy-ng: AI-Agent Powered Computer-Assisted Structure Elucidation},
+  url    = {https://github.com/steinbeck/lucy-ng},
+  year   = {2026}
 }
 ```
