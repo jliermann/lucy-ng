@@ -196,7 +196,9 @@ This makes the exact model + version of every agent auditable at the top of ever
 
 **Step 5: Kick off (mandatory — the team will NOT start on its own).**
 
-Immediately after spawning, the coordinator MUST push the first directive. The freshly-spawned teammates are idle and will do nothing until messaged:
+Immediately after spawning, the coordinator MUST push the first directive. The freshly-spawned teammates are idle and will do nothing until messaged.
+
+**First, stamp timing** (see the timing step): take the `run_start` stamp (this one also does `mkdir -p <compound_path>/analysis`), then a `phase_start` stamp for `peak-picking` — both BEFORE the push below.
 
 ```
 SendMessage(
@@ -243,6 +245,93 @@ source of truth the pre-accept coverage gate reads. Record four things:
 
 If no `[MULTIPLICITY-AMBIGUOUS]` record exists, omit this section entirely — the single-family
 flow is unaffected.
+</step>
+
+<step name="timing">
+**Wall-clock timing capture — real UTC timestamps at every phase boundary and agent hand-back,
+so a run's total and per-phase duration can be reported reproducibly (e.g. in a publication).**
+
+<!--
+RELOAD NOTE: case.md is symlinked into ~/.claude. Prompt edit — a FRESH Claude Code session is
+required to reload. Not unit-testable this session; validated by the next full CASE run.
+-->
+
+**Two hard rules:**
+1. **NEVER infer a timestamp** from context / `currentDate` (that only knows the calendar day).
+   ALWAYS read the real clock with `date -u`. That is the whole point — the old `<timestamp>`
+   placeholders were being filled from context and had no wall-clock time.
+2. **All timing work happens in the coordinator** (this orchestrator), never in the teammates.
+   It therefore CANNOT delay the lsd-engineer's "[ITERATION-COMPLETE] the instant the solver
+   exits" anti-hang rule. A `date` call is instantaneous; still, always take the `phase_end`
+   stamp for an arriving reply FIRST, then write its CASE-PROGRESS.md section and push the next
+   `[BEGIN]` — never let stamping gate the next directive.
+
+**Mechanism — one atomic append per event.** At each timing point, run exactly one Bash call
+that reads the clock and appends one JSON line to the append-only log (survives restarts):
+
+```bash
+printf '{"utc":"%s","epoch":%s,"event":"%s","phase":"%s","agent":"%s"}\n' \
+  "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$(date -u +%s)" "<event>" "<phase>" "<agent>" \
+  >> <compound_path>/analysis/timing.jsonl
+```
+
+(The very first call — `run_start` — must create the dir first: prefix it with
+`mkdir -p <compound_path>/analysis && `.)
+
+**When to stamp (phase boundaries + agent hand-backs — plenty, but not every message):**
+
+| event | phase value | when |
+|-------|-------------|------|
+| `run_start` | `run` | ONCE, at team spawn, BEFORE the first `[BEGIN]` push |
+| `phase_start` | the task name (`peak-picking`, `lsd-iteration-NN`, `hmbc-selection-NN`, `ranking`, `coverage_gate`, `identity_gate`) | immediately BEFORE you SendMessage each `[BEGIN]` directive |
+| `phase_end` | same phase name | immediately as the matching `[*-COMPLETE]` / `[VALIDATION-*]` / `[G-IDENT-*]` reply arrives (before writing its section) |
+| `run_end` | `run` | ONCE, after the gates pass and results are ready, BEFORE terminate_team |
+
+Rule of thumb: **every `[BEGIN]` you send → one `phase_start`; every completion reply you
+receive → one `phase_end`.** That gives start+end for every phase and a stamp for every agent
+hand-back, without stamping routine chatter. Also mirror the human-readable UTC value into the
+matching CASE-PROGRESS.md field (`**Started (UTC):**`, `**Phase start (UTC):**`,
+`**Reported (UTC):**` — see progress-format.md).
+
+**Finalize (run ONCE, right after the `run_end` stamp, before terminate_team).** This also runs
+on the escalate and smoke-test exits (any path into terminate_team), so a duration is always
+recorded. Convert the log into the machine-readable `timing.json` + a human table
+deterministically (python does the arithmetic — do NOT compute durations by hand):
+
+```bash
+python3 - <<'PY' <compound_path>
+import json, sys, pathlib
+d = pathlib.Path(sys.argv[1]) / "analysis"
+ev = [json.loads(l) for l in (d/"timing.jsonl").read_text().splitlines() if l.strip()]
+def hms(s): return None if s is None else f"{s//3600:02d}:{s%3600//60:02d}:{s%60:02d}"
+starts, phases = {}, []
+for e in ev:
+    if e["event"] == "phase_start":
+        starts[e["phase"]] = e
+    elif e["event"] == "phase_end" and e["phase"] in starts:
+        s = starts.pop(e["phase"])
+        phases.append({"phase": e["phase"], "agent": e.get("agent", ""),
+                       "start_utc": s["utc"], "end_utc": e["utc"],
+                       "duration_s": int(e["epoch"]) - int(s["epoch"])})
+run = {x["event"]: x for x in ev if x["event"] in ("run_start", "run_end")}
+total = (int(run["run_end"]["epoch"]) - int(run["run_start"]["epoch"])) if {"run_start","run_end"} <= run.keys() else None
+out = {"run_start_utc": run.get("run_start", {}).get("utc"),
+       "run_end_utc": run.get("run_end", {}).get("utc"),
+       "total_duration_s": total, "total_duration_hms": hms(total), "phases": phases}
+(d/"timing.json").write_text(json.dumps(out, indent=2))
+rows = "\n".join(f"| {p['phase']} | {p['agent']} | {p['start_utc']} | {p['end_utc']} | {hms(p['duration_s'])} |" for p in phases)
+print("\n## Timing Summary\n\n"
+      f"**Run start (UTC):** {out['run_start_utc']}  \n"
+      f"**Run end (UTC):** {out['run_end_utc']}  \n"
+      f"**Total wall-clock:** {out['total_duration_hms']}\n\n"
+      "| Phase | Agent | Start (UTC) | End (UTC) | Duration |\n"
+      "|-------|-------|-------------|-----------|----------|\n" + rows + "\n")
+PY
+```
+
+Append the printed `## Timing Summary` block to `analysis/CASE-PROGRESS.md`, and also to
+`analysis/final_results.md` **if it exists** (it won't on the escalate/smoke exits).
+`analysis/timing.json` is the machine-readable artefact for aggregating across many runs.
 </step>
 
 <step name="validate_message">
@@ -306,7 +395,7 @@ SendMessage(
 )
 ```
 
-**Monitoring loop:** Receive structured messages from teammates (arrive as conversation turns) + optionally read `TaskList()` for status + read `<compound_path>/analysis/CASE-PROGRESS.md` for loop detection. On each structured message ([SETUP-COMPLETE], [ITERATION-COMPLETE], [VALIDATION-PASSED], [VALIDATION-BLOCKED], [RANKING-COMPLETE]): write the corresponding section to CASE-PROGRESS.md per write_progress, **push the next `[BEGIN]` directive** to whichever agent owns the next step, then continue monitoring.
+**Monitoring loop:** Receive structured messages from teammates (arrive as conversation turns) + optionally read `TaskList()` for status + read `<compound_path>/analysis/CASE-PROGRESS.md` for loop detection. On each structured message ([SETUP-COMPLETE], [ITERATION-COMPLETE], [VALIDATION-PASSED], [VALIDATION-BLOCKED], [RANKING-COMPLETE]): **take the `phase_end` timing stamp first** (see the timing step), then write the corresponding section to CASE-PROGRESS.md per write_progress, then take a `phase_start` stamp for and **push the next `[BEGIN]` directive** to whichever agent owns the next step, then continue monitoring. (Timing invariant: every `[BEGIN]` you push is preceded by a `phase_start`; every completion reply you receive is preceded by a `phase_end`.)
 
 **Stall recovery (missing [ITERATION-COMPLETE]) — self-rescue when you are awoken:**
 The primary defence is the lsd-engineer sending [ITERATION-COMPLETE] the instant the solver
@@ -771,6 +860,8 @@ Overall: PASS / FAIL (N/4 checkpoints passed)
 Gracefully shut down all teammates and clean up team resources.
 
 **This step executes after:** present_results (successful or failed CASE), OR escalate (user escalation), OR smoke_test_report (smoke test mode).
+
+**Step 0: Finalize timing (before shutdown).** Take the `run_end` stamp, then run the timing finalize (see the timing step): it writes `analysis/timing.json` and prints the `## Timing Summary` block, which you append to `analysis/CASE-PROGRESS.md` (and to `analysis/final_results.md` if it exists). Do this on every exit path — success, escalation, or smoke test — so a wall-clock duration is always on record.
 
 **Step 1: Send shutdown requests to all 4 teammates:**
 ```

@@ -7,6 +7,12 @@ Write CASE-PROGRESS.md entries as the sole writer. No agent writes this file dir
 
 **Rule:** Append-only. NEVER overwrite previous content. NEVER let agents write this file.
 
+**Timestamp rule:** Every `(UTC)` field below is a REAL wall-clock timestamp taken with `date -u`
+per the case.md `timing` step — an ISO-8601 UTC value like `2026-07-01T09:12:03Z`. NEVER fill a
+timestamp from context or `currentDate` (that has no time-of-day). These fields mirror the
+append-only `analysis/timing.jsonl` log; the final `## Timing Summary` block + `analysis/timing.json`
+are produced from that log at the end of the run.
+
 **Writing triggers and order:**
 
 1. **File header** — write immediately after team spawns (before any agent messages):
@@ -16,7 +22,7 @@ Write CASE-PROGRESS.md entries as the sole writer. No agent writes this file dir
 
 **Compound:** <compound_path>
 **Formula:** <molecular_formula>
-**Started:** <timestamp>
+**Started (UTC):** <real ISO-8601 UTC from `date -u`, = the run_start timing stamp>
 **Team:** CASE Team v4.0 (coordinator, nmr-chemist, lsd-engineer, solution-analyst, devils-advocate)
 
 ---
@@ -36,6 +42,7 @@ Write CASE-PROGRESS.md entries as the sole writer. No agent writes this file dir
 - **devils-advocate:** <reported> (intended: claude-opus-4-8)
 
 ### NMR-Chemist
+**Reported (UTC):** <phase_end stamp for peak-picking, when [SETUP-COMPLETE] arrived>
 **DBE:** <from message>
 **Spectra found:** <from message>
 **Peak counts:** <from message>
@@ -61,7 +68,7 @@ Write CASE-PROGRESS.md entries as the sole writer. No agent writes this file dir
 ## Iteration N: <brief description>
 
 ### Coordinator
-**Time:** <timestamp>
+**Phase start (UTC):** <ISO-8601 UTC = the phase_start stamp for lsd-iteration-N>
 **Iteration goal:** <brief goal for this iteration>
 ```
 
@@ -69,6 +76,7 @@ Write CASE-PROGRESS.md entries as the sole writer. No agent writes this file dir
 
 ```markdown
 ### LSD-Engineer
+**Reported (UTC):** <phase_end stamp for this iteration, when [ITERATION-COMPLETE] arrived>
 **LSD file:** <from message: LSD file path>
 **Solution count:** <from message>
 **Fragment search:** <from message>
@@ -88,6 +96,7 @@ Write CASE-PROGRESS.md entries as the sole writer. No agent writes this file dir
 
 ```markdown
 ### Devils-Advocate
+**Reported (UTC):** <phase_end stamp, when [VALIDATION-PASSED/BLOCKED] arrived>
 **Validation:** <PASSED or BLOCKED>
 **sp2 count:** <from message>
 **H budget:** <from message>
@@ -118,6 +127,7 @@ If [VALIDATION-BLOCKED]: also append:
 
 ```markdown
 ### Solution-Analyst
+**Reported (UTC):** <phase_end stamp, when [RANKING-COMPLETE] arrived>
 **Solutions:** <from message: total count>
 **Top solution:** <from message: rank, SMILES, MAE, matched>
 **Strained rings:** <from message>
@@ -133,7 +143,7 @@ If [VALIDATION-BLOCKED]: also append:
 
 ### Orchestrator
 **Pattern detected:** <pattern_name>
-**Specialist spawned:** lucy-diagnostic at <timestamp>
+**Specialist spawned:** lucy-diagnostic at <ISO-8601 UTC from `date -u`>
 **Report:** DIAGNOSTIC-REPORT.md
 
 ### Diagnostic Specialist (External)
@@ -159,6 +169,29 @@ If [VALIDATION-BLOCKED]: also append:
 **Validation:** PASSED
 <fields from revised validation message>
 ```
+
+10. **Timing Summary** — the LAST block, appended once at the end of the run (produced by the
+case.md `timing` finalize step, not hand-written). The coordinator appends the printed block
+verbatim; it is generated from `analysis/timing.jsonl` alongside the machine-readable
+`analysis/timing.json`:
+
+```markdown
+## Timing Summary
+
+**Run start (UTC):** <ISO-8601>
+**Run end (UTC):** <ISO-8601>
+**Total wall-clock:** <HH:MM:SS>
+
+| Phase | Agent | Start (UTC) | End (UTC) | Duration |
+|-------|-------|-------------|-----------|----------|
+| peak-picking | nmr-chemist | <ISO> | <ISO> | <HH:MM:SS> |
+| lsd-iteration-01 | lsd-engineer | <ISO> | <ISO> | <HH:MM:SS> |
+| ... | ... | ... | ... | ... |
+| ranking | solution-analyst | <ISO> | <ISO> | <HH:MM:SS> |
+```
+
+`analysis/timing.json` carries the same data as structured JSON (`run_start_utc`, `run_end_utc`,
+`total_duration_s`, `total_duration_hms`, and a `phases` array) for aggregation across runs.
 
 **Backward-compatibility note:** The orchestrator's detect_loops step parses these fields from CASE-PROGRESS.md via LLM reading:
 - `Solution count: N` — now in ### Coordinator or ### LSD-Engineer sub-sections within ## Iteration N:
