@@ -56,7 +56,7 @@ them:
 | **LSD** | Jean-Marc Nuzillard | The structure generator — the core solver |
 | **RDKit** | RDKit contributors | Cheminformatics: molecules, SMILES/InChI, substructure search |
 | **nmrglue** | J. J. Helmus et al. | Reading Bruker NMR data |
-| **HOSE codes** | Bremser; W. Robien; A. Ratsemaat's generator | 13C shift-prediction descriptors |
+| **HOSE codes** | W. Bremser (1978) | 13C shift-prediction descriptors |
 | **COCONUT**, **NMRShiftDB** | their respective communities | Reference data for dereplication and prediction |
 
 The `lucy` command-line tools are the wrappers through which these packages are driven.
@@ -377,7 +377,8 @@ current preferred citation; a key reference is:
 
 **Acknowledgments:** LSD by Jean-Marc Nuzillard (Université de Reims Champagne-Ardenne) ·
 original Lucy concept by Christoph Steinbeck · RDKit · nmrglue for NMR file parsing ·
-HOSE-code shift prediction · COCONUT and NMRShiftDB for reference data.
+HOSE codes (W. Bremser, *Anal. Chim. Acta* **1978**, 103, 355–365) · COCONUT and
+NMRShiftDB for reference data.
 
 If you use lucy-ng itself, please also cite it (alongside LSD):
 
