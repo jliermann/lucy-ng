@@ -18,9 +18,8 @@ generator — at its core** (see [Built on LSD](#built-on-lsd-and-established-to
 The genuinely novel part, and our own contribution, is the cooperative **agent team** that
 drives all of it unattended.
 
-> lucy-ng is the successor to the original *Lucy* CASE program written by the project
-> author and later acquired by Bruker. It rebuilds that decades-old experience around an
-> agent-driven, fully programmable core.
+> lucy-ng is a reference to the original *Lucy* CASE program written by the project author.
+> The existence of LSD made Lucy obsolete.
 
 ---
 
