@@ -11,8 +11,12 @@ Computer-Assisted Structure Elucidation (CASE) workflow autonomously — picking
 extracting constraints, driving the LSD solver, ranking candidates, and critiquing its
 own work — the way a group of human spectroscopists would, but unattended.
 
-Underneath the team sits the `lucy` command-line toolkit: a complete, scriptable NMR
-processing and structure-elucidation pipeline that the agents (and you) call directly.
+Underneath the team sits the `lucy` command-line toolkit. That toolkit does not reinvent
+the science: it is largely an **integration layer around established software written by
+others**, with **[LSD](https://nuzillard.github.io/LSD/) — Jean-Marc Nuzillard's structure
+generator — at its core** (see [Built on LSD](#built-on-lsd-and-established-tools) below).
+The genuinely novel part, and our own contribution, is the cooperative **agent team** that
+drives all of it unattended.
 
 > lucy-ng is the successor to the original *Lucy* CASE program written by the project
 > author and later acquired by Bruker. It rebuilds that decades-old experience around an
@@ -22,6 +26,7 @@ processing and structure-elucidation pipeline that the agents (and you) call dir
 
 ## Table of Contents
 
+- [Built on LSD and Established Tools](#built-on-lsd-and-established-tools)
 - [The CASE Agent Team](#the-case-agent-team)
 - [Running a CASE Elucidation](#running-a-case-elucidation)
 - [The `lucy` CLI](#the-lucy-cli)
@@ -31,6 +36,33 @@ processing and structure-elucidation pipeline that the agents (and you) call dir
 - [Supported Data](#supported-data)
 - [Development](#development)
 - [License & Citation](#license--citation)
+
+---
+
+## Built on LSD and Established Tools
+
+The hard combinatorial heart of structure elucidation — enumerating every molecular graph
+consistent with the spectroscopic constraints — is done by **[LSD (Logic for Structure
+Determination)](https://nuzillard.github.io/LSD/), created and maintained by Jean-Marc
+Nuzillard** (Université de Reims Champagne-Ardenne, CNRS). LSD is the product of decades of
+rigorous work, it builds structures purely from 2D-NMR connectivity without leaning on a
+chemical-shift database, and it is the foundation without which lucy-ng simply would not
+exist. **If you use lucy-ng in research, cite LSD** — see [Citation](#license--citation).
+
+lucy-ng does not replace LSD or the other packages it relies on. It wraps and coordinates
+them:
+
+| Foundation | By | Its role in lucy-ng |
+|------------|-----|---------------------|
+| **LSD** | Jean-Marc Nuzillard | The structure generator — the core solver |
+| **RDKit** | RDKit contributors | Cheminformatics: molecules, SMILES/InChI, substructure search |
+| **nmrglue** | J. J. Helmus et al. | Reading Bruker NMR data |
+| **HOSE codes** | Bremser; W. Robien; A. Ratsemaat's generator | 13C shift-prediction descriptors |
+| **COCONUT**, **NMRShiftDB** | their respective communities | Reference data for dereplication and prediction |
+
+The `lucy` command-line tools are the wrappers through which these packages are driven.
+**What is genuinely new here — our own contribution — is the [CASE agent team](#the-case-agent-team)**
+that operates all of them end to end, unattended.
 
 ---
 
@@ -124,8 +156,11 @@ commands in the same family:
 
 ## The `lucy` CLI
 
-Everything the agents do is available directly through the `lucy` command. Every
-subcommand supports `--format json` for scripting. The command groups:
+Everything the agents do is available directly through the `lucy` command. These commands
+are thin wrappers that orchestrate the [foundational packages above](#built-on-lsd-and-established-tools)
+— LSD, RDKit, nmrglue and the rest — behind one consistent interface; the science lives in
+those packages, not here. Every subcommand supports `--format json` for scripting. The
+command groups:
 
 | Group | What it does |
 |-------|--------------|
@@ -202,7 +237,7 @@ pip install rdkit
 
 ### LSD solver
 
-The [LSD solver](http://eos.univ-reims.fr/LSD/) by Jean-Marc Nuzillard does the actual
+The [LSD solver](https://nuzillard.github.io/LSD/) by Jean-Marc Nuzillard does the actual
 structure generation. Download it, extract it, and add its `bin/` directory to `PATH`.
 Verify with:
 
@@ -329,9 +364,23 @@ hatch build               # build the package
 
 MIT License — see [LICENSE](LICENSE).
 
-**Acknowledgments:** original Lucy concept by Christoph Steinbeck · LSD solver by
-Jean-Marc Nuzillard · nmrglue for NMR file parsing · COCONUT and NMRShiftDB for reference
-data.
+### Cite LSD first
+
+lucy-ng is worthless without the LSD structure generator. **Any work using lucy-ng must
+cite LSD.** See the [LSD website](https://nuzillard.github.io/LSD/) for the author's
+current preferred citation; a key reference is:
+
+> B. Plainchont, V. P. Emerenciano, J.-M. Nuzillard. *Recent advances in the structure
+> elucidation of small organic molecules by the LSD software.* Magn. Reson. Chem. **2013**,
+> 51, 447–453. See also J.-M. Nuzillard, *Tutorial for the structure elucidation of small
+> molecules by means of the LSD software*, Magn. Reson. Chem. **2018**
+> ([doi:10.1002/mrc.4612](https://doi.org/10.1002/mrc.4612)).
+
+**Acknowledgments:** LSD by Jean-Marc Nuzillard (Université de Reims Champagne-Ardenne) ·
+original Lucy concept by Christoph Steinbeck · RDKit · nmrglue for NMR file parsing ·
+HOSE-code shift prediction · COCONUT and NMRShiftDB for reference data.
+
+If you use lucy-ng itself, please also cite it (alongside LSD):
 
 ```bibtex
 @software{lucy-ng,
