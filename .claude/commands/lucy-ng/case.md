@@ -89,6 +89,23 @@ Background teammates go idle between turns and do **NOT** poll the TaskList on t
 - Agents act ONLY on a received `SendMessage`. They must never "wait for", "monitor", or "claim from" the TaskList.
 - A teammate's reply arrives as a conversation turn and wakes the coordinator, which then immediately pushes the next `[BEGIN]` directive. This message ping-pong is the ONLY thing that keeps the workflow moving — there is no autonomous polling. If you ever find yourself "waiting" after a `TaskCreate` without having sent a `[BEGIN]`, that is the bug: push the directive.
 
+**⚠ EXECUTION-MODE CAVEAT — headless / non-interactive (`claude -p`, batch/UAT harness):**
+The message ping-pong above assumes a teammate's reply arrives as a conversation turn that
+WAKES you. **That wake-up only happens in an interactive session.** When you run
+non-interactively/headless there is NO event loop to re-enter a finished turn — if you send a
+`[BEGIN]` and then END YOUR TURN saying "I'll wait for [ITERATION-COMPLETE]", the process
+simply exits mid-workflow. **This is the `NO_RESULT` failure mode.** Detect this mode from your
+environment/system context (no interactive user; invoked via `claude -p` / a harness). In it:
+- **Never end a turn expecting to be woken. "Background-and-wait" is forbidden.**
+- Drive every stage **INLINE within one continuous turn**: after each `[BEGIN]`, actively POLL
+  for completion in a loop — read `TaskList()` status AND check the expected filesystem
+  artefacts (`analysis/iteration_NN/solncounter` or `*.sol`, `analysis/final_results.md`) — then
+  proceed to the next stage yourself, without waiting for a wake-up.
+- Treat teammate replies as best-effort: if a `[*-COMPLETE]` has not arrived but the artefact is
+  on disk, read the result from the filesystem (as in the Stall recovery step) and continue.
+This keeps the identical push logic; it only changes how you await each reply so headless runs
+do not stall. In an interactive session, the normal message-wake path applies unchanged.
+
 **Step 1: Initialize team namespace** ({compound_name} = last path component, e.g., "MyCompound")
 
 ```
