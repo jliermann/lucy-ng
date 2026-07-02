@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v9.1
-milestone_name: CASE Final-Answer Correctness & Verification Gates
-status: Awaiting next milestone
-stopped_at: v9.1 milestone SHIPPED 2026-06-29 (phases 86-89; RANK/IDENT/MULT + blind-UAT gate) — planning next milestone
-last_updated: "2026-06-29T10:33:52.276Z"
-last_activity: 2026-06-29 — Milestone v9.1 completed and archived
+milestone: v9.2
+milestone_name: CASE Web-View
+status: planning
+last_updated: "2026-07-02T14:19:45.595Z"
+last_activity: 2026-07-02
 progress:
-  total_phases: 4
-  completed_phases: 3
-  total_plans: 9
-  completed_plans: 9
-  percent: 75
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # lucy-ng State
@@ -25,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-06-23)
 
 ## Current Position
 
-Phase: Milestone v9.1 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-06-29 — Milestone v9.1 completed and archived
+Status: Defining requirements
+Last activity: 2026-07-02 — Milestone v9.2 started
 
 ## Milestone v9.1 Phases
 

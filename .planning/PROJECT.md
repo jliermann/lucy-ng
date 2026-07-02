@@ -10,7 +10,20 @@ Lucy-ng is an AI-agent skill for Computer-Assisted Structure Elucidation (CASE) 
 
 An AI agent can autonomously determine the structure of an unknown organic compound from its NMR spectra, with a multi-agent architecture that prevents unproductive loops and keeps the elucidation on track.
 
-## Current Milestone: none — planning next (run `/gsd-new-milestone`)
+## Current Milestone: v9.2 CASE Web-View
+
+**Goal:** A read-only web dashboard makes a CASE run observable live (and after the fact) — purely informative, no control functions.
+
+**Target features:**
+- `lucy webview serve/stop/status` — standalone FastAPI server (optional extra `lucy-ng[webview]`) rendering any `analysis/` folder read-only with auto-refresh
+- Run-status widget (iteration / active phase / elapsed)
+- Top-structures widget (RDKit depiction + MAE/rank)
+- Scrollable log widget (`CASE-PROGRESS.md`)
+- `case.md` integration: orchestrator starts the server at run start and reports the URL
+- Server outlives `terminate_team` (user stops it via `lucy webview stop`)
+
+Design spec: `docs/superpowers/specs/2026-07-02-case-webview-design.md`. Stage 2 (deferred, NOT this milestone): rendered spectra tabs + data tables.
+
 
 **Carried seed:** CASE4 azulene-regiochemistry-enumeration gap (4th defect class surfaced by the v9.1 blind UAT) — the di-methyl-ethyl class is now searched, but the exact chamazulene regiochemistry is not enumerated. See `.planning/todos/pending/2026-06-25-case4-azulene-regiochemistry-enumeration-gap.md`.
 
