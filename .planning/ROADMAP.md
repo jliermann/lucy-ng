@@ -53,7 +53,10 @@ CASE orchestrator and kept alive after the run.
   3. `lucy webview status <analysis_dir>` reports whether a server is currently running for that folder.
   4. Running `lucy webview serve` on a folder that already has a live server returns the existing URL instead of double-binding (idempotent start).
   5. `pip install lucy-ng` (core) succeeds without FastAPI or uvicorn; `pip install lucy-ng[webview]` adds them.
-**Plans**: TBD
+**Plans**: 3 plans (3 waves)
+  - [ ] 90-01-PLAN.md — Test infrastructure: `tests/test_cli_webview.py` (6 classes / 11 tests) + conftest fixtures (Wave 0)
+  - [ ] 90-02-PLAN.md — Webview server package: `state.py` (WebviewState) + `app.py` (create_app) + `server.py` (lifecycle) (Wave 1)
+  - [ ] 90-03-PLAN.md — CLI group `lucy webview` (serve/stop/status/_run) + `cli/__main__.py` + registration + `[webview]` extra (Wave 2)
 **UI hint**: yes
 
 ---
@@ -70,6 +73,8 @@ CASE orchestrator and kept alive after the run.
   4. All three API endpoints return a well-formed "waiting for data" payload (status 200, not 500) when source files are missing, empty, or mid-write; `GET /api/structure/{i}.svg` for an out-of-range index returns 404.
   5. A malformed SMILES entry in a solutions file causes that entry to render as a placeholder; all other entries in the list render correctly.
   6. Opening `http://localhost:<port>/` in a browser shows the three widgets auto-refreshing every ~3 s without a JavaScript build step.
+
+**Note for planning:** `[tool.hatch.build.targets.wheel]` must add `src/lucy_ng/webview/static/*` to `artifacts` when the static frontend lands (Phase 90 deliberately left it untouched).
 **Plans**: TBD
 **UI hint**: yes
 
@@ -92,7 +97,7 @@ CASE orchestrator and kept alive after the run.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 90. Server, CLI, and Packaging | 0/? | Not started | - |
+| 90. Server, CLI, and Packaging | 0/3 | Planned | - |
 | 91. API Endpoints, Depictions, and Static Frontend | 0/? | Not started | - |
 | 92. Orchestrator Integration | 0/? | Not started | - |
 
