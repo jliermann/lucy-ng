@@ -30,4 +30,15 @@
 
 ## Traceability
 
-_(filled by the roadmapper — every WV-xx mapped to exactly one phase)_
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| WV-01 | Phase 90 | Pending |
+| WV-02 | Phase 90 | Pending |
+| WV-08 | Phase 90 | Pending |
+| WV-03 | Phase 91 | Pending |
+| WV-04 | Phase 91 | Pending |
+| WV-05 | Phase 91 | Pending |
+| WV-06 | Phase 91 | Pending |
+| WV-07 | Phase 92 | Pending |
+
+**Coverage:** 8/8 requirements mapped. No orphans.

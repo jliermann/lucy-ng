@@ -15,6 +15,7 @@
 - **v8.0 pyLSD Integration** - Phases 65-71 (superseded by v9.0 before UAT passed)
 - ✅ [v9.0 CASE Reliability & Skill Consolidation](milestones/v9.0-ROADMAP.md) - Phases 72-85 (shipped 2026-06-17)
 - ✅ [v9.1 CASE Final-Answer Correctness & Verification Gates](milestones/v9.1-ROADMAP.md) - Phases 86-89 (shipped 2026-06-29)
+- **v9.2 CASE Web-View** - Phases 90-92 (in progress)
 
 ---
 
@@ -27,11 +28,76 @@ exact chamazulene regiochemistry still unreachable) — todo `2026-06-25-case4-a
 
 ---
 
-## Next Milestone
+## v9.2 CASE Web-View
 
-No active milestone. Run `/gsd-new-milestone` to scope the next version.
+**Goal:** A read-only web dashboard makes a CASE run observable live (and after the fact) —
+three widgets (run status, top structures, log), auto-refresh, launched automatically by the
+CASE orchestrator and kept alive after the run.
 
-Candidate seed (carried from v9.1): **CASE4 azulene-regiochemistry-enumeration gap** — the
-di-methyl-ethyl class is now searched, but the exact chamazulene regiochemistry is not enumerated
-(suspected azulene/non-benzenoid connectivity enumeration + degraded 2D data + azulene HOSE
-unreliability). See `.planning/todos/pending/2026-06-25-case4-azulene-regiochemistry-enumeration-gap.md`.
+### Phases
+
+- [ ] **Phase 90: Server, CLI, and Packaging** — `lucy webview` commands, server lifecycle via `.webview.json`, optional `lucy-ng[webview]` extra
+- [ ] **Phase 91: API Endpoints, Depictions, and Static Frontend** — three JSON endpoints with graceful degradation, RDKit SVG depictions, vanilla-JS dashboard
+- [ ] **Phase 92: Orchestrator Integration** — `case.md` launches the server at run start and reports the URL
+
+### Phase Details
+
+#### Phase 90: Server, CLI, and Packaging
+
+**Goal**: Users can start, stop, and query a read-only webview server for any `analysis/` folder using `lucy webview` commands; the server package is isolated as an optional extra.
+**Depends on**: Nothing
+**Requirements**: WV-01, WV-02, WV-08
+**Success Criteria** (what must be TRUE):
+  1. `lucy webview serve <analysis_dir>` starts a FastAPI/uvicorn server, writes `.webview.json` (pid/port/url) into `<analysis_dir>`, and prints the dashboard URL.
+  2. `lucy webview stop <analysis_dir>` terminates the server process and removes `.webview.json`; the port is no longer in use.
+  3. `lucy webview status <analysis_dir>` reports whether a server is currently running for that folder.
+  4. Running `lucy webview serve` on a folder that already has a live server returns the existing URL instead of double-binding (idempotent start).
+  5. `pip install lucy-ng` (core) succeeds without FastAPI or uvicorn; `pip install lucy-ng[webview]` adds them.
+**Plans**: TBD
+**UI hint**: yes
+
+---
+
+#### Phase 91: API Endpoints, Depictions, and Static Frontend
+
+**Goal**: Opening the dashboard URL in a browser shows three auto-refreshing widgets — run status, top candidate structures with RDKit SVG depictions, and the scrollable run log — with graceful degradation during live runs when source files are absent or partial.
+**Depends on**: Phase 90
+**Requirements**: WV-03, WV-04, WV-05, WV-06
+**Success Criteria** (what must be TRUE):
+  1. `GET /api/status` on a fixture folder returns iteration number, active phase, and elapsed time derived from `timing.json`/`timing.jsonl` and `CASE-PROGRESS.md`.
+  2. `GET /api/log` returns the current raw content of `CASE-PROGRESS.md` as a text/JSON payload.
+  3. `GET /api/structures` returns a ranked list with SMILES, MAE, and rank fields; `GET /api/structure/{i}.svg` returns a non-empty RDKit SVG for a valid SMILES index.
+  4. All three API endpoints return a well-formed "waiting for data" payload (status 200, not 500) when source files are missing, empty, or mid-write; `GET /api/structure/{i}.svg` for an out-of-range index returns 404.
+  5. A malformed SMILES entry in a solutions file causes that entry to render as a placeholder; all other entries in the list render correctly.
+  6. Opening `http://localhost:<port>/` in a browser shows the three widgets auto-refreshing every ~3 s without a JavaScript build step.
+**Plans**: TBD
+**UI hint**: yes
+
+---
+
+#### Phase 92: Orchestrator Integration
+
+**Goal**: When a CASE run starts, the orchestrator automatically launches the webview server for the `analysis/` directory and reports the dashboard URL and stop hint to the user before any team work begins; the server outlives the team.
+**Depends on**: Phase 91
+**Requirements**: WV-07
+**Success Criteria** (what must be TRUE):
+  1. At CASE run start (before the first `[BEGIN]`), `case.md` runs `lucy webview serve analysis/` in the background and prints the dashboard URL and `lucy webview stop` hint to the user.
+  2. After the run ends and `terminate_team` fires, the webview server is still running and the dashboard URL is still reachable.
+  3. The orchestrator notes in its output that the user must stop the server manually via `lucy webview stop <analysis_dir>`.
+**Plans**: TBD
+
+---
+
+### Progress Table
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 90. Server, CLI, and Packaging | 0/? | Not started | - |
+| 91. API Endpoints, Depictions, and Static Frontend | 0/? | Not started | - |
+| 92. Orchestrator Integration | 0/? | Not started | - |
+
+---
+
+**v9.1 outcome (for reference):**
+Phases 86-89. All requirements (RANK-01..03, IDENT-01..03, MULT-01..04, UAT-01..03) met.
+Tests: 1131 passing at close.
