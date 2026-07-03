@@ -117,7 +117,7 @@ def start(
     ]
 
     log_path = resolved / ".webview.log"
-    log_file = open(log_path, "w")  # noqa: SIM115 (kept open for lifetime of subprocess)
+    log_file = open(log_path, "w")  # noqa: SIM115
 
     proc = subprocess.Popen(
         cmd,
@@ -126,13 +126,15 @@ def start(
         stderr=subprocess.STDOUT,
         close_fds=True,
     )
+    # Close the parent-side copy immediately — the subprocess keeps its own
+    # inherited fd (WR-02).  log_path.read_text() below opens a fresh fd.
+    log_file.close()
 
     # Port-squat guard: give uvicorn 0.5 s to bind; if it already exited,
     # the port was stolen (T-90-05).
     time.sleep(0.5)
     if proc.poll() is not None:
         # Read the tail of the log for the error message.
-        log_file.flush()
         try:
             tail = log_path.read_text()[-2000:]
         except OSError:
