@@ -122,3 +122,12 @@ No new security surface beyond the plan's threat register (T-90-08 through T-90-
 ---
 *Phase: 90-server-cli-and-packaging*
 *Completed: 2026-07-03*
+
+## Self-Check: PASSED
+
+- `src/lucy_ng/cli/webview.py` — FOUND
+- `src/lucy_ng/cli/__main__.py` — FOUND
+- `.planning/phases/90-server-cli-and-packaging/90-03-SUMMARY.md` — FOUND
+- Commit cf1c90c — FOUND
+- Commit 63f1142 — FOUND
+- Commit 97a2831 — FOUND
