@@ -4,13 +4,13 @@ milestone: v9.2
 milestone_name: CASE Web-View
 status: executing
 stopped_at: v9.2 roadmap created (phases 90-92, WV-01..WV-08 mapped)
-last_updated: "2026-07-02T17:13:22.218Z"
-last_activity: 2026-07-02 -- Phase 90 planning complete
+last_updated: "2026-07-03T07:09:03.597Z"
+last_activity: 2026-07-03
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 3
-  completed_plans: 0
+  completed_plans: 1
   percent: 0
 ---
 
@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-29)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a multi-agent team that uses the intended solver pipeline — not a manual bypass
-**Current focus:** v9.2 CASE Web-View — read-only dashboard for live + finished CASE runs
+**Current focus:** Phase 90 — server-cli-and-packaging
 
 ## Current Position
 
@@ -30,10 +30,10 @@ See: .planning/PROJECT.md (updated 2026-06-29)
 [  TODO  ] [  TODO  ] [  TODO  ]
 ```
 
-Phase: 90 (not started — roadmap just created)
-Plan: —
+Phase: 90 (server-cli-and-packaging) — EXECUTING
+Plan: 2 of 3
 Status: Ready to execute
-Last activity: 2026-07-02 -- Phase 90 planning complete
+Last activity: 2026-07-03
 
 ## Milestone v9.2 Phases
 
@@ -118,7 +118,7 @@ Key v9.0 constraint (still in force): SYME and DEFF NOT are lucy-ng abstractions
 
 ## Session Continuity
 
-Last session: 2026-07-02
+Last session: 2026-07-03T07:09:03.593Z
 Stopped at: v9.2 roadmap created (phases 90-92, WV-01..WV-08 mapped)
 Resume with: `/gsd-plan-phase 90` (Server, CLI, and Packaging)
 
