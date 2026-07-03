@@ -1,5 +1,7 @@
 """Pytest fixtures for lucy-ng tests."""
 
+from pathlib import Path
+
 import numpy as np
 import pytest
 
@@ -144,3 +146,108 @@ def sample_peak_list_2d() -> PeakList2D:
         experiment_type="HSQC",
         spectrum_id="test_hsqc",
     )
+
+
+# ---------------------------------------------------------------------------
+# Webview fixtures (Phase 90)
+# All runtime imports are inside fixture bodies — module-level import-safety.
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def webview_analysis_dir(tmp_path: Path) -> Path:
+    """Create a minimal analysis/ directory for webview tests.
+
+    Returns a Path to a temporary directory that mimics the analysis_dir
+    structure used by the webview server.  Tests can populate files as needed.
+    """
+    analysis_dir = tmp_path / "analysis"
+    analysis_dir.mkdir()
+    return analysis_dir
+
+
+@pytest.fixture
+def webview_server(webview_analysis_dir: Path):  # type: ignore[no-untyped-def]
+    """Start a real webview server subprocess and yield (state, analysis_dir).
+
+    The fixture invokes ``lucy webview serve`` as a background subprocess so
+    that the lifecycle code under test actually writes ``.webview.json``.
+    Teardown sends SIGTERM to the server pid recorded in the state file and
+    removes the file, guaranteeing no orphan processes.
+
+    Requires the webview extra (fastapi) to be installed; skips otherwise.
+    """
+    import json as _json
+    import os
+    import signal
+    import subprocess
+    import sys
+    import time
+
+    # Guard: skip if fastapi not installed (webview extra absent in core env).
+    try:
+        import fastapi  # noqa: F401  # pyright: ignore[reportMissingModuleSource]
+    except ImportError:
+        pytest.skip("webview extra (fastapi) not installed")
+
+    proc = subprocess.Popen(
+        [
+            sys.executable,
+            "-m",
+            "lucy_ng.cli",
+            "webview",
+            "serve",
+            str(webview_analysis_dir),
+            "--format",
+            "json",
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        start_new_session=True,
+    )
+
+    # Poll up to 2 s for .webview.json to appear (written by server.start()).
+    state_file = webview_analysis_dir / ".webview.json"
+    deadline = time.monotonic() + 2.0
+    while not state_file.exists() and time.monotonic() < deadline:
+        time.sleep(0.05)
+
+    state = None
+    if state_file.exists():
+        try:
+            from lucy_ng.webview.state import WebviewState  # noqa: PLC0415
+
+            state = WebviewState.model_validate_json(state_file.read_text())
+        except Exception:  # noqa: BLE001
+            state = None
+
+    yield state, webview_analysis_dir
+
+    # --- Teardown: guaranteed no orphan processes ---
+
+    # 1. Kill the server pid stored in .webview.json (may differ from proc.pid
+    #    if serve delegates to a child process for the actual uvicorn run).
+    if state_file.exists():
+        try:
+            stored = _json.loads(state_file.read_text())
+            server_pid = stored.get("pid")
+            if server_pid:
+                os.kill(server_pid, signal.SIGTERM)
+        except (ProcessLookupError, OSError, Exception):  # noqa: BLE001
+            pass
+
+    # 2. Terminate the CLI subprocess itself (idempotent if already gone).
+    try:
+        os.kill(proc.pid, signal.SIGTERM)
+    except ProcessLookupError:
+        pass
+
+    # 3. Remove state file.
+    state_file.unlink(missing_ok=True)
+
+    # 4. Wait for subprocess to exit; force-kill if it lingers.
+    try:
+        proc.wait(timeout=2.0)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        proc.wait()
