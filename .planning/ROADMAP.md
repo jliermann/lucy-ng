@@ -55,7 +55,7 @@ CASE orchestrator and kept alive after the run.
   5. `pip install lucy-ng` (core) succeeds without FastAPI or uvicorn; `pip install lucy-ng[webview]` adds them.
 **Plans**: 3 plans (3 waves)
   - [x] 90-01-PLAN.md — Test infrastructure: `tests/test_cli_webview.py` (6 classes / 11 tests) + conftest fixtures (Wave 0)
-  - [ ] 90-02-PLAN.md — Webview server package: `state.py` (WebviewState) + `app.py` (create_app) + `server.py` (lifecycle) (Wave 1)
+  - [x] 90-02-PLAN.md — Webview server package: `state.py` (WebviewState) + `app.py` (create_app) + `server.py` (lifecycle) (Wave 1)
   - [ ] 90-03-PLAN.md — CLI group `lucy webview` (serve/stop/status/_run) + `cli/__main__.py` + registration + `[webview]` extra (Wave 2)
 **UI hint**: yes
 
@@ -97,7 +97,7 @@ CASE orchestrator and kept alive after the run.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 90. Server, CLI, and Packaging | 1/3 | In Progress|  |
+| 90. Server, CLI, and Packaging | 2/3 | In Progress|  |
 | 91. API Endpoints, Depictions, and Static Frontend | 0/? | Not started | - |
 | 92. Orchestrator Integration | 0/? | Not started | - |
 
