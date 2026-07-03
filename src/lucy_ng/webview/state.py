@@ -68,8 +68,10 @@ class WebviewState(BaseModel):
         """Return ``True`` if the server process is still running.
 
         Uses POSIX signal 0 (no actual signal delivered) to probe the PID.
-        ``PermissionError`` means the process exists but is owned by another
-        user — still counts as alive.
+        ``PermissionError`` means the PID exists but belongs to a different
+        user — treat as not-our-process (dead from our perspective) so that
+        a stale ``.webview.json`` whose PID was recycled to a foreign process
+        does not permanently block :func:`~lucy_ng.webview.server.start`.
         """
         try:
             os.kill(self.pid, 0)
@@ -77,4 +79,5 @@ class WebviewState(BaseModel):
         except ProcessLookupError:
             return False
         except PermissionError:
-            return True
+            # PID recycled to a process owned by another user.
+            return False
