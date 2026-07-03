@@ -54,6 +54,10 @@ prediction = [
     # Install manually: pip install git+https://github.com/Ratsemaat/HOSE_code_generator.git --no-deps
     # Then install its actual runtime deps: pip install rdkit
 ]
+webview = [
+    "fastapi>=0.100",
+    "uvicorn>=0.20",
+]
 
 [tool.hatch.metadata]
 allow-direct-references = true

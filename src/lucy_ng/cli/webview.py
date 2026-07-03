@@ -28,11 +28,11 @@ def _require_webview() -> None:
     try:
         import fastapi  # noqa: F401
         import uvicorn  # noqa: F401
-    except ImportError:
+    except ImportError as exc:
         raise click.ClickException(
             "The webview extra is not installed.\n"
             "Install with: pip install lucy-ng[webview]"
-        )
+        ) from exc
 
 
 @webview.command("serve")
@@ -155,6 +155,7 @@ def _run(analysis_dir: Path, port: int, host: str) -> None:
     _require_webview()
 
     import uvicorn
+
     from lucy_ng.webview.app import create_app
 
     app = create_app(analysis_dir.resolve())
