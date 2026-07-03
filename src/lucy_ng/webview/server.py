@@ -216,6 +216,11 @@ def stop(analysis_dir: Path) -> tuple[bool, int | None]:
         # Process already dead — clean up the stale file and report.
         state_file.unlink(missing_ok=True)
         return (False, pid)
+    except PermissionError:
+        # PID recycled to a process owned by a different user (WR-01).
+        # Treat as not-ours — do not escalate, just clean up the stale file.
+        state_file.unlink(missing_ok=True)
+        return (False, pid)
 
     # Poll up to ~3 s for the process to exit.
     for _ in range(15):
@@ -224,12 +229,16 @@ def stop(analysis_dir: Path) -> tuple[bool, int | None]:
             os.kill(pid, 0)
         except ProcessLookupError:
             break  # Process has exited.
+        except PermissionError:
+            # PID recycled to another user's process — stop signalling it
+            # and do not escalate to SIGKILL (CR-01).
+            break
     else:
         # Process still alive after 3 s — escalate to SIGKILL.
         try:
             os.kill(pid, signal.SIGKILL)
-        except ProcessLookupError:
-            pass  # Died between the last poll and SIGKILL.
+        except (ProcessLookupError, PermissionError):
+            pass  # Died between poll and SIGKILL, or belongs to different user.
 
     state_file.unlink(missing_ok=True)
     return (True, pid)
