@@ -31,7 +31,7 @@ class WebviewState(BaseModel):
         port: int,
         host: str,
         analysis_dir: Path,
-    ) -> "WebviewState":
+    ) -> WebviewState:
         """Build a new state object from process parameters.
 
         Args:
@@ -58,7 +58,7 @@ class WebviewState(BaseModel):
         (analysis_dir / ".webview.json").write_text(self.model_dump_json(indent=2))
 
     @classmethod
-    def load(cls, analysis_dir: Path) -> "WebviewState":
+    def load(cls, analysis_dir: Path) -> WebviewState:
         """Read and deserialise state from ``<analysis_dir>/.webview.json``."""
         return cls.model_validate_json(
             (analysis_dir / ".webview.json").read_text()
