@@ -16,6 +16,7 @@ from lucy_ng.cli.predict import predict
 from lucy_ng.cli.pylsd import pylsd
 from lucy_ng.cli.read import read
 from lucy_ng.cli.visualize import visualize
+from lucy_ng.cli.webview import webview
 
 
 @click.group()
@@ -41,6 +42,7 @@ def cli() -> None:
       fetch       Fetch data from external sources
       database    Database management (build, info)
       fragment    Fragment library (build, search, info)
+      webview     Dashboard server for live CASE runs
     """
     pass
 
@@ -59,3 +61,4 @@ cli.add_command(visualize)
 cli.add_command(fetch)
 cli.add_command(database)
 cli.add_command(fragment)
+cli.add_command(webview)
