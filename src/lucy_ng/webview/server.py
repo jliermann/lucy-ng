@@ -165,7 +165,14 @@ def status(analysis_dir: Path) -> WebviewState | None:
     if not state_file.exists():
         return None
 
-    state = WebviewState.load(Path(analysis_dir))
+    try:
+        state = WebviewState.load(Path(analysis_dir))
+    except Exception:
+        # Corrupt or unreadable state file (partial write, schema change, etc.)
+        # — treat as stale so status() returns None rather than crashing.
+        state_file.unlink(missing_ok=True)
+        return None
+
     if state.is_alive():
         return state
 
@@ -193,7 +200,12 @@ def stop(analysis_dir: Path) -> tuple[bool, int | None]:
     if not state_file.exists():
         return (False, None)
 
-    state = WebviewState.load(Path(analysis_dir))
+    try:
+        state = WebviewState.load(Path(analysis_dir))
+    except Exception:
+        # Corrupt or unreadable state file — clean up rather than crashing.
+        state_file.unlink(missing_ok=True)
+        return (False, None)
     pid = state.pid
 
     try:
