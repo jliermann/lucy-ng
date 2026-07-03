@@ -36,7 +36,7 @@ CASE orchestrator and kept alive after the run.
 
 ### Phases
 
-- [ ] **Phase 90: Server, CLI, and Packaging** — `lucy webview` commands, server lifecycle via `.webview.json`, optional `lucy-ng[webview]` extra
+- [x] **Phase 90: Server, CLI, and Packaging** — `lucy webview` commands, server lifecycle via `.webview.json`, optional `lucy-ng[webview]` extra (completed 2026-07-03)
 - [ ] **Phase 91: API Endpoints, Depictions, and Static Frontend** — three JSON endpoints with graceful degradation, RDKit SVG depictions, vanilla-JS dashboard
 - [ ] **Phase 92: Orchestrator Integration** — `case.md` launches the server at run start and reports the URL
 
@@ -56,7 +56,7 @@ CASE orchestrator and kept alive after the run.
 **Plans**: 3 plans (3 waves)
   - [x] 90-01-PLAN.md — Test infrastructure: `tests/test_cli_webview.py` (6 classes / 11 tests) + conftest fixtures (Wave 0)
   - [x] 90-02-PLAN.md — Webview server package: `state.py` (WebviewState) + `app.py` (create_app) + `server.py` (lifecycle) (Wave 1)
-  - [ ] 90-03-PLAN.md — CLI group `lucy webview` (serve/stop/status/_run) + `cli/__main__.py` + registration + `[webview]` extra (Wave 2)
+  - [x] 90-03-PLAN.md — CLI group `lucy webview` (serve/stop/status/_run) + `cli/__main__.py` + registration + `[webview]` extra (Wave 2)
 **UI hint**: yes
 
 ---
@@ -97,7 +97,7 @@ CASE orchestrator and kept alive after the run.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 90. Server, CLI, and Packaging | 2/3 | In Progress|  |
+| 90. Server, CLI, and Packaging | 3/3 | Complete   | 2026-07-03 |
 | 91. API Endpoints, Depictions, and Static Frontend | 0/? | Not started | - |
 | 92. Orchestrator Integration | 0/? | Not started | - |
 

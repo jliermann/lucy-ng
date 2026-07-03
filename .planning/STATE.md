@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v9.2
 milestone_name: CASE Web-View
-status: executing
+status: verifying
 stopped_at: v9.2 roadmap created (phases 90-92, WV-01..WV-08 mapped)
-last_updated: "2026-07-03T07:17:05.789Z"
+last_updated: "2026-07-03T07:36:54.917Z"
 last_activity: 2026-07-03
 progress:
   total_phases: 3
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 3
-  completed_plans: 2
-  percent: 0
+  completed_plans: 3
+  percent: 33
 ---
 
 # lucy-ng State
@@ -32,7 +32,7 @@ See: .planning/PROJECT.md (updated 2026-06-29)
 
 Phase: 90 (server-cli-and-packaging) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-07-03
 
 ## Milestone v9.2 Phases
@@ -101,6 +101,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [v9.2-roadmap]: Stage-2 items (rendered spectra tabs, data tables, SSE/WebSocket push) are explicitly deferred — not in scope for this milestone.
 - [v9.2-roadmap]: Graceful degradation (WV-06) assigned to Phase 91 alongside the API endpoints because it is an API-layer concern: every endpoint must handle missing/partial/malformed source files without raising a 500.
 - [v9.2-roadmap]: WV-07 (orchestrator integration) sequenced last because it requires a working dashboard URL (Phase 91) to be meaningful. It is a skill edit to `case.md` — no Python code changes expected.
+- [Phase ?]: Raise click.ClickException from exc in _require_webview(): ruff B904 requires exception chaining in except clause
 
 ### Pending Todos
 
@@ -118,7 +119,7 @@ Key v9.0 constraint (still in force): SYME and DEFF NOT are lucy-ng abstractions
 
 ## Session Continuity
 
-Last session: 2026-07-03T07:17:05.785Z
+Last session: 2026-07-03T07:36:42.775Z
 Stopped at: v9.2 roadmap created (phases 90-92, WV-01..WV-08 mapped)
 Resume with: `/gsd-plan-phase 90` (Server, CLI, and Packaging)
 
