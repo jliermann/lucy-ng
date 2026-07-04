@@ -14,11 +14,10 @@ collects cleanly even before the router modules exist.
 
 from __future__ import annotations
 
-import tomllib
 from pathlib import Path
 
 import pytest
-
+import tomllib
 
 # ---------------------------------------------------------------------------
 # TestStatusEndpoint [→ Plan 02]
@@ -165,7 +164,9 @@ class TestStructuresEndpoint:
         try:
             from fastapi.testclient import TestClient  # pyright: ignore[reportMissingModuleSource]
 
-            from lucy_ng.webview.routers import structures  # pyright: ignore[reportMissingModuleSource]
+            from lucy_ng.webview.routers import (
+                structures,  # pyright: ignore[reportMissingModuleSource]
+            )
         except ImportError:
             pytest.skip("webview extra or structures router not yet available")
 
@@ -189,7 +190,9 @@ class TestStructuresEndpoint:
         try:
             from fastapi.testclient import TestClient  # pyright: ignore[reportMissingModuleSource]
 
-            from lucy_ng.webview.routers import structures  # pyright: ignore[reportMissingModuleSource]
+            from lucy_ng.webview.routers import (
+                structures,  # pyright: ignore[reportMissingModuleSource]
+            )
         except ImportError:
             pytest.skip("webview extra or structures router not yet available")
 
@@ -209,12 +212,51 @@ class TestStructuresEndpoint:
         assert first["rank"] == 1, f"Expected first rank==1: {first}"
         assert first["mae"] is not None, f"Expected mae set for ranked: {first}"
 
+    def test_ranked_with_null_rank_does_not_drop_tier(self, tmp_path: Path) -> None:
+        """A present-but-null rank must NOT crash the ranked tier into unranked (CR-01)."""
+        try:
+            from fastapi.testclient import TestClient  # pyright: ignore[reportMissingModuleSource]
+
+            from lucy_ng.webview.routers import (
+                structures,  # pyright: ignore[reportMissingModuleSource]
+            )
+        except ImportError:
+            pytest.skip("webview extra or structures router not yet available")
+
+        import json as _json
+
+        from fastapi import FastAPI  # pyright: ignore[reportMissingModuleSource]
+
+        solutions = [
+            {"rank": 2, "solution_index": 1, "smiles": "CCO", "mae": 0.3, "quality": "ok"},
+            {"rank": None, "solution_index": 2, "smiles": "CCN", "mae": None, "quality": None},
+            {"rank": 1, "solution_index": 0, "smiles": "c1ccccc1", "mae": 0.1, "quality": "ok"},
+        ]
+        (tmp_path / "ranking_results.json").write_text(
+            _json.dumps({"solutions": solutions, "total_solutions": 3}),
+            encoding="utf-8",
+        )
+
+        app = FastAPI()
+        app.include_router(structures.make_router(tmp_path))
+
+        with TestClient(app) as client:
+            r = client.get("/api/structures")
+
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+        data = r.json()
+        assert data["source"] == "ranked", f"null rank must not drop ranked tier: {data}"
+        assert data["structures"][0]["rank"] == 1, "rank 1 must sort first"
+        assert data["structures"][-1]["rank"] is None, "null rank must sort last"
+
     def test_out_of_range_svg_returns_404(self, live_analysis_dir: Path) -> None:
         """GET /api/structure/999.svg → 404 when index is out of range."""
         try:
             from fastapi.testclient import TestClient  # pyright: ignore[reportMissingModuleSource]
 
-            from lucy_ng.webview.routers import structures  # pyright: ignore[reportMissingModuleSource]
+            from lucy_ng.webview.routers import (
+                structures,  # pyright: ignore[reportMissingModuleSource]
+            )
         except ImportError:
             pytest.skip("webview extra or structures router not yet available")
 
@@ -233,7 +275,9 @@ class TestStructuresEndpoint:
         try:
             from fastapi.testclient import TestClient  # pyright: ignore[reportMissingModuleSource]
 
-            from lucy_ng.webview.routers import structures  # pyright: ignore[reportMissingModuleSource]
+            from lucy_ng.webview.routers import (
+                structures,  # pyright: ignore[reportMissingModuleSource]
+            )
         except ImportError:
             pytest.skip("webview extra or structures router not yet available")
 
@@ -260,7 +304,9 @@ class TestStructuresEndpoint:
         try:
             from fastapi.testclient import TestClient  # pyright: ignore[reportMissingModuleSource]
 
-            from lucy_ng.webview.routers import structures  # pyright: ignore[reportMissingModuleSource]
+            from lucy_ng.webview.routers import (
+                structures,  # pyright: ignore[reportMissingModuleSource]
+            )
         except ImportError:
             pytest.skip("webview extra or structures router not yet available")
 
@@ -294,7 +340,9 @@ class TestDepiction:
     def test_render_valid_smiles_returns_svg_string(self) -> None:
         """render_smiles('c1ccccc1') returns a str containing 'svg'."""
         try:
-            from lucy_ng.webview.depiction import render_smiles  # pyright: ignore[reportMissingModuleSource]
+            from lucy_ng.webview.depiction import (
+                render_smiles,  # pyright: ignore[reportMissingModuleSource]
+            )
         except ImportError:
             pytest.skip("lucy_ng.webview.depiction not yet available")
 
@@ -306,17 +354,39 @@ class TestDepiction:
     def test_render_malformed_smiles_returns_none(self) -> None:
         """render_smiles('not_a_real_smiles_XXXX') returns None."""
         try:
-            from lucy_ng.webview.depiction import render_smiles  # pyright: ignore[reportMissingModuleSource]
+            from lucy_ng.webview.depiction import (
+                render_smiles,  # pyright: ignore[reportMissingModuleSource]
+            )
         except ImportError:
             pytest.skip("lucy_ng.webview.depiction not yet available")
 
         result = render_smiles("not_a_real_smiles_XXXX")
         assert result is None, f"Expected None for malformed SMILES, got: {result!r}"
 
+    def test_render_never_raises_on_draw_failure(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """render_smiles returns None (never raises) if RDKit drawing fails (CR-02).
+
+        A SMILES can parse via MolFromSmiles yet fail 2D preparation (e.g.
+        KekulizeException); the endpoint must degrade to a placeholder, not 500.
+        """
+        try:
+            from lucy_ng.webview import depiction  # pyright: ignore[reportMissingModuleSource]
+        except ImportError:
+            pytest.skip("lucy_ng.webview.depiction not yet available")
+
+        def _boom(*_a: object, **_k: object) -> None:
+            raise RuntimeError("simulated kekulize/draw failure")
+
+        monkeypatch.setattr(depiction, "PrepareMolForDrawing", _boom)
+        result = depiction.render_smiles("c1ccccc1")
+        assert result is None, f"Expected None when drawing raises, got: {result!r}"
+
     def test_placeholder_svg_returns_svg_string(self) -> None:
         """placeholder_svg() returns a str containing 'svg'."""
         try:
-            from lucy_ng.webview.depiction import placeholder_svg  # pyright: ignore[reportMissingModuleSource]
+            from lucy_ng.webview.depiction import (
+                placeholder_svg,  # pyright: ignore[reportMissingModuleSource]
+            )
         except ImportError:
             pytest.skip("lucy_ng.webview.depiction not yet available")
 

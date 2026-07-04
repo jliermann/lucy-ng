@@ -326,9 +326,11 @@
         grid.appendChild(tile);
       }
 
-      // Re-fetch SVG only if SMILES changed (D-10: no flicker)
+      // Re-fetch SVG only if SMILES changed (D-10: no flicker).
+      // Direct compare — a `|| null` coercion made empty-string SMILES
+      // ("" || null === null) re-fetch forever every tick.
       var smiles = item.smiles || '';
-      if (smiles !== (lastSmiles[idx] || null)) {
+      if (smiles !== lastSmiles[idx]) {
         var img2 = document.getElementById('img-' + idx);
         if (img2) {
           img2.src = '/api/structure/' + idx + '.svg?t=' + Date.now();

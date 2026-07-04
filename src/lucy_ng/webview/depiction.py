@@ -47,9 +47,16 @@ def render_smiles(smiles: str, width: int = 300, height: int = 300) -> str | Non
     opts.addAtomIndices = False  # type: ignore[assignment]  # RDKit stub limitation; clean publication style, no atom-index labels (D-09)
     opts.addStereoAnnotation = True  # type: ignore[assignment]  # RDKit stub limitation; keep stereo info — publication style
 
-    PrepareMolForDrawing(mol)
-    drawer.DrawMolecule(mol)
-    drawer.FinishDrawing()
+    try:
+        PrepareMolForDrawing(mol)
+        drawer.DrawMolecule(mol)
+        drawer.FinishDrawing()
+    except Exception:
+        # A SMILES can parse via MolFromSmiles yet fail 2D preparation/drawing
+        # (e.g. KekulizeException for some aromatic systems). Treat as
+        # unrenderable so the caller falls back to placeholder_svg(); the SVG
+        # endpoint must never surface a 500 (D-11). Honours "Never raises".
+        return None
     return drawer.GetDrawingText()
 
 

@@ -108,8 +108,14 @@ def _load_all_structures(
             solutions = data.get("solutions", [])
             total = int(data.get("total_solutions", len(solutions)))
 
-            # Sort by rank ascending (rank 1 = best)
-            solutions_sorted = sorted(solutions, key=lambda s: s.get("rank", 999999))
+            # Sort by rank ascending (rank 1 = best). A present-but-null rank
+            # (partially-ranked run) must NOT reach sorted() as None — that
+            # raises TypeError and silently drops the whole ranked tier
+            # (caught below). Treat null rank as "last".
+            solutions_sorted = sorted(
+                solutions,
+                key=lambda s: s["rank"] if s.get("rank") is not None else 999999,
+            )
 
             entries: list[dict[str, Any]] = [
                 {

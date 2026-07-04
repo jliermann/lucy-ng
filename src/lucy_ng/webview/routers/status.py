@@ -174,7 +174,8 @@ def _status_from_events(events: list[dict[str, Any]]) -> dict[str, Any]:
     elapsed_s: int | None = None
     if run_start_epoch is not None:
         now_epoch = int(datetime.now(tz=timezone.utc).timestamp())
-        elapsed_s = now_epoch - run_start_epoch
+        # Clamp: NTP step-back or VM resume can make now < run_start.
+        elapsed_s = max(0, now_epoch - run_start_epoch)
 
     return {
         "state": "running",
