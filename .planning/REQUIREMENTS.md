@@ -9,10 +9,10 @@
 ### WEBVIEW — read-only run dashboard
 - [x] **WV-01**: User can start a local dashboard for any `analysis/` folder with `lucy webview serve <dir>` — for a live OR a finished run (server reads files only, knows nothing of the agent team).
 - [x] **WV-02**: User can stop the dashboard with `lucy webview stop <dir>` and check whether one is running with `lucy webview status <dir>` (tracked via a `.webview.json` pid/port file in the folder).
-- [ ] **WV-03**: User sees the run status live — current iteration, active phase, and elapsed time — derived from `timing.json`/`timing.jsonl` + `CASE-PROGRESS.md`, auto-refreshed.
-- [ ] **WV-04**: User sees the best ~10 candidate structures rendered (RDKit SVG depiction) with MAE/rank, from `ranking_results.json`/`final_results.md` + `solutions.smi`.
-- [ ] **WV-05**: User sees the run log (`CASE-PROGRESS.md`) in a scrollable panel that auto-refreshes.
-- [ ] **WV-06**: The dashboard degrades gracefully during a live run — missing/empty/partly-written source files show a "waiting for data" state, never a 500; malformed SMILES is skipped, not fatal.
+- [x] **WV-03**: User sees the run status live — current iteration, active phase, and elapsed time — derived from `timing.json`/`timing.jsonl` + `CASE-PROGRESS.md`, auto-refreshed.
+- [x] **WV-04**: User sees the best ~10 candidate structures rendered (RDKit SVG depiction) with MAE/rank, from `ranking_results.json`/`final_results.md` + `solutions.smi`.
+- [x] **WV-05**: User sees the run log (`CASE-PROGRESS.md`) in a scrollable panel that auto-refreshes.
+- [x] **WV-06**: The dashboard degrades gracefully during a live run — missing/empty/partly-written source files show a "waiting for data" state, never a 500; malformed SMILES is skipped, not fatal.
 - [ ] **WV-07**: When a CASE run starts, the orchestrator (`case.md`) launches the server in the background and reports the dashboard URL and stop hint to the user before work begins.
 - [x] **WV-08**: The webview ships as an optional extra `lucy-ng[webview]` (FastAPI + uvicorn); the core `lucy` CLI stays dependency-free. The frontend is static HTML + vanilla JS (no build step).
 
@@ -35,10 +35,10 @@
 | WV-01 | Phase 90 | Complete |
 | WV-02 | Phase 90 | Complete |
 | WV-08 | Phase 90 | Complete |
-| WV-03 | Phase 91 | Pending |
-| WV-04 | Phase 91 | Pending |
-| WV-05 | Phase 91 | Pending |
-| WV-06 | Phase 91 | Pending |
+| WV-03 | Phase 91 | Complete |
+| WV-04 | Phase 91 | Complete |
+| WV-05 | Phase 91 | Complete |
+| WV-06 | Phase 91 | Complete |
 | WV-07 | Phase 92 | Pending |
 
 **Coverage:** 8/8 requirements mapped. No orphans.

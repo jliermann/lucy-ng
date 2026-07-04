@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v9.2
 milestone_name: CASE Web-View
 status: executing
-stopped_at: Phase 91 context gathered
-last_updated: "2026-07-04T14:02:59.199Z"
-last_activity: 2026-07-04 -- Phase 91 planning complete
+stopped_at: Completed 91-01 test scaffold
+last_updated: "2026-07-04T14:10:58.433Z"
+last_activity: 2026-07-04
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 7
-  completed_plans: 3
+  completed_plans: 4
   percent: 33
 ---
 
@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-29)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a multi-agent team that uses the intended solver pipeline — not a manual bypass
-**Current focus:** Phase 91 — api endpoints, depictions, and static frontend
+**Current focus:** Phase 91 — api-endpoints-depictions-and-static-frontend
 
 ## Current Position
 
@@ -30,10 +30,10 @@ See: .planning/PROJECT.md (updated 2026-06-29)
 [  TODO  ] [  TODO  ] [  TODO  ]
 ```
 
-Phase: 91
-Plan: Not started
+Phase: 91 (api-endpoints-depictions-and-static-frontend) — EXECUTING
+Plan: 2 of 4
 Status: Ready to execute
-Last activity: 2026-07-04 -- Phase 91 planning complete
+Last activity: 2026-07-04
 
 ## Milestone v9.2 Phases
 
@@ -102,6 +102,8 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [v9.2-roadmap]: Graceful degradation (WV-06) assigned to Phase 91 alongside the API endpoints because it is an API-layer concern: every endpoint must handle missing/partial/malformed source files without raising a 500.
 - [v9.2-roadmap]: WV-07 (orchestrator integration) sequenced last because it requires a working dashboard URL (Phase 91) to be meaningful. It is a skill edit to `case.md` — no Python code changes expected.
 - [Phase ?]: Raise click.ClickException from exc in _require_webview(): ruff B904 requires exception chaining in except clause
+- [Phase 91]: Epoch values in timing.jsonl test fixtures are JSON strings (not ints) matching case.md shell printf %s output
+- [Phase 91]: All fastapi/webview imports in test_webview_api.py are inside test function bodies (WV-08 collect-safety)
 
 ### Pending Todos
 
@@ -119,8 +121,8 @@ Key v9.0 constraint (still in force): SYME and DEFF NOT are lucy-ng abstractions
 
 ## Session Continuity
 
-Last session: 2026-07-04T13:20:40.016Z
-Stopped at: Phase 91 context gathered
+Last session: 2026-07-04T14:10:58.429Z
+Stopped at: Completed 91-01 test scaffold
 Resume with: `/gsd-plan-phase 90` (Server, CLI, and Packaging)
 
 ---

@@ -84,7 +84,7 @@ CASE orchestrator and kept alive after the run.
 Plans:
 **Wave 1**
 
-- [ ] 91-01-PLAN.md — Wave 0 test scaffold: fixtures (empty/live/final analysis dirs) + tests/test_webview_api.py
+- [x] 91-01-PLAN.md — Wave 0 test scaffold: fixtures (empty/live/final analysis dirs) + tests/test_webview_api.py
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -119,7 +119,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 90. Server, CLI, and Packaging | 3/3 | Complete    | 2026-07-03 |
-| 91. API Endpoints, Depictions, and Static Frontend | 0/? | Not started | - |
+| 91. API Endpoints, Depictions, and Static Frontend | 1/4 | In Progress|  |
 | 92. Orchestrator Integration | 0/? | Not started | - |
 
 ---
