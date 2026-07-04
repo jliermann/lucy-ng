@@ -88,7 +88,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 91-02-PLAN.md — status + log routers (GET /api/status, GET /api/log) with graceful degradation
+- [x] 91-02-PLAN.md — status + log routers (GET /api/status, GET /api/log) with graceful degradation
 - [ ] 91-03-PLAN.md — RDKit depiction module + structures router (GET /api/structures, GET /api/structure/{i}.svg)
 
 **Wave 3** *(blocked on Wave 2 completion)*
@@ -119,7 +119,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 90. Server, CLI, and Packaging | 3/3 | Complete    | 2026-07-03 |
-| 91. API Endpoints, Depictions, and Static Frontend | 1/4 | In Progress|  |
+| 91. API Endpoints, Depictions, and Static Frontend | 2/4 | In Progress|  |
 | 92. Orchestrator Integration | 0/? | Not started | - |
 
 ---
