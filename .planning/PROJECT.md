@@ -269,4 +269,4 @@ Minimum viable spectral data for v1:
 | `CLAUDE_CODE_SUBAGENT_MODEL=inherit` | A stale `=sonnet` override silently forced all subagents to Sonnet 4.6 and drove earlier CASE failures | Good — Opus 4.8 then solved both cases |
 
 ---
-*Last updated: 2026-07-03 — v9.2 Phase 90 complete (`lucy webview` server, CLI, and packaging: FastAPI app + `.webview.json` lifecycle + `lucy-ng[webview]` optional extra); next up Phase 91 (API endpoints, depictions, static frontend)*
+*Last updated: 2026-07-04 — v9.2 Phase 91 complete (webview API endpoints `/api/status|/api/log|/api/structures|/api/structure/{i}.svg` with graceful degradation + RDKit SVG depictions + single-file vanilla-JS auto-refresh dashboard served at `GET /`; static assets shipped in the wheel via hatch artifacts; WV-03/04/05/06 validated, WV-08 import-safety held); next up Phase 92 (orchestrator integration — auto-launch the dashboard from case.md, WV-07)*
