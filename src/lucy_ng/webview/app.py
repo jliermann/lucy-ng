@@ -25,9 +25,16 @@ def create_app(analysis_dir: Path) -> FastAPI:
     Returns:
         A :class:`FastAPI` application with:
         - ``GET /health`` → ``{"status": "ok", "analysis_dir": "<path>"}``
+        - ``GET /api/status`` → live run status (WV-03)
+        - ``GET /api/structures`` → candidate structure list (WV-04)
+        - ``GET /api/structure/{i}.svg`` → RDKit SVG depiction (WV-04)
+        - ``GET /api/log`` → raw CASE-PROGRESS.md content (WV-05)
+        - ``GET /`` → single-file dashboard (index.html, WV-06)
         - Swagger/ReDoc UI suppressed (``docs_url=None``, ``redoc_url=None``)
 
-    Phase 91 adds routers via ``app.include_router(router)`` after this call.
+    All router and FileResponse imports are inside this function body so that
+    ``from lucy_ng.webview import server`` never transitively imports fastapi
+    or RDKit on core (non-webview-extra) installs (WV-08).
     """
     app = FastAPI(title="lucy-ng webview", docs_url=None, redoc_url=None)
     analysis_dir = analysis_dir.resolve()
@@ -35,5 +42,24 @@ def create_app(analysis_dir: Path) -> FastAPI:
     @app.get("/health")
     def health() -> dict[str, str]:
         return {"status": "ok", "analysis_dir": str(analysis_dir)}
+
+    # Phase 91: lazy imports — these modules import fastapi/RDKit and must only
+    # be reached via create_app(), never at package import time (WV-08).
+    from lucy_ng.webview.routers import log as _log  # noqa: PLC0415
+    from lucy_ng.webview.routers import status as _status  # noqa: PLC0415
+    from lucy_ng.webview.routers import structures as _structures  # noqa: PLC0415
+
+    app.include_router(_status.make_router(analysis_dir))
+    app.include_router(_structures.make_router(analysis_dir))
+    app.include_router(_log.make_router(analysis_dir))
+
+    # Serve the single-page frontend at GET /
+    from fastapi.responses import FileResponse  # noqa: PLC0415
+
+    _static_file = Path(__file__).parent / "static" / "index.html"
+
+    @app.get("/")
+    def index() -> FileResponse:
+        return FileResponse(str(_static_file), media_type="text/html")
 
     return app
