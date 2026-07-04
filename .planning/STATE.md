@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v9.2
 milestone_name: CASE Web-View
-status: ready_to_plan
-stopped_at: Phase 90 complete (3/3) — ready to discuss Phase 91
-last_updated: 2026-07-03T14:24:07.276Z
+status: planning
+stopped_at: Phase 91 context gathered
+last_updated: "2026-07-04T13:20:40.022Z"
 last_activity: 2026-07-03
 progress:
   total_phases: 3
@@ -119,8 +119,8 @@ Key v9.0 constraint (still in force): SYME and DEFF NOT are lucy-ng abstractions
 
 ## Session Continuity
 
-Last session: 2026-07-03T07:36:42.775Z
-Stopped at: v9.2 roadmap created (phases 90-92, WV-01..WV-08 mapped)
+Last session: 2026-07-04T13:20:40.016Z
+Stopped at: Phase 91 context gathered
 Resume with: `/gsd-plan-phase 90` (Server, CLI, and Packaging)
 
 ---
