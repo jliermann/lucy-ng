@@ -75,7 +75,12 @@ CASE orchestrator and kept alive after the run.
   6. Opening `http://localhost:<port>/` in a browser shows the three widgets auto-refreshing every ~3 s without a JavaScript build step.
 
 **Note for planning:** `[tool.hatch.build.targets.wheel]` must add `src/lucy_ng/webview/static/*` to `artifacts` when the static frontend lands (Phase 90 deliberately left it untouched).
-**Plans**: TBD
+**Plans**: 4 plans (3 waves)
+Plans:
+- [ ] 91-01-PLAN.md — Wave 0 test scaffold: fixtures (empty/live/final analysis dirs) + tests/test_webview_api.py
+- [ ] 91-02-PLAN.md — status + log routers (GET /api/status, GET /api/log) with graceful degradation
+- [ ] 91-03-PLAN.md — RDKit depiction module + structures router (GET /api/structures, GET /api/structure/{i}.svg)
+- [ ] 91-04-PLAN.md — create_app wiring + GET / + static/index.html dashboard + hatch artifacts (BLOCKING)
 **UI hint**: yes
 
 ---
