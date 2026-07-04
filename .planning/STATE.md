@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v9.2
 milestone_name: CASE Web-View
-status: verifying
-stopped_at: Completed 91-01 test scaffold
-last_updated: "2026-07-04T14:32:38.084Z"
+status: ready_to_plan
+stopped_at: Phase 91 complete (4/4) — ready to discuss Phase 92
+last_updated: 2026-07-04T15:56:20.633Z
 last_activity: 2026-07-04
 progress:
   total_phases: 3
@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-29)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a multi-agent team that uses the intended solver pipeline — not a manual bypass
-**Current focus:** Phase 91 — api-endpoints-depictions-and-static-frontend
+**Current focus:** Phase 92 — orchestrator integration
 
 ## Current Position
 
@@ -30,9 +30,9 @@ See: .planning/PROJECT.md (updated 2026-06-29)
 [  TODO  ] [  TODO  ] [  TODO  ]
 ```
 
-Phase: 91 (api-endpoints-depictions-and-static-frontend) — EXECUTING
-Plan: 4 of 4
-Status: Phase complete — ready for verification
+Phase: 92
+Plan: Not started
+Status: Ready to plan
 Last activity: 2026-07-04
 
 ## Milestone v9.2 Phases
@@ -83,7 +83,7 @@ Items acknowledged and deferred at v9.0 milestone close on 2026-06-17 (resolved 
 
 **Velocity:**
 
-- Total plans completed: 166 across 11 milestones (10 shipped + 1 abandoned) at v9.1 close
+- Total plans completed: 170 across 11 milestones (10 shipped + 1 abandoned) at v9.1 close
 - v9.1: 4 phases (86-89), shipped 2026-06-29; tests: 1131 passing at close
 - v9.2: 3 phases planned (90-92); 0 plans complete
 
