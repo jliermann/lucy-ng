@@ -37,7 +37,7 @@ CASE orchestrator and kept alive after the run.
 ### Phases
 
 - [x] **Phase 90: Server, CLI, and Packaging** — `lucy webview` commands, server lifecycle via `.webview.json`, optional `lucy-ng[webview]` extra (completed 2026-07-03)
-- [ ] **Phase 91: API Endpoints, Depictions, and Static Frontend** — three JSON endpoints with graceful degradation, RDKit SVG depictions, vanilla-JS dashboard
+- [x] **Phase 91: API Endpoints, Depictions, and Static Frontend** — three JSON endpoints with graceful degradation, RDKit SVG depictions, vanilla-JS dashboard (completed 2026-07-04)
 - [ ] **Phase 92: Orchestrator Integration** — `case.md` launches the server at run start and reports the URL
 
 ### Phase Details
@@ -93,7 +93,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 91-04-PLAN.md — create_app wiring + GET / + static/index.html dashboard + hatch artifacts (BLOCKING)
+- [x] 91-04-PLAN.md — create_app wiring + GET / + static/index.html dashboard + hatch artifacts (BLOCKING)
 
 **UI hint**: yes
 
@@ -119,7 +119,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 90. Server, CLI, and Packaging | 3/3 | Complete    | 2026-07-03 |
-| 91. API Endpoints, Depictions, and Static Frontend | 3/4 | In Progress|  |
+| 91. API Endpoints, Depictions, and Static Frontend | 4/4 | Complete   | 2026-07-04 |
 | 92. Orchestrator Integration | 0/? | Not started | - |
 
 ---
