@@ -113,6 +113,16 @@ None. The "Waiting for candidates..." and "Waiting for log data..." strings are 
 
 No new threat surface beyond what was declared in the plan's threat register (T-91-09, T-91-10, T-91-11). T-91-09 mitigation confirmed: the file contains zero occurrences of innerHTML; all log and DOM updates use textContent or createElement + textContent.
 
+## Human Verification (Task 4 — checkpoint:human-verify)
+
+**Status:** APPROVED by user on 2026-07-04.
+
+Verification was performed against a live-run fixture analysis dir served via `lucy webview serve`. Evidence gathered before sign-off:
+- All 6 ROADMAP success criteria confirmed at the HTTP level: `/api/status` (running, iteration 1, server-computed `elapsed_s` from string epoch), `/api/structures` (`source=unranked`, `total=4`), `/api/log` (raw content), `/api/structure/0.svg` (real RDKit depiction, 36 path elements), `/api/structure/2.svg` malformed → 200 placeholder, `/api/structure/99.svg` out-of-range → 404, `GET /` → 200 text/html.
+- Dashboard mechanics confirmed statically: `setInterval(tick, 3000)` (D-15), polls all three JSON endpoints, `textContent`-only (0× `innerHTML`, WV-08/T-91-09).
+- 27/27 webview tests pass; WV-08 import-safety confirmed (fastapi absent from webview package import path).
+- User opened the served dashboard in a browser and approved the visual rendering + ~3 s auto-refresh of all three widgets.
+
 ## Self-Check: PASSED
 
 | Item | Result |
