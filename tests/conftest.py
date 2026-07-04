@@ -251,3 +251,150 @@ def webview_server(webview_analysis_dir: Path):  # type: ignore[no-untyped-def]
     except subprocess.TimeoutExpired:
         proc.kill()
         proc.wait()
+
+
+# ---------------------------------------------------------------------------
+# Phase 91 analysis-dir state fixtures
+# All runtime imports (json, etc.) are kept inside fixture bodies.
+# No fastapi / rdkit imported at module level here.
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def empty_analysis_dir(tmp_path: Path) -> Path:
+    """Analysis dir with no files at all — simulates 'before run starts'."""
+    d = tmp_path / "analysis"
+    d.mkdir()
+    return d
+
+
+@pytest.fixture
+def live_analysis_dir(tmp_path: Path) -> Path:
+    """Live-run state: timing.jsonl + iteration_01/solutions.smi + CASE-PROGRESS.md.
+
+    The solutions.smi contains three lines:
+      index 0 — valid aspirin SMILES
+      index 1 — valid benzene SMILES
+      index 2 — malformed SMILES (triggers placeholder SVG tests)
+    """
+    import json as _json
+
+    d = tmp_path / "analysis"
+    d.mkdir()
+
+    # timing.jsonl — epoch values are JSON STRINGS (shell printf %s output)
+    timing_events = [
+        {
+            "utc": "2026-07-04T10:00:00Z",
+            "epoch": "1751630400",
+            "event": "run_start",
+            "phase": "run",
+            "agent": "",
+        },
+        {
+            "utc": "2026-07-04T10:00:05Z",
+            "epoch": "1751630405",
+            "event": "phase_start",
+            "phase": "lsd-iteration-01",
+            "agent": "lsd-engineer",
+        },
+    ]
+    (d / "timing.jsonl").write_text(
+        "".join(_json.dumps(ev) + "\n" for ev in timing_events)
+    )
+
+    # iteration_01/solutions.smi — index 2 is malformed
+    iter_dir = d / "iteration_01"
+    iter_dir.mkdir()
+    (iter_dir / "solutions.smi").write_text(
+        "CC(=O)Oc1ccccc1C(=O)O\n"  # index 0 — aspirin (valid)
+        "c1ccccc1\n"  # index 1 — benzene (valid)
+        "not_a_real_smiles_XXXX\n"  # index 2 — malformed (placeholder)
+    )
+
+    # CASE-PROGRESS.md — minimal content for log / status-fallback tests
+    (d / "CASE-PROGRESS.md").write_text(
+        "## Iteration 1: LSD structure generation\n\n"
+        "### LSD-Engineer\n\n"
+        "Running LSD solver on NMR constraints.\n"
+    )
+
+    return d
+
+
+@pytest.fixture
+def final_analysis_dir(tmp_path: Path) -> Path:
+    """Final run state: timing.json + ranking_results.json present."""
+    import json as _json
+
+    d = tmp_path / "analysis"
+    d.mkdir()
+
+    # timing.json — written by case.md finalizer after run_end
+    (d / "timing.json").write_text(
+        _json.dumps(
+            {
+                "run_start_utc": "2026-07-04T10:00:00Z",
+                "run_end_utc": "2026-07-04T11:30:00Z",
+                "total_duration_s": 5400,
+                "total_duration_hms": "01:30:00",
+                "phases": [
+                    {
+                        "phase": "lsd-iteration-01",
+                        "agent": "lsd-engineer",
+                        "start_utc": "2026-07-04T10:00:05Z",
+                        "end_utc": "2026-07-04T11:00:00Z",
+                        "duration_s": 3595,
+                    }
+                ],
+            }
+        )
+    )
+
+    # ranking_results.json — written by lucy lsd rank --format json
+    (d / "ranking_results.json").write_text(
+        _json.dumps(
+            {
+                "total_solutions": 2,
+                "ranked_count": 2,
+                "skipped_count": 0,
+                "experimental_shifts": [128.0, 129.5],
+                "tolerance": 5.0,
+                "solutions": [
+                    {
+                        "rank": 1,
+                        "solution_index": 1,
+                        "smiles": "c1ccccc1",
+                        "mae": 0.1,
+                        "quality": "excellent",
+                        "deviations": [0.1, 0.1],
+                        "within_3ppm": 2,
+                        "within_5ppm": 2,
+                        "total_carbons": 6,
+                        "max_deviation": 0.1,
+                        "prediction_rate": 1.0,
+                        "matched_count": 2,
+                        "has_aromatic_ring": True,
+                    },
+                    {
+                        "rank": 2,
+                        "solution_index": 3,
+                        "smiles": "CC(=O)Oc1ccccc1C(=O)O",
+                        "mae": 1.5,
+                        "quality": "good",
+                        "deviations": [1.2, 1.8],
+                        "within_3ppm": 2,
+                        "within_5ppm": 2,
+                        "total_carbons": 9,
+                        "max_deviation": 1.8,
+                        "prediction_rate": 1.0,
+                        "matched_count": 2,
+                        "has_aromatic_ring": True,
+                    },
+                ],
+                "warnings": [],
+            }
+        )
+    )
+
+    return d
