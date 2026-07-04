@@ -48,15 +48,19 @@ CASE orchestrator and kept alive after the run.
 **Depends on**: Nothing
 **Requirements**: WV-01, WV-02, WV-08
 **Success Criteria** (what must be TRUE):
+
   1. `lucy webview serve <analysis_dir>` starts a FastAPI/uvicorn server, writes `.webview.json` (pid/port/url) into `<analysis_dir>`, and prints the dashboard URL.
   2. `lucy webview stop <analysis_dir>` terminates the server process and removes `.webview.json`; the port is no longer in use.
   3. `lucy webview status <analysis_dir>` reports whether a server is currently running for that folder.
   4. Running `lucy webview serve` on a folder that already has a live server returns the existing URL instead of double-binding (idempotent start).
   5. `pip install lucy-ng` (core) succeeds without FastAPI or uvicorn; `pip install lucy-ng[webview]` adds them.
+
 **Plans**: 3 plans (3 waves)
+
   - [x] 90-01-PLAN.md — Test infrastructure: `tests/test_cli_webview.py` (6 classes / 11 tests) + conftest fixtures (Wave 0)
   - [x] 90-02-PLAN.md — Webview server package: `state.py` (WebviewState) + `app.py` (create_app) + `server.py` (lifecycle) (Wave 1)
   - [x] 90-03-PLAN.md — CLI group `lucy webview` (serve/stop/status/_run) + `cli/__main__.py` + registration + `[webview]` extra (Wave 2)
+
 **UI hint**: yes
 
 ---
@@ -67,6 +71,7 @@ CASE orchestrator and kept alive after the run.
 **Depends on**: Phase 90
 **Requirements**: WV-03, WV-04, WV-05, WV-06
 **Success Criteria** (what must be TRUE):
+
   1. `GET /api/status` on a fixture folder returns iteration number, active phase, and elapsed time derived from `timing.json`/`timing.jsonl` and `CASE-PROGRESS.md`.
   2. `GET /api/log` returns the current raw content of `CASE-PROGRESS.md` as a text/JSON payload.
   3. `GET /api/structures` returns a ranked list with SMILES, MAE, and rank fields; `GET /api/structure/{i}.svg` returns a non-empty RDKit SVG for a valid SMILES index.
@@ -77,10 +82,19 @@ CASE orchestrator and kept alive after the run.
 **Note for planning:** `[tool.hatch.build.targets.wheel]` must add `src/lucy_ng/webview/static/*` to `artifacts` when the static frontend lands (Phase 90 deliberately left it untouched).
 **Plans**: 4 plans (3 waves)
 Plans:
+**Wave 1**
+
 - [ ] 91-01-PLAN.md — Wave 0 test scaffold: fixtures (empty/live/final analysis dirs) + tests/test_webview_api.py
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 91-02-PLAN.md — status + log routers (GET /api/status, GET /api/log) with graceful degradation
 - [ ] 91-03-PLAN.md — RDKit depiction module + structures router (GET /api/structures, GET /api/structure/{i}.svg)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 91-04-PLAN.md — create_app wiring + GET / + static/index.html dashboard + hatch artifacts (BLOCKING)
+
 **UI hint**: yes
 
 ---
@@ -91,9 +105,11 @@ Plans:
 **Depends on**: Phase 91
 **Requirements**: WV-07
 **Success Criteria** (what must be TRUE):
+
   1. At CASE run start (before the first `[BEGIN]`), `case.md` runs `lucy webview serve analysis/` in the background and prints the dashboard URL and `lucy webview stop` hint to the user.
   2. After the run ends and `terminate_team` fires, the webview server is still running and the dashboard URL is still reachable.
   3. The orchestrator notes in its output that the user must stop the server manually via `lucy webview stop <analysis_dir>`.
+
 **Plans**: TBD
 
 ---
