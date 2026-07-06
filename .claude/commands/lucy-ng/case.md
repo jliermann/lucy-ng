@@ -42,7 +42,25 @@ Extract compound path and molecular formula from user input.
    ```
    If numbered subdirectories with `acqus` files exist, use `.` (current directory) as compound_path.
 
-3. **If formula missing:** Ask the user — just the formula, nothing else:
+3. **If formula missing:** FIRST look for it on disk in `{compound_path}`, and only ask the
+   user if nothing usable is found. Many compound directories ship the formula in a small
+   sidecar text file — read it instead of prompting. Search generically (do NOT hard-code one
+   filename); check, in order, common formula sidecars:
+   ```bash
+   # look for a formula sidecar in the compound dir (case-insensitive, several conventions)
+   for f in "$CP"/molecular-formula.txt "$CP"/molecular_formula.txt "$CP"/formula.txt \
+            "$CP"/molform.txt "$CP"/*.formula; do
+     [ -f "$f" ] || continue
+     cand=$(tr -d ' \t\r\n' < "$f")
+     # accept only a plausible molecular formula token (element symbols + counts)
+     if printf '%s' "$cand" | grep -Eq '^([A-Z][a-z]?[0-9]*)+$'; then
+       echo "FORMULA_FROM_FILE=$cand ($f)"; break
+     fi
+   done
+   ```
+   (`$CP` = `{compound_path}`.) If a plausible formula is found, use it and tell the user which
+   file it came from (e.g. "Using formula C13H18O2 from molecular-formula.txt"). Only if no
+   sidecar yields a valid formula, ask the user — just the formula, nothing else:
    ```
    What is the molecular formula? (e.g., C9H10O2)
    ```
@@ -245,6 +263,8 @@ When the server starts successfully the output already contains:
 
 Store the URL from the output in a variable (e.g. `WEBVIEW_URL`) so it can be recorded in the CASE-PROGRESS.md header `**Dashboard:**` field (see write_progress). The `analysis/` directory exists because the `run_start` stamp above created it — this is why the launch block sits after that stamp.
 
+**Now create the CASE-PROGRESS.md header — BEFORE the `[BEGIN] peak-picking` push, not at `[SETUP-COMPLETE]`.** Using the `write_progress` File-header trigger (progress-format.md trigger 1), write `<compound_path>/analysis/CASE-PROGRESS.md` with `**Compound:**` (the data path), `**Formula:**` (the molecular formula — both are already known at run start), `**Started (UTC):**` (the `run_start` stamp), `**Team:**`, and `**Dashboard:**` (`WEBVIEW_URL`, or the "unavailable — [webview] extra not installed" note if the launch warned). This populates the dashboard **Run Log** panel with the run context from t=0 instead of leaving it "Waiting for log data…" until peak-picking finishes. Do NOT defer the header to `[SETUP-COMPLETE]`.
+
 Continue to the `phase_start` stamp and the `[BEGIN] peak-picking` push regardless of webview outcome.
 
 ```
@@ -264,7 +284,7 @@ Read the full CASE-PROGRESS.md format template before writing any progress entri
 
 Read file: ~/.claude/commands/lucy-ng/references/progress-format.md
 
-The orchestrator is the SOLE AUTHOR of CASE-PROGRESS.md. Create it at `<compound_path>/analysis/CASE-PROGRESS.md` after receiving [SETUP-COMPLETE] from nmr-chemist. Update after every [ITERATION-COMPLETE], [VALIDATION-PASSED/BLOCKED], and [RANKING-COMPLETE] message. When writing the file header, record the dashboard URL captured from the `lucy webview serve` output (stored in `WEBVIEW_URL` from spawn_case_team Step 5) into the `**Dashboard:**` field — or write "unavailable — [webview] extra not installed" if the launch warned.
+The orchestrator is the SOLE AUTHOR of CASE-PROGRESS.md. Create the file with its **header at run-start** — in spawn_case_team Step 5, right after the webview launch, using the File-header trigger (trigger 1 below). Do NOT wait for [SETUP-COMPLETE]: the header must exist from t=0 so the dashboard **Run Log** panel shows the run context (compound path, formula, dashboard URL) immediately rather than "Waiting for log data…". Then **append** the `## Setup` section after receiving [SETUP-COMPLETE] from nmr-chemist, and update after every [ITERATION-COMPLETE], [VALIDATION-PASSED/BLOCKED], and [RANKING-COMPLETE] message. When writing the file header, record the dashboard URL captured from the `lucy webview serve` output (stored in `WEBVIEW_URL` from spawn_case_team Step 5) into the `**Dashboard:**` field — or write "unavailable — [webview] extra not installed" if the launch warned.
 
 <!--
 RELOAD NOTE: case.md is a repo `.claude/` skill prompt symlinked into `~/.claude`. Behavior

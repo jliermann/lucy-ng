@@ -131,6 +131,43 @@ def test_terminate_team_no_stop() -> None:
     )
 
 
+def test_progress_header_created_at_run_start() -> None:
+    """case.md creates the CASE-PROGRESS.md header at run-start, before the first push.
+
+    Regression for the live-run finding: the dashboard Run Log showed
+    "Waiting for log data…" for the whole peak-picking phase because case.md
+    created CASE-PROGRESS.md only after [SETUP-COMPLETE]. The header (compound
+    path, formula, dashboard URL) is known at run-start and must be written then
+    so the dashboard is populated from t=0.
+
+    Asserts a 'create the CASE-PROGRESS.md header' instruction appears BEFORE the
+    first ``content="[BEGIN] peak-picking`` push.
+    """
+    case_text = CASE_MD.read_text()
+    lowered = case_text.lower()
+
+    marker = "create the case-progress.md header"
+    assert marker in lowered, (
+        "case.md does not instruct creating the CASE-PROGRESS.md header at run-start — "
+        "the header (compound/formula/dashboard) must be written in spawn_case_team "
+        "Step 5 so the dashboard Run Log is populated from t=0, not only after "
+        "[SETUP-COMPLETE]"
+    )
+    assert FIRST_PUSH_MARKER in case_text, (
+        f"case.md does not contain the SendMessage push marker {FIRST_PUSH_MARKER!r}"
+    )
+
+    header_idx = lowered.index(marker)
+    push_idx = case_text.index(FIRST_PUSH_MARKER)
+
+    assert header_idx < push_idx, (
+        f"The CASE-PROGRESS.md header-creation instruction appears at position "
+        f"{header_idx}, but the first '[BEGIN] peak-picking' push is at {push_idx} — "
+        "the header must be created BEFORE the push (at run-start) so the dashboard "
+        "log is not empty during peak-picking"
+    )
+
+
 def test_progress_format_dashboard_field() -> None:
     """progress-format.md contains a '**Dashboard:**' header field (OD-5).
 
