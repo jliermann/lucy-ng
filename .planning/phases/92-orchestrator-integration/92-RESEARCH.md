@@ -173,8 +173,14 @@ SendMessage(
 ```
 Note: the webview server (started at run_start) is intentionally NOT stopped here.
 It remains running so the user can review the dashboard after the CASE run ends.
-The user stops it with: lucy webview stop <compound_path>/analysis
+The manual stop hint is printed at run-start (spawn_case_team Step 5), NOT here.
 ```
+
+**DO NOT COPY VERBATIM:** the actual `terminate_team` comment must NOT contain the
+literal string `lucy webview stop` — that manual-stop hint belongs ONLY in the
+run-start launch block (Step 5). The `test_terminate_team_no_stop` grep test asserts
+zero occurrences of that literal in the `terminate_team` section, so including it here
+would break the Wave 0 contract.
 
 Without this comment, a future editor might incorrectly "fix" the missing stop call.
 
@@ -490,17 +496,15 @@ lucy webview serve "<compound_path>/analysis" 2>&1
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+Both questions are resolved and adopted in Plan 92-02's `<design_decisions>` block (OD-5 and the smoke-test decision).
 
 1. **Should the dashboard URL appear in CASE-PROGRESS.md header?**
-   - What we know: The header is written after [SETUP-COMPLETE] (see progress-format.md). The webview URL is known at run_start (Step 5). The orchestrator can store it in a variable and inject it into the header.
-   - What's unclear: Whether the planner considers this OD-5 worth the extra header field.
-   - Recommendation: Include it (see OD-5 above). Adds one line to the progress-format.md write trigger. Small value but persistent record.
+   - RESOLVED: **Yes** (OD-5). The header is written after [SETUP-COMPLETE]; the webview URL is known at run_start (Step 5), stored in a variable, and injected into the header. Adopted in 92-02 Task 2 (adds the `**Dashboard:**` field to progress-format.md + the write instruction).
 
 2. **Smoke-test mode — should webview also launch?**
-   - What we know: Smoke-test mode (`--smoke-test` flag in case.md) exits after [VALIDATION-PASSED] and calls `terminate_team`. The analysis/ directory exists.
-   - What's unclear: Whether it's useful to launch the dashboard for a 1-iteration smoke test.
-   - Recommendation: Launch it anyway (the WV-07 insertion point is before the smoke-test/normal branching). The webview serve call is idempotent and ~0.5 s; there's no cost to including it in smoke-test mode.
+   - RESOLVED: **Yes**. The WV-07 insertion point sits before the smoke-test/normal branch, so the launch runs in both modes. The serve call is idempotent and ~0.5 s — no cost to including it in smoke-test mode. Adopted in 92-02 (insertion-point placement).
 
 ---
 
