@@ -217,6 +217,36 @@ Immediately after spawning, the coordinator MUST push the first directive. The f
 
 **First, stamp timing** (see the timing step): take the `run_start` stamp (this one also does `mkdir -p <compound_path>/analysis`), then a `phase_start` stamp for `peak-picking` — both BEFORE the push below.
 
+<!-- WV-07: Launch webview dashboard before the first [BEGIN] push.
+     analysis/ was just created by the run_start timing stamp above.
+     lucy webview serve is non-blocking (~0.5 s startup probe) — it does NOT
+     violate the headless/non-interactive rule. The spawned uvicorn process
+     uses start_new_session=True and outlives this orchestrator session.
+     Do NOT use & (background operator), --port, or --open. -->
+
+**Launch the webview dashboard (non-blocking — exits in ~0.5 s):**
+
+```bash
+WEBVIEW_OUTPUT=$(lucy webview serve "<compound_path>/analysis" 2>&1)
+WEBVIEW_EXIT=$?
+if [ $WEBVIEW_EXIT -eq 0 ]; then
+  echo "$WEBVIEW_OUTPUT"
+else
+  echo "Note: Webview dashboard unavailable — $WEBVIEW_OUTPUT"
+  echo "Install lucy-ng[webview] to enable the live dashboard."
+fi
+```
+
+This call is foreground and non-blocking: `lucy webview serve` launches a detached uvicorn subprocess via `start_new_session=True`, waits ~0.5 s for a startup probe, then returns. Do NOT append `&`, do NOT background-and-wait, do NOT pass `--port` or `--open`, and do NOT abort the CASE run if the call fails — the dashboard is observability only.
+
+When the server starts successfully the output already contains:
+- `Webview server running at http://127.0.0.1:NNNNN`
+- `Stop with: lucy webview stop <compound_path>/analysis`
+
+Store the URL from the output in a variable (e.g. `WEBVIEW_URL`) so it can be recorded in the CASE-PROGRESS.md header `**Dashboard:**` field (see write_progress). The `analysis/` directory exists because the `run_start` stamp above created it — this is why the launch block sits after that stamp.
+
+Continue to the `phase_start` stamp and the `[BEGIN] peak-picking` push regardless of webview outcome.
+
 ```
 SendMessage(
   type="message",
@@ -877,6 +907,8 @@ Overall: PASS / FAIL (N/4 checkpoints passed)
 Gracefully shut down all teammates and clean up team resources.
 
 **This step executes after:** present_results (successful or failed CASE), OR escalate (user escalation), OR smoke_test_report (smoke test mode).
+
+**Note (WV-07):** The webview server started at run_start is intentionally left running here. It remains accessible so the user can review the dashboard after the CASE run ends. The manual stop hint was printed at run-start (spawn_case_team Step 5). Do NOT add a stop call to this step.
 
 **Step 0: Finalize timing (before shutdown).** Take the `run_end` stamp, then run the timing finalize (see the timing step): it writes `analysis/timing.json` and prints the `## Timing Summary` block, which you append to `analysis/CASE-PROGRESS.md` (and to `analysis/final_results.md` if it exists). Do this on every exit path — success, escalation, or smoke test — so a wall-clock duration is always on record.
 
