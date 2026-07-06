@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v9.2
 milestone_name: CASE Web-View
-status: ready_to_plan
-stopped_at: Phase 91 complete (4/4) — ready to discuss Phase 92
-last_updated: 2026-07-04T15:56:20.633Z
-last_activity: 2026-07-04
+status: executing
+stopped_at: Completed 91-01 test scaffold
+last_updated: "2026-07-06T13:09:54.307Z"
+last_activity: 2026-07-06 -- Phase 92 planning complete
 progress:
   total_phases: 3
   completed_phases: 2
-  total_plans: 7
+  total_plans: 10
   completed_plans: 7
   percent: 67
 ---
@@ -32,8 +32,8 @@ See: .planning/PROJECT.md (updated 2026-06-29)
 
 Phase: 92
 Plan: Not started
-Status: Ready to plan
-Last activity: 2026-07-04
+Status: Ready to execute
+Last activity: 2026-07-06 -- Phase 92 planning complete
 
 ## Milestone v9.2 Phases
 
