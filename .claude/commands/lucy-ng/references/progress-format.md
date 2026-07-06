@@ -24,6 +24,7 @@ are produced from that log at the end of the run.
 **Formula:** <molecular_formula>
 **Started (UTC):** <real ISO-8601 UTC from `date -u`, = the run_start timing stamp>
 **Team:** CASE Team v4.0 (coordinator, nmr-chemist, lsd-engineer, solution-analyst, devils-advocate)
+**Dashboard:** <webview URL printed by `lucy webview serve` at run start, or "unavailable — [webview] extra not installed" if the launch failed>
 
 ---
 ```

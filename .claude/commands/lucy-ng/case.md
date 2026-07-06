@@ -264,7 +264,7 @@ Read the full CASE-PROGRESS.md format template before writing any progress entri
 
 Read file: ~/.claude/commands/lucy-ng/references/progress-format.md
 
-The orchestrator is the SOLE AUTHOR of CASE-PROGRESS.md. Create it at `<compound_path>/analysis/CASE-PROGRESS.md` after receiving [SETUP-COMPLETE] from nmr-chemist. Update after every [ITERATION-COMPLETE], [VALIDATION-PASSED/BLOCKED], and [RANKING-COMPLETE] message.
+The orchestrator is the SOLE AUTHOR of CASE-PROGRESS.md. Create it at `<compound_path>/analysis/CASE-PROGRESS.md` after receiving [SETUP-COMPLETE] from nmr-chemist. Update after every [ITERATION-COMPLETE], [VALIDATION-PASSED/BLOCKED], and [RANKING-COMPLETE] message. When writing the file header, record the dashboard URL captured from the `lucy webview serve` output (stored in `WEBVIEW_URL` from spawn_case_team Step 5) into the `**Dashboard:**` field — or write "unavailable — [webview] extra not installed" if the launch warned.
 
 <!--
 RELOAD NOTE: case.md is a repo `.claude/` skill prompt symlinked into `~/.claude`. Behavior
