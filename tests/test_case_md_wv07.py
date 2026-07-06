@@ -1,0 +1,149 @@
+"""Wave 0 grep-contract tests for the WV-07 case.md edit (Phase 92-01).
+
+These tests assert the BEHAVIORAL CONTRACT that Plan 92-02 must satisfy by
+editing case.md and progress-format.md.  Before Plan 92-02 lands:
+
+  - test_webview_launch_present  RED  (lucy webview serve not yet in case.md)
+  - test_stop_hint_present       RED  (lucy webview stop not yet in pre-terminate region)
+  - test_terminate_team_no_stop  GREEN  (regression guard — server must outlive run)
+  - test_progress_format_dashboard_field  RED  (**Dashboard:** not yet in progress-format.md)
+
+After Plan 92-02 lands all four tests are GREEN.
+
+All file reads use repo-relative paths (.claude/commands/lucy-ng/...) so tests
+work from any checkout without touching ~/.claude.
+
+Run with::
+
+    pytest tests/test_case_md_wv07.py -v
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+# Repo-relative paths — pytest must be invoked from the repo root (pyproject.toml).
+CASE_MD = Path(".claude/commands/lucy-ng/case.md")
+PROGRESS_FORMAT_MD = Path(".claude/commands/lucy-ng/references/progress-format.md")
+
+# The marker that begins the terminate_team step in case.md.
+TERMINATE_TEAM_MARKER = '<step name="terminate_team">'
+
+# The exact substring that identifies the first [BEGIN] peak-picking *push*
+# (SendMessage call in spawn_case_team Step 5, not the earlier agent prompt mention).
+# Using content="[BEGIN] peak-picking ensures we locate the SendMessage action
+# at line ~224, not the earlier Task() prompt reference at line ~146.
+FIRST_PUSH_MARKER = 'content="[BEGIN] peak-picking'
+
+
+def test_webview_launch_present() -> None:
+    """case.md contains 'lucy webview serve' BEFORE the first '[BEGIN] peak-picking' push.
+
+    Asserts:
+    - 'lucy webview serve' is present in case.md.
+    - The first occurrence of 'lucy webview serve' precedes the first occurrence
+      of the SendMessage push marker ``content="[BEGIN] peak-picking`` — verifying
+      that the WV-07 launch block is inserted before the team kick-off.
+
+    Status: RED until Plan 92-02 inserts the webview launch block in
+    spawn_case_team Step 5.
+    """
+    case_text = CASE_MD.read_text()
+
+    assert "lucy webview serve" in case_text, (
+        "case.md does not contain 'lucy webview serve' — "
+        "Plan 92-02 must insert the webview launch block in spawn_case_team Step 5"
+    )
+    assert FIRST_PUSH_MARKER in case_text, (
+        f"case.md does not contain the SendMessage push marker {FIRST_PUSH_MARKER!r} — "
+        "unexpected structural change to spawn_case_team; update this test if the "
+        "SendMessage format changed"
+    )
+
+    serve_idx = case_text.index("lucy webview serve")
+    push_idx = case_text.index(FIRST_PUSH_MARKER)
+
+    assert serve_idx < push_idx, (
+        f"'lucy webview serve' appears at position {serve_idx}, but the first "
+        f"SendMessage push marker appears at position {push_idx} — "
+        "the webview launch block must be inserted BEFORE the '[BEGIN] peak-picking' "
+        "SendMessage in spawn_case_team Step 5"
+    )
+
+
+def test_stop_hint_present() -> None:
+    """The pre-terminate_team region of case.md contains 'lucy webview stop'.
+
+    The WV-07 launch block (in spawn_case_team Step 5) must output a stop hint
+    so the user knows how to shut down the dashboard after the run.
+
+    Status: RED until Plan 92-02 adds the stop hint to the WV-07 launch block.
+    """
+    case_text = CASE_MD.read_text()
+
+    assert TERMINATE_TEAM_MARKER in case_text, (
+        f"case.md does not contain the marker {TERMINATE_TEAM_MARKER!r} — "
+        "the terminate_team step may have been renamed; update this test"
+    )
+
+    pre_marker = case_text.split(TERMINATE_TEAM_MARKER, 1)[0]
+
+    assert "lucy webview stop" in pre_marker, (
+        "The run-start/spawn region of case.md (everything before terminate_team) "
+        "does not contain 'lucy webview stop' — "
+        "Plan 92-02 must add the stop hint to the WV-07 webview launch block in "
+        "spawn_case_team Step 5"
+    )
+
+
+def test_terminate_team_no_stop() -> None:
+    """The terminate_team section of case.md does NOT contain 'lucy webview stop'.
+
+    This is a regression guard: the webview server must outlive the CASE run
+    (SC #2).  The orchestrator must never call 'lucy webview stop' in the
+    shutdown step — the stop hint belongs only in the run-start launch block.
+
+    Status: GREEN both before and after Plan 92-02 (regression guard).
+    """
+    case_text = CASE_MD.read_text()
+
+    assert TERMINATE_TEAM_MARKER in case_text, (
+        f"case.md does not contain the marker {TERMINATE_TEAM_MARKER!r} — "
+        "the terminate_team step may have been renamed; update this test"
+    )
+
+    # Extract the terminate_team section: from the marker to its closing </step>.
+    after_marker = case_text.split(TERMINATE_TEAM_MARKER, 1)[1]
+
+    closing_tag = "</step>"
+    assert closing_tag in after_marker, (
+        f"The terminate_team section does not have a closing {closing_tag!r} — "
+        "unexpected structural change to case.md; update this test"
+    )
+
+    terminate_section = after_marker.split(closing_tag, 1)[0]
+
+    assert "lucy webview stop" not in terminate_section, (
+        "The terminate_team section of case.md contains 'lucy webview stop' — "
+        "this violates SC #2: the server must outlive the CASE run. "
+        "The stop hint belongs ONLY in the WV-07 launch block (spawn_case_team), "
+        "NOT in the shutdown step."
+    )
+
+
+def test_progress_format_dashboard_field() -> None:
+    """progress-format.md contains a '**Dashboard:**' header field (OD-5).
+
+    This field records the webview URL in the CASE-PROGRESS.md header so the
+    URL is retrievable after the run without re-running 'lucy webview status'.
+
+    Status: RED until Plan 92-02 adds the Dashboard field to the CASE-PROGRESS.md
+    header template in progress-format.md.
+    """
+    pf_text = PROGRESS_FORMAT_MD.read_text()
+
+    assert "**Dashboard:**" in pf_text, (
+        "progress-format.md does not contain '**Dashboard:**' — "
+        "Plan 92-02 must add the OD-5 Dashboard field to the CASE-PROGRESS.md "
+        "header template in progress-format.md"
+    )
