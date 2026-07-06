@@ -113,7 +113,7 @@ Plans:
 **Plans**: 3 plans in 3 waves
 
 - [x] 92-01-PLAN.md — Wave 0 test scaffold: case.md grep-contract tests + serve-outlives-caller lifecycle test
-- [ ] 92-02-PLAN.md — Edit case.md (Step 5 webview launch + terminate_team no-stop comment) + progress-format.md Dashboard field
+- [x] 92-02-PLAN.md — Edit case.md (Step 5 webview launch + terminate_team no-stop comment) + progress-format.md Dashboard field
 - [ ] 92-03-PLAN.md — Fresh-session smoke-test human verification (SC #1/#2/#3)
 
 ---
@@ -124,7 +124,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 90. Server, CLI, and Packaging | 3/3 | Complete    | 2026-07-03 |
 | 91. API Endpoints, Depictions, and Static Frontend | 4/4 | Complete    | 2026-07-04 |
-| 92. Orchestrator Integration | 1/3 | In Progress|  |
+| 92. Orchestrator Integration | 2/3 | In Progress|  |
 
 ---
 
