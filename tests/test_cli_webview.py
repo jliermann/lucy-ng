@@ -16,6 +16,7 @@ import os
 import socket
 import subprocess
 import sys
+import time
 import tomllib
 from pathlib import Path
 from typing import Any
@@ -378,3 +379,76 @@ class TestWebviewLifecycle:
         assert running_state is not None, (
             "server.status() returned None while fixture server is live"
         )
+
+    def test_serve_outlives_caller(self, webview_analysis_dir: Path) -> None:
+        """Server process survives after its launching subprocess.run caller exits.
+
+        Verifies SC #2: start_new_session=True in server.start() makes the uvicorn
+        subprocess an independent OS process (setsid). The caller subprocess returns
+        in < 10 s (non-blocking) and the server PID is still alive after it exits.
+
+        Uses webview_analysis_dir (not webview_server) so we control the launch.
+        The finally block always calls 'lucy webview stop' to prevent orphan processes.
+        """
+        try:
+            import fastapi  # noqa: F401  # pyright: ignore[reportMissingModuleSource]
+        except ImportError:
+            pytest.skip("webview extra (fastapi) not installed — outlives-caller test skipped")
+
+        pid: int | None = None
+        try:
+            t0 = time.monotonic()
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "lucy_ng.cli",
+                    "webview",
+                    "serve",
+                    str(webview_analysis_dir),
+                    "--format",
+                    "json",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+            elapsed = time.monotonic() - t0
+
+            assert result.returncode == 0, (
+                f"'lucy webview serve' exited with code {result.returncode}.\n"
+                f"stdout: {result.stdout}\nstderr: {result.stderr}"
+            )
+            assert elapsed < 10.0, (
+                f"'lucy webview serve' took {elapsed:.2f} s to return — "
+                "must return in < 10 s (non-blocking contract)"
+            )
+
+            data = json.loads(result.stdout)
+            pid = int(data["pid"])
+
+            # The subprocess.run caller has already returned — verify the server is STILL alive.
+            try:
+                os.kill(pid, 0)
+            except ProcessLookupError:
+                raise AssertionError(
+                    f"Server (pid={pid}) is dead after caller subprocess.run returned — "
+                    "start_new_session=True detachment may not be working"
+                )
+            except PermissionError:
+                pass  # PID exists but belongs to a different user — still alive
+
+        finally:
+            # Always clean up: stop the server so no orphan process survives the test.
+            subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "lucy_ng.cli",
+                    "webview",
+                    "stop",
+                    str(webview_analysis_dir),
+                ],
+                capture_output=True,
+                timeout=15,
+            )
