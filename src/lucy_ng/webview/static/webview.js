@@ -231,7 +231,7 @@
       // Pipe table: header row + separator row (e.g. |---|---|) required before
       // treating as a table — avoids false positives on stray '|' chars in body text.
       if (/^\|.*\|\s*$/.test(line) && i + 1 < lines.length
-          && /^\|[\s:-]+\|\s*$/.test(lines[i + 1])) {
+          && /^\|[\s:|-]+\|\s*$/.test(lines[i + 1])) {
         var headerCells = line.split('|').slice(1, -1).map(function (s) { return s.trim(); });
         i += 2; // skip header + separator
         var rows = [];
