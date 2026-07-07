@@ -421,6 +421,26 @@ class TestFrontend:
             f"Expected content-type to start with text/html: {content_type!r}"
         )
 
+    def test_webview_js_served(self, live_analysis_dir: Path) -> None:
+        """GET /webview.js → HTTP 200, Content-Type starts with 'application/javascript'."""
+        try:
+            from fastapi.testclient import TestClient  # pyright: ignore[reportMissingModuleSource]
+
+            from lucy_ng.webview.app import create_app  # pyright: ignore[reportMissingModuleSource]
+        except ImportError:
+            pytest.skip("webview extra or create_app not yet available")
+
+        with TestClient(create_app(live_analysis_dir)) as client:
+            r = client.get("/webview.js")
+
+        assert r.status_code == 200, (
+            f"Expected 200 for GET /webview.js, got {r.status_code}: {r.text[:200]}"
+        )
+        content_type = r.headers.get("content-type", "")
+        assert content_type.startswith("application/javascript") or content_type.startswith(
+            "text/javascript"
+        ), f"Expected content-type to start with application/javascript: {content_type!r}"
+
 
 # ---------------------------------------------------------------------------
 # TestWiring [→ Plan 04]
@@ -481,4 +501,12 @@ class TestPackaging:
         assert "src/lucy_ng/webview/static/*" in artifacts, (
             f"'src/lucy_ng/webview/static/*' not found in hatch wheel artifacts.\n"
             f"Current artifacts: {artifacts}"
+        )
+
+    def test_webview_js_present_in_static(self) -> None:
+        """webview.js exists at the flat static/ level so the existing hatch glob packages it."""
+        static_dir = Path(__file__).parent.parent / "src" / "lucy_ng" / "webview" / "static"
+        assert (static_dir / "webview.js").exists(), (
+            "webview.js must exist at the flat static/ level for the existing hatch glob "
+            "to cover it"
         )
