@@ -116,6 +116,17 @@ None - no external service configuration required.
 - Phases 94-96 have a stable dock-in point: `[data-panel="tables"]`, `[data-panel="spectra-1d"]`, `[data-panel="spectra-2d"]` are the exact attribute selectors those phases will populate with real content, replacing the placeholder `<div class="placeholder">` text.
 - No blockers. The one open item Plan 03 should specifically verify in-browser (per UI-SPEC's own "Manual hierarchy check" note) is whether the 13px `h3` vs 12px body/bold 1px size difference reads as a distinguishable visual hierarchy level for agent-name sub-headings — this is a genuine judgment call UI-SPEC flagged as needing human eyes, not a defect.
 
+## Self-Check: PASSED
+
+- FOUND: src/lucy_ng/webview/static/index.html
+- FOUND: src/lucy_ng/webview/static/webview.js
+- FOUND: tests/test_webview_api.py
+- FOUND: .planning/phases/93-formatted-log-tab-framework/93-02-SUMMARY.md
+- FOUND commit fdd80df (Task 1)
+- FOUND commit 0c1a8b8 (Task 2)
+- FOUND commit 8748c94 (Rule 1 fix)
+- FOUND commit d9cd025 (this SUMMARY)
+
 ---
 *Phase: 93-formatted-log-tab-framework*
 *Completed: 2026-07-07*
