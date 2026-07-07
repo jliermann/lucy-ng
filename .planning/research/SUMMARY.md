@@ -198,5 +198,22 @@ Based on research, suggested phase structure:
 
 ---
 
+## ⚠ ORCHESTRATOR OVERRIDE — post-research user decision (2026-07-07)
+
+The synthesis above assumed **peak-based** plots (sticks/scatter from `analysis/peaks/*.json` only). **The user decided otherwise:** render the **real x/y spectra** (¹³C/¹H 1D traces, HSQC/HMBC/COSY 2D contours) from the raw Bruker experiment data **with the picked peaks overlaid on top**, so the user can immediately judge whether the peak-picking makes sense against the actual data. This is the QC value peak-only plots cannot provide.
+
+**What this changes (authoritative for the roadmap):**
+- **Spectra source = real Bruker data (via `BrukerReader`/nmrglue) + peak overlay (from `analysis/peaks/*.json`).** The Bruker-FID rendering guidance in STACK.md / ARCHITECTURE.md / PITFALLS.md — which the reconciliation above had discarded — is **back in scope**. Re-read those files' Bruker sections.
+- **A Bruker/experiment data-path wiring step is required** (the server currently reads only `analysis/`). Options from the research: record the compound/data path at run-start (case.md writes a small manifest / `.webview.json` field), or discover Bruker experiment dirs under `analysis_dir.parent` via `BrukerReader._detect_experiment_type()`. The roadmapper should make this a prerequisite of the 1D-spectra phase (likely folded into it, or a thin phase before it). This is a small `case.md`/orchestrator touch.
+- **The PITFALLS still fully apply and gain weight:** matplotlib OO API only (no pyplot); reversed ppm axes; 2D contour perf/memory (decimate + threshold levels + mtime PNG cache + threadpool via sync `def` handlers); close figures; lazy import (WV-08); graceful "unavailable" (HTTP 200) when raw data can't be located; hatch artifacts for new static files.
+- **Peak overlay uses the existing `analysis/peaks/*.json`** (confirmed present in a real CASE1 run: `carbon_signals.json`, `hsqc.json`, `hmbc.json`, `cosy.json`) plotted on top of the real trace/contour.
+- **Data tables (TBL-*) and formatted log (LOG-01/TAB-01) are unchanged** by this override — they remain `analysis/`-only and frontend-only respectively.
+
+**Unchanged reconciliations that still hold:** matplotlib → `[webview]` extra (OO API, PNG); markdown log = hand-rolled textContent renderer (NO CDN, NO innerHTML); frontend split to `static/index.html` + `static/webview.js`, no build step.
+
+Build-order impact: log/tabs → data tables → **1D real spectra + peak overlay (incl. Bruker-path wiring)** → 2D real spectra + peak overlay.
+
+---
+
 *Research completed: 2026-07-07*
-*Ready for roadmap: yes*
+*Ready for roadmap: yes (with the override above)*
