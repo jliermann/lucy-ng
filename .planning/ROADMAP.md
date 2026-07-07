@@ -38,7 +38,7 @@ CASE orchestrator and kept alive after the run.
 
 - [x] **Phase 90: Server, CLI, and Packaging** — `lucy webview` commands, server lifecycle via `.webview.json`, optional `lucy-ng[webview]` extra (completed 2026-07-03)
 - [x] **Phase 91: API Endpoints, Depictions, and Static Frontend** — three JSON endpoints with graceful degradation, RDKit SVG depictions, vanilla-JS dashboard (completed 2026-07-04)
-- [ ] **Phase 92: Orchestrator Integration** — `case.md` launches the server at run start and reports the URL
+- [x] **Phase 92: Orchestrator Integration** — `case.md` launches the server at run start and reports the URL (completed 2026-07-07)
 
 ### Phase Details
 
@@ -114,7 +114,7 @@ Plans:
 
 - [x] 92-01-PLAN.md — Wave 0 test scaffold: case.md grep-contract tests + serve-outlives-caller lifecycle test
 - [x] 92-02-PLAN.md — Edit case.md (Step 5 webview launch + terminate_team no-stop comment) + progress-format.md Dashboard field
-- [ ] 92-03-PLAN.md — Fresh-session smoke-test human verification (SC #1/#2/#3)
+- [x] 92-03-PLAN.md — Fresh-session smoke-test human verification (SC #1/#2/#3)
 
 ---
 
@@ -124,7 +124,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 90. Server, CLI, and Packaging | 3/3 | Complete    | 2026-07-03 |
 | 91. API Endpoints, Depictions, and Static Frontend | 4/4 | Complete    | 2026-07-04 |
-| 92. Orchestrator Integration | 2/3 | In Progress|  |
+| 92. Orchestrator Integration | 3/3 | Complete   | 2026-07-07 |
 
 ---
 
