@@ -1,5 +1,25 @@
 # Project Milestones: lucy-ng
 
+## v9.2 CASE Web-View (Shipped: 2026-07-07)
+
+**Delivered:** A read-only web dashboard that makes a CASE run observable live and after the fact — three auto-refreshing widgets (run status, top RDKit-rendered candidate structures with MAE/rank, scrollable run log), auto-launched by the orchestrator and kept alive past the run. Ships as an optional extra (`lucy-ng[webview]`); the core CLI stays dependency-free. Live-validated on a CASE1 run (ibuprofen solved, Rank 1 MAE 0.25).
+
+**Phases completed:** 3 phases (90–92), 10 plans, 17 tasks. All 8 requirements (WV-01..08) met.
+
+**Key accomplishments:**
+
+- **Phase 90 — server, CLI, packaging:** `lucy webview serve/stop/status` (FastAPI/uvicorn) with a PID-aware `.webview.json` lifecycle (`WebviewState` Pydantic v2 model), idempotent start, detached process (`start_new_session=True`) so it outlives the caller; shipped as the optional `lucy-ng[webview]` extra with the core CLI kept dependency-free (WV-08 import safety verified).
+- **Phase 91 — endpoints + depictions + frontend:** four JSON/SVG endpoints on `create_app()` (`/api/status`, `/api/log`, `/api/structures`, `/api/structure/{i}.svg`) with graceful degradation (missing/partial/mid-write files → HTTP 200 "waiting", never 500; out-of-range → 404; malformed SMILES → placeholder); clean RDKit SVG depictions (no atom indices); single-file vanilla-JS dashboard (3 s polling, `textContent`-only, no build step) shipped in the wheel via hatch artifacts.
+- **Phase 92 — orchestrator integration:** `case.md` auto-launches the dashboard at run-start (before the first `[BEGIN]`), prints the URL + manual `lucy webview stop` hint, and leaves the server running past `terminate_team`; browser is not auto-opened by design.
+- **Post-code-review hardening (Phase 91):** three verified correctness fixes — null-rank no longer drops the ranked tier, `render_smiles` can never 500 on a kekulize failure, and the frontend no longer re-fetches SVGs every tick for empty-SMILES tiles — each locked by a regression test.
+- **Live-run refinement (Phase 92):** the CASE-PROGRESS.md header is now written at run-start (compound path, formula, dashboard URL) so the dashboard Run Log fills from t=0 instead of staying empty until `[SETUP-COMPLETE]`.
+
+**Verification:** every phase `VERIFICATION.md` passed; phases 91 and 92 additionally live-validated in-browser by the user. Full test suite green (1174 collected).
+
+**Deferred to Stage 2 (v9.3):** formatted run log (markdown rendering) + rendered spectra tabs + data tables — see STATE.md § Deferred Items.
+
+---
+
 ## v9.1 CASE Final-Answer Correctness & Verification Gates (Shipped: 2026-06-29)
 
 **Delivered:** Closed three "clean-but-wrong" CASE failure classes with verification gates, then proved the fixes hold end-to-end on independent blind CASE runs.

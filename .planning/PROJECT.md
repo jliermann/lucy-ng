@@ -41,11 +41,13 @@ Design spec: `docs/superpowers/specs/2026-07-02-case-webview-design.md`. Stage 2
 
 ## Current State
 
-**Version:** v9.1 shipped 2026-06-29 (v9.0 shipped 2026-06-17)
-**Codebase:** Python package (`src/lucy_ng/`), test suite **1131 passing** at v9.1 close
+**Version:** v9.2 shipped 2026-07-07 (v9.1 2026-06-29, v9.0 2026-06-17)
+**Codebase:** Python package (`src/lucy_ng/`) + `src/lucy_ng/webview/` (optional `[webview]` extra), test suite **1174 tests** at v9.2 close
 **Database:** SQLite with 928K compounds, 7.9M HOSE statistics + fragment library (2.4M SSCs)
 **Agent definitions:** 4-agent CASE team + case.md orchestrator (in `repo/.claude/`, symlinked into `~/.claude`)
 **New CLI (v9.1):** `lucy identify` (structure→identity gate); `lucy pick hsqc` now reports `multiplicity_edited`; `lucy lsd rank` unified onto the shared 13C predictor.
+
+**What shipped in v9.2 (CASE Web-View, phases 90–92):** A read-only web dashboard that makes a CASE run observable live and after the fact — `lucy webview serve/stop/status` (FastAPI, optional `lucy-ng[webview]` extra; core CLI stays dependency-free), four JSON/SVG endpoints with graceful degradation (missing/partial files → HTTP 200, never 500), RDKit SVG depictions, and a single-file vanilla-JS dashboard (3 s polling, no build step). The `case.md` orchestrator auto-launches the dashboard at run-start and reports the URL; the detached server (`start_new_session=True`) outlives the team. Live-validated on a CASE1 run (ibuprofen, Rank 1 MAE 0.25). Stage 2 (formatted log + spectra tabs + data tables) deferred to v9.3.
 
 **What shipped in v9.1:** Three "clean-but-wrong" CASE failure classes closed with verification gates, blind-validated end-to-end. RANK (ranker↔predict unified, ibuprofen MAE 2.23→0.24); IDENT (`lucy identify` + post-solution `G-IDENT` gate stop naming hallucination); MULT (per-family multiplicity search + MAE-independent `coverage_gate` + binding `G-MULT` flag). Validated by 5 blind UATs (CASE5/6/7/8 PASS, CASE4 conditional), each RDKit-verified.
 
@@ -129,8 +131,15 @@ Design spec: `docs/superpowers/specs/2026-07-02-case-webview-design.md`. Stage 2
 - Aliphatic multiplicity coverage: per-family LSD search + MAE-independent `coverage_gate` + binding `G-MULT` flag + `pick hsqc multiplicity_edited` detector (MULT-01/02/03/04) — v9.1
 - Blind-UAT validation gate: 5 RDKit-verified blind runs (CASE5/6/7/8 pass, CASE4 conditional) (UAT-01/02/03) — v9.1
 
+### Validated (v9.2 — CASE Web-View)
+
+- `lucy webview serve/stop/status`: read-only FastAPI dashboard server with PID-aware `.webview.json` lifecycle, idempotent start, detached process that outlives the caller; optional `lucy-ng[webview]` extra, core CLI dependency-free (WV-01/02/08) — v9.2
+- Dashboard endpoints + UI: `/api/status|/api/log|/api/structures|/api/structure/{i}.svg` with graceful degradation (200 not 500 on partial files; 404 out-of-range; placeholder on malformed SMILES), RDKit SVG depictions, single-file vanilla-JS auto-refresh frontend, no build step (WV-03/04/05/06) — v9.2
+- Orchestrator auto-launch: `case.md` starts the dashboard at run-start, reports URL + stop hint, server outlives `terminate_team`; live-validated on CASE1 (WV-07) — v9.2
+
 ### Deferred
 
+- [ ] **Stage 2 (v9.3) — webview:** formatted run log (render `CASE-PROGRESS.md` markdown) + rendered spectra tabs (1D ¹³C/¹H/DEPT, 2D HSQC/HMBC/COSY) + data tables (peak lists, constraint inventory, HMBC usage). Design spec `docs/superpowers/specs/2026-07-02-case-webview-design.md` § Stage 2; architecture built to accommodate.
 - [ ] CASE4 azulene-regiochemistry-enumeration gap — exact chamazulene regiochemistry not reachable (di-methyl-ethyl class is searched). 4th defect class surfaced by v9.1 UAT-01. (todo `2026-06-25-case4-azulene-regiochemistry-enumeration-gap`)
 - [ ] 4J HMBC coupling handling via pyLSD (Priority 1 — v7.0 statistical approach failed, pyLSD solver-based approach next)
 - [ ] Multi-compound CASE comparison UAT (blocked on 4J handling or non-aromatic test compounds)
@@ -269,4 +278,4 @@ Minimum viable spectral data for v1:
 | `CLAUDE_CODE_SUBAGENT_MODEL=inherit` | A stale `=sonnet` override silently forced all subagents to Sonnet 4.6 and drove earlier CASE failures | Good — Opus 4.8 then solved both cases |
 
 ---
-*Last updated: 2026-07-07 — v9.2 webview milestone COMPLETE (phases 90–92, WV-01..08). Phase 92 wired the CASE orchestrator (`case.md`) to auto-launch `lucy webview serve <analysis>` at run-start (before the first `[BEGIN]`), print the dashboard URL + manual `lucy webview stop` hint, and leave the server running past `terminate_team` (survives via `start_new_session=True`); browser is not auto-opened by design. Live-verified on a CASE1 run; a follow-up fix (`f782ea8`) writes the CASE-PROGRESS.md header at run-start so the dashboard log is populated from t=0. Next: run `/gsd-complete-milestone` to archive the webview milestone.*
+*Last updated: 2026-07-07 after the v9.2 CASE Web-View milestone (phases 90–92, WV-01..08) — archived to `milestones/v9.2-ROADMAP.md` + `milestones/v9.2-REQUIREMENTS.md`, tagged `v9.2`. Delivered the read-only CASE dashboard (server/CLI + endpoints/depictions/frontend + orchestrator auto-launch), live-validated on CASE1. Next: `/gsd-new-milestone` to scope Stage 2 (v9.3) — formatted run log + rendered spectra tabs + data tables.*

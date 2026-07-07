@@ -15,119 +15,22 @@
 - **v8.0 pyLSD Integration** - Phases 65-71 (superseded by v9.0 before UAT passed)
 - ✅ [v9.0 CASE Reliability & Skill Consolidation](milestones/v9.0-ROADMAP.md) - Phases 72-85 (shipped 2026-06-17)
 - ✅ [v9.1 CASE Final-Answer Correctness & Verification Gates](milestones/v9.1-ROADMAP.md) - Phases 86-89 (shipped 2026-06-29)
-- **v9.2 CASE Web-View** - Phases 90-92 (in progress)
+- ✅ [v9.2 CASE Web-View](milestones/v9.2-ROADMAP.md) - Phases 90-92 (shipped 2026-07-07)
 
 ---
 
-**v9.1 outcome:** Closed three "clean-but-wrong" defect classes — RANK (ranker path unified),
-IDENT (`lucy identify` + post-solution G-IDENT gate), MULT (per-family multiplicity search +
-MAE-independent coverage gate) — and proved them end-to-end with five blind CASE UATs
-(CASE5/6/7/8 PASS; CASE4 conditional). Audit: `milestones/v9.1-MILESTONE-AUDIT.md`.
-Non-blocking deferred follow-up: CASE4 azulene-regiochemistry-enumeration gap (4th defect class,
-exact chamazulene regiochemistry still unreachable) — todo `2026-06-25-case4-azulene-regiochemistry-enumeration-gap`.
+## No active milestone
 
----
+**v9.2 CASE Web-View shipped 2026-07-07** (Stage 1): a read-only dashboard makes a CASE run
+observable — three auto-refreshing widgets (run status, top RDKit-rendered structures, run log),
+auto-launched by the orchestrator and kept alive after the run. Full detail:
+[`milestones/v9.2-ROADMAP.md`](milestones/v9.2-ROADMAP.md).
 
-## v9.2 CASE Web-View
+**Next up — Stage-2 milestone (v9.3):** the deferred webview work — formatted run log (render
+`CASE-PROGRESS.md` markdown) + rendered spectra tabs (1D ¹³C/¹H/DEPT, 2D HSQC/HMBC/COSY) + data
+tables (peak lists, constraint inventory, HMBC usage). See STATE.md § Deferred Items and
+`docs/superpowers/specs/2026-07-02-case-webview-design.md` § Stage 2. The v9.2 architecture was
+built to accommodate it ("tabs dock in without a rewrite"). Start with `/gsd-new-milestone`.
 
-**Goal:** A read-only web dashboard makes a CASE run observable live (and after the fact) —
-three widgets (run status, top structures, log), auto-refresh, launched automatically by the
-CASE orchestrator and kept alive after the run.
-
-### Phases
-
-- [x] **Phase 90: Server, CLI, and Packaging** — `lucy webview` commands, server lifecycle via `.webview.json`, optional `lucy-ng[webview]` extra (completed 2026-07-03)
-- [x] **Phase 91: API Endpoints, Depictions, and Static Frontend** — three JSON endpoints with graceful degradation, RDKit SVG depictions, vanilla-JS dashboard (completed 2026-07-04)
-- [x] **Phase 92: Orchestrator Integration** — `case.md` launches the server at run start and reports the URL (completed 2026-07-07)
-
-### Phase Details
-
-#### Phase 90: Server, CLI, and Packaging
-
-**Goal**: Users can start, stop, and query a read-only webview server for any `analysis/` folder using `lucy webview` commands; the server package is isolated as an optional extra.
-**Depends on**: Nothing
-**Requirements**: WV-01, WV-02, WV-08
-**Success Criteria** (what must be TRUE):
-
-  1. `lucy webview serve <analysis_dir>` starts a FastAPI/uvicorn server, writes `.webview.json` (pid/port/url) into `<analysis_dir>`, and prints the dashboard URL.
-  2. `lucy webview stop <analysis_dir>` terminates the server process and removes `.webview.json`; the port is no longer in use.
-  3. `lucy webview status <analysis_dir>` reports whether a server is currently running for that folder.
-  4. Running `lucy webview serve` on a folder that already has a live server returns the existing URL instead of double-binding (idempotent start).
-  5. `pip install lucy-ng` (core) succeeds without FastAPI or uvicorn; `pip install lucy-ng[webview]` adds them.
-
-**Plans**: 3 plans (3 waves)
-
-  - [x] 90-01-PLAN.md — Test infrastructure: `tests/test_cli_webview.py` (6 classes / 11 tests) + conftest fixtures (Wave 0)
-  - [x] 90-02-PLAN.md — Webview server package: `state.py` (WebviewState) + `app.py` (create_app) + `server.py` (lifecycle) (Wave 1)
-  - [x] 90-03-PLAN.md — CLI group `lucy webview` (serve/stop/status/_run) + `cli/__main__.py` + registration + `[webview]` extra (Wave 2)
-
-**UI hint**: yes
-
----
-
-#### Phase 91: API Endpoints, Depictions, and Static Frontend
-
-**Goal**: Opening the dashboard URL in a browser shows three auto-refreshing widgets — run status, top candidate structures with RDKit SVG depictions, and the scrollable run log — with graceful degradation during live runs when source files are absent or partial.
-**Depends on**: Phase 90
-**Requirements**: WV-03, WV-04, WV-05, WV-06
-**Success Criteria** (what must be TRUE):
-
-  1. `GET /api/status` on a fixture folder returns iteration number, active phase, and elapsed time derived from `timing.json`/`timing.jsonl` and `CASE-PROGRESS.md`.
-  2. `GET /api/log` returns the current raw content of `CASE-PROGRESS.md` as a text/JSON payload.
-  3. `GET /api/structures` returns a ranked list with SMILES, MAE, and rank fields; `GET /api/structure/{i}.svg` returns a non-empty RDKit SVG for a valid SMILES index.
-  4. All three API endpoints return a well-formed "waiting for data" payload (status 200, not 500) when source files are missing, empty, or mid-write; `GET /api/structure/{i}.svg` for an out-of-range index returns 404.
-  5. A malformed SMILES entry in a solutions file causes that entry to render as a placeholder; all other entries in the list render correctly.
-  6. Opening `http://localhost:<port>/` in a browser shows the three widgets auto-refreshing every ~3 s without a JavaScript build step.
-
-**Note for planning:** `[tool.hatch.build.targets.wheel]` must add `src/lucy_ng/webview/static/*` to `artifacts` when the static frontend lands (Phase 90 deliberately left it untouched).
-**Plans**: 4 plans (3 waves)
-Plans:
-**Wave 1**
-
-- [x] 91-01-PLAN.md — Wave 0 test scaffold: fixtures (empty/live/final analysis dirs) + tests/test_webview_api.py
-
-**Wave 2** *(blocked on Wave 1 completion)*
-
-- [x] 91-02-PLAN.md — status + log routers (GET /api/status, GET /api/log) with graceful degradation
-- [x] 91-03-PLAN.md — RDKit depiction module + structures router (GET /api/structures, GET /api/structure/{i}.svg)
-
-**Wave 3** *(blocked on Wave 2 completion)*
-
-- [x] 91-04-PLAN.md — create_app wiring + GET / + static/index.html dashboard + hatch artifacts (BLOCKING)
-
-**UI hint**: yes
-
----
-
-#### Phase 92: Orchestrator Integration
-
-**Goal**: When a CASE run starts, the orchestrator automatically launches the webview server for the `analysis/` directory and reports the dashboard URL and stop hint to the user before any team work begins; the server outlives the team.
-**Depends on**: Phase 91
-**Requirements**: WV-07
-**Success Criteria** (what must be TRUE):
-
-  1. At CASE run start (before the first `[BEGIN]`), `case.md` runs `lucy webview serve analysis/` in the background and prints the dashboard URL and `lucy webview stop` hint to the user.
-  2. After the run ends and `terminate_team` fires, the webview server is still running and the dashboard URL is still reachable.
-  3. The orchestrator notes in its output that the user must stop the server manually via `lucy webview stop <analysis_dir>`.
-
-**Plans**: 3 plans in 3 waves
-
-- [x] 92-01-PLAN.md — Wave 0 test scaffold: case.md grep-contract tests + serve-outlives-caller lifecycle test
-- [x] 92-02-PLAN.md — Edit case.md (Step 5 webview launch + terminate_team no-stop comment) + progress-format.md Dashboard field
-- [x] 92-03-PLAN.md — Fresh-session smoke-test human verification (SC #1/#2/#3)
-
----
-
-### Progress Table
-
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 90. Server, CLI, and Packaging | 3/3 | Complete    | 2026-07-03 |
-| 91. API Endpoints, Depictions, and Static Frontend | 4/4 | Complete    | 2026-07-04 |
-| 92. Orchestrator Integration | 3/3 | Complete    | 2026-07-07 |
-
----
-
-**v9.1 outcome (for reference):**
-Phases 86-89. All requirements (RANK-01..03, IDENT-01..03, MULT-01..04, UAT-01..03) met.
-Tests: 1131 passing at close.
+Also outstanding (unrelated to webview, carried from v9.1): CASE4 azulene-regiochemistry
+enumeration gap — todo `2026-06-25-case4-azulene-regiochemistry-enumeration-gap`.

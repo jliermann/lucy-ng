@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v9.2
 milestone_name: CASE Web-View
-status: milestone_complete
-stopped_at: Milestone complete (Phase 92 was final phase)
-last_updated: 2026-07-07T06:50:31.414Z
-last_activity: 2026-07-06
+status: Awaiting next milestone
+stopped_at: Completed 91-01 test scaffold
+last_updated: "2026-07-07T08:28:11.074Z"
+last_activity: 2026-07-07 — Milestone v9.2 completed and archived
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 10
   completed_plans: 10
-  percent: 67
+  percent: 100
 ---
 
 # lucy-ng State
@@ -25,15 +25,10 @@ See: .planning/PROJECT.md (updated 2026-06-29)
 
 ## Current Position
 
-```
-[Phase 90] [Phase 91] [Phase 92]
-[  TODO  ] [  TODO  ] [  TODO  ]
-```
-
-Phase: 92
-Plan: Not started
-Status: Milestone complete
-Last activity: 2026-07-07
+Phase: Milestone v9.2 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-07-07 — Milestone v9.2 completed and archived
 
 ## Milestone v9.2 Phases
 
@@ -46,6 +41,16 @@ Last activity: 2026-07-07
 **Sequencing:** 90 (server + CLI) is the foundation — nothing else can be tested without it. 91 (API + frontend) builds on 90 and delivers the complete user-visible dashboard. 92 (orchestrator integration) is a skill-level edit to `case.md` that requires 91 to be working so the URL it reports leads to a real dashboard.
 
 ## Deferred Items
+
+Items acknowledged and deferred at **v9.2 CASE Web-View milestone close on 2026-07-07**:
+
+| Category | Item | Status | Note |
+|----------|------|--------|------|
+| stage-2 | Formatted run log (render CASE-PROGRESS.md markdown: headings/bold/tables) | deferred → v9.3 | Deferred in Phase 91 with an explicit "revisit if the raw log proves hard to read" trigger — trigger met on the live CASE1 run. Reverses D-13 (raw monospace). Small; candidate first phase of the Stage-2 milestone. |
+| stage-2 | Rendered spectra tabs + data tables (1D ¹³C/¹H/DEPT, 2D HSQC/HMBC/COSY; peak lists, constraint inventory, HMBC usage) | deferred → v9.3 | Explicit Stage 2 per design spec (`docs/superpowers/specs/2026-07-02-case-webview-design.md`); needs new Bruker-data plotting infrastructure + new endpoints + tab UI. Architecture built to accommodate ("tabs dock in without a rewrite"). |
+| todo | 2026-06-30-ranking-tests-hardfail-without-hosegen | deferred | Test-infra todo from the v9.1 era; unrelated to webview. Carried forward. |
+| uat | 90-HUMAN-UAT.md | resolved-marker | status=passed, 0 pending scenarios — effectively done; flagged only by a stale file marker. |
+| todo | 2026-06-25-case4-azulene-regiochemistry-enumeration-gap | carried (from v9.1) | Still open; unrelated to webview. See the v9.1 entry below. |
 
 Items acknowledged and deferred at **v9.1 milestone close on 2026-06-29**:
 
@@ -127,3 +132,7 @@ Resume with: `/gsd-plan-phase 90` (Server, CLI, and Packaging)
 
 ---
 *Last updated: 2026-07-02 — v9.2 roadmap created (3 phases, 8 requirements mapped)*
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone
