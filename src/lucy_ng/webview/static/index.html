@@ -185,6 +185,99 @@
     text-align: center;
   }
 
+  /* ---- Markdown-rendered run log ---- */
+  #log-panel h1 {
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.2;
+    color: #212529;
+    margin: 16px 0 8px;
+  }
+  #log-panel h1:first-child {
+    margin-top: 0;
+  }
+  #log-panel h2 {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.2;
+    color: #212529;
+    margin: 16px 0 8px;
+  }
+  #log-panel h3 {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.2;
+    color: #495057;
+    margin: 12px 0 4px;
+  }
+  #log-panel p {
+    font-size: 12px;
+    color: #212529;
+    line-height: 1.6;
+    margin: 4px 0;
+  }
+  #log-panel strong {
+    font-weight: 600;
+    color: #212529;
+  }
+  #log-panel code {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 12px;
+    background: #f8f9fa;
+    padding: 0 4px;
+    border-radius: 4px;
+    color: #212529;
+  }
+  #log-panel pre {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 8px 12px;
+    overflow-x: auto;
+    margin: 8px 0;
+  }
+  #log-panel pre code {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    white-space: pre;
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+  }
+  #log-panel hr {
+    border: none;
+    border-top: 1px solid #dee2e6;
+    margin: 16px 0;
+  }
+  #log-panel table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 12px;
+    margin: 8px 0;
+  }
+  #log-panel th {
+    background: #f8f9fa;
+    color: #495057;
+    font-weight: 600;
+    text-align: left;
+    padding: 4px 8px;
+    border: 1px solid #dee2e6;
+  }
+  #log-panel td {
+    padding: 4px 8px;
+    border: 1px solid #dee2e6;
+    color: #212529;
+  }
+  #log-panel ul {
+    margin: 4px 0 4px 20px;
+  }
+  #log-panel li {
+    font-size: 12px;
+    color: #212529;
+    line-height: 1.6;
+  }
+
   /* ---- Responsive: narrow windows collapse to stacked ---- */
   @media (max-width: 700px) {
     #main { flex-direction: column; }

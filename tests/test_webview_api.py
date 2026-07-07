@@ -510,3 +510,26 @@ class TestPackaging:
             "webview.js must exist at the flat static/ level for the existing hatch glob "
             "to cover it"
         )
+
+
+# ---------------------------------------------------------------------------
+# TestMarkdownRendererSafety [→ Plan 02]
+# ---------------------------------------------------------------------------
+
+
+class TestMarkdownRendererSafety:
+    """LOG-01 / D-02: static/webview.js must never assign server content via innerHTML."""
+
+    def test_no_innerhtml_in_source(self) -> None:
+        """'innerHTML' must not appear anywhere in static/webview.js (regression guard)."""
+        js_path = (
+            Path(__file__).parent.parent
+            / "src" / "lucy_ng" / "webview" / "static" / "webview.js"
+        )
+        if not js_path.exists():
+            pytest.skip("webview.js not yet extracted")
+        source = js_path.read_text(encoding="utf-8")
+        assert "innerHTML" not in source, (
+            "webview.js must never use innerHTML (XSS guard, D-02) — "
+            "found the literal substring 'innerHTML' in the source"
+        )
