@@ -13,7 +13,7 @@
 - [x] **WV-04**: User sees the best ~10 candidate structures rendered (RDKit SVG depiction) with MAE/rank, from `ranking_results.json`/`final_results.md` + `solutions.smi`.
 - [x] **WV-05**: User sees the run log (`CASE-PROGRESS.md`) in a scrollable panel that auto-refreshes.
 - [x] **WV-06**: The dashboard degrades gracefully during a live run — missing/empty/partly-written source files show a "waiting for data" state, never a 500; malformed SMILES is skipped, not fatal.
-- [ ] **WV-07**: When a CASE run starts, the orchestrator (`case.md`) launches the server in the background and reports the dashboard URL and stop hint to the user before work begins.
+- [x] **WV-07**: When a CASE run starts, the orchestrator (`case.md`) launches the server in the background and reports the dashboard URL and stop hint to the user before work begins.
 - [x] **WV-08**: The webview ships as an optional extra `lucy-ng[webview]` (FastAPI + uvicorn); the core `lucy` CLI stays dependency-free. The frontend is static HTML + vanilla JS (no build step).
 
 ## Future Requirements (deferred — Stage 2)
@@ -39,6 +39,6 @@
 | WV-04 | Phase 91 | Complete |
 | WV-05 | Phase 91 | Complete |
 | WV-06 | Phase 91 | Complete |
-| WV-07 | Phase 92 | Pending |
+| WV-07 | Phase 92 | Complete |
 
 **Coverage:** 8/8 requirements mapped. No orphans.
