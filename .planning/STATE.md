@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v9.3
 milestone_name: CASE Web-View Stage 2
 status: planning
-last_updated: "2026-07-07T08:54:34.928Z"
+last_updated: "2026-07-07T00:00:00.000Z"
 last_activity: 2026-07-07
 progress:
-  total_phases: 0
+  total_phases: 4
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -17,53 +17,52 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-06-29)
+See: .planning/PROJECT.md (updated 2026-07-07)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a multi-agent team that uses the intended solver pipeline — not a manual bypass
-**Current focus:** Milestone complete
+**Current focus:** v9.3 CASE Web-View Stage 2 — roadmap created, ready to plan Phase 93
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: Not started (roadmap approved, ready for `/gsd-plan-phase 93`)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-07-07 — Milestone v9.3 started
+Status: Roadmap created
+Last activity: 2026-07-07 — v9.3 roadmap created (4 phases, 8 requirements mapped)
 
-## Milestone v9.2 Phases
+```
+Progress: [░░░░░░░░░░░░░░░░░░░░] 0% (0/4 phases)
+```
+
+## Milestone v9.3 Phases
 
 | Phase | Goal | Requirements | Depends on |
 |-------|------|--------------|------------|
-| 90. Server, CLI, and Packaging | `lucy webview` commands + server lifecycle via `.webview.json` + `lucy-ng[webview]` optional extra | WV-01, WV-02, WV-08 | — |
-| 91. API Endpoints, Depictions, and Static Frontend | Three JSON endpoints with graceful degradation + RDKit SVG + vanilla-JS dashboard | WV-03, WV-04, WV-05, WV-06 | 90 |
-| 92. Orchestrator Integration | `case.md` launches server at run start, reports URL, server outlives team | WV-07 | 91 |
+| 93. Formatted Log + Tab Framework | Tab navigation bar + hand-rolled markdown renderer; pure frontend | LOG-01, TAB-01 | — |
+| 94. Data Tables | `tables.py` router reading `analysis/peaks/*.json` + `compound.lsd`; ¹³C signals, correlations, LSD constraints | TBL-01, TBL-02, TBL-03 | 93 |
+| 95. 1D Real Spectra + Peak Overlay | `spectra.py` router; real Bruker 1D traces + peak overlay; matplotlib in `[webview]` extra; `.run_manifest.json` path wiring | SP1-01, SP-02 | 93, 94 |
+| 96. 2D Real Spectra + Peak Overlay | Extends `spectra.py` with HSQC/HMBC/COSY contour + cross-peak overlay; decimation + cache | SP2-01 | 95 |
 
-**Sequencing:** 90 (server + CLI) is the foundation — nothing else can be tested without it. 91 (API + frontend) builds on 90 and delivers the complete user-visible dashboard. 92 (orchestrator integration) is a skill-level edit to `case.md` that requires 91 to be working so the URL it reports leads to a real dashboard.
+**Sequencing:** Phase 93 (tab framework + markdown log) ships first as a pure frontend change — it establishes the tab dock-in that all later phases populate and carries zero backend risk. Phase 94 (data tables) comes next, establishing the `analysis/`-only router pattern without matplotlib. Phase 95 (1D spectra) introduces the Bruker-path wiring (`.run_manifest.json` written by `case.md`) and the matplotlib Agg pipeline — two cross-cutting concerns that Phase 96 inherits. Phase 96 (2D spectra) is purely additive to Phase 95: same router, same manifest, same matplotlib backend, only adds 2D contour logic + caching.
 
 ## Deferred Items
 
-Items acknowledged and deferred at **v9.2 CASE Web-View milestone close on 2026-07-07**:
+Items acknowledged and deferred at **v9.2 CASE Web-View milestone close on 2026-07-07** (carried into v9.3 or later):
 
 | Category | Item | Status | Note |
 |----------|------|--------|------|
-| stage-2 | Formatted run log (render CASE-PROGRESS.md markdown: headings/bold/tables) | deferred → v9.3 | Deferred in Phase 91 with an explicit "revisit if the raw log proves hard to read" trigger — trigger met on the live CASE1 run. Reverses D-13 (raw monospace). Small; candidate first phase of the Stage-2 milestone. |
-| stage-2 | Rendered spectra tabs + data tables (1D ¹³C/¹H/DEPT, 2D HSQC/HMBC/COSY; peak lists, constraint inventory, HMBC usage) | deferred → v9.3 | Explicit Stage 2 per design spec (`docs/superpowers/specs/2026-07-02-case-webview-design.md`); needs new Bruker-data plotting infrastructure + new endpoints + tab UI. Architecture built to accommodate ("tabs dock in without a rewrite"). |
-| todo | 2026-06-30-ranking-tests-hardfail-without-hosegen | deferred | Test-infra todo from the v9.1 era; unrelated to webview. Carried forward. |
-| uat | 90-HUMAN-UAT.md | resolved-marker | status=passed, 0 pending scenarios — effectively done; flagged only by a stale file marker. |
-| todo | 2026-06-25-case4-azulene-regiochemistry-enumeration-gap | carried (from v9.1) | Still open; unrelated to webview. See the v9.1 entry below. |
+| stage-2 | Formatted run log (render CASE-PROGRESS.md markdown: headings/bold/tables) | ACTIVE → Phase 93 | Deferred in Phase 91 with an explicit "revisit if the raw log proves hard to read" trigger — trigger met on the live CASE1 run. Reverses D-13. |
+| stage-2 | Rendered spectra tabs + data tables (1D ¹³C/¹H, 2D HSQC/HMBC/COSY; peak lists, constraint inventory) | ACTIVE → Phases 94-96 | Explicit Stage 2 per design spec. Architecture built to accommodate. |
+| defer-v9.4 | DEPT sub-tab (CH/CH2/CH3 signed bar chart) | deferred → v9.4 | Conditional on `multiplicity_edited` field in hsqc.json; P2 deliverable |
+| defer-v9.4 | Interactive spectrum zoom/pan | deferred | Would require a JS charting library; conflicts with no-build/no-CDN constraint |
+| defer-v9.4 | SSE/WebSocket live push replacing 3 s polling | deferred | Optional optimization; no functional gain |
+| todo | 2026-06-30-ranking-tests-hardfail-without-hosegen | deferred | Test-infra todo from v9.1; unrelated to webview |
+| todo | 2026-06-25-case4-azulene-regiochemistry-enumeration-gap | carried (from v9.1) | Still open; unrelated to webview |
 
 Items acknowledged and deferred at **v9.1 milestone close on 2026-06-29**:
 
 | Category | Item | Status | Note |
 |----------|------|--------|------|
 | todo | 2026-06-25-case4-azulene-regiochemistry-enumeration-gap | deferred | NEW 4th defect class from v9.1 UAT-01; di-methyl-ethyl class now searched, exact chamazulene regiochemistry still unreachable. Carried-seed. |
-
-Items acknowledged and deferred at v9.0 milestone close on 2026-06-17 (resolved in v9.1):
-
-| Category | Item | Status | Note |
-|----------|------|--------|------|
-| todo | 2026-06-17-lucy-lsd-rank-scoring-defect | RESOLVED in v9.1 (Phase 86) | shipped as RANK |
-| uat | 78-UAT-CASE1.md / 78-UAT-CASE9.md / 78-UAT-VERDICT.md | superseded | failed gate later overcome |
-| verification | 75-VERIFICATION.md | human_needed | satisfied by v9.0 blind UATs |
 
 ## Completed Milestones
 
@@ -82,56 +81,60 @@ Items acknowledged and deferred at v9.0 milestone close on 2026-06-17 (resolved 
 | v8.0 pyLSD Integration | 65-71 | Superseded by v9.0 (UAT failed as mechanism validation) |
 | v9.0 CASE Reliability & Skill Consolidation | 72-85 | 2026-06-17 |
 | v9.1 CASE Final-Answer Correctness & Verification Gates | 86-89 | 2026-06-29 |
+| v9.2 CASE Web-View | 90-92 | 2026-07-07 |
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 173 across 11 milestones (10 shipped + 1 abandoned) at v9.1 close
-- v9.1: 4 phases (86-89), shipped 2026-06-29; tests: 1131 passing at close
-- v9.2: 3 phases planned (90-92); 0 plans complete
+- Total plans completed: 183 across 12 milestones (11 shipped + 1 abandoned) at v9.2 close
+  - v9.2: 3 phases (90-92), 10 plans, shipped 2026-07-07; tests: 1174 passing at close
+  - v9.1: 4 phases (86-89), 9 plans, shipped 2026-06-29; tests: 1131 passing at close
+- v9.3: 4 phases planned (93-96); 0 plans complete
 
 ## Accumulated Context
 
 ### Roadmap Evolution
 
-- v9.2 roadmap created (2026-07-02): phases 90-92. Derived from 8 requirements (WV-01..WV-08) from the approved design spec `docs/superpowers/specs/2026-07-02-case-webview-design.md`. Phase 90 delivers the server infrastructure and CLI lifecycle management; Phase 91 delivers all user-visible dashboard content (API layer + RDKit SVG depictions + static vanilla-JS frontend, including graceful degradation on partial files); Phase 92 wires the orchestrator to auto-start the server.
+- v9.3 roadmap created (2026-07-07): phases 93-96. Derived from 8 requirements (LOG-01, TAB-01, TBL-01..03, SP1-01, SP2-01, SP-02) with authoritative override: spectra = **real Bruker traces + peak overlay** (not peak-only sticks). Research HIGH confidence across all phases; no research gate needed for any phase.
 
-### Decisions
+### Key Design Decisions for v9.3
+
+- [v9.3-roadmap]: **Spectra source = real Bruker data** — BrukerReader/nmrglue renders the actual processed spectrum; picked peaks from `analysis/peaks/*.json` are overlaid on top. This is the QC value: user sees whether peaks were placed correctly relative to the real signals.
+- [v9.3-roadmap]: **Bruker-path wiring via `.run_manifest.json`** — `case.md` writes `{"bruker_data_dir": "<abs>", "formula": "<formula>"}` into `analysis/.run_manifest.json` at run-start. The spectra router reads this file. If absent (manual `lucy webview serve`, pre-v9.3 run), spectra tab shows "unavailable" gracefully. No CLI signature change; no `.webview.json` model change.
+- [v9.3-roadmap]: **matplotlib OO API only** — `Figure` + `FigureCanvasAgg`; never `matplotlib.pyplot` in any webview module. All matplotlib imports lazy inside `make_router()` per WV-08. `matplotlib>=3.7` added to `[webview]` extra.
+- [v9.3-roadmap]: **Reversed ppm axes everywhere** — `ax.set_xlim(ppm_scale[0], ppm_scale[-1])` where `ppm_scale[0]` is the highest ppm (Bruker convention). Both F1 and F2 axes reversed on 2D plots. Shared `_apply_nmr_axes()` helper prevents omission.
+- [v9.3-roadmap]: **2D performance** — decimate to ≤512×512 before contouring; threshold-based contour levels (MAD noise floor); mtime-keyed per-router PNG cache; sync `def` route handlers (FastAPI dispatches to thread-pool, never blocks event loop).
+- [v9.3-roadmap]: **Markdown log = hand-rolled DOM renderer** — createElement + textContent throughout; never `innerHTML` of server content. Covers the exact CASE-PROGRESS.md subset (## headings, **bold**, `code`, pipe-tables, code fences, --- hr). No CDN, no bundled JS library.
+- [v9.3-roadmap]: **SP-02 graceful degradation** — assigned to Phase 95 (first spectra phase, where the "unavailable" pattern for missing raw data is established); carried as a hard acceptance criterion to Phase 96 and recommended acceptance concern for Phase 94 tables.
+
+### Decisions (inherited from v9.2)
 
 Decisions are logged in PROJECT.md Key Decisions table.
 
-- [v9.2-roadmap]: FastAPI + uvicorn shipped as `lucy-ng[webview]` optional extra; core `lucy` CLI stays dependency-free. The frontend is static HTML + vanilla JS — no build toolchain. Server is "dumb" (reads files only, no agent-team coupling) so the same command serves both live and finished runs.
-- [v9.2-roadmap]: Stage-2 items (rendered spectra tabs, data tables, SSE/WebSocket push) are explicitly deferred — not in scope for this milestone.
-- [v9.2-roadmap]: Graceful degradation (WV-06) assigned to Phase 91 alongside the API endpoints because it is an API-layer concern: every endpoint must handle missing/partial/malformed source files without raising a 500.
-- [v9.2-roadmap]: WV-07 (orchestrator integration) sequenced last because it requires a working dashboard URL (Phase 91) to be meaningful. It is a skill edit to `case.md` — no Python code changes expected.
-- [Phase ?]: Raise click.ClickException from exc in _require_webview(): ruff B904 requires exception chaining in except clause
-- [Phase 91]: Epoch values in timing.jsonl test fixtures are JSON strings (not ints) matching case.md shell printf %s output
-- [Phase 91]: All fastapi/webview imports in test_webview_api.py are inside test function bodies (WV-08 collect-safety)
+- [v9.2-roadmap]: FastAPI + uvicorn shipped as `lucy-ng[webview]` optional extra; core `lucy` CLI stays dependency-free. Frontend is static HTML + vanilla JS — no build toolchain. Server is "dumb" (reads files only, no agent-team coupling).
+- [Phase 91]: All fastapi/webview imports in test files are inside test function bodies (WV-08 collect-safety).
+- [Phase 91]: Epoch values in timing.jsonl test fixtures are JSON strings matching case.md shell printf %s output.
 
 ### Pending Todos
 
-- **[2026-06-25] CASE4 azulene-regiochemistry-enumeration gap** — carried seed; not in v9.2 scope. See `.planning/todos/pending/2026-06-25-case4-azulene-regiochemistry-enumeration-gap.md`.
+- **[2026-06-25] CASE4 azulene-regiochemistry-enumeration gap** — carried seed; not in v9.3 scope. See `.planning/todos/pending/2026-06-25-case4-azulene-regiochemistry-enumeration-gap.md`.
 
 ### Blockers/Concerns
 
-None. Phase 90 may begin immediately (`/gsd-plan-phase 90`).
+None. Phase 93 may begin immediately (`/gsd-plan-phase 93`).
 
 ### Strategic Reference
 
-See `background/sherlock-analysis.md` for full Sherlock vs lucy-ng comparison. v9.0 closed the end-to-end mechanism gap; v9.1 closed the three "clean-but-wrong" defect classes. v9.2 adds observability (dashboard) without touching solver logic.
+See `background/sherlock-analysis.md` for full Sherlock vs lucy-ng comparison. v9.0 closed the end-to-end mechanism gap; v9.1 closed the three "clean-but-wrong" defect classes. v9.2 adds live observability. v9.3 deepens the inspector with spectra and data tables.
 
 Key v9.0 constraint (still in force): SYME and DEFF NOT are lucy-ng abstractions. Native LSD-3.4.9 commands are: MULT, LIST, PROP, BOND, COSY, HMBC, ELIM, DEFF, FEXP, HSQC, ELEM.
 
 ## Session Continuity
 
-Last session: 2026-07-06T13:22:17.970Z
-Stopped at: Completed 91-01 test scaffold
-Resume with: `/gsd-plan-phase 90` (Server, CLI, and Packaging)
+Last session: 2026-07-07 — v9.3 roadmap created
+Stopped at: Roadmap written, requirements traceability updated
+Resume with: `/gsd-plan-phase 93` (Formatted Log + Tab Framework)
 
 ---
-*Last updated: 2026-07-02 — v9.2 roadmap created (3 phases, 8 requirements mapped)*
-
-## Operator Next Steps
-
-- Start the next milestone with /gsd-new-milestone
+*Last updated: 2026-07-07 — v9.3 roadmap created (4 phases, 8 requirements mapped)*

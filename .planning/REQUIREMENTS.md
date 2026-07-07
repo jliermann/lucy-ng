@@ -46,11 +46,11 @@
 
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
-| LOG-01 | TBD | Pending |
-| TAB-01 | TBD | Pending |
-| TBL-01 | TBD | Pending |
-| TBL-02 | TBD | Pending |
-| TBL-03 | TBD | Pending |
-| SP1-01 | TBD | Pending |
-| SP2-01 | TBD | Pending |
-| SP-02 | TBD | Pending |
+| LOG-01 | Phase 93 | Pending |
+| TAB-01 | Phase 93 | Pending |
+| TBL-01 | Phase 94 | Pending |
+| TBL-02 | Phase 94 | Pending |
+| TBL-03 | Phase 94 | Pending |
+| SP1-01 | Phase 95 | Pending |
+| SP-02  | Phase 95 | Pending |
+| SP2-01 | Phase 96 | Pending |
