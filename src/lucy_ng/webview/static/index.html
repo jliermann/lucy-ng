@@ -132,35 +132,63 @@
     flex-direction: column;
     gap: 8px;
   }
-  #log-panel-wrapper h2 {
-    font-size: 13px;
-    font-weight: 600;
-    color: #495057;
-    padding-bottom: 4px;
+
+  /* ---- Tab bar ---- */
+  #tab-bar {
+    display: flex;
+    gap: 4px;
     border-bottom: 1px solid #dee2e6;
     flex-shrink: 0;
   }
-  #log-panel {
+  #tab-bar button {
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #6c757d;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+  }
+  #tab-bar button:hover {
+    color: #495057;
+  }
+  #tab-bar button.active {
+    color: #212529;
+    border-bottom-color: #212529;
+  }
+  #tab-bar button:focus-visible {
+    outline: 2px solid #0c5460;
+    outline-offset: 2px;
+  }
+
+  /* ---- Tab panels (shared box model) ---- */
+  [data-panel] {
+    display: none;
     flex: 1;
     background: #fff;
     border: 1px solid #dee2e6;
     border-radius: 6px;
     padding: 10px 12px;
     overflow-y: scroll;
-    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-    font-size: 12px;
-    line-height: 1.6;
-    white-space: pre-wrap;
-    word-break: break-word;
     color: #212529;
     min-height: 200px;
-    max-height: calc(100vh - 120px);
+    max-height: calc(100vh - 156px);
+  }
+  [data-panel="log"] {
+    display: flex;
+  }
+  [data-panel].placeholder {
+    font-size: 13px;
+    color: #6c757d;
+    padding: 16px 0;
+    text-align: center;
   }
 
   /* ---- Responsive: narrow windows collapse to stacked ---- */
   @media (max-width: 700px) {
     #main { flex-direction: column; }
-    #log-panel { max-height: 300px; }
+    [data-panel] { max-height: 300px; }
   }
 </style>
 </head>
@@ -190,8 +218,16 @@
 
   <!-- Log panel (right) -->
   <div id="log-panel-wrapper">
-    <h2>Run Log</h2>
-    <pre id="log-panel">Waiting for log data...</pre>
+    <div id="tab-bar">
+      <button data-tab="log">Run Log</button>
+      <button data-tab="spectra-1d">1D Spectra</button>
+      <button data-tab="spectra-2d">2D Spectra</button>
+      <button data-tab="tables">Tables</button>
+    </div>
+    <div id="log-panel" data-panel="log">Waiting for log data...</div>
+    <div class="placeholder" data-panel="spectra-1d">1D Spectra — coming in Phase 95</div>
+    <div class="placeholder" data-panel="spectra-2d">2D Spectra — coming in Phase 96</div>
+    <div class="placeholder" data-panel="tables">Tables — coming in Phase 94</div>
   </div>
 
 </div>

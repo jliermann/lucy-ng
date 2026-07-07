@@ -200,6 +200,33 @@
   }
 
   // ------------------------------------------------------------------
+  // initTabs — plain class/display toggling, no fetch triggered (D-01)
+  // ------------------------------------------------------------------
+  function initTabs() {
+    var buttons = document.querySelectorAll('#tab-bar [data-tab]');
+    var panels = document.querySelectorAll('[data-panel]');
+
+    function activate(tabName) {
+      for (var i = 0; i < panels.length; i++) {
+        panels[i].style.display = (panels[i].getAttribute('data-panel') === tabName)
+          ? 'flex' : 'none';
+      }
+      for (var j = 0; j < buttons.length; j++) {
+        var isActive = buttons[j].getAttribute('data-tab') === tabName;
+        buttons[j].classList.toggle('active', isActive);
+      }
+    }
+
+    for (var k = 0; k < buttons.length; k++) {
+      buttons[k].addEventListener('click', function (evt) {
+        activate(evt.currentTarget.getAttribute('data-tab'));
+      });
+    }
+
+    activate('log');  // default tab on load
+  }
+
+  // ------------------------------------------------------------------
   // Refresh indicator
   // ------------------------------------------------------------------
   function flashDot() {
@@ -219,6 +246,7 @@
   // ------------------------------------------------------------------
   // Bootstrap
   // ------------------------------------------------------------------
+  initTabs();  // one-time: click-driven, not polled
   tick();  // immediate load
   setInterval(tick, REFRESH_MS);  // D-15: ~3 s polling
 
