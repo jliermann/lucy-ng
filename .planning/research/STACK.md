@@ -1,381 +1,477 @@
-# Technology Stack: pyLSD Integration and 4J HMBC Exploration
+# Stack Research: v9.3 CASE Web-View Stage 2
 
-**Project:** lucy-ng
-**Milestone:** v8.0 pyLSD Integration
-**Researched:** 2026-03-13
-**Confidence:** HIGH for pyLSD mechanics (thesis + official docs + manual). MEDIUM for version currency (latest release is a8, no 2024/2025 updates found).
-
----
-
-## Context: What Already Exists
-
-The existing stack is locked. Do not re-evaluate these components:
-
-| Component | Version | Status |
-|-----------|---------|--------|
-| Python | 3.10+ | Locked |
-| RDKit | 2025.9.4 | In use |
-| NumPy | 2.2.1 | In use |
-| SciPy | 1.17.0 | In use |
-| Pydantic v2 | 2.12.5 | In use |
-| Click | 8.1.8 | In use |
-| SQLite | stdlib | In use (schema v6) |
-| tqdm | 4.67.3 | In use |
-| LSD binary | 3.5.3 | Installed (via PATH) |
-| outlsd binary | 3.5.3 | Installed (via PATH) |
-
-The v8.0 milestone adds pyLSD on top of this stack. **No existing dependencies are removed.**
+**Domain:** Python web dashboard with server-side NMR spectra rendering
+**Milestone:** v9.3 CASE Web-View Stage 2
+**Researched:** 2026-07-07
+**Confidence:** HIGH — all findings grounded in the existing codebase and standard Python/matplotlib/FastAPI API patterns. One gap flagged (data table source path for peak lists).
 
 ---
 
-## New Capabilities Required
+## Context: What Already Exists (Do Not Re-evaluate)
 
-The pyLSD integration milestone needs to:
+| Component | Version (installed) | pyproject.toml | Status |
+|-----------|---------------------|----------------|--------|
+| Python | 3.10+ | `>=3.10` | Locked |
+| FastAPI | current | `>=0.100` ([webview] extra) | In use |
+| uvicorn | current | `>=0.20` ([webview] extra) | In use |
+| numpy | 2.x | `>=1.24` (core) | In use |
+| RDKit | 2025.x | `>=2023.0` (core) | In use (SVG depiction) |
+| BrukerReader | — | lucy_ng internal | In use (reads 1D + 2D Bruker data) |
+| nmrglue | git master | git dep (core) | In use (Bruker file I/O) |
 
-1. **Install pyLSD** — download and configure the pyLSD-a8 distribution so `python lsd.py` can be called
-2. **Call pyLSD from lucy-ng** — invoke pyLSD via subprocess, same pattern as existing LSD runner
-3. **Generate pyLSD input files** — extend `LSDInputGenerator` to emit `FORM`, `PIEC`, `ELIM`, and multi-state `MULT` syntax
-4. **Collect multi-run solutions** — pyLSD runs LSD multiple times internally; collect merged SMILES output
-5. **4J exploration** — write HMBC commands with explicit bond range `HMBC C H 2 4` plus `ELIM N 4` to enable solver-level 4J handling
-
----
-
-## pyLSD: Obtaining and Installing
-
-### Source
-
-**Repository:** https://github.com/nuzillard/PyLSD
-
-pyLSD is **not on PyPI**. The PyPI packages named `pylsd` and `pylsd-nova` are unrelated (Python bindings for an image line-segment detector — completely different project, same name collision).
-
-**Download:** Pre-built archive from GitHub releases:
-- Linux: `pylsd-linux-a8.tar.gz`
-- Windows: `pylsd-windows-a8.zip`
-
-**Current version:** PyLSD-a8 (alpha 8). No releases found from 2024/2025 — this appears to be the latest stable version. Confidence: MEDIUM (checked GitHub; no newer release visible).
-
-### Installation Procedure
-
-```bash
-# 1. Download and extract (Linux)
-wget https://github.com/nuzillard/PyLSD/raw/master/pylsd-linux-a8.tar.gz
-tar -xzf pylsd-linux-a8.tar.gz
-# Creates three directories: Variant/, Predict/, LSD/
-
-# 2. Configure defaults.py in Variant/ — must edit these paths:
-#   lsdbin     = "../LSD"          (path to LSD/outlsd executables)
-#   datafolder = "../LSD/Data"     (where pyLSD writes temp files)
-#   java       = "java"            (Java executable path, for built-in ranking)
-#   predictorspath = "../Predict"  (only needed for built-in ranking — NOT used in lucy-ng)
-
-# 3. Test installation
-cd Variant
-python lsd.py breg57.lsd   # should produce solutions for built-in example
-```
-
-### Python Version Requirement
-
-Python 3 required from pyLSD-a8 onward. Compatible with lucy-ng's Python 3.10+ constraint. No version conflict.
-
-### Dependencies
-
-| Dependency | Required For | Status |
-|------------|-------------|--------|
-| Python 3 | Running `lsd.py` | Already satisfied |
-| Java Runtime ≥ 6 | pyLSD's built-in ranking (nmrshiftdb2-based) | **NOT needed** — lucy-ng uses HOSE-based ranking instead |
-| LSD binary (lsd) | pyLSD calls lsd internally | Already installed |
-| outlsd binary | SMILES conversion (already used by lucy-ng) | Already installed |
-
-**Key finding:** Java is only needed for pyLSD's built-in ranking, which Sherlock (and lucy-ng) explicitly disable in favour of HOSE-based ranking. No Java dependency required for lucy-ng integration.
+Note: The existing `structures.py` router serves RDKit SVG via `Response(content=svg_str, media_type="image/svg+xml")` — the PNG spectra endpoint follows the same pattern with `media_type="image/png"`.
 
 ---
 
-## How pyLSD Differs from Direct LSD Execution
+## New Dependency Required for Stage 2
 
-### What pyLSD Is
+**matplotlib is NOT currently in `pyproject.toml`** (confirmed by grep — zero imports in `src/lucy_ng/`; not listed as a dependency). It IS installed on the system (3.10.7), likely as a transitive dep from the scientific Python environment. For Stage 2 spectra rendering, it must be explicitly declared to make the requirement reproducible:
 
-pyLSD is a Python script (`Variant/lsd.py`) that acts as an orchestrator over the LSD binary. It:
+```toml
+[project.optional-dependencies]
+webview = [
+    "fastapi>=0.100",
+    "uvicorn>=0.20",
+    "matplotlib>=3.7",      # ← ADD: server-side spectra rendering (Stage 2)
+]
+```
 
-1. Reads an enhanced `.lsd` input file containing pyLSD-specific commands (FORM, PIEC, ELIM, multi-state MULT)
-2. Enumerates all combinations of variable atom states (hybridisation, multiplicity, valency)
-3. Generates one plain LSD input file per combination
-4. Runs the LSD binary on each generated file (potentially many runs)
-5. Merges all solution files into a single output
-6. Optionally ranks merged solutions using nmrshiftdb2 (disabled in lucy-ng)
-
-**Invocation:** `python lsd.py myfile.lsd` from the `Variant/` directory.
-
-**Current lucy-ng invocation:** `subprocess.run([lsd_path], input=file_content, ...)` — pipes the file to the lsd binary directly.
-
-**pyLSD invocation:** `subprocess.run(["python", "lsd.py", str(input_file)], cwd=variant_dir, ...)` — passes filename as argument, must run from Variant/.
-
-This is the primary integration change: the runner calls `python lsd.py FILE` rather than `lsd < FILE`.
-
-### File Format Differences
-
-The pyLSD input format is a **superset** of the LSD input format. Every valid LSD file is a valid pyLSD file. pyLSD adds these commands that do not exist in native LSD:
-
-| Command | pyLSD | Native LSD | Notes |
-|---------|-------|------------|-------|
-| `FORM` | YES | NO | Molecular formula as text string |
-| `PIEC` | YES | NO | Connected piece count (always 1) |
-| `ELIM` | Both | YES (native) | ELIM exists in native LSD too — pyLSD passes it through |
-| `MULT` multi-state | YES | NO | Multiple hybridisation/multiplicity options as tuples |
-| `SHIX` | Both | YES (native) | 13C shift assignment — exists in LSD 3.5.x |
-| `SHIH` | Both | YES (native) | 1H shift assignment — exists in LSD 3.5.x |
-| `MOMA` | pyLSD only | NO | Molecular mass constraint (not needed for CASE) |
-| `DEMU` | pyLSD only | NO | Default parameters for supplementary atoms |
-
-**Critical note:** The existing lucy-ng `LSDInputGenerator` already generates `SHIX` and `SHIH` commands — these work identically in both LSD and pyLSD. No format migration needed for existing output.
+That is the only new library dependency for Stage 2. Everything else is reuse.
 
 ---
 
-## Command Reference for New File Format
+## Recommended Stack: Five Decision Areas
 
-### FORM — Molecular Formula (pyLSD only)
+### 1. Spectra Rendering Backend
 
-```
-FORM C 13 H 18 O 2
-```
+**Recommendation: matplotlib Agg (server-side) → PNG**
 
-Defines the molecular formula. Serves as upper boundary on solution space. pyLSD uses this to determine what supplementary atoms to add when MULT states are ambiguous.
+Use `matplotlib.figure.Figure` with `matplotlib.backends.backend_agg.FigureCanvasAgg` directly, never `matplotlib.pyplot`.
 
-**Usage in lucy-ng:** Always add FORM as first command in pyLSD input files. The formula is already available in the workflow (required for LSD constraint generation in existing code).
+Why:
+- `pyplot` maintains global state (current figure/axes) that is NOT thread-safe in a FastAPI/uvicorn worker.
+- `Figure()` + explicit `FigureCanvasAgg` is fully stateless and thread-safe — each request gets its own `Figure` object with its own canvas.
+- No `matplotlib.use('Agg')` call is needed (that call modifies global backend state). Setting the canvas explicitly via `FigureCanvasAgg(fig)` is sufficient and safe in a server context.
+- PNG over SVG because 2D contour plots with hundreds of contour lines produce SVGs with thousands of path elements (easily >1 MB); a 800×500 PNG at dpi=100 is 50–150 KB.
+- SVG remains correct for molecular structure depictions (RDKit, already in place) because those are compact line drawings.
 
-### PIEC — Connected Pieces (pyLSD only)
+Pattern for 1D spectra:
+```python
+import io
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_agg import FigureCanvasAgg
 
-```
-PIEC 1
-```
-
-Restricts output to fully connected molecules. Always set to 1. No variation needed.
-
-### ELIM — Eliminate Long-Range Correlations
-
-```
-ELIM N_correlations N_bonds
-```
-
-ELIM exists in **native LSD** and passes through to pyLSD unchanged. Semantics:
-
-- `ELIM 1 4` — allow up to 1 HMBC correlation to be interpreted as a 4J (up to 4 bonds). The solver will try eliminating that correlation if it prevents solution assembly.
-- `ELIM 3 4` — allow up to 3 correlations to be 4J.
-- ELIM is **disabled by default** (Sherlock disables it too). Only enable when suspect 4J correlations are present.
-
-**For 4J exploration in lucy-ng:** When nmr-chemist flags suspect 4J HMBC correlations, enable ELIM with count = number of suspect correlations. This lets the solver decide which correlations are 4J rather than forcing the agent to manually exclude them.
-
-**Interaction with HMBC bond range:** When a HMBC line specifies explicit bond range `HMBC C H 2 4`, the correlation is treated as possibly 4J. ELIM must be active (with `N_bonds >= 4`) for such extended-range HMBC commands to take effect. Without ELIM, extended bond ranges have no effect.
-
-Example for ibuprofen 4J case (3 suspect correlations through aromatic ring):
-```
-ELIM 3 4
-HMBC 4 8 2 4   ; suspect 4J: C4a -> H6 through para-substituted benzene
-HMBC 6 9 2 4   ; suspect 4J: C5a -> H7
-HMBC 8 4 2 4   ; suspect 4J: same pair reversed
+def render_1d_spectrum(spectrum: Spectrum1D) -> bytes:
+    fig = Figure(figsize=(10, 4))
+    FigureCanvasAgg(fig)          # Agg canvas, no global state
+    ax = fig.add_subplot(111)
+    # NMR convention: ppm scale decreasing left to right
+    ax.plot(spectrum.ppm_scale[::-1], spectrum.data.real[::-1], lw=0.8, color='#1a5276')
+    ax.set_xlabel('δ (ppm)')
+    ax.set_ylabel('Intensity')
+    ax.set_title(f'{spectrum.nucleus} NMR')
+    ax.invert_xaxis()             # high ppm on left
+    fig.tight_layout()
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png', dpi=100, bbox_inches='tight')
+    buf.seek(0)
+    return buf.getvalue()
+    # fig goes out of scope here — no plt.close() needed; GC handles it
 ```
 
-### MULT — Multi-State Atom Definition (extended in pyLSD)
-
-**Native LSD (single state only):**
+Pattern for 2D spectra (HSQC / HMBC / COSY):
+```python
+def render_2d_spectrum(spectrum: Spectrum2D) -> bytes:
+    fig = Figure(figsize=(8, 8))
+    FigureCanvasAgg(fig)
+    ax = fig.add_subplot(111)
+    # Determine auto contour levels from top 5% of absolute values
+    import numpy as np
+    threshold = np.percentile(np.abs(spectrum.data), 95)
+    levels = np.linspace(threshold * 0.1, threshold, 8)
+    ax.contour(
+        spectrum.f2_ppm_scale[::-1],   # F2 = 1H (x-axis)
+        spectrum.f1_ppm_scale[::-1],   # F1 = 13C or 1H (y-axis)
+        spectrum.data,
+        levels=levels,
+        colors=['#1a5276'],
+        linewidths=0.6,
+    )
+    ax.set_xlabel(f'F2: {spectrum.f2_nucleus} δ (ppm)')
+    ax.set_ylabel(f'F1: {spectrum.f1_nucleus} δ (ppm)')
+    ax.set_title(spectrum.experiment_type)
+    ax.invert_xaxis()
+    ax.invert_yaxis()
+    fig.tight_layout()
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png', dpi=100, bbox_inches='tight')
+    buf.seek(0)
+    return buf.getvalue()
 ```
-MULT atom_num element hybridisation multiplicity
-MULT 1 C 2 0    ; atom 1 is sp2 carbon with 0 attached H (quaternary sp2)
-```
 
-**pyLSD (multiple states as tuples):**
-```
-MULT atom_num element[(valencies)] (hybridisations) (multiplicities)
-MULT 14 O (2 3) (0 1)     ; oxygen, sp2 or sp3, 0 or 1 attached H
-MULT 19 N35 (1 2 3) (0 1 2 3)  ; nitrogen, valence 3 or 5, sp1/sp2/sp3, 0-3 H
-```
+### 2. Serving Images from FastAPI
 
-**Impact:** pyLSD enumerates all state combinations and runs LSD once per combination. For ibuprofen's 2 oxygens with ambiguous states, this produces `2*2 = 4` LSD runs. For typical natural products with 2-4 ambiguous heteroatoms, expect 4-16 LSD runs — manageable.
-
-**For lucy-ng:** Unambiguous carbons (known from DEPT) continue using single-state MULT. Only heteroatoms with unknown hybridisation use tuple notation. The lsd-engineer agent writes tuple MULT for heteroatoms when hybridisation is not directly observable (O, N without direct spectral evidence).
-
-### SHIX / SHIH — Chemical Shift Assignment
-
-Already supported in existing LSDInputGenerator. No changes needed. Included here for completeness:
-
-```
-SHIX atom_index shift_ppm    ; 13C shift for heavy atom
-SHIH H_index shift_ppm       ; 1H shift for hydrogen
-```
-
----
-
-## Integration Architecture
-
-### Option A: pyLSD as Subprocess (Recommended)
-
-The existing `LSDRunner` calls `lsd < file`. The new `PyLSDRunner` calls `python lsd.py file`:
+**Recommendation: `Response(content=bytes, media_type="image/png")` with a per-router in-memory cache**
 
 ```python
-class PyLSDRunner:
-    def __init__(self, pylsd_dir: Path):
-        # pylsd_dir = path to Variant/ directory
-        self.variant_dir = pylsd_dir
-        self.lsd_py = pylsd_dir / "lsd.py"
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import Response
 
-    def run_file(self, input_file: Path, timeout: int = 300) -> LSDResult:
-        proc = subprocess.run(
-            ["python", str(self.lsd_py), str(input_file)],
-            cwd=self.variant_dir,
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-        )
-        # pyLSD writes solutions in input_file directory as *.smi or *.sol
-        # Parse solutions, collect SMILES, return LSDResult
+def make_router(analysis_dir: Path) -> APIRouter:
+    # WV-08: all heavy imports inside make_router body, never at module level
+    from matplotlib.figure import Figure                          # lazy
+    from matplotlib.backends.backend_agg import FigureCanvasAgg  # lazy
+    from lucy_ng.readers.bruker import BrukerReader               # already imported lazily elsewhere
+
+    router = APIRouter(prefix="/api")
+    _cache: dict[str, bytes] = {}  # render-once cache: exp_key → PNG bytes
+
+    @router.get("/spectrum/1d/{exp_type}.png")
+    def get_1d_spectrum(exp_type: str) -> Response:
+        if exp_type in _cache:
+            return Response(content=_cache[exp_type], media_type="image/png")
+        exp_dir = _find_experiment(analysis_dir.parent, exp_type)
+        if exp_dir is None:
+            raise HTTPException(status_code=404, detail="Experiment not found")
+        try:
+            spectrum = BrukerReader.read_1d(exp_dir)
+            png = render_1d_spectrum(spectrum)
+            _cache[exp_type] = png
+            return Response(content=png, media_type="image/png")
+        except Exception:
+            raise HTTPException(status_code=404, detail="Cannot render spectrum")
+
+    @router.get("/spectrum/2d/{exp_type}.png")
+    def get_2d_spectrum(exp_type: str) -> Response:
+        ...  # same pattern
+
+    return router
+```
+
+Notes on this pattern:
+- `Response(content=bytes, ...)` is correct for pre-loaded in-memory bytes; `StreamingResponse` is for generators/file handles and adds no benefit here.
+- The `_cache` dict lives in the closure — one cache per `analysis_dir`, not shared across different analysis dirs. Cache is per-process in-memory; it clears on server restart. This is appropriate because Bruker experiment data is immutable once acquired.
+- During a live run before a spectrum file exists, return HTTP 404 gracefully (same as the structures router for out-of-range index).
+- Consistent with WV-08: `matplotlib`, `FigureCanvasAgg`, and `BrukerReader` are imported inside `make_router`, never at module level of `routers/spectra.py`.
+
+**Where the Bruker data lives:**
+The webview currently takes only `analysis_dir`. CASE always runs `lucy webview serve <compound_path>/analysis`, so `analysis_dir.parent` is the compound path where Bruker experiment directories live (numbered subdirectories: `1/`, `2/`, etc.). The spectra router discovers experiments by scanning `analysis_dir.parent` for directories containing an `acqus` file (1D) or both `acqus` + `acqu2s` files (2D). The `BrukerReader` already handles this correctly.
+
+Discovery helper:
+```python
+def _find_experiment(compound_path: Path, exp_type: str) -> Path | None:
+    """Find Bruker experiment dir by pulse program or nucleus match."""
+    for d in sorted(compound_path.iterdir()):
+        if not d.is_dir(): continue
+        acqus = d / "acqus"
+        if not acqus.exists(): continue
+        pp = (acqus.read_text(errors='replace')
+              .split('PULPROG')[1].split('\n')[0]
+              .strip().strip('<>').lower()
+              if 'PULPROG' in acqus.read_text(errors='replace') else '')
+        if exp_type in ('1h', 'proton') and '1h' in pp or 'zg' in pp:
+            return d
         ...
+    return None
 ```
 
-**Why subprocess over importing `lsd.py`:** pyLSD's `lsd.py` is a standalone script, not a Python package. It uses `sys.exit()` calls and global state that make direct import unsafe. Subprocess is cleaner and consistent with the existing LSD runner architecture.
+In practice the discovery logic will need to handle the specific PULPROG names used in the test datasets (see `bruker.py`'s `_detect_experiment_type()` for the pattern-matching already in use). The spectra router can delegate to the same `BrukerReader` logic.
 
-**Working directory:** pyLSD must be invoked from `Variant/` (it uses relative paths in `defaults.py` to locate LSD binaries and data folders). Pass the absolute input file path as argument; pyLSD writes output to the input file's directory.
+### 3. Markdown Rendering in the Frontend
 
-### Option B: Direct LSD Calls with Manual ELIM (Fallback)
+**Recommendation: Hand-rolled safe markdown-to-DOM renderer in `index.html`**
 
-For 4J exploration specifically, the existing `LSDRunner` can use ELIM directly — ELIM is a native LSD command, not pyLSD-only. If the only goal is 4J handling (not ambiguous atom states), the agent can write an LSD file with ELIM enabled and call `lsd` directly.
+The constraint is self-contained single-file vanilla JS with no CDN and no build step. The existing log panel assigns content via `logEl.textContent = content` — this must be replaced with structured DOM building, but the XSS guard must be preserved.
 
-**When to use Option B:** If pyLSD installation proves problematic (path configuration, cross-platform issues). All 4J exploration functionality works without pyLSD — pyLSD's value is specifically for ambiguous heteroatom states (the MULT multi-state feature).
+The exact subset of CASE-PROGRESS.md that needs rendering (written by the orchestrator per `progress-format.md`):
 
-**Recommendation:** Implement pyLSD integration (Option A) for full capability, but design the 4J exploration workflow to work via Option B (direct LSD + ELIM) as a fallback. The CLI command `lucy lsd run-pylsd` wraps pyLSD; `lucy lsd run` continues to call LSD directly.
+| Markdown syntax | Element | Notes |
+|-----------------|---------|-------|
+| `## Iteration N` | `<h2>` | Top-level section |
+| `### Agent Name` | `<h3>` | Agent sub-section |
+| `**bold text**` | `<strong>` | Inline, appears in status lines |
+| `` `inline code` `` | `<code>` | Inline, for shift values / formulas |
+| `\| col \| col \|` rows | `<table><tr><td>` | Peak assignment tables |
+| `---` | `<hr>` | Section separators |
+| bare text lines | `<p>` | Narrative paragraphs |
+| ` ``` ` fences | `<pre><code>` | LSD snippets (rare) |
 
----
+Implementation principle — all text content through `textContent`, never `innerHTML`:
 
-## LSDInputGenerator Extension
+```javascript
+function renderMarkdown(text) {
+    var container = document.createElement('div');
+    var lines = text.split('\n');
+    var i = 0;
 
-The existing `LSDInputGenerator` needs a new mode to emit pyLSD syntax. **Do not change existing LSD output** — maintain backward compatibility.
+    while (i < lines.length) {
+        var line = lines[i];
 
-New method: `LSDInputGenerator.generate_pylsd(problem, elim_count=0, elim_max_bonds=4)`:
+        // Code fences
+        if (line.startsWith('```')) {
+            var code = [];
+            i++;
+            while (i < lines.length && !lines[i].startsWith('```')) {
+                code.push(lines[i++]);
+            }
+            var pre = document.createElement('pre');
+            var codeEl = document.createElement('code');
+            codeEl.textContent = code.join('\n');  // safe
+            pre.appendChild(codeEl);
+            container.appendChild(pre);
+            i++;
+            continue;
+        }
 
-```python
-# Additions to generate_pylsd() output vs generate():
+        // HR
+        if (line.match(/^---+$/)) {
+            container.appendChild(document.createElement('hr'));
+            i++; continue;
+        }
 
-# 1. FORM command at top (before PIEC)
-lines.append(f"FORM {format_formula(problem.molecular_formula)}")
-lines.append("PIEC 1")
+        // Headings
+        if (line.startsWith('## ')) {
+            var h = document.createElement('h2');
+            appendInlineNodes(h, line.slice(3));   // inline parser for bold/code
+            container.appendChild(h);
+            i++; continue;
+        }
+        if (line.startsWith('### ')) {
+            var h3 = document.createElement('h3');
+            appendInlineNodes(h3, line.slice(4));
+            container.appendChild(h3);
+            i++; continue;
+        }
 
-# 2. ELIM (conditional — only when agent requests it)
-if elim_count > 0:
-    lines.append(f"ELIM {elim_count} {elim_max_bonds}")
+        // Table (collect consecutive pipe-starting lines)
+        if (line.startsWith('|')) {
+            var table = buildTable(lines, i);
+            container.appendChild(table.el);
+            i = table.nextI;
+            continue;
+        }
 
-# 3. MULT with tuple notation for ambiguous atoms
-# Single-state carbon: "MULT 1 C 2 0"  (unchanged)
-# Multi-state oxygen: "MULT 14 O (2 3) (0 1)"
-for atom in problem.atoms:
-    if atom.has_multiple_states:
-        lines.append(atom.to_pylsd_mult_line())  # tuple notation
-    else:
-        lines.append(atom.to_mult_line())  # existing LSD notation (unchanged)
+        // Non-empty paragraph text
+        if (line.trim()) {
+            var p = document.createElement('p');
+            appendInlineNodes(p, line);
+            container.appendChild(p);
+        }
 
-# 4. HMBC with optional bond range
-# Default: "HMBC 1 3"  (unchanged, 2-3 bonds implied)
-# Explicit range: "HMBC 1 3 2 4"  (for flagged 4J suspects)
+        i++;
+    }
+    return container;
+}
+
+// appendInlineNodes: safe inline parser for **bold** and `code`
+// Uses textContent for all text — never innerHTML
+function appendInlineNodes(parent, text) {
+    var parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/);
+    parts.forEach(function(part) {
+        if (part.startsWith('**') && part.endsWith('**')) {
+            var strong = document.createElement('strong');
+            strong.textContent = part.slice(2, -2);
+            parent.appendChild(strong);
+        } else if (part.startsWith('`') && part.endsWith('`')) {
+            var code = document.createElement('code');
+            code.textContent = part.slice(1, -1);
+            parent.appendChild(code);
+        } else if (part) {
+            parent.appendChild(document.createTextNode(part));
+        }
+    });
+}
 ```
 
-The `LSDCorrelation` model gets an optional `bond_range: tuple[int, int] | None` field. When set to `(2, 4)`, the correlation is written with explicit range. The agent sets this field when flagging suspect 4J correlations.
+This replaces the current `logEl.textContent = content` in `refreshLog()`. The log panel element changes from `<pre id="log-panel">` to `<div id="log-panel">` (pre is incompatible with block-level elements like table/h2).
 
----
+**What this does NOT support and why that is acceptable:**
+- Nested lists — CASE-PROGRESS.md uses tables, not lists
+- Link URLs — not present in CASE-PROGRESS.md content
+- Images — not present
+- Blockquotes — not present
 
-## Configuration Management
+This renderer is purpose-built for CASE-PROGRESS.md's actual output format, not a general markdown renderer.
 
-pyLSD requires `defaults.py` to be configured for the local system. This is a one-time setup analogous to configuring the LSD binary path. Options:
+### 4. Tabbed UI Without a Build Step
 
-1. **Environment variable** `PYLSD_DIR` pointing to the Variant/ directory — simplest, consistent with existing PATH-based LSD discovery.
-2. **lucy status** check — extend `lucy lsd check` to also verify pyLSD is found and configured.
+**Recommendation: Pure CSS/JS tab navigation in a single `index.html` file**
 
-**Recommended:** Add `PYLSD_DIR` environment variable support to `PyLSDRunner`. The `lucy status` skill already checks for LSD; add pyLSD check to the same command.
+The current layout has two panels side by side (`#structure-panel` left, `#log-panel-wrapper` right). Stage 2 adds spectra and data tables. The cleanest restructuring is:
 
----
+- Keep the top status bar unchanged.
+- Replace the two-column `#main` with a layout that has the structure panel on the left (unchanged) and a tabbed panel on the right with four tabs.
 
-## New CLI Command
+HTML structure:
+```html
+<div id="main">
+  <!-- Left: structure panel (unchanged) -->
+  <div id="structure-panel">...</div>
 
-```bash
-lucy lsd run-pylsd compound.lsd      # Run pyLSD on a file
-lucy lsd run-pylsd compound.lsd --elim 3 4  # With ELIM enabled
+  <!-- Right: tabbed panel -->
+  <div id="tab-area">
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="log">Run Log</button>
+      <button class="tab-btn" data-tab="spectra-1d">1D Spectra</button>
+      <button class="tab-btn" data-tab="spectra-2d">2D Spectra</button>
+      <button class="tab-btn" data-tab="tables">Data Tables</button>
+    </div>
+    <div id="tab-log"        class="tab-panel active"><!-- log div --></div>
+    <div id="tab-spectra-1d" class="tab-panel hidden"><!-- img tags --></div>
+    <div id="tab-spectra-2d" class="tab-panel hidden"><!-- img tags --></div>
+    <div id="tab-tables"     class="tab-panel hidden"><!-- table HTML --></div>
+  </div>
+</div>
 ```
 
-This parallels the existing `lucy lsd run` command. The agent chooses which command to use based on whether pyLSD features are needed.
+CSS:
+```css
+.tab-bar { display: flex; border-bottom: 1px solid #dee2e6; margin-bottom: 8px; }
+.tab-btn {
+    padding: 6px 14px; border: none; background: none; cursor: pointer;
+    font-size: 13px; color: #6c757d; border-bottom: 2px solid transparent;
+}
+.tab-btn.active { color: #212529; border-bottom-color: #1a5276; font-weight: 600; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+```
+
+JS (replaces nothing — new event wiring):
+```javascript
+document.querySelectorAll('.tab-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        var target = btn.dataset.tab;
+        document.querySelectorAll('.tab-btn').forEach(function(b) {
+            b.classList.toggle('active', b.dataset.tab === target);
+        });
+        document.querySelectorAll('.tab-panel').forEach(function(p) {
+            p.classList.toggle('active', p.id === 'tab-' + target);
+        });
+    });
+});
+```
+
+**`index.html` stays as ONE file.** The hatch artifact entry is `src/lucy_ng/webview/static/*` (glob), so splitting is technically possible, but the v9.2 design decision to keep it as a single file holds — no reason to add complexity.
+
+Spectra panels use `<img>` elements whose `src` points to the new PNG endpoints:
+```html
+<!-- Inside tab-spectra-1d -->
+<img id="spec-13c" src="/api/spectrum/1d/13c.png" alt="13C spectrum" style="max-width:100%">
+<img id="spec-1h"  src="/api/spectrum/1d/1h.png"  alt="1H spectrum"  style="max-width:100%">
+```
+
+These images are fetched once on page load (or on tab activation via lazy-load logic). No polling needed — spectra are static after acquisition. The 3-second polling loop should NOT re-fetch spectra images on every tick (add a loaded flag per image).
+
+### 5. Data Table Sources
+
+**LSD Constraint Inventory (HIGH confidence)**
+
+Source: `analysis_dir / "iteration_NN" / "compound.lsd"` (the latest iteration dir). The JSON constraint inventory is embedded at the top of every `compound.lsd` file as a POSIX-comment block:
+
+```
+; {"constraint_inventory": { ... }}
+```
+
+Parse path: read the latest `compound.lsd` → extract lines starting with `; {` → `json.loads()` → serve as `/api/constraints`.
+
+Alternative (also viable): `lucy lsd validate-inventory --format json analysis/iteration_NN/compound.lsd` — uses the existing CLI to extract the JSON. This is safer because the parser already handles edge cases. The router can shell out via `subprocess.run()`.
+
+**HMBC Usage (HIGH confidence)**
+
+Source: HMBC lines in `compound.lsd`:
+```
+HMBC carbon_idx proton_idx min_j max_j  ; comment
+```
+Parse path: grep lines starting with `HMBC ` from the latest `compound.lsd` → split fields → serve as part of `/api/constraints`.
+
+**Peak Lists (MEDIUM confidence — design decision required)**
+
+Source: CASE-PROGRESS.md `## Setup` section. The orchestrator writes peak tables into the `## Setup` section from the nmr-chemist's [SETUP-COMPLETE] message. These tables are markdown pipe-tables. The nmr-chemist CLI commands (`lucy pick 1d/hsqc/hmbc --format json`) write to stdout only — no separate peak JSON files are written to disk.
+
+Options for Stage 2:
+1. Parse the `## Setup` section of CASE-PROGRESS.md (the markdown table) in a new `/api/peaks` endpoint. Fragile (depends on orchestrator's exact markdown formatting).
+2. Modify the CASE workflow to write a `peaks_summary.json` to `analysis_dir` at the end of peak picking. This is cleaner but requires a workflow change.
+3. Defer peak tables to a later phase and only show constraint inventory + HMBC usage in Stage 2.
+
+**Recommendation for Stage 2: Start with option 3 (defer peak list tables).** Serve the constraint inventory and HMBC lines from `compound.lsd` (well-structured, machine-parseable). Add a note in the roadmap that peak list tables require either markdown parsing or a workflow addition.
 
 ---
+
+## Core Technologies Table
+
+| Technology | Version | Purpose | New for Stage 2? |
+|------------|---------|---------|-----------------|
+| matplotlib | ≥3.7 | Server-side PNG spectra rendering (1D line, 2D contour) | YES — add to [webview] extra |
+| `matplotlib.backends.backend_agg.FigureCanvasAgg` | (part of matplotlib) | Headless, thread-safe canvas — no `use('Agg')` global | YES — use pattern |
+| `fastapi.responses.Response` | (part of fastapi) | Serve PNG bytes: `Response(content=bytes, media_type="image/png")` | New endpoint type |
+| `io.BytesIO` | (stdlib) | Buffer for `fig.savefig()` output | YES — pattern |
+| `lucy_ng.readers.bruker.BrukerReader` | (internal) | Read Bruker 1D/2D data → Spectrum1D/Spectrum2D | Reused |
+
+## Supporting Libraries
+
+| Library | Version | Purpose | When to Use |
+|---------|---------|---------|-------------|
+| `matplotlib.figure.Figure` | ≥3.7 | Direct figure construction without pyplot global state | All server-side rendering |
+| `numpy` | ≥1.24 (already core dep) | Contour level computation, array slicing | 2D spectra auto-levels |
 
 ## What NOT to Add
 
 | Avoid | Why | Use Instead |
 |-------|-----|-------------|
-| Java runtime as lucy-ng dependency | Only needed for pyLSD's built-in ranking, which is disabled in favour of HOSE-based ranking | No change — existing HOSE ranking is sufficient |
-| pylsd-nova or ocrd-fork-pylsd from PyPI | Completely different project — Python bindings for an image processing library, not NMR CASE | Download nuzillard/PyLSD from GitHub |
-| casekit (Java) | Sherlock uses this Java library for pyLSD file generation. Lucy-ng is Python and already has LSDInputGenerator. | Extend existing Python LSDInputGenerator |
-| Sherlock web services | Full Java/Spring microservice stack. Lucy-ng is a CLI tool. | Direct subprocess invocation of pyLSD |
-| WebCocon 4J-Flag approach | WebCocon's 4J-Flag parameter varies the count of allowed 4J correlations iteratively. LSD's ELIM achieves the same result directly. Different tool, not applicable. | LSD ELIM command |
-| Parallel LSD runs (manual orchestration) | pyLSD already handles parallelism internally for variable atom states. Lucy-ng does not need to re-implement this. | Let pyLSD orchestrate its own LSD runs |
-
----
+| `matplotlib.pyplot` (plt.*) | Not thread-safe; uses global state (current figure, current axes); calling `plt.figure()` or `plt.close()` in a FastAPI handler will corrupt renders across concurrent requests | `matplotlib.figure.Figure` + `FigureCanvasAgg` directly |
+| `matplotlib.use('Agg')` global call | Modifies module-level backend state; if called after any other matplotlib import it raises `UserWarning` and may be ignored; fragile in a server that might already have imported matplotlib | Explicit `FigureCanvasAgg(fig)` instead |
+| Plotly / Bokeh / Altair / d3.js | All require CDN delivery or a build step; violate the self-contained no-CDN constraint | Server-side matplotlib PNG |
+| marked.js / micromark / any JS markdown library | Would require CDN or inlining a >10 KB blob; more complex than the needed subset | Hand-rolled 50-line DOM renderer |
+| htmx / Alpine.js / any JS framework | CDN dependency; overkill for tab navigation | 10-line vanilla JS tab switcher |
+| `StreamingResponse` for PNG | For generators/file handles; adds overhead for in-memory bytes | `Response(content=bytes, ...)` |
+| `pandas` | Not needed; constraint inventory from compound.lsd is simple key-value JSON; peak tables are simple lists | Direct `json.loads()` / string split |
+| Splitting `index.html` into multiple files | Adds path-join complexity; single file is simpler to package, test, and serve | Keep single `index.html` |
 
 ## Alternatives Considered
 
-| Category | Recommended | Alternative | Why Not |
-|----------|-------------|-------------|---------|
-| pyLSD invocation | Subprocess `python lsd.py FILE` | Import `lsd.py` as module | lsd.py uses `sys.exit()` and global mutable state; not designed for import. Subprocess is safe and consistent with existing LSD runner. |
-| 4J handling | LSD ELIM (works in both LSD and pyLSD) | Remove 4J suspect correlations entirely | Removal was v4.0 approach — caused empty solution set. ELIM lets solver decide which correlations are 4J, preserving all correlations in the constraint set. |
-| 4J handling | LSD ELIM | WebCocon 4J-Flag iterative approach | WebCocon is a different CASE tool (COCON-based). Lucy-ng uses LSD/pyLSD. ELIM is the LSD-native mechanism for exactly this problem. |
-| File format extension | Extend LSDInputGenerator with `generate_pylsd()` | New PyLSDInputGenerator class | Minor functional addition; same model types. Adding a method maintains DRY and avoids duplicating all the existing MULT/HSQC/HMBC/BOND generation logic. |
-
----
+| Recommended | Alternative | Why Not |
+|-------------|-------------|---------|
+| Server-side PNG via matplotlib | Client-side plotly.js from CDN | Violates no-CDN constraint; CDN means no air-gap, adds external dependency |
+| `FigureCanvasAgg` explicit | `matplotlib.use('Agg')` global | Global state change unsafe in server; fails silently after first import |
+| Hand-rolled markdown renderer | Inline minified marked.js (~50 KB) | Maintains XSS discipline; purpose-built for the CASE-PROGRESS.md subset; no blob to maintain |
+| PNG format | SVG for spectra | 2D contour SVGs are >1 MB (thousands of path elements); PNG is 50–150 KB |
+| `analysis_dir.parent` convention | Passing `compound_path` to `create_app()` | No API change needed; CASE always creates `analysis/` as a direct child of the compound dir |
 
 ## Version Compatibility
 
-| Component | Required | Notes |
-|-----------|----------|-------|
-| PyLSD | a8 (latest) | Python 3 required from a8. No newer version found. |
-| LSD binary | 3.5.2 or 3.5.3 | pyLSD-a8 is based on LSD 3.5.2. LSD 3.5.3 is identical to 3.5.2. Both work. |
-| Python | 3.10+ | pyLSD a8 requires Python 3; no upper bound issue seen. |
-| Java | NOT required | Only for built-in ranking — disable in defaults.py |
+| Package | Compatible With | Notes |
+|---------|-----------------|-------|
+| matplotlib ≥3.7 | numpy ≥1.24 | Both already satisfied by existing deps |
+| matplotlib 3.10.7 (system) | FastAPI + uvicorn (existing) | No conflicts; matplotlib is only imported inside route handlers |
+| FigureCanvasAgg | Python 3.10–3.12 | Stable API; no breaking changes in matplotlib 3.x |
 
----
+## Installation Delta
 
-## Installation
-
-No new Python packages required. pyLSD is a standalone Python script, not a pip-installable package.
-
-```bash
-# Download and install pyLSD (one-time setup)
-wget https://github.com/nuzillard/PyLSD/raw/master/pylsd-linux-a8.tar.gz
-tar -xzf pylsd-linux-a8.tar.gz -C ~/PyLSD/
-# Edit ~/PyLSD/Variant/defaults.py:
-#   lsdbin = os.path.expanduser("~/PyLSD/LSD")  (or wherever LSD binaries are)
-#   datafolder = os.path.expanduser("~/PyLSD/LSD/Data")
-
-# Verify pyLSD works
-cd ~/PyLSD/Variant && python lsd.py breg57.lsd
-
-# Set environment variable for lucy-ng
-export PYLSD_DIR=~/PyLSD/Variant
-
-# Verify lucy-ng can find pyLSD (after v8.0 ships)
-lucy lsd check
+```toml
+# In pyproject.toml [project.optional-dependencies]:
+webview = [
+    "fastapi>=0.100",
+    "uvicorn>=0.20",
+    "matplotlib>=3.7",    # ADD for Stage 2 spectra rendering
+]
 ```
 
----
+```bash
+# Reinstall with updated extra:
+pip install -e ".[webview]"
+```
 
 ## Sources
 
-**PRIMARY SOURCES (HIGH confidence):**
-- [PyLSD official site](https://nuzillard.github.io/PyLSD/) — confirmed download method (GitHub archive), Python 3 requirement from a8, invocation as `python lsd.py FILE`
-- [PyLSD Installation](https://nuzillard.github.io/PyLSD/INSTALL.html) — confirmed: Java optional (ranking only), defaults.py configuration, three-directory structure (Variant/, LSD/, Predict/)
-- [LSD Manual (nuzillard.github.io)](https://nuzillard.github.io/LSD/MANUAL_ENG.html) — ELIM command confirmed: `ELIM P1 P2` where P1=max correlations eliminated, P2=max bond count; SHIX/SHIH confirmed as native LSD commands
-- [GitHub: nuzillard/PyLSD](https://github.com/nuzillard/PyLSD) — confirmed available distributions: pylsd-linux-a8.tar.gz, pylsd-windows-a8.zip, pylsd-nmrbox-a7.tar.gz
-- `background/wenk-thesis.txt` lines 2069–2247, 5491–5600 — FORM/PIEC/ELIM/MULT/SHIX/SHIH command semantics, complete ibuprofen pyLSD example, pyLSD execution description, Sherlock's Java ranking explicitly disabled
-
-**SECONDARY SOURCES (MEDIUM confidence):**
-- [Sherlock PMC paper (PMC9920390)](https://pmc.ncbi.nlm.nih.gov/articles/PMC9920390/) — pyLSD used for structure generation, built-in ranking disabled in Sherlock
-- [WebCocon 4J paper (PMC8398166)](https://pmc.ncbi.nlm.nih.gov/articles/PMC8398166/) — alternative 4J approach (WebCocon 4J-Flag); reviewed and not adopted
-- `src/lucy_ng/lsd/runner.py` — existing runner architecture; subprocess pattern confirmed for pyLSD adaptation
+- Codebase reading: `src/lucy_ng/webview/app.py`, `routers/status.py`, `routers/structures.py`, `routers/log.py`, `static/index.html` — existing patterns confirmed (WV-08 lazy imports, make_router closure, Response for binary content)
+- Codebase reading: `src/lucy_ng/readers/bruker.py` — `Spectrum1D`/`Spectrum2D` fields confirmed (data, ppm_scale, f1_ppm_scale, f2_ppm_scale, nucleus, experiment_type)
+- Codebase reading: `pyproject.toml` — confirmed matplotlib absent from declared deps
+- System: `python3 -c "import matplotlib; print(matplotlib.__version__)"` → 3.10.7 (installed but undeclared)
+- Codebase reading: `.claude/agents/lucy-nmr-chemist.md`, `.claude/commands/lucy-ng/case.md` — confirmed peak data only in CASE-PROGRESS.md + compound.lsd (no separate JSON files written to analysis_dir)
+- matplotlib official docs pattern: `Figure` + `FigureCanvasAgg` for headless server rendering — standard MEDIUM→HIGH confidence (stable API, widely documented, no version concerns for ≥3.7)
+- Design spec: `docs/superpowers/specs/2026-07-02-case-webview-design.md` — Stage 2 requirements confirmed
 
 ---
 
-*Stack research for: pyLSD integration enabling ambiguous atom states and ELIM-based 4J exploration*
-*Researched: 2026-03-13*
-*Confidence: HIGH for command semantics, integration architecture, and ELIM usage. MEDIUM for pyLSD version currency (a8 appears to be latest, no updates since ~2022 visible).*
+*Stack research for: v9.3 CASE Web-View Stage 2 — spectra rendering, markdown log, tabbed UI, data tables*
+*Researched: 2026-07-07*

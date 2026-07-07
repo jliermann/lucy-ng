@@ -1,25 +1,25 @@
-# Feature Landscape: pyLSD Integration and 4J Exploration
+# Feature Research
 
-**Domain:** pyLSD-based structure generation with systematic 4J HMBC coupling exploration
-**Researched:** 2026-03-13
-**Confidence:** HIGH — Wenk thesis (Sherlock) provides full pyLSD specification with concrete ibuprofen example; existing codebase provides integration context
+**Domain:** CASE run monitor — v9.3 Web-View Stage 2 (spectra tabs, data tables, formatted log)
+**Researched:** 2026-07-07
+**Confidence:** HIGH — all findings based on direct inspection of existing codebase, analysis/ artefacts from real CASE runs (CASE1 ibuprofen), and established NMR display conventions
 
 ---
 
-## Background: What pyLSD Changes and Why It Matters
+## Context: What v9.2 Already Delivers (Do Not Re-Research)
 
-The current lucy-ng pipeline calls LSD directly. LSD requires fully-specified, unambiguous atom states: one hybridisation state and one proton count per atom. If any ambiguity exists (unknown heteroatom hybridisation, possible 4J vs 3J HMBC coupling), the user must choose one option — and a wrong choice yields zero solutions or wrong structures.
+The existing dashboard at `GET /` exposes three auto-refreshing panels:
+- Status bar: run state, iteration, active phase, elapsed time (`/api/status`)
+- Structure grid: top-10 ranked candidates with RDKit SVG depiction + MAE/rank (`/api/structures`, `/api/structure/{i}.svg`)
+- Raw log panel: `CASE-PROGRESS.md` verbatim in a scrollable `<pre>` (`/api/log`)
 
-pyLSD removes this limitation by accepting **ambiguous MULT declarations** and internally generating and running multiple LSD files — one per combination of ambiguous atom states. All solutions from all runs are collected into a unified result set. For 4J exploration specifically, this means marking a suspect HMBC correlation as having bond range `2 4` (instead of the default `2 3`) and using ELIM to permit the system to include or exclude it while exploring all valid configurations.
-
-The critical insight from the ibuprofen failure (v4.0 UAT): three HMBC correlations through the aromatic ring are 4J, not 3J. When written as `HMBC X Y` (default 2–3 bonds), LSD enforces them as 2–3J constraints and produces wrong ring systems. The fix is `HMBC X Y 2 4` — but this only works if ELIM is enabled to allow that extended range.
-
-The pyLSD input format differs from LSD in five ways:
-1. FORM command declares molecular formula explicitly (LSD uses implicit formula from MULT sum)
-2. MULT supports multiple hybridisation states and proton counts: `MULT 14 O (2 3) (0 1)`
-3. ELIM command enables elimination of non-standard correlations (required for 4J HMBC)
-4. SHIX/SHIH commands assign chemical shift values to atoms, preventing equivalent-atom ambiguity during isomer generation
-5. PIEC command declares molecule must be fully connected (always 1)
+Architecture constraints carried forward into Stage 2:
+- Single-file `index.html` with inline JS/CSS, no build step, no node toolchain
+- FastAPI `app.include_router()` pattern; new routers dock into `create_app(analysis_dir)`
+- Server is "dumb" — reads `analysis_dir` files only, no agent knowledge, no live-run dependency
+- WV-08 import-safety: fastapi and RDKit only reachable via `app.py` (new matplotlib follows same rule)
+- Graceful degradation: missing/partial files → HTTP 200 "waiting", never 500
+- 3 s polling retained; tabs dock without a rewrite (design spec guarantees this)
 
 ---
 
@@ -27,137 +27,131 @@ The pyLSD input format differs from LSD in five ways:
 
 ### Table Stakes (Users Expect These)
 
-Features the CASE system needs for pyLSD integration to be functional. Missing any of these means the migration from direct LSD to pyLSD does not work.
-
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| **pyLSD input file writer** | pyLSD needs a different input format than LSD — FORM, PIEC, ambiguous MULT, SHIX/SHIH, ELIM | MEDIUM | Replaces/extends the existing LSD file writer. Must support all existing commands (MULT, HSQC, HMBC, COSY, BOND, LIST, PROP, DEFF, FEXP) plus the new ones. See ibuprofen example in Appendix A4 of Wenk thesis. CLI: `lucy lsd write-pylsd`. |
-| **FORM command generation** | pyLSD requires explicit molecular formula via FORM | LOW | Format: `FORM C 13 H 18 O 2`. Parsed from compound formula string. Not used by direct LSD — verify not written there. This is a pyLSD-only command; existing code must not accidentally include it in LSD files. |
-| **PIEC command generation** | pyLSD requires connectivity constraint | LOW | Always `PIEC 1` (fully connected molecule). Written immediately after FORM. |
-| **Ambiguous MULT declaration** | Heteroatoms (O, N, S) often have multiple valid hybridisation states and proton counts | MEDIUM | Format: `MULT 14 O (2 3) (0 1)` — hybridisation and proton count are lists in parentheses. For unambiguous carbons, format remains `MULT 1 C 3 3`. pyLSD generates one LSD file per combination: O with (sp2, 0H) + O with (sp2, 1H) + O with (sp3, 0H) + O with (sp3, 1H) = 4 combinations for one oxygen atom. Default values from Wenk thesis Table A16 must be encoded as agent knowledge. |
-| **ELIM command generation** | Required to allow HMBC correlations with bond range extending beyond LSD default (>3J) | LOW | Format: `ELIM N M` where N = number of NSCs to eliminate, M = max bond distance allowed. For one suspect 4J correlation: `ELIM 1 4`. For two suspect: `ELIM 2 4`. Must be written ONLY when at least one HMBC has max bond count > 3. Without ELIM, the `2 4` in `HMBC X Y 2 4` is silently ignored by LSD. |
-| **SHIX command generation (heavy atoms)** | Prevents pyLSD from treating atoms with identical MULT states as equivalent, which collapses the solution space incorrectly | MEDIUM | Format: `SHIX 1 18.082`. Written for every carbon atom. For heteroatoms with unknown shift, omit. Two atoms with identical MULT but different SHIX values are treated as non-interchangeable during isomer generation. Without SHIX, two CH3 groups at 22.37 and 22.37 ppm are collapsed to one assignment — correct for symmetric molecules, wrong when they differ. |
-| **SHIH command generation (protons)** | Same as SHIX but for proton chemical shifts. Prevents proton-level equivalence collapse. | MEDIUM | Format: `SHIH 2 0.896`. Written for every HSQC-assigned proton. Diastereotopic protons get separate SHIH lines. |
-| **HMBC extended bond range syntax** | 4J correlations need `HMBC X Y 2 4` instead of default `HMBC X Y` (2–3 bonds) | LOW | Already partially implemented as "possible_4J" flag. Must generate explicit min/max bond parameters. The lsd-engineer agent currently defers 4J correlations — new behavior is to write them with extended range instead. |
-| **pyLSD execution wrapper** | Replace `lucy lsd run` with a wrapper that runs pyLSD and collects solutions | MEDIUM | pyLSD internally generates and runs N LSD files, then collects all solutions into one `.smi` file. The lucy CLI wrapper needs to handle pyLSD's output format, which differs from direct LSD. Must detect both success (solutions found) and failure (zero solutions from all runs). |
-| **Multi-run solution collection** | pyLSD produces solutions from N LSD runs; all must be merged before ranking | LOW | pyLSD handles this internally — it outputs a single solution file. The wrapper just needs to parse that file correctly. Solutions may be duplicates across runs (same structure found by different atom-state combinations); dedup before ranking. |
-| **Agent knowledge: pyLSD file format** | lsd-engineer must write correct pyLSD files, not LSD files | HIGH | The lsd-engineer agent currently knows only LSD syntax. Must learn: FORM replaces implicit formula, PIEC required, MULT can have list arguments, SHIX/SHIH mandatory for non-trivial molecules, ELIM required when any HMBC uses `2 4`. This is a skill/agent update, not Python code. |
-| **Constraint inventory: 4J tracking** | Constraint inventory JSON block must track which HMBC correlations are flagged as possible 4J | MEDIUM | New inventory fields: `suspected_4j_hmbcs` (list of C–H pairs), `elim_count` (N in ELIM command). Devils-advocate must verify: if any HMBC written with `2 4`, ELIM must be present with count >= number of such HMBCs. |
+| **Formatted run log** — render CASE-PROGRESS.md as markdown | The CASE agent team writes structured markdown: `## Iteration N`, `### NMR-Chemist`, bold conclusions, code fences, tables. Viewing this as raw `#`/`**` in a `<pre>` is the v9.2 explicitly deferred default. The trigger was met on the live CASE1 run. A chemist watching a live run expects readable structure. | LOW | Pure frontend change. `GET /api/log` already returns the content unchanged. Add `marked.js` via CDN (`<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js">`) and swap the `<pre>` for a `<div id="log">` rendered with `marked.parse(content)`. No new endpoint needed. Auto-scroll-to-bottom behaviour unchanged (already in v9.2 D-13). |
+| **Tab navigation** — Overview / Spectra / Tables / Log | With four feature groups the single-panel layout no longer fits. Tab switching is the expected navigation pattern for any dashboard with multiple data views. The design spec explicitly says "tabs dock in without a rewrite." | LOW | Pure frontend CSS show/hide (`display:none`/`block`) with a tab-bar. No new endpoints. The Overview tab contains the existing v9.2 status bar + structure grid unchanged. |
+| **¹³C peak list table** — ppm, multiplicity, nH, nC, assignment | The signal table is the primary chemist-facing CASE artefact. After a run the first question is: "did peak picking capture all signals correctly?" A table is the canonical format. Missing this means the inspector has no way to verify NMR input. | LOW | `analysis/peaks/carbon_signals.json` is written by the CASE team with all needed columns (`ppm`, `mult`, `nC`, `assignment`, `confidence`). New endpoint `GET /api/peaks/c13` reads and serves it as JSON. Frontend renders as an HTML table. Graceful degrade when file absent. |
+| **HMBC correlation table** — C ppm, H ppm, flag | The HMBC flag column (`ok` / `1J_artifact` / `potential_4J`) is exactly what a chemist checks to understand which correlations drove the structure and which were deferred. This is the key CASE reasoning artefact. | LOW | `analysis/peaks/hmbc.json` is written by the CASE team with `carbon_ppm`, `proton_ppm`, `intensity`, `flag`. New endpoint `GET /api/peaks/hmbc`. Flag column must be colour-coded in the frontend (green=ok, amber=1J_artifact, red=potential_4J). |
+| **¹³C bar chart** — stick spectrum with reversed ppm axis | A bar/stick chart of ¹³C signals is the standard CASE run summary display. Without a reversed ppm axis the display is scientifically wrong: NMR convention is high ppm (downfield) on the left, 0 ppm on the right. Bars coloured by multiplicity aid immediate reading. | MEDIUM | Generate server-side via matplotlib from `carbon_signals.json` peak data (NOT from raw Bruker FID — see Anti-Features). `matplotlib` added to `[webview]` optional extra. New endpoint `GET /api/spectra/c13.svg` renders to SVG and returns it as `image/svg+xml`. Axis: 220 ppm left → 0 ppm right (`ax.invert_xaxis()`). Bars coloured by mult: Cq grey, CH blue, CH2 orange, CH3 green. Label each bar with its ppm value. |
+| **HSQC scatter** — ¹H (x, reversed) vs ¹³C (y, reversed) | The HSQC scatter is the minimum meaningful 2D display. A chemist expects F2 (¹H, direct) on x-axis and F1 (¹³C) on y-axis, both axes reversed (high ppm at left/top). Swapping these is a domain-correctness error. | MEDIUM | `analysis/peaks/hsqc.json` provides `carbon_ppm`, `proton_ppm`, `intensity`, `one_bond`. Server-side matplotlib scatter. New endpoint `GET /api/spectra/hsqc.svg`. Mark `one_bond=True` peaks with a distinct colour/marker. Axis ranges from peak data + margin. `ax.invert_xaxis()` + `ax.invert_yaxis()`. Reuses matplotlib already added for ¹³C chart. |
+| **HMBC scatter** — with flag colouring | The HMBC scatter coloured by flag (`ok` / `1J_artifact` / `potential_4J`) shows at a glance which cross-peaks drove the structure search and which were set aside. This is as important as the table. | MEDIUM | Same approach as HSQC from `hmbc.json`. New endpoint `GET /api/spectra/hmbc.svg`. Legend required. Flag colours match the table: green/amber/red. Reuses matplotlib. |
+| **LSD constraint inventory display** | The constraint inventory (MULT count, HMBC batches applied vs deferred, BOND constraints, pending items) is what was actually sent to the solver. Showing it closes the loop from "what peaks exist" to "what the solver received." | MEDIUM | The constraint inventory JSON block is embedded in `analysis/iteration_NN/compound.lsd` headers between `=== CONSTRAINT INVENTORY ===` markers. New endpoint `GET /api/constraints` reads the latest `iteration_NN/` directory (alphabetically last), extracts and parses the JSON block, and serves it. Frontend renders a summary: MULT count, HMBC batches, BOND list, applied vs deferred bullets. Graceful degrade when no LSD file exists yet. |
 
 ### Differentiators (Competitive Advantage)
 
-Features that improve 4J handling beyond minimum viable.
-
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| **Multi-file 4J exploration strategy** | When unsure which HMBCs are 4J (the common case), generate multiple pyLSD input files with different HMBC configurations and union the results | HIGH | Strategy: for K suspect HMBC correlations, test 2^K combinations (each suspect either included as 2–3J or excluded/extended to 4J). Union all solution sets. For K=3 (ibuprofen case), this is 8 runs. Wenk thesis §4.3.1 mentions this as planned improvement: "Multiple pyLSD input files with different configurations could be produced and executed." Not yet in Sherlock — lucy-ng could be first to implement. |
-| **Atom exchange for grouped signals** | When two atoms share nearly identical shifts (grouped), use HMBC `(C1 C2) H` syntax to allow either atom as the correlation source — handles peak assignment ambiguity without re-running | MEDIUM | Already in pyLSD format: `HMBC (5 6) 7 2 3`. Wenk thesis §4.3.1 confirms this resolved a case where the candidate list was empty without it. Agent currently uses this syntax for grouped atoms (v4.0 bug fixed). Verify it's still working correctly after pyLSD migration. |
-| **Aromatic 4J heuristic + extended range** | nmr-chemist heuristic identifies which HMBCs are probably 4J; lsd-engineer writes them with `2 4` instead of deferring them | MEDIUM | Currently (v6.0): nmr-chemist flags, lsd-engineer defers. New behavior: flagged correlations get `2 4` + ELIM rather than being dropped. This is the minimal fix for ibuprofen. Depends on: ELIM command generation, extended HMBC syntax. |
-| **PROP constraints from neighbourhood detection** | Statistical neighbour detection produces forbidden/mandatory bonds — these should become PROP constraints in the pyLSD file | MEDIUM | Already detected via `lucy detect neighbours`. Currently only C=O is turned into BOND. PROP generalizes this: `LIST L3 14 15` + `PROP 1 0 L3 -` forbids atom 1 from bonding to anything in L3 (heteroatom list). The ibuprofen example shows systematic PROP usage for all non-O-bearing carbons. This is agent skill knowledge, not Python code. |
-| **HETE/PROP heteroatom isolation** | Heteroatom-heteroatom bonds are usually absent in natural products; PROP can forbid them by default | LOW | `HETE L1; hetero atoms` + `PROP L1 0 L1 -; no hetero-hetero bonds`. Already detected by `lucy detect hhb`. Agent must translate the hhb result into HETE/PROP constraints, not just advisory notes. See ibuprofen example lines 5591–5592. |
-| **UAT with pyLSD on ibuprofen** | Confirm pyLSD + ELIM + 4J extended range actually finds the correct ibuprofen structure | HIGH | The definitive validation that the approach works. Must produce ibuprofen (or a set containing ibuprofen) as a solution. Expected: 3 HMBCs flagged as 4J, written as `HMBC X Y 2 4`, ELIM 3 4 (or ELIM with appropriate count), SHIX/SHIH for all atoms, correct aromatic ring in top-ranked solution. This is the v4.0 failure case that started this whole track. |
+| **DEPT sub-tab** — signed bar chart (positive CH/CH3, negative CH2) | DEPT-135 phase information is lost in a plain ¹³C listing. Showing signed bars makes CH2 immediately identifiable, which is the analytical purpose of DEPT. This turns the ¹³C display from informational to diagnostic. | MEDIUM | Conditional: only render if `multiplicity_edited` field in `hsqc.json` is `true` (DEPT-guided HSQC was used). Otherwise the Spectra > 1D panel shows only the ¹³C tab. Bars: CH/CH3 positive (blue/green), CH2 negative (orange), Cq absent. Source: multiplicity field from `carbon_signals.json`. No new endpoint — same `GET /api/peaks/c13` data, different render flag. |
+| **COSY scatter** — ¹H–¹H connectivity | Completes the 2D picture. Chemists verifying connectivity expect to see all three 2D experiments: HSQC, HMBC, COSY. | MEDIUM | `analysis/peaks/cosy.json` exists (confirmed from CASE1). Both axes ¹H reversed. Square plot; diagonal visible. New endpoint `GET /api/spectra/cosy.svg`. Reuses matplotlib. Low incremental effort once HSQC/HMBC are implemented. |
+| **Constraint inventory "applied vs deferred" detail** | Side-by-side rendering of `applied_from_detection` and `pending_from_detection` lists directly shows the agent's reasoning about trusted vs held-back evidence. This is unique to the lucy-ng CASE inspector — no other CASE tool exposes this level of solver-input transparency. | LOW | Already in the constraint inventory JSON block — no extra endpoint beyond `GET /api/constraints`. Just needs appropriate frontend layout (two-column list or colour-coded rows). |
+| **HSQC correlation table** | Completes the Tables view alongside ¹³C and HMBC. A chemist doing detailed post-run verification wants the direct C–H assignments in tabular form. | LOW | `analysis/peaks/hsqc.json` has `carbon_ppm`, `proton_ppm`, `matched_real_carbon`, `one_bond`. New endpoint `GET /api/peaks/hsqc`. Low incremental effort once ¹³C and HMBC tables are done. Defer to P2 — scatter covers the primary use case. |
+| **Per-iteration constraint diff** | Shows how the LSD input changed between iterations (batch 1 → batch 2 HMBC added, new BOND constraints). Enables rapid multi-iteration review without reading individual LSD files. | HIGH | Requires reading all `iteration_NN/compound.lsd` files and diffing constraint inventory JSON blocks. Significant backend logic. Defer to a later milestone. |
 
 ### Anti-Features (Commonly Requested, Often Problematic)
 
 | Feature | Why Requested | Why Problematic | Alternative |
 |---------|---------------|-----------------|-------------|
-| **Statistical pre-filtering of 4J correlations** | Simpler than running multiple LSD files | v7.0 proved this is fundamentally non-viable: HOSE pair distance statistics produce 100% false positive rate because j5_plus dominates every atom type universally. Cannot distinguish 2J from 4J statistically. | Use pyLSD's ELIM + extended bond range. The constraint solver explores all bond configurations directly — no pre-filtering needed. |
-| **Running all 2^K HMBC configurations in parallel** | Faster than sequential exploration | For K=3 suspect correlations, 8 runs is fine. For K=8 (larger molecules), 256 runs may overwhelm the system. Parallelism also complicates solution deduplication and progress tracking. | Run pyLSD once per configuration sequentially; stop early if correct structure found via ranking. Cap K at 4 (max 16 configurations). |
-| **Writing LSD files for all molecules** | Some users may prefer direct LSD over pyLSD | pyLSD is a superset of LSD — any valid LSD file is also valid pyLSD input. If all atom states are unambiguous and no ELIM is needed, pyLSD produces exactly one LSD file and runs it. No need to maintain two writers. | Produce pyLSD files always. The format degrades gracefully to LSD behavior when no ambiguity exists. |
-| **Exposing pyLSD's internal LSD files to the agent** | Transparency into which LSD files were generated | pyLSD's internal files are temp files, not intended for inspection. Exposing them adds debugging complexity with little benefit for CASE workflow. | Report solution count per run in CASE-PROGRESS.md. If all runs return zero, diagnostic specialist investigates. |
-| **Replacing HOSE-based ranking with pyLSD's built-in ranking** | pyLSD can rank solutions internally | pyLSD's built-in ranking is disabled in Sherlock and replaced with HOSE-based prediction (Wenk thesis §3.1.4.2.4). The existing lucy-ng ranking (two-tier: match count + MAE) is better calibrated for this database. | Keep existing `lucy lsd rank`. pyLSD provides solutions; lucy-ng ranks them. |
-| **Using ELIM for all HMBC correlations by default** | ELIM allows "invalid" correlations to be pruned, which seems useful as a general tool | ELIM is specifically for correlations that extend BEYOND LSD's default bond limits. Using it on normal 2–3J correlations does nothing useful but may mislead the agent into thinking those correlations are questionable. | Apply ELIM only when at least one HMBC has max bond distance > 3. Track this explicitly in the ELIM count (N in `ELIM N M`). |
+| **Full ¹H spectrum trace from raw Bruker FID** | "Looks like a real NMR spectrum" | Requires nmrglue + matplotlib + discovery of the Bruker data directory (which is the parent of `analysis/`, not always predictable). Solvent signals, shimming artefacts, phase correction must be handled. Adds nmrglue to `[webview]` extra (not currently there). The run monitor does not need the ¹H lineshape or multiplet pattern — it needs peak positions. | Show a stick chart of ¹H chemical shifts derived from `hsqc.json` proton_ppm values — sufficient for inspector purposes. |
+| **Full 2D contour plots from raw Bruker data** | "Contour plots look like the real experiment" | Same Bruker-path-discovery problem as FID traces. Contour level selection is non-trivial (logarithmic, noise-floor dependent). Large 2D matrices are slow to render on each poll request. The scatter from already-picked peaks contains all information a run reviewer needs. | Scatter from peak JSON already recommended above. |
+| **Interactive zoom/pan in spectra** | Chemists zoom in professional NMR tools | Requires a JS charting library (Plotly, Chart.js, D3) or htmx — either adds a build step or a CDN dependency substantially larger than marked.js. The dashboard is an inspector, not a full NMR processing tool. | Serve matplotlib SVGs at higher resolution (600×400 px); add a `download` button on each spectrum tile so chemists can open in their preferred tool. |
+| **Editable peak lists or constraint editor** | "Would be useful to fix errors directly" | Violates the core v9.2 design principle: the view never mutates the run. Any write path risks corrupting active CASE run files. | The dashboard is a monitor. Corrections are made by re-running the CASE team with updated parameters. |
+| **Raw COSY peak list table** | "Tables exist for ¹³C and HMBC, why not COSY?" | COSY tables are long and chemists do not read raw ¹H–¹H peak lists in tabular form — they trace connectivity in scatter plots. A 200-row table of ¹H–¹H pairs clutters the Tables tab without adding insight. | COSY scatter plot (differentiator above). |
+| **SSE/WebSocket live push** | "Eliminate the 3 s polling lag" | Design spec explicitly deferred this: "no functional gain." Adds server-side complexity for a cosmetic improvement on a 20–120 min run where 3 s lag is imperceptible. | Keep 3 s polling. |
+| **Server-side markdown rendering** | "Keep the frontend thin" | Requires a Python markdown library in the webview extra (e.g. `mistune`), adds a dependency and server processing for content that is already served verbatim. The frontend already receives the content — render it there. | CDN `marked.js` in the frontend; one `<script>` tag, no new backend dependency. |
 
 ---
 
 ## Feature Dependencies
 
 ```
-pyLSD input file writer
-    └── requires --> FORM command generation [NEW]
-    └── requires --> PIEC command generation [NEW]
-    └── requires --> Ambiguous MULT syntax [NEW]
-    └── requires --> SHIX/SHIH generation [NEW]
-    └── requires --> ELIM command generation [NEW]
-    └── requires --> Extended HMBC bond range syntax [NEW — builds on existing `2 4` flag]
-    └── replaces --> Existing LSD file writer [EXISTING]
+[Tab navigation]
+    └──required by──> [All Stage-2 panels]
 
-ELIM command generation
-    └── requires --> HMBC extended bond range syntax [NEW — must know which HMBCs need 2 4]
-    └── requires --> nmr-chemist 4J flagging [EXISTING — v6.0 heuristic]
+[Formatted run log]
+    └──reuses──> [GET /api/log (v9.2, unchanged)]
+    └──requires──> [marked.js via CDN (frontend only)]
 
-pyLSD execution wrapper
-    └── requires --> pyLSD installed on system [EXISTING requirement, same as LSD]
-    └── requires --> pyLSD input file writer [NEW]
-    └── replaces --> lucy lsd run [EXISTING]
-    └── produces --> unified solution file (same format as direct LSD)
+[matplotlib added to [webview] extra]
+    └──required by──> [All spectra image endpoints]
 
-Agent knowledge: pyLSD file format
-    └── requires --> pyLSD input file writer [NEW — must know what to request]
-    └── requires --> lsd-engineer skill update [NEW]
-    └── enhances --> Constraint inventory: 4J tracking [NEW, below]
+[¹³C bar chart endpoint GET /api/spectra/c13.svg]
+    └──requires──> [GET /api/peaks/c13 data]
+    └──requires──> [matplotlib in [webview] extra]
 
-Constraint inventory: 4J tracking
-    └── requires --> Existing constraint inventory JSON block [EXISTING — v4.0]
-    └── requires --> Agent knowledge: pyLSD file format [NEW, above]
-    └── enhances --> Devils-advocate verification [EXISTING]
+[GET /api/peaks/c13]
+    └──reads──> [analysis/peaks/carbon_signals.json]
+    └──shared by──> [¹³C bar chart + ¹³C peak list table]
 
-Multi-file 4J exploration
-    └── requires --> pyLSD input file writer [NEW]
-    └── requires --> pyLSD execution wrapper [NEW]
-    └── requires --> nmr-chemist 4J flagging [EXISTING — v6.0 heuristic]
-    └── requires --> Coordinator multi-run orchestration [NEW agent skill]
-    └── enhances --> aromatic ring sanity check [EXISTING — v4.0]
+[DEPT sub-tab]
+    └──requires──> [GET /api/peaks/c13 (same endpoint, same data)]
+    └──conditional on──> [multiplicity_edited flag in analysis/peaks/hsqc.json]
 
-PROP constraints from neighbourhood detection
-    └── requires --> lucy detect neighbours [EXISTING — v3.0]
-    └── requires --> Agent knowledge: pyLSD file format (LIST/PROP syntax) [NEW]
-    └── requires --> lsd-engineer skill update [NEW]
-    └── enhances --> Solution quality (fewer wrong candidates)
+[HSQC scatter GET /api/spectra/hsqc.svg]
+    └──reads──> [analysis/peaks/hsqc.json]
+    └──requires──> [matplotlib (shared)]
 
-UAT: ibuprofen with pyLSD
-    └── requires --> pyLSD input file writer [NEW]
-    └── requires --> ELIM + extended HMBC [NEW]
-    └── requires --> SHIX/SHIH [NEW]
-    └── requires --> Agent knowledge update [NEW]
-    └── validates --> All table stakes features above
+[HMBC scatter GET /api/spectra/hmbc.svg]
+    └──reads──> [analysis/peaks/hmbc.json]
+    └──requires──> [matplotlib (shared)]
+
+[COSY scatter GET /api/spectra/cosy.svg]
+    └──reads──> [analysis/peaks/cosy.json]
+    └──requires──> [matplotlib (shared)]
+    └──enhances──> [HMBC scatter — full 2D connectivity picture]
+
+[¹³C peak list table]
+    └──reuses──> [GET /api/peaks/c13 JSON]
+
+[HMBC correlation table]
+    └──requires──> [GET /api/peaks/hmbc (new JSON endpoint)]
+    └──reads──> [analysis/peaks/hmbc.json]
+
+[HSQC correlation table]
+    └──requires──> [GET /api/peaks/hsqc (new JSON endpoint)]
+    └──reads──> [analysis/peaks/hsqc.json]
+
+[LSD constraint inventory GET /api/constraints]
+    └──reads──> [latest analysis/iteration_NN/compound.lsd header block]
+    └──requires──> [JSON block extraction from LSD file comments]
 ```
 
 ### Dependency Notes
 
-- **ELIM requires knowing which HMBCs are 4J:** The count N in `ELIM N M` equals the number of HMBC lines with max bond distance > 3. The lsd-engineer must count these when constructing the ELIM line, not guess. If N is wrong (too low), some extended-range correlations are silently treated as standard correlations.
-- **SHIX/SHIH are required for correct isomer enumeration:** Without them, pyLSD treats all CH3 groups with the same MULT as interchangeable, which can collapse real structural distinctions. For the ibuprofen case: two CH3 groups at 22.37 ppm ARE equivalent (the isobutyl CH3s) — but they must still have SHIH/SHIX lines so pyLSD correctly handles their cross-assignment.
-- **Multi-file 4J exploration depends on the coordinator:** The coordinator (case.md orchestrator) must decide how many pyLSD runs to execute and which HMBC configurations to try. This is new orchestration logic that does not exist in any current agent.
-- **PROP constraints are a skill update, not Python code:** The LIST/PROP generation from `lucy detect neighbours` output is agent reasoning — the agent reads the JSON output and decides which atoms go in which lists. No new CLI commands needed.
+- **matplotlib is the single new package dependency.** Add once to `[webview]` optional extra; all five spectra image endpoints share it. No other new package required.
+- **`GET /api/peaks/c13` is shared.** The ¹³C bar chart image and the ¹³C peak list table use the same endpoint — one returns SVG, the other drives the HTML table from the same JSON.
+- **DEPT sub-tab is conditional.** It only appears if `multiplicity_edited: true` in `hsqc.json`. If the condition is not met, the tab is hidden gracefully (no missing-data error).
+- **LSD constraint inventory requires at least one `iteration_NN/compound.lsd`.** During the setup phase before iteration 1 the endpoint returns a "waiting" payload. The constraint inventory JSON block is in the file header comments — a simple regex extraction, not a full LSD parser.
+- **Spectra images are served on-demand, no server-side cache** (same "dumb server" pattern as D-10 in Phase 91 for structure SVGs). matplotlib render is fast enough for a 3 s poll cycle.
 
 ---
 
 ## MVP Definition
 
-### Launch With (v8.0 core)
+### Launch With (v9.3 core)
 
-Minimum viable feature set to unblock ibuprofen CASE and validate pyLSD approach.
+Minimum viable feature set that delivers the "full run inspector" concept.
 
-- [ ] **pyLSD input file writer** — Without this, nothing else works. Must produce correct FORM, PIEC, MULT, SHIX, SHIH, HSQC, HMBC (with explicit bond range), COSY, BOND, LIST, PROP, DEFF, FEXP, ELIM.
-- [ ] **ELIM command generation** — Required for any HMBC correlation extended beyond 3J. Count = number of extended-range HMBCs in the file.
-- [ ] **SHIX/SHIH generation** — Required for correct isomer enumeration. All carbons get SHIX; all HSQC-assigned protons get SHIH.
-- [ ] **pyLSD execution wrapper** — Replace `lucy lsd run` or provide `lucy lsd run-pylsd`. Must collect solutions from pyLSD's unified output.
-- [ ] **Agent knowledge: pyLSD file format** — lsd-engineer must know the full syntax. Update agent skill with FORM, PIEC, ambiguous MULT, SHIX/SHIH, ELIM, extended HMBC. This is the highest-leverage update: one skill change enables all the above.
-- [ ] **Constraint inventory: 4J tracking** — Add `suspected_4j_hmbcs` and `elim_count` to JSON block. Devils-advocate verifies ELIM present when extended HMBCs exist.
-- [ ] **UAT: ibuprofen with pyLSD** — Confirm correct structure found. Accept as milestone-complete only when ibuprofen is top-ranked solution.
+- [x] **Formatted run log** — renders the markdown structure agents write; immediately improves readability; zero new backend work
+- [x] **Tab navigation** — prerequisite for all other panels; pure frontend CSS, no new endpoints
+- [x] **¹³C peak list table** — answers "did peak picking work?"; LOW backend complexity
+- [x] **HMBC correlation table with flag column** — answers "which correlations drove LSD?"; LOW backend complexity
+- [x] **¹³C bar chart** — visual confirmation of signal count and multiplicity; MEDIUM (one new dep: matplotlib)
+- [x] **HSQC scatter** — verifies direct C–H assignment; MEDIUM (reuses matplotlib)
+- [x] **HMBC scatter** — shows which cross-peaks were flagged; MEDIUM (reuses matplotlib)
+- [x] **LSD constraint inventory summary** — closes the loop: what exactly was sent to the solver; MEDIUM (LSD header parsing)
 
-### Add After Validation (v8.x)
+### Add After Validation (v9.3 follow-on)
 
-- [ ] **PROP constraints from neighbourhood detection** — Trigger: ibuprofen solved, multi-compound UAT still fails on heteroatom-heavy compounds.
-- [ ] **HETE/PROP for heteroatom isolation** — Trigger: UAT compounds with O-O or O-N bonds being incorrectly proposed.
-- [ ] **Multi-file 4J exploration** — Trigger: cases where nmr-chemist cannot determine which HMBCs are 4J (uncertainty > 1 candidate).
-- [ ] **Atom exchange for grouped signals** — Trigger: cases where peak grouping causes empty solution set; existing grouped HMBC syntax may already handle this.
+- [ ] **COSY scatter** — complete 2D picture; low incremental effort once HSQC/HMBC exist
+- [ ] **DEPT sub-tab** — valuable when DEPT data is present; conditional rendering is slightly tricky
+- [ ] **HSQC correlation table** — useful for detailed review; defer until scatter is confirmed sufficient
 
-### Future Consideration (v9+)
+### Future Consideration (v9.4+)
 
-- [ ] **Multi-fragment injection + pyLSD** — Combine fragment library with pyLSD's ambiguous atom handling. Not blocking anything in v8.
-- [ ] **Multi-compound UAT** — Six test compounds have 4J risk. After ibuprofen confirmed working, run all six.
-- [ ] **Parallel multi-run execution** — Subprocess pool for 2^K configurations. Only needed for K > 4 (>16 runs).
+- [ ] **Per-iteration constraint diff** — HIGH complexity; useful only for multi-iteration deep-dive
+- [ ] **Full spectrum trace from Bruker FID** — large new dependency (nmrglue); revisit if stick charts prove insufficient
+- [ ] **Full 2D contour from raw Bruker data** — same issue; scatter is sufficient for the inspector
 
 ---
 
@@ -165,113 +159,74 @@ Minimum viable feature set to unblock ibuprofen CASE and validate pyLSD approach
 
 | Feature | User Value | Implementation Cost | Priority |
 |---------|------------|---------------------|----------|
-| pyLSD input file writer | HIGH | MEDIUM | P1 — foundation |
-| ELIM command generation | HIGH | LOW | P1 — unblocks 4J |
-| SHIX/SHIH generation | HIGH | LOW | P1 — required by format |
-| pyLSD execution wrapper | HIGH | MEDIUM | P1 — replaces direct LSD |
-| Agent knowledge: pyLSD format | HIGH | MEDIUM | P1 — lsd-engineer must know this |
-| Constraint inventory: 4J tracking | HIGH | LOW | P1 — DA gate |
-| UAT: ibuprofen with pyLSD | HIGH | LOW | P1 — validation |
-| PROP from neighbourhood detection | MEDIUM | LOW | P2 — quality improvement |
-| HETE/PROP heteroatom isolation | MEDIUM | LOW | P2 — reduces wrong candidates |
-| Atom exchange for grouped signals | MEDIUM | LOW | P2 — edge case |
-| Multi-file 4J exploration | HIGH | HIGH | P2 — powerful but complex |
-| Parallel multi-run execution | LOW | MEDIUM | P3 — performance only |
+| Formatted run log | HIGH — immediate readability win on every run | LOW — CDN script + frontend only | P1 |
+| Tab navigation | HIGH — prerequisite for all panels | LOW — pure CSS | P1 |
+| ¹³C peak list table | HIGH — first verification step | LOW — JSON already available | P1 |
+| HMBC correlation table | HIGH — core CASE review artefact | LOW — JSON already available | P1 |
+| ¹³C bar chart | HIGH — visual signal summary | MEDIUM — matplotlib new dep | P1 |
+| HSQC scatter | HIGH — C–H assignment check | MEDIUM — reuses matplotlib | P1 |
+| HMBC scatter | HIGH — correlation overview with flags | MEDIUM — reuses matplotlib | P1 |
+| LSD constraint inventory | HIGH — closes solver-input loop | MEDIUM — LSD header parser | P1 |
+| COSY scatter | MEDIUM — supporting connectivity view | LOW incremental | P2 |
+| DEPT sub-tab | MEDIUM — CH2 sign info | MEDIUM — conditional rendering | P2 |
+| HSQC correlation table | LOW — scatter covers use case | LOW incremental | P3 |
+| Per-iteration constraint diff | MEDIUM — deep debug aid | HIGH — multi-file diff logic | P3 |
 
 **Priority key:**
-- P1: Must have for v8.0 launch — unblocks ibuprofen CASE
-- P2: Should have, add when core is validated
-- P3: Nice to have, defer to v9+
+- P1: Must have for v9.3 launch
+- P2: Should have, add when P1 stable
+- P3: Nice to have, future consideration
 
 ---
 
-## Concrete Format Reference
+## NMR Domain Correctness Requirements
 
-### pyLSD File Differences from Direct LSD
+These are non-negotiable. Wrong convention = scientifically incorrect display.
 
-| Aspect | Direct LSD | pyLSD |
-|--------|-----------|-------|
-| Molecular formula | Implicit (sum of MULT atoms) | `FORM C 13 H 18 O 2` (explicit, first command) |
-| Connectivity | Not declared | `PIEC 1` (always present) |
-| Atom state | `MULT 1 C 3 3` (single value each) | `MULT 14 O (2 3) (0 1)` (list allowed) |
-| Shift assignment | Not used | `SHIX 1 18.082` (heavy atom), `SHIH 2 0.896` (proton) |
-| Extended correlations | Not supported | `ELIM 1 4` enables; `HMBC X Y 2 4` uses |
-| Multiple runs | One LSD run | N runs (one per ambiguous state combo) |
-| Output | `.sol` binary, convert with `outlsd` | Unified SMILES output (pyLSD handles conversion) |
+| Requirement | Correct Convention | Common Mistake to Avoid |
+|-------------|-------------------|-------------------------|
+| ¹³C x-axis direction | High ppm (≈220) on left, 0 ppm on right | matplotlib default is left→right (low ppm first) |
+| ¹H x-axis direction | High ppm (≈12) on left, 0 ppm on right | Same default error |
+| HSQC axes | F2=¹H on x (reversed), F1=¹³C on y (reversed) | Swapping axes gives a transposed plot |
+| HMBC axes | Same as HSQC: F2=¹H on x, F1=¹³C on y, both reversed | Same swap risk |
+| COSY axes | Both ¹H, square, diagonal visible (F1=F2 line), both reversed | Non-square or missing diagonal |
+| DEPT sign convention | DEPT-135: CH and CH3 bars above zero, CH2 bars below zero | Showing all bars positive loses CH2 identification |
+| 2D y-axis direction | ¹³C: high ppm at top, 0 ppm at bottom | matplotlib default origin is lower-left |
 
-### ELIM Semantics (from Wenk thesis §3.1.4.2.3)
-
-`ELIM N M` means: "allow elimination of N correlations that have bond distance up to M." The two parameters are:
-- N: maximum number of extended-range correlations the solver is allowed to treat as invalid
-- M: maximum bond distance for those correlations (4 for 4J exploration)
-
-Critical rule: ELIM only activates for HMBC/COSY lines where the declared max bond distance exceeds LSD defaults (>3 for HMBC, >4 for COSY). A standard `HMBC X Y` (no bond range) is never eligible for elimination.
-
-For ibuprofen with 3 suspect 4J correlations: `ELIM 3 4`. This permits pyLSD to explore configurations where 0, 1, 2, or 3 of the suspect correlations are treated as too long to be valid.
-
-### Ambiguous MULT for Common Heteroatoms (Wenk thesis Table A16)
-
-| Atom | Possible Valencies | Possible Hybridisations | Possible H Counts |
-|------|--------------------|------------------------|-------------------|
-| O (unknown) | 2 | sp2, sp3 | 0, 1 |
-| O (known carbonyl) | 2 | sp2 | 0 |
-| O (known ether/hydroxyl) | 2 | sp3 | 0, 1 |
-| N (unknown) | 3, 5 | sp1, sp2, sp3 | 0, 1, 2, 3 |
-| C (sp2, quaternary) | 4 | sp2 | 0 |
-| C (sp3, CH3) | 4 | sp3 | 3 |
+Implementation note: a shared helper `_apply_nmr_axes(ax, xnuc, ynuc)` that calls `ax.invert_xaxis()` and `ax.invert_yaxis()` as appropriate should be shared across all spectrum renderers to prevent inconsistency. Pass `xnuc="1H"` or `xnuc="13C"` to encode the axis direction in one place.
 
 ---
 
-## 4J Exploration Strategy (Concrete)
+## Data Sources and v9.2 Endpoint Dependencies
 
-The problem: agent has a list of HMBC correlations where some are flagged as "possibly 4J" by nmr-chemist. The agent must decide how to handle them.
+| Stage-2 Feature | Data Source (in analysis_dir) | Depends on Existing v9.2 | New Endpoint |
+|----------------|-------------------------------|--------------------------|--------------|
+| Formatted run log | `CASE-PROGRESS.md` | `/api/log` unchanged | None — frontend change only |
+| ¹³C peak list table | `peaks/carbon_signals.json` | None | `GET /api/peaks/c13` |
+| HMBC correlation table | `peaks/hmbc.json` | None | `GET /api/peaks/hmbc` |
+| HSQC correlation table | `peaks/hsqc.json` | None | `GET /api/peaks/hsqc` |
+| ¹³C bar chart image | `peaks/carbon_signals.json` + matplotlib | Shares data with ¹³C table | `GET /api/spectra/c13.svg` |
+| DEPT sub-tab image | `peaks/carbon_signals.json` (mult field) + matplotlib | Shares data with ¹³C table | No new endpoint; render flag on ¹³C endpoint |
+| HSQC scatter image | `peaks/hsqc.json` + matplotlib | None | `GET /api/spectra/hsqc.svg` |
+| HMBC scatter image | `peaks/hmbc.json` + matplotlib | None | `GET /api/spectra/hmbc.svg` |
+| COSY scatter image | `peaks/cosy.json` + matplotlib | None | `GET /api/spectra/cosy.svg` |
+| LSD constraint inventory | `iteration_NN/compound.lsd` header block | None | `GET /api/constraints` |
+| Tab navigation | None | `index.html` (extend) | None |
 
-**Recommended strategy for v8.0 (minimal):**
-1. nmr-chemist identifies suspect 4J correlations (aromatic W-pathway pattern, currently heuristic)
-2. lsd-engineer writes them as `HMBC X Y 2 4` (extended range) instead of standard `HMBC X Y`
-3. lsd-engineer counts N = number of extended HMBCs, writes `ELIM N 4`
-4. Run once with pyLSD — the solver explores all valid bond distance configurations internally
-5. If solutions include correct structure, done. If zero solutions, diagnostic specialist investigates.
-
-**Extended strategy for v8.x (multi-file):**
-For K suspect correlations where confidence is low:
-1. Generate K+1 pyLSD input files: base file (all K as standard 2–3J) + one file per suspect excluded
-2. Run each file separately, collect solution sets
-3. Union all solutions, deduplicate by SMILES, re-rank by HOSE prediction
-4. Report combined solution set to solution-analyst
-
-The multi-file strategy is the approach Wenk thesis describes as "planned improvement" — it is not yet in Sherlock (as of thesis writing). Lucy-ng implementing it would exceed Sherlock's current capability.
-
----
-
-## Competitor Feature Analysis
-
-| Feature | Sherlock | Lucy-ng v6.0 (current) | Lucy-ng v8.0 (target) |
-|---------|----------|------------------------|------------------------|
-| pyLSD integration | Yes — primary solver | No — direct LSD only | Yes — primary solver |
-| Ambiguous atom states (MULT lists) | Yes | No | Yes |
-| ELIM for 4J exploration | Yes | No | Yes |
-| SHIX/SHIH for atom differentiation | Yes — used always | No | Yes |
-| FORM/PIEC commands | Yes | No | Yes |
-| Multi-run for ambiguous states | Yes — automatic via pyLSD | No | Yes — via pyLSD |
-| Multi-file 4J configurations | Partial (test impl.) | No | Planned (v8.x) |
-| Autonomous 4J detection | No (heuristic only) | Heuristic (v6.0) | Heuristic + solver-based |
-| PROP from neighbourhood stats | Yes | No (advisory only) | Yes (v8.x) |
+All image endpoints return pre-rendered matplotlib SVG (`image/svg+xml`) — the same format already used for structure depictions in v9.2. On-demand per request; no server-side cache. The `<img src="/api/spectra/c13.svg">` tag in the frontend polls naturally on the 3 s refresh cycle.
 
 ---
 
 ## Sources
 
-**HIGH confidence (authoritative):**
-- Wenk, M. (2023). *Development of a System for Computer-Assisted Structure Elucidation of Small Organic Compounds.* PhD Thesis. (`background/wenk-thesis.txt` lines 2069–2268, 4640–4664, 5491–5625) — Complete pyLSD command reference, ibuprofen example, atom exchange feature, ELIM semantics, default heteroatom MULT values.
-- `.planning/PROJECT.md` — v8.0 milestone definition, deferred features, v7.0 post-mortem (statistical 4J abandoned).
-- `.planning/research/FEATURES.md` (v5.0) — Fragment library features; pattern for this document.
-- Memory: v4.0 UAT findings — concrete 4J failure analysis for ibuprofen (three 4J HMBC correlations identified: C4a↔C6, C5a↔C7, with atom indices documented).
-
-**MEDIUM confidence:**
-- Wenk thesis §4.3.1 on atom exchange / multi-file approach: "Casekit and Sherlock already have a test implementation" — not yet in production. Confidence MEDIUM because exact behavior of test implementation is not described in detail.
+- Direct code inspection: `src/lucy_ng/webview/` (app.py, routers/log.py, routers/status.py, static/index.html) — v9.2 architecture confirmed
+- Direct artefact inspection: `data/nmrdata/active-lucy-ng-testprojects/CASE1/analysis/peaks/` — confirmed fields in `carbon_signals.json`, `hmbc.json`, `hsqc.json`, `cosy.json`
+- Direct artefact inspection: CASE1 `iteration_01/compound.lsd` — confirmed constraint inventory JSON block structure and the `=== CONSTRAINT INVENTORY ===` delimiter
+- Design spec: `docs/superpowers/specs/2026-07-02-case-webview-design.md` § Stage 2 — feature scope confirmed
+- Phase 91 context: `.planning/milestones/v9.2-phases/91-api-endpoints-depictions-and-static-frontend/91-CONTEXT.md` — v9.2 decisions locked (D-01 through D-15)
+- NMR display conventions: IUPAC standard practice, domain knowledge — ppm axis reversal, DEPT sign convention, 2D F1/F2 axis assignment (HIGH confidence, stable conventions)
 
 ---
 
-*Feature research for: v8.0 pyLSD Integration and 4J Exploration*
-*Researched: 2026-03-13*
+*Feature research for: v9.3 CASE Web-View Stage 2*
+*Researched: 2026-07-07*

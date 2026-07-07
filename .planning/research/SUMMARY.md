@@ -1,17 +1,19 @@
 # Project Research Summary
 
-**Project:** lucy-ng v8.0 — pyLSD Integration and 4J HMBC Exploration
-**Domain:** Computer-Assisted Structure Elucidation (CASE) — LSD solver extension for 4J HMBC handling
-**Researched:** 2026-03-13
+**Project:** lucy-ng v9.3 — CASE Web-View Stage 2
+**Domain:** FastAPI webview extension — rendered NMR spectra, data tables, formatted log
+**Researched:** 2026-07-07
 **Confidence:** HIGH
+
+---
 
 ## Executive Summary
 
-The v8.0 milestone solves the root cause of the ibuprofen CASE failure (v4.0 UAT): three HMBC correlations through the aromatic ring are 4-bond (4J) couplings, but the LSD solver enforces them as 2-3J, producing wrong ring systems. The solution is pyLSD-based multi-run orchestration with per-correlation extended bond ranges (`HMBC X Y 2 4`) — the solver explores all valid bond distance configurations rather than the agent having to manually decide which correlations to drop. This is the approach used by Sherlock (the only published system to solve this problem), validated by the Wenk thesis with a complete ibuprofen worked example.
+v9.3 adds four self-contained panels to the existing v9.2 CASE run monitor: a markdown-formatted log, peak/correlation data tables, 1D ¹³C stick spectra, and 2D HSQC/HMBC/COSY scatter plots. The key architectural insight — verified against a real CASE1 (ibuprofen) run — is that **all spectra are rendered from the curated peak/correlation JSON files already written to `analysis/peaks/`**, not from raw Bruker FID traces. This means no new path-wiring, no nmrglue in the webview, and no `.run_manifest.json` or `--bruker-dir` machinery. The "dumb server reads `analysis/` files only" boundary from v9.2 is fully preserved.
 
-The recommended architecture builds on top of the existing stack without replacing anything. pyLSD is not a new binary to install — it is a file format superset and a Python multi-run driver. The critical architectural finding is that lucy-ng should implement the multi-run permutation logic directly in Python (`PyLSDOrchestrator` + `SolutionMerger`) rather than calling pyLSD as a subprocess. pyLSD-a8 is not pip-installable, has hardcoded paths, and includes an nmrshiftdb2 ranker that conflicts with lucy-ng's HOSE-based ranking. The LSD binary already supports the `ELIM` command natively; the only new capabilities needed are (1) per-correlation extended HMBC bond range syntax and (2) permutation orchestration over suspect 4J correlations. Total new Python: ~230 lines across two new classes.
+The single new package dependency is `matplotlib>=3.7` (added to the `[webview]` extra). It must be used exclusively via the OO API (`Figure` + `FigureCanvasAgg`, never `pyplot`) with figures closed in `try/finally`, lazy-imported inside `make_router()` per the WV-08 pattern. Every spectra plot requires reversed ppm axes (NMR convention: high ppm left/top) via a shared `_apply_nmr_axes()` helper — this is a silent correctness bug if missed. The markdown log uses a ~50-line hand-rolled DOM renderer (createElement + textContent throughout, never innerHTML), satisfying both the no-CDN constraint and the v9.2 XSS discipline.
 
-The critical risk is repeating the v7.0 failure: spending multiple phases building infrastructure before validating the core hypothesis. The hypothesis — that removing 4J suspect correlations from the LSD constraint set produces solutions containing the correct aromatic ring — must be validated manually on ibuprofen before any code is written. A 30-minute test with the existing LSD binary gates the entire roadmap. The v7.0 post-mortem is explicit on this: approach first, infrastructure second.
+The four phases build in a strictly dependency-justified order: (A) tab framework + formatted log — pure frontend, no new backend; (B) data tables — establishes the peak-JSON router pattern against `analysis/` only; (C) 1D ¹³C stick spectra — introduces matplotlib and the Agg→PNG pipeline; (D) 2D scatter — extends the spectra router for HSQC/HMBC/COSY. Because everything is peak-JSON-based there is no Bruker-path prerequisite phase at all.
 
 ---
 
@@ -19,124 +21,139 @@ The critical risk is repeating the v7.0 failure: spending multiple phases buildi
 
 ### Recommended Stack
 
-No new Python packages are required. The `PyLSDOrchestrator` class (~150 lines) and `SolutionMerger` class (~80 lines) implement the equivalent multi-run behavior directly using the existing `LSDRunner`, which already invokes the LSD binary. The existing HOSE-based ranking pipeline (`lucy lsd rank`) is preserved unchanged and applied to the merged solution pool. pyLSD-a8 should not be installed as a subprocess dependency.
+The stack delta for v9.3 is minimal. One package is added (`matplotlib>=3.7` to `[webview]` extra); all other dependencies (FastAPI, uvicorn, numpy, RDKit) are already declared. matplotlib is system-installed but undeclared in pyproject.toml today — it must be explicitly listed to make spectra rendering reproducible on a clean install.
 
-**Core technologies (all existing):**
-- `LSDRunner` (subprocess): calls LSD binary — extended by `PyLSDOrchestrator`, never replaced
-- `LSDInputGenerator`: LSD file writer — extended with `emit_form()`, `emit_elim()`, extended HMBC bond range support, `; ELIM` annotation parsing
-- `SolutionRanker` (HOSE-based): two-tier ranking (match count primary, MAE secondary) — applied to merged solutions; pyLSD's built-in nmrshiftdb2 ranking explicitly bypassed
-- RDKit (already a dependency): used by `SolutionMerger` for InChI-key deduplication across runs
+**Core technologies:**
 
-**New dependencies:** None.
+- **matplotlib `Figure` + `FigureCanvasAgg`** — server-side PNG spectra rendering. OO API is mandatory (never `pyplot`); `FigureCanvasAgg(fig)` explicitly sets the Agg canvas without touching global backend state; all figures closed in `try/finally`.
+- **`fastapi.responses.Response(content=bytes, media_type="image/png")`** — PNG endpoint pattern, identical to the existing SVG structure endpoint; `StreamingResponse` is unnecessary for in-memory bytes.
+- **`io.BytesIO`** — buffer for `canvas.print_png(buf)`; no temp files, no race conditions.
+- **Vanilla JS tab switcher** — plain CSS show/hide + `data-tab` attributes; no framework, no CDN, ~10 lines.
+- **Hand-rolled markdown→DOM renderer** — ~50 lines; covers the exact subset CASE-PROGRESS.md uses (## headings, **bold**, `code`, pipe-tables, code fences, --- hr); all text via `textContent`, zero innerHTML of server content.
+
+**What NOT to add:** `matplotlib.pyplot` (not thread-safe in a server), `matplotlib.use('Agg')` as a global call (fragile after-import; use explicit `FigureCanvasAgg` instead), `marked.js` via CDN (violates no-CDN constraint), `marked.js` bundled (unnecessary for the markdown subset), Plotly/Bokeh/D3 (require CDN or build step), SVG format for spectra (2D scatter SVGs can exceed 1 MB; PNG at 800×500 dpi=100 is 50–150 KB), `pandas` (not needed; JSON is flat).
 
 ### Expected Features
 
-**Must have (v8.0 core — table stakes):**
-- `LSDInputGenerator` extension: emit `FORM C13 H18 O2`, `PIEC 1`, `ELIM N M`, `SHIX atom shift`, `SHIH atom shift`, extended `HMBC X Y 2 4` bond range — without this, nothing else works
-- `PyLSDOrchestrator`: parse `; ELIM`-annotated HMBC lines, generate permutation files (include/exclude each suspect correlation), run LSD via `LSDRunner` once per permutation, collect `.sol` files — core new machinery
-- `SolutionMerger`: deduplicate SMILES from multiple runs using RDKit InChI keys, write `merged.smi` and `run_report.json` — required to prevent duplicate structures distorting ranking
-- `lucy pylsd run` CLI command: thin wrapper over `PyLSDOrchestrator` — agent-facing interface for multi-run mode
-- Constraint inventory v2 schema: add `pylsd_mode`, `elim_value`, `elim_annotated` fields to JSON block — devils-advocate verification gate
-- lsd-engineer agent skill update: full pyLSD command reference (FORM, PIEC, ELIM semantics, `HMBC X Y 2 4` syntax, `; ELIM` annotation rule, constraint inventory v2) — highest-leverage single change
-- case.md orchestrator skill update: route to `lucy pylsd run` when `pylsd_mode: true`, use `run_report.json` in CASE-PROGRESS.md
-- UAT: ibuprofen CASE with pyLSD — only milestone-complete criterion that matters
+**Must have — v9.3 core (P1):**
+- Formatted run log — renders CASE-PROGRESS.md markdown structure; pure frontend change, zero new endpoints
+- Tab navigation — prerequisite for all panels; pure CSS/JS
+- ¹³C peak list table — answers "did peak picking work?"; reads `analysis/peaks/carbon_signals.json`
+- HMBC correlation table with flag column — core CASE review artefact; reads `analysis/peaks/hmbc.json`; flag must be colour-coded (green/amber/red)
+- ¹³C stick spectrum — visual signal summary with multiplicity colouring; matplotlib from `carbon_signals.json`
+- HSQC scatter — C–H assignment check; reads `analysis/peaks/hsqc.json`
+- HMBC scatter with flag colouring — shows which cross-peaks drove LSD; reads `analysis/peaks/hmbc.json`
+- LSD constraint inventory summary — closes the solver-input loop; reads `analysis/iteration_NN/compound.lsd` header JSON block
 
-**Should have (v8.x after ibuprofen validated):**
-- `PROP` constraints from neighbourhood detection — translate `lucy detect neighbours` JSON output into `LIST`/`PROP` LSD constraints (currently advisory-only)
-- `HETE`/`PROP` for heteroatom isolation — forbid heteroatom-heteroatom bonds by default
-- Atom exchange for grouped signals — verify `HMBC (C1 C2) H` grouped syntax works correctly post-migration
-- Multi-file 4J exploration (exhaustive 2^K subsets) — sequential runs for K≤3, cap at 3 suspects
+**Should have — v9.3 follow-on (P2):**
+- COSY scatter — completes the 2D connectivity picture; reads `analysis/peaks/cosy.json`; low incremental effort once HSQC/HMBC done
+- DEPT sub-tab — signed bar chart (CH/CH3 positive, CH2 negative); conditional on `multiplicity_edited` flag in `hsqc.json`
+- HSQC correlation table — tabular C–H assignments; defer until scatter confirmed sufficient
 
-**Defer to v9+:**
-- Multi-fragment injection + pyLSD combined
-- Multi-compound UAT (six test compounds with 4J risk)
-- Parallel multi-run subprocess pool (only needed for K>4)
-- pyLSD binary invocation as alternative execution path
+**Defer to v9.4+ (P3):**
+- Per-iteration constraint diff — HIGH complexity multi-file diff; useful only for deep debug
+- Full ¹H spectrum trace from raw Bruker FID — requires nmrglue + path wiring; scatter from HSQC proton_ppm values is sufficient
+- Full 2D contour from raw Bruker data — same issue; peak scatter is sufficient
+- Interactive zoom/pan — requires JS charting library; out of scope for the inspector
+- SSE/WebSocket live push — design spec deferred; 3 s polling is adequate for 20–120 min runs
+
+**Anti-features (do not add):**
+- Raw COSY peak list table — scatter covers the use case; 200-row ¹H–¹H table adds clutter
+- Any write path (editable peak lists, constraint editor) — monitor never mutates the run
+- `marked.js` via CDN — violates no-CDN constraint
+- `innerHTML = convertedMarkdown(serverContent)` — reintroduces XSS; SMILES strings in CASE-PROGRESS.md may contain `<` characters
+
+**One open product decision to confirm in requirements:**
+Peak-based stick/scatter plots (recommended: simpler, uses curated elucidation data, stays within `analysis/` boundary) vs. real processed spectrum traces from Bruker FIDs (out of scope for v9.3). Flag for explicit confirmation at requirements step.
 
 ### Architecture Approach
 
-The architecture is additive: `PyLSDOrchestrator` wraps `LSDRunner` (calling it N times per permutation), `SolutionMerger` deduplicates SMILES by InChI key, and `lucy lsd rank` operates on `merged.smi` unchanged. The `; ELIM` comment in lsd-engineer-written files is the contract between agent reasoning and Python orchestration: the agent annotates which HMBC lines are suspect, Python generates and runs the permutations. This division preserves chemical reasoning in the agent layer and combinatorial execution in the Python layer. Confirmed by examining a real project pyLSD file (`C13H6O8_pyLSD_Michael.lsd`) showing `ELIM 4 4` and `HMBC X Y 3 4 ; ELIM` as the actual format.
+The v9.2 architecture is extended, never restructured. `create_app(analysis_dir)` gains two new router inclusions (`spectra.py`, `tables.py`) and one new static file route (`/webview.js`). The existing four routers are unchanged. `index.html` is split into `static/index.html` + `static/webview.js` (+ optional css) for maintainability — both files are covered by the existing `src/lucy_ng/webview/static/*` hatch artifact glob, but this must be verified with a packaging test.
 
 **Major components:**
-1. `LSDInputGenerator` (extended in `src/lucy_ng/lsd/generator.py`) — adds `emit_form()`, `emit_elim()`, extended HMBC bond range; all existing LSD output unchanged; backward compatible
-2. `PyLSDOrchestrator` (new, `src/lucy_ng/lsd/pylsd_orchestrator.py`) — permutation file generation, N-fold `LSDRunner` invocation, solution collection, `run_report.json` output
-3. `SolutionMerger` (new, `src/lucy_ng/lsd/solution_merger.py`) — InChI-key deduplication, `merged.smi` writer, fallback to SMILES comparison on InChI failure
-4. `lucy pylsd run` CLI (new subcommand in `src/lucy_ng/cli/lsd.py`) — thin agent interface, preserves `lucy lsd run` unchanged
-5. lsd-engineer agent skill (update) — writes constraint inventory v2 with pyLSD fields, annotates suspect HMBC with `; ELIM`
-6. case.md orchestrator skill (update) — routes to `lucy pylsd run` when `pylsd_mode: true`
+
+1. **`routers/tables.py` (NEW)** — reads `analysis/peaks/carbon_signals.json`, `analysis/peaks/hmbc.json`, `analysis/peaks/hsqc.json`, `analysis/peaks/cosy.json`, and `analysis/iteration_NN/compound.lsd` header JSON block; returns `{"state", "columns", "rows"}` response shape; all imports lazy inside `make_router()` per WV-08.
+2. **`routers/spectra.py` (NEW)** — reads same peak JSON files; renders matplotlib PNG via `Figure` + `FigureCanvasAgg`; returns `Response(content=bytes, media_type="image/png")`; figures closed in `try/finally`; all matplotlib imports lazy inside `make_router()`.
+3. **`static/webview.js` (NEW)** — extracted + extended JS: tab switching, markdown→DOM renderer, table rendering, spectrum `<img>` tag management; no build step, served via explicit `FileResponse` route in `app.py`.
+4. **`static/index.html` (MODIFIED)** — tab layout shell; references `/webview.js`; log panel changed from `<pre>` to `<div>` for block-level markdown elements.
+5. **`pyproject.toml` (MODIFIED)** — `matplotlib>=3.7` added to `[webview]` extra.
+
+**Key pattern — shared `_apply_nmr_axes(ax, xnuc, ynuc)` helper:**
+Called by every spectrum renderer to enforce NMR convention (high ppm left/top). Encodes `ax.invert_xaxis()` / `ax.invert_yaxis()` logic in one place. Skipping this is the primary silent correctness risk.
+
+**Data sources confirmed from real CASE1 run (`analysis/peaks/`):**
+`carbon_signals.json` (ppm, mult, nC, assignment, formula, dbe, solvent), `hsqc.json`, `hmbc.json`, `hmbc_correlations.json`, `cosy.json`, plus `iteration_NN/compound.lsd` containing a JSON constraint inventory block in the file header comments.
 
 ### Critical Pitfalls
 
-1. **ELIM does not extend bond ranges — it drops correlations entirely.** `ELIM N M` allows LSD to discard up to N correlations entirely; it does NOT let correlations satisfy 4J paths. Use `HMBC X Y 2 4` (per-correlation explicit bond range) for 4J handling. Using ELIM for 4J silently drops genuine 4J connectivity, producing wrong structures that pass all checks. This is the single most dangerous semantic confusion in the entire v8.0 design.
+1. **matplotlib pyplot thread-safety** — `import matplotlib.pyplot as plt` and any `plt.*` calls share global state across FastAPI worker threads. Use the OO API exclusively: `from matplotlib.figure import Figure; from matplotlib.backends.backend_agg import FigureCanvasAgg`. Never import `matplotlib.pyplot` in any webview module. Figures closed in `try/finally`. Add an import-safety test alongside the existing `test_main_importable_without_fastapi`.
 
-2. **FORM/MULT mismatch causes zero solutions with no diagnostic.** If `FORM C13H18O2` is present but MULT defines 12 carbons (off-by-one typo), pyLSD generates zero LSD files — LSD is never called. The existing zero-solution diagnostic does not apply. Requires FORM/MULT atom-count consistency validation as a pre-run gate in the `PyLSDOrchestrator` and as a devils-advocate checklist item.
+2. **Reversed ppm axes are a silent NMR correctness bug** — matplotlib default auto-scales left→right (low ppm on left), which is scientifically wrong. All spectra renderers must call `ax.invert_xaxis()` and/or `ax.invert_yaxis()` via the shared `_apply_nmr_axes()` helper. Acceptance criterion on CASE1 ibuprofen: carbonyl at ~181 ppm must appear on the far LEFT of the ¹³C stick chart. Test: assert `ax.get_xlim()[0] > ax.get_xlim()[1]`.
 
-3. **Combinatorial explosion from ambiguous MULT hybridisation.** Without explicit sp2/sp3 in every MULT line, pyLSD enumerates all hybridisation combinations — 56,829 LSD files in the documented Caripyrin case (15+ hours). Always specify hybridisation explicitly; abort if >50 LSD files are generated.
+3. **Markdown innerHTML reintroduces v9.2 XSS** — CASE-PROGRESS.md contains run-derived text including SMILES strings (CXSMILES can contain `<`). Any `innerHTML = convertedHtml` reintroduces injection risk. Mandatory: every text node from the server set via `textContent`, never `innerHTML`. Acceptance criterion: inject `# <img src=x onerror=alert(1)>` into mock CASE-PROGRESS.md and confirm it renders as literal text.
 
-4. **4J combination space grows exponentially without a cap.** For N suspect correlations, exhaustive exploration is 2^N runs. Cap at 3 suspects per run (max 8 combinations). Use sequential strategy (add back one at a time) for N>3. Abort after 8 runs without solution and escalate to diagnostic agent.
+4. **hatch artifacts must cover all new static files** — The existing `artifacts = ["src/lucy_ng/webview/static/*"]` glob is flat (does not recurse). Adding `webview.js` is covered; adding any subdirectory requires a separate entry. After each phase that adds static files, verify with a packaging test. Symptom of failure: 404 in production that does not reproduce in development.
 
-5. **Build-before-validate failure (v7.0 recurrence).** v7.0 spent 5 phases building infrastructure before discovering 100% false positive rate at calibration. Validate the core hypothesis manually on ibuprofen (run LSD with 3 suspect correlations removed — does it produce an aromatic ring solution?) before writing any v8.0 code. This is Phase 1 of the roadmap.
+5. **matplotlib not in `[webview]` extra yet** — system-installed but undeclared. A clean `pip install lucy-ng[webview]` will fail at the first spectra request with `ModuleNotFoundError`. Must be added at the start of Phase C.
 
 ---
 
 ## Implications for Roadmap
 
-### Phase 1: Manual Hypothesis Validation
-**Rationale:** The entire v8.0 approach rests on one empirical claim: removing the 3 suspect 4J HMBC correlations (atoms 4↔8, 6↔9, 8↔4) from the ibuprofen LSD file produces solutions that include an aromatic ring. This must be confirmed before any code is written. The v7.0 post-mortem mandates approach validation before infrastructure.
-**Delivers:** Go/no-go gate. A `validation_result.md` documenting: which correlations were removed, solution count, aromatic ring presence in top-ranked solution.
-**Avoids:** Pitfall 5 (build-before-validate), entire v7.0 failure mode.
-**No code required.** 30-minute manual test using existing `lucy lsd run` and `lucy lsd rank`.
+Based on research, suggested phase structure:
 
-### Phase 2: LSDInputGenerator Extensions (Wave 1, parallel-safe)
-**Rationale:** Everything downstream depends on the file format being correct. This phase adds `FORM`, `ELIM N M`, `SHIX`, `SHIH`, and extended `HMBC X Y min max` emission as additive methods. No existing behavior changes. FORM/MULT consistency validator prevents Pitfall 2.
-**Delivers:** `emit_form()`, `emit_elim()`, `parse_elim_annotations()` static methods; extended HMBC bond range field in `LSDCorrelation` model; `validate_pylsd_input()` pre-run consistency check. Unit tests for each.
-**Avoids:** Pitfall 1 (per-correlation bond range is the documented 4J mechanism, not ELIM), Pitfall 2 (consistency validator).
+### Phase A: Formatted Log + Tab Framework
 
-### Phase 3: PyLSDOrchestrator and SolutionMerger (Wave 1, parallel-safe)
-**Rationale:** Core new Python machinery, independent of CLI and agent updates. Builds on Phase 2's annotation-parsing. No agent changes needed for this phase.
-**Delivers:** `PyLSDOrchestrator` (~150 lines) generating permutation .lsd files and running `LSDRunner` N times; `SolutionMerger` (~80 lines) with InChI-key deduplication; `run_report.json` format. Unit tests on mock LSD inputs.
-**Uses:** `LSDRunner` (unchanged), RDKit InChI (existing dependency).
-**Avoids:** Pitfall 3 (generated-file count abort guard: >50 files = abort), Pitfall 4 (K≤3 cap built into orchestrator), Pitfall 7 (pyLSD ranking bypassed — solutions always go through `lucy lsd rank`).
+**Rationale:** Pure frontend, no new backend. Ships first to establish the tab dock-in that all subsequent phases populate. Zero risk of breaking existing backend behaviour. Extracts `index.html` JS into `webview.js`, paying a maintainability dividend immediately.
 
-### Phase 4: Constraint Inventory v2 Schema (Wave 1, parallel-safe)
-**Rationale:** Agent-facing metadata schema — independent of Python runtime. Must be defined before agent skill updates reference it. Devils-advocate verification gates on `pylsd_mode`, `elim_value`, `elim_annotated` fields.
-**Delivers:** Updated constraint inventory JSON schema documented in agent skill files; devils-advocate checklist extended with ELIM/FORM/MULT validation rules; explicit semantic test: "ELIM is for artifact correlations, `HMBC X Y 2 4` is for 4J."
-**Avoids:** Pitfall 7 (DA verifies `lucy lsd rank` is used post-merge, not pyLSD's built-in ranking).
+**Delivers:** Working tabbed layout (Candidates | Log | 1D Spectra | 2D Spectra | Tables); markdown-formatted CASE-PROGRESS.md log; `webview.js` established as the frontend JS home.
 
-### Phase 5: CLI Command and Regression Suite (Wave 2, depends on 2+3)
-**Rationale:** `lucy pylsd run` is the agent-facing interface; it depends on Phase 2 (file format) and Phase 3 (orchestrator). Regression suite must run before agent integration to catch any behavioral regressions on existing test cases.
-**Delivers:** `lucy pylsd run <file>` CLI subcommand; regression test: `ibuprofen.lsd` through pyLSD multi-run mode produces same solution set as direct `lucy lsd run` (before 4J-removal changes); `lucy lsd check` extended to report multi-run availability.
-**Avoids:** Pitfall 5 (migration regression as blocking acceptance criterion). Also validates FORM command is harmlessly handled by LSD binary (MEDIUM confidence gap resolved here).
+**Implements:** Tab switching (vanilla JS, ~10 lines), markdown→DOM renderer (~50 lines, textContent-only), `<pre>` → `<div>` for log panel, `webview.js` served via `FileResponse` route in `app.py`.
 
-### Phase 6: Agent Skill Updates (Wave 2, depends on 4+5)
-**Rationale:** lsd-engineer and case.md orchestrator skill updates come after Python infrastructure and CLI are validated — direct application of the v7.0 lesson. Agent updates for a non-viable approach waste skill-writing effort.
-**Delivers:** lsd-engineer skill with full pyLSD command reference (FORM, PIEC, ELIM semantics, `HMBC X Y 2 4` syntax, `; ELIM` annotation rule, constraint inventory v2 fields, explicit ELIM-vs-bond-range disambiguation); case.md orchestrator routing rule for `pylsd_mode: true`; solution-analyst skill updated to reference `run_report.json`.
-**Avoids:** Pitfall 1 (explicit ELIM distinction in skill), Pitfall 8 (deferral-only-after-zero-solution rule mandatory in skill).
+**Avoids:** XSS via innerHTML (Pitfall 3 — textContent throughout); CDN dependency (no CDN).
 
-### Phase 7: Ibuprofen CASE UAT (Wave 3, depends on 6)
-**Rationale:** End-to-end validation that the full stack (Python infrastructure + agent skills + CLI) correctly solves the ibuprofen case. Milestone-complete criterion.
-**Delivers:** CASE run producing ibuprofen as top-ranked solution with aromatic ring verified. CASE-PROGRESS.md documenting which permutation yielded the solution. `run_report.json` showing solution distribution across permutations.
-**Gate:** Mark v8.0 complete only when ibuprofen SMILES with aromatic ring appears at rank #1.
+### Phase B: Data Tables
+
+**Rationale:** Data sources are entirely within `analysis/` (already accessible to the server). No new package dependencies; no matplotlib yet. Establishes the `tables.py` router and `{"state", "columns", "rows"}` response shape before the more complex spectra router.
+
+**Delivers:** Tables tab with ¹³C peak list, HMBC correlation table (flag colour-coded), LSD constraint inventory summary.
+
+**Implements:** `routers/tables.py` reading `analysis/peaks/carbon_signals.json`, `analysis/peaks/hmbc.json`, `analysis/iteration_NN/compound.lsd` header JSON block. New endpoints `GET /api/peaks/c13`, `GET /api/peaks/hmbc`, `GET /api/constraints`. All imports lazy inside `make_router()` (WV-08).
+
+### Phase C: 1D ¹³C Stick Spectra
+
+**Rationale:** Introduces matplotlib and the Agg→PNG pipeline. 1D stick chart is simpler than 2D scatter — validates the full render chain before Phase D adds 2D complexity. This is where the two most critical correctness requirements land: matplotlib OO API and reversed ppm axes.
+
+**Delivers:** 1D Spectra tab with ¹³C stick spectrum (bars coloured by multiplicity), reversed ppm axis (high ppm left), rendered as PNG from `analysis/peaks/carbon_signals.json`.
+
+**Implements:** `routers/spectra.py` with lazy matplotlib imports (`Figure` + `FigureCanvasAgg`, never `pyplot`); shared `_apply_nmr_axes()` helper; `try/finally` figure close; `GET /api/spectra/c13.png`; matplotlib added to `[webview]` extra; import-safety test added.
+
+**Avoids:** matplotlib pyplot thread-safety (Pitfall 1 — OO API only); reversed ppm axes (Pitfall 2 — shared helper); matplotlib not in extra (Pitfall 5); hatch artifacts regression (Pitfall 4 — packaging test).
+
+### Phase D: 2D HSQC/HMBC/COSY Scatter
+
+**Rationale:** Purely additive to Phase C. Router, tab framework, and matplotlib Agg pipeline are already in place. Only new logic is 2D-specific: two-axis ppm labelling, flag colouring for HMBC, diagonal for COSY.
+
+**Delivers:** 2D Spectra tab with HSQC scatter (F2=¹H x reversed, F1=¹³C y reversed), HMBC scatter (flag-coloured), COSY scatter (square, diagonal, both ¹H axes reversed). All PNG from `analysis/peaks/*.json`.
+
+**Implements:** Extends `spectra.py` with `GET /api/spectra/hsqc.png`, `GET /api/spectra/hmbc.png`, `GET /api/spectra/cosy.png`; reuses `_apply_nmr_axes()` for both axes; mtime-keyed per-router PNG cache to avoid re-rendering on every 3-second poll.
+
+**Avoids:** Axis direction on both dimensions (Pitfall 2); memory growth from un-cached 2D re-renders.
 
 ### Phase Ordering Rationale
 
-- Phase 1 before all others: hypothesis validation gates the entire approach. If the manual test fails, the roadmap changes before a single line of code is written.
-- Phases 2, 3, 4 run in parallel (Wave 1): generator extension, orchestrator/merger, and constraint inventory schema have no dependencies on each other.
-- Phase 5 depends on Phases 2 and 3: CLI requires both file format and orchestrator.
-- Phase 6 depends on Phases 4 and 5: agents need both the schema and the CLI command to exist and be validated.
-- Phase 7 depends on Phase 6: UAT requires all agent updates complete.
+- **A before B/C/D:** Tab framework is prerequisite for all panels; frontend-only phase ships with zero backend risk.
+- **B before C:** Establishes the `analysis/` peak-JSON router pattern with simpler (no-matplotlib) logic; any router bug surfaces cheaply before the more complex spectra router is added.
+- **C before D:** 1D stick validates the Agg→PNG pipeline and axis inversion before 2D (which adds two-axis complexity and caching concerns).
+- **No Bruker-path prerequisite phase:** All spectra derive from `analysis/peaks/*.json` — the entire four-phase sequence touches `analysis/` only. No path-wiring step needed.
 
 ### Research Flags
 
-Phases with well-documented patterns (skip research-phase):
-- **Phase 2 (LSDInputGenerator extension):** LSD manual and Wenk thesis provide exact command syntax. FORM, ELIM, SHIX semantics are fully specified with command grammar. No additional research needed.
-- **Phase 3 (PyLSDOrchestrator):** Design is clear; implementation is straightforward Python (permutation generation via `itertools.combinations`, subprocess calls via existing `LSDRunner`, InChI deduplication via RDKit). All APIs confirmed.
-- **Phase 4 (Constraint inventory schema):** Additive to existing JSON schema. No research needed.
-
-Phases that need targeted validation during execution:
-- **Phase 1 (Hypothesis validation):** The result of this test is unknown. If ibuprofen does NOT produce an aromatic ring solution after 4J removal, deeper diagnosis is needed before continuing. This is the gating question of the entire milestone.
-- **Phase 5 (Regression suite):** Whether `FORM` is harmlessly ignored by the LSD binary (MEDIUM confidence) must be confirmed in this phase before proceeding to agent integration. If LSD rejects FORM as an unknown command, the file format design changes.
-- **Phase 7 (UAT):** Whether the devils-advocate ELIM-vs-bond-range verification correctly catches agent confusion in practice is untested. May require one iteration of skill refinement.
+**All phases use standard patterns — skip research phase for all four:**
+- Phase A — tab switching and DOM-based markdown rendering are fully specified; no unknowns.
+- Phase B — JSON file reading + table rendering; established FastAPI router pattern.
+- Phase C — matplotlib OO API is stable and well-documented; all correctness requirements specified.
+- Phase D — purely additive to Phase C; all patterns established.
 
 ---
 
@@ -144,44 +161,42 @@ Phases that need targeted validation during execution:
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | No new dependencies. pyLSD architecture confirmed by GitHub repo, official docs, Wenk thesis, and real project email archive example file. LSD ELIM semantics confirmed by official manual. |
-| Features | HIGH | MVP feature set derived directly from Wenk thesis §4.3 with complete ibuprofen pyLSD example. Sherlock is the reference implementation. All command syntax fully documented. |
-| Architecture | HIGH | Examined existing `runner.py`, `generator.py`, `models.py`. New component sizes estimated from code review (~150 + ~80 lines). Real pyLSD file format confirmed by project email archive example (`C13H6O8_pyLSD_Michael.lsd`). `; ELIM` annotation already appears informally in `iteration_07/compound.lsd`. |
-| Pitfalls | HIGH | ELIM semantics from LSD manual (authoritative). Combinatorial explosion figures from Wenk thesis (Caripyrin example: 56,829 LSD files). v7.0 failure documented in post-mortem. SMILES deduplication issue from confirmed RDKit InChI canonical behavior. |
+| Stack | HIGH | Verified against live codebase and real CASE1 run artefacts; matplotlib version pinned from system install; reconciliation directives resolve all divergences |
+| Features | HIGH | Data sources confirmed from real `analysis/peaks/` artefacts; feature scope from v9.2 design spec; anti-features clearly motivated |
+| Architecture | HIGH | All patterns derived from direct inspection of existing webview code; reconciliation resolves Bruker-path divergence authoritatively |
+| Pitfalls | HIGH | All four critical pitfalls grounded in codebase inspection and v9.2 post-mortem; matplotlib thread-safety and axis convention well-documented |
 
-**Overall confidence:** HIGH
+**Overall confidence: HIGH**
 
 ### Gaps to Address
 
-- **FORM command tolerated by LSD binary (MEDIUM confidence):** Documented as pyLSD-only, but whether `lsd` ignores unknown commands gracefully is not confirmed from official LSD docs. Must verify in Phase 5 regression before agents use FORM unconditionally. If LSD rejects FORM, it must be omitted from files passed to `LSDRunner` directly (only used in files passed to pyLSD mode).
+- **Peak-based vs Bruker-FID spectra (product decision — confirm in requirements):** This summary recommends peak-based stick/scatter plots (simpler, stays within `analysis/` boundary). Confirm explicitly before Phase C begins.
 
-- **Permutation count in practice for aromatic natural products:** Ibuprofen has 3-4 suspect 4J correlations (8-16 permutations). Larger aromatic natural products may flag 6+ suspects. The K≤3 cap in `PyLSDOrchestrator` and the sequential (not exhaustive) fallback strategy handle this architecturally, but the appropriate cap value should be reviewed after multi-compound UAT in v8.x.
+- **`compound.lsd` header JSON block delimiter:** FEATURES.md and ARCHITECTURE.md describe the format differently (`=== CONSTRAINT INVENTORY ===` vs `; {` comment prefix). The `tables.py` implementation must verify the exact format against a real CASE1 `iteration_NN/compound.lsd` before writing the parser. One-minute check, not a research task.
 
-- **SHIX interaction with python-level multi-run (no pyLSD):** The `PyLSDOrchestrator` calls LSD directly (not pyLSD), so SHIX lines in the LSD file affect only LSD's internal atom-equivalence detection, not pyLSD's ranking (which is not used). This is intentional but must be documented explicitly in the lsd-engineer skill to prevent confusion about why SHIX appears in files that don't go through pyLSD's ranking algorithm.
+- **DEPT sub-tab `multiplicity_edited` field:** Field described but not confirmed against real CASE1 artefact. Treat DEPT as a P2 deliverable; verify field presence before implementing.
 
 ---
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- `background/wenk-thesis.txt` lines 2069–2268, 4640–4664, 5491–5625 — Complete pyLSD command reference, ibuprofen example with exact atom numbering, ELIM semantics, Caripyrin combinatorial explosion example (56,829 LSD files), default heteroatom MULT values (Table A16), Sherlock's Java ranking explicitly disabled in favour of HOSE
-- [LSD Manual (nuzillard.github.io)](https://nuzillard.github.io/LSD/MANUAL_ENG.html) — ELIM `P1 P2` semantics ("eliminate up to P1 correlations through up to P2 bonds" — eliminates, does NOT extend), SHIX/SHIH native commands, DUPL semantics
-- [PyLSD official site](https://nuzillard.github.io/PyLSD/) and [Installation](https://nuzillard.github.io/PyLSD/INSTALL.html) — Python 3 requirement from a8, Java optional (ranking only), three-directory structure, `python lsd.py FILE` invocation
-- [GitHub: nuzillard/PyLSD](https://github.com/nuzillard/PyLSD) — confirmed distributions (pylsd-linux-a8.tar.gz, pylsd-windows-a8.zip), no 2024/2025 releases visible (a8 is latest)
-- `data/nmrdata/active-lucy-ng-testprojects/CASE1/analysis/iteration_07/compound.lsd` — confirmed agents already write `; ELIM` annotations informally
-- `src/lucy_ng/lsd/runner.py`, `generator.py`, `models.py` — existing component boundaries confirmed by direct code inspection
+
+- Direct artefact inspection: `data/nmrdata/active-lucy-ng-testprojects/CASE1/analysis/peaks/` — confirmed `carbon_signals.json`, `hsqc.json`, `hmbc.json`, `hmbc_correlations.json`, `cosy.json` and their field schemas
+- Direct code inspection: `src/lucy_ng/webview/` (app.py, routers/, static/index.html, server.py, state.py) — v9.2 architecture and WV-08 pattern confirmed
+- Direct code inspection: `src/lucy_ng/readers/bruker.py` — `Spectrum1D`/`Spectrum2D` fields, ppm_scale ordering
+- Direct code inspection: `pyproject.toml` — `[webview]` extra (fastapi + uvicorn only; matplotlib absent); hatch `artifacts = ["src/lucy_ng/webview/static/*"]`
+- Design spec: `docs/superpowers/specs/2026-07-02-case-webview-design.md` — Stage 2 scope, "dumb server" boundary, no-CDN constraint
+- Phase 91 context: `.planning/milestones/v9.2-phases/91-api-endpoints-depictions-and-static-frontend/91-CONTEXT.md` — WV-01 through WV-08 decisions locked
+- Orchestrator reconciliation directives — verified real CASE1 run artefact locations and authoritative resolutions of researcher divergences
 
 ### Secondary (MEDIUM confidence)
-- Real pyLSD file `/Users/steinbeck/Dropbox/Private/Mail/.../C13H6O8_pyLSD_Michael.lsd` (project email archive) — confirmed `ELIM 4 4` and `HMBC X Y 3 4 ; ELIM` annotation pattern as actual usage
-- [Sherlock PMC paper (PMC9920390)](https://pmc.ncbi.nlm.nih.gov/articles/PMC9920390/) — pyLSD as primary solver, built-in ranking disabled in favour of HOSE prediction
-- [WebCocon 4J paper (PMC8398166)](https://pmc.ncbi.nlm.nih.gov/articles/PMC8398166/) — 4J-Flag semantics, 1000x runtime explosion risk for uncapped 4J exploration
-- [PyLSD HISTORY.html](https://nuzillard.github.io/PyLSD/HISTORY.html) — a5 bug: two-letter atomic symbols (Cl, Br) not accepted in MULT
 
-### Tertiary (project post-mortem)
-- `.planning/milestones/v7.0-ROADMAP.md` — v7.0 failure (100% false positive rate, statistical 4J abandoned after 5 phases of infrastructure)
-- `.planning/PROJECT.md` — v4.0 UAT findings (three 4J correlations identified: C4a↔C6, C5a↔C7, exact atom indices documented)
+- matplotlib official docs — `Figure` + `FigureCanvasAgg` OO API for headless server rendering; thread-safety of sync route handlers
+- FastAPI docs — sync `def` route handlers dispatched to thread-pool executor; `async def` blocks event loop if sync compute inside
+- IUPAC NMR display conventions — ppm axis reversal (high downfield left), DEPT sign convention, 2D F1/F2 axis assignment
 
 ---
-*Research completed: 2026-03-13*
+
+*Research completed: 2026-07-07*
 *Ready for roadmap: yes*
-*Next step: gsd-roadmapper agent uses this SUMMARY.md to structure v8.0 milestone roadmap*

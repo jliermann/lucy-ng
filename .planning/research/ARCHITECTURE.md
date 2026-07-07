@@ -1,425 +1,479 @@
-# Architecture Research: pyLSD Integration
+# Architecture Research — v9.3 CASE Web-View Stage 2
 
-**Domain:** pyLSD integration into existing lucy-ng CASE pipeline (v8.0)
-**Researched:** 2026-03-13
-**Confidence:** HIGH (existing codebase examined in full, real pyLSD file from project email archive examined, pyLSD official docs fetched, LSD tutorial PDF located)
-
----
-
-## Executive Summary
-
-pyLSD is not a replacement for LSD — it is a Python driver that calls LSD multiple times. Lucy-ng already calls LSD once per iteration via `LSDRunner`. The v8.0 integration replaces that single call with a pyLSD-style multi-run: one call per HMBC correlation permutation where suspect 4J correlations are toggled on/off. The result is a merged SMILES pool ranked by the existing `SolutionRanker`.
-
-The key architectural finding from examining a real pyLSD file (`C13H6O8_pyLSD_Michael.lsd`) is that pyLSD is not a separate solver — it is a file format extension plus a Python orchestrator. The LSD binary does the actual solving. Lucy-ng already uses the LSD binary directly and already has `LSDRunner`. The v8.0 work therefore splits into three clean layers:
-
-1. **File format extension** — add `FORM`, `ELIM`, `SHIX` support to `LSDInputGenerator` and the constraint inventory (agent-side changes are minimal — lsd-engineer adds `ELIM N N` when flagging 4J correlations).
-
-2. **Multi-run orchestration in Python** — new `PyLSDOrchestrator` class in `src/lucy_ng/lsd/` that takes a base LSD file, a list of suspect HMBC lines, and runs LSD once per permutation, collecting all solutions.
-
-3. **Solution deduplication** — new `SolutionMerger` that deduplicates SMILES across runs before passing to the existing `SolutionRanker`.
-
-The agent team changes are contained: lsd-engineer learns to annotate suspect HMBC correlations with `; ELIM` comments (already practiced informally in iteration_07 file) and optionally writes `ELIM N N`. The orchestrator skill learns to call `lucy pylsd run` instead of `lucy lsd run`. No other agent changes are needed.
+**Domain:** FastAPI webview extension — rendered spectra, data tables, formatted log
+**Researched:** 2026-07-07
+**Confidence:** HIGH — all claims derived from direct inspection of the live codebase
 
 ---
 
-## System Overview
+## Standard Architecture
+
+### System Overview
 
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                      CASE Agent Workflow (unchanged)                     │
-│  ┌──────────────┐   ┌────────────────┐   ┌──────────────────────────┐   │
-│  │ nmr-chemist  │   │  lsd-engineer  │   │    solution-analyst       │   │
-│  │ flags 4J     │   │ writes .lsd    │   │   ranks+verifies          │   │
-│  │ correlations │   │ adds ELIM N N  │   │   aromatic ring check     │   │
-│  └──────┬───────┘   └───────┬────────┘   └───────────┬──────────────┘   │
-│         │  4J flag[]        │  compound.lsd           │ ranked SMILES     │
-└─────────┼───────────────────┼─────────────────────────┼──────────────────┘
-          │                   │                         │
-┌─────────┼───────────────────┼─────────────────────────┼──────────────────┐
-│         │      CLI Layer    │                         │                   │
-│         │   lucy pylsd run  ▼                         │                   │
-│         │   ┌──────────────────────────────────────┐  │                   │
-│         │   │        PyLSDOrchestrator              │  │                   │
-│         │   │  - parse ELIM lines from .lsd        │  │                   │
-│         │   │  - generate N permutation files      │  │                   │
-│         │   │  - call LSDRunner N times            │  │                   │
-│         │   │  - collect .sol files                │  │                   │
-│         │   │  - call outlsd N times               │  │                   │
-│         │   └───────────┬──────────────────────────┘  │                   │
-│         │               │  N * .sol files              │                   │
-│         │   ┌───────────▼──────────────────────────┐  │                   │
-│         │   │        SolutionMerger                 │  │                   │
-│         │   │  - deduplicate SMILES (InChI key)    │  │                   │
-│         │   │  - write merged.smi                  │  │                   │
-│         │   └───────────┬──────────────────────────┘  │                   │
-│         │               │  merged.smi                  │                   │
-│         │   ┌───────────▼──────────────────────────┐  │                   │
-│         └───►  lucy lsd rank merged.smi --shifts    ├──┘                   │
-│               │        (unchanged)                  │                      │
-│               └────────────────────────────────────┘                      │
-├────────────────────────────────────────────────────────────────────────────┤
-│                     Solver Layer (unchanged)                               │
-│  ┌───────────────┐   ┌────────────┐   ┌────────────┐                      │
-│  │  LSDRunner    │   │  LSD binary│   │   outlsd   │                      │
-│  │  (subprocess) │──►│  (solver)  │──►│  (SMILES)  │                      │
-│  └───────────────┘   └────────────┘   └────────────┘                      │
-└────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│  Browser (vanilla JS, no build step)                              │
+│  ┌──────────────────────────────────────────────────────────┐    │
+│  │ Tab bar: Candidates | Log | 1D Spectra | 2D Spectra | Tables │
+│  │ static/index.html  (HTML + CSS)                          │    │
+│  │ static/webview.js  (NEW — extracted + extended JS)       │    │
+│  └──────────────────────────────────────────────────────────┘    │
+│         3 s polling │ JSON / PNG responses                        │
+├──────────────────────────────────────────────────────────────────┤
+│  FastAPI app  (create_app(analysis_dir) — app.py)                 │
+│  ┌────────┐ ┌──────┐ ┌────────────┐ ┌───────────┐ ┌──────────┐  │
+│  │status  │ │log   │ │structures  │ │spectra.py │ │tables.py │  │
+│  │.py     │ │.py   │ │.py         │ │(NEW)      │ │(NEW)     │  │
+│  └────────┘ └──────┘ └────────────┘ └───────────┘ └──────────┘  │
+│  unchanged            unchanged     lazy imports inside           │
+│                                     make_router() — WV-08         │
+├──────────────────────────────────────────────────────────────────┤
+│  Data sources (read-only — server never writes or invokes CLI)    │
+│  ┌────────────────────────────┐  ┌──────────────────────────┐    │
+│  │ analysis/                  │  │ Bruker experiment dirs   │    │
+│  │  timing.json / .jsonl      │  │  <bruker_root>/<N>/      │    │
+│  │  CASE-PROGRESS.md          │  │  pdata/1/  (raw NMR)     │    │
+│  │  ranking_results.json      │  │                          │    │
+│  │  iteration_NN/compound.lsd │  │  Path discovered from:   │    │
+│  │  peaks_13c.json            │  │  analysis/.run_manifest  │    │
+│  │  peaks_1h.json             │  │  .json (written once by  │    │
+│  │  .run_manifest.json (NEW)  │  │  case.md at run_start)   │    │
+│  └────────────────────────────┘  └──────────────────────────┘    │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Component Boundaries
+## New vs Modified Components
 
-### Existing Components (unchanged or minimally extended)
-
-| Component | Location | What changes in v8.0 |
-|-----------|----------|----------------------|
-| `LSDRunner` | `src/lucy_ng/lsd/runner.py` | None — called by `PyLSDOrchestrator` |
-| `LSDInputGenerator` | `src/lucy_ng/lsd/generator.py` | Add `FORM`, `ELIM N N`, `SHIX` emission; parse `; ELIM` annotation |
-| `LSDOutputParser` | `src/lucy_ng/lsd/parser.py` | None |
-| `SolutionRanker` | `src/lucy_ng/ranking/` | None — accepts merged SMILES file |
-| `lsd_run` CLI | `src/lucy_ng/cli/lsd.py` | None — preserved for single-run use |
-| `lsd_rank` CLI | `src/lucy_ng/cli/lsd.py` | None |
-| `LSDSolutionAnalyzer` | `src/lucy_ng/lsd/analyzer.py` | None |
-
-### New Components (v8.0 adds)
-
-| Component | Location | Responsibility |
-|-----------|----------|----------------|
-| `PyLSDOrchestrator` | `src/lucy_ng/lsd/pylsd_orchestrator.py` | Parse ELIM-annotated .lsd file, generate permutations, run LSD N times, collect solutions |
-| `SolutionMerger` | `src/lucy_ng/lsd/solution_merger.py` | Deduplicate SMILES from multiple runs using InChI keys; write merged.smi |
-| `pylsd run` CLI | `src/lucy_ng/cli/lsd.py` (new subcommand) | Thin CLI wrapper over `PyLSDOrchestrator` |
-
-### Agent Files (partial changes only)
-
-| File | Location | What changes |
-|------|----------|--------------|
-| lsd-engineer agent | `~/.claude/agents/lsd-engineer.md` | Add `ELIM N N` writing rule; annotate suspect HMBC lines with `; ELIM` |
-| case.md orchestrator skill | `~/.claude/commands/lucy-ng/case.md` | Replace `lucy lsd run` with `lucy pylsd run` when 4J correlations flagged |
-| CLAUDE.md / SKILL.md | project root | Update `lucy lsd run` → `lucy pylsd run` in CLI reference |
+| Component | Status | Change |
+|-----------|--------|--------|
+| `webview/app.py` | MODIFIED | Include two new routers; add `/webview.js` static route |
+| `webview/routers/spectra.py` | NEW | `GET /api/spectra`, `GET /api/spectrum/{kind}.png` |
+| `webview/routers/tables.py` | NEW | `GET /api/tables`, `GET /api/tables/{name}` |
+| `webview/routers/log.py` | UNCHANGED | Raw markdown passthrough stays as-is |
+| `webview/routers/status.py` | UNCHANGED | |
+| `webview/routers/structures.py` | UNCHANGED | |
+| `webview/static/index.html` | MODIFIED | Tab layout, reference `/webview.js`; markdown via client-side renderer |
+| `webview/static/webview.js` | NEW | Extracted + extended JS (tab switching, spectrum/table rendering) |
+| `pyproject.toml` | MODIFIED | Add `matplotlib>=3.7` to `[webview]` extra |
+| `case.md` | MODIFIED | Write `analysis/.run_manifest.json` at `run_start` (one line added) |
 
 ---
 
-## Key Design Decisions
-
-### Decision 1: pyLSD as File Format + Orchestration, Not Replacement
-
-**What:** pyLSD is not a separate binary or library to install — it is a Python script (`lsd.py`) that reads an extended LSD file and calls the LSD binary multiple times. Lucy-ng already has `LSDRunner` calling the LSD binary. The v8.0 work replicates what pyLSD does: generate permutation files, run LSD on each, merge results.
-
-**Why not just call `python lsd.py`:** The pyLSD distribution is not a pip-installable package. It ships as a compressed archive with hardcoded paths and an nmrshiftdb2 dependency for its own ranking. Lucy-ng already has superior HOSE-based ranking. Wrapping the pyLSD Python script as a subprocess would create a fragile dependency on an unmaintained distribution. Building the equivalent multi-run logic inside lucy-ng is cleaner, testable, and gives full control over the permutation strategy.
-
-**Confidence:** HIGH — confirmed by examining pyLSD GitHub repo (archived distribution, no pip package, version a8 based on LSD-3.5.2) and the real pyLSD file in the project email archive.
-
-### Decision 2: ELIM Annotation as the Agent-File-Format Contract
-
-**What:** The agent (lsd-engineer) annotates suspect HMBC lines with `; ELIM` comment and writes `ELIM N N` at the file header. The `PyLSDOrchestrator` parses this annotation to identify which correlations to permute.
-
-**Evidence from real file (`C13H6O8_pyLSD_Michael.lsd`):**
-```
-ELIM 4 4          ; global: allow up to 4 correlations to be treated as 4J, up to 4 bonds
-...
-HMBC 11 10 3 4; ELIM   ; this specific HMBC allows 3-4 bonds (not default 2-3)
-HMBC 9 11 3 4; ELIM    ; same
-```
-
-**What `ELIM N N` means:** `ELIM x y` = allow LSD to eliminate up to `x` HMBC correlations that may arise from couplings through up to `y` bonds. This is the core mechanism: LSD will try excluding each marked correlation to see if removing it yields solutions.
-
-**Why this is better than generating multiple .lsd files manually:** The `; ELIM` annotation is already natural for the lsd-engineer agent (iteration_07 uses it as a comment already). Making it the trigger for multi-run keeps the LSD file as the single source of truth and the constraint inventory already tracks these annotations.
-
-### Decision 3: Coexist, Not Replace
-
-**What:** `lucy lsd run` is preserved unchanged. A new `lucy pylsd run` command wraps `PyLSDOrchestrator`. The orchestrator skill uses `lucy pylsd run` only when `nmr-chemist` has flagged 4J correlations. For compounds with no 4J risk, the workflow uses the original `lucy lsd run`.
-
-**Why:** Backwards compatibility. The existing CASE workflow is validated and working. Forcing all runs through multi-run when there are no 4J correlations adds complexity with no benefit. The orchestrator skill detects 4J flag presence and routes accordingly.
-
-### Decision 4: Deduplication by InChI Key, Not SMILES
-
-**What:** `SolutionMerger` converts each SMILES to InChI (via RDKit) and uses InChI keys as the deduplication key. Multiple permutation runs will generate the same structure via different constraint paths.
-
-**Why not SMILES comparison:** SMILES strings for the same structure differ by atom ordering, ring notation, and aromaticity representation. InChI is canonical and handles tautomers, stereochemistry flags, and ring notation uniformly. RDKit is already a dependency.
-
-**Risk:** InChI generation can fail for unusual valence atoms. `SolutionMerger` falls back to SMILES string comparison when InChI fails (with a warning).
-
----
-
-## Data Flow: 4J HMBC Exploration
+## Recommended Project Structure
 
 ```
-1. nmr-chemist
-   → detects aromatic pattern (127-141 ppm, sp2 carbons)
-   → flags specific HMBC correlations as suspect 4J
-   → posts flags to coordinator
-
-2. lsd-engineer (receives 4J flags)
-   → writes compound.lsd with:
-       ELIM 2 4             ; allow up to 2 correlations excluded, up to 4 bonds
-       ...
-       HMBC 4 8 2 4 ; ELIM  ; suspect 4J: bond range extended to 2-4
-       HMBC 6 9 2 4 ; ELIM  ; suspect 4J: bond range extended to 2-4
-   → updates constraint inventory: "elim_value": "2 4", "elim_annotated": ["4 8", "6 9"]
-
-3. orchestrator skill (detects ELIM in constraint inventory)
-   → calls: lucy pylsd run compound.lsd --shifts "180.56,140.84,..."
-   → NOT: lucy lsd run compound.lsd
-
-4. PyLSDOrchestrator (Python)
-   → parses compound.lsd, finds 2 ; ELIM lines
-   → generates permutations: [(include 4 8, include 6 9), (exclude 4 8, include 6 9),
-                               (include 4 8, exclude 6 9), (exclude 4 8, exclude 6 9)]
-   → for each permutation:
-       - write permutation_NN.lsd (copy of compound.lsd with that HMBC line removed or kept)
-       - run LSDRunner on permutation_NN.lsd
-       - if solutions: run outlsd, collect SMILES
-   → hands collected SMILES to SolutionMerger
-
-5. SolutionMerger
-   → deduplicates by InChI key
-   → writes merged.smi
-   → writes run_report.json: {"total_raw": 45, "unique": 12, "permutations": 4, "yielded": [0,1,2,3]}
-
-6. lucy lsd rank merged.smi --shifts "180.56,..." (unchanged)
-   → returns ranked solutions as before
-
-7. solution-analyst (unchanged)
-   → reviews ranked solutions
-   → checks aromatic ring presence
-   → uses run_report.json to note which permutations contributed solutions
+src/lucy_ng/webview/
+├── app.py                      # MODIFIED: +spectra/tables routers, +/webview.js route
+├── server.py                   # unchanged
+├── state.py                    # unchanged
+├── depiction.py                # unchanged
+├── routers/
+│   ├── __init__.py             # unchanged
+│   ├── status.py               # unchanged
+│   ├── log.py                  # unchanged (raw markdown passthrough)
+│   ├── structures.py           # unchanged
+│   ├── spectra.py              # NEW
+│   └── tables.py               # NEW
+└── static/
+    ├── index.html              # MODIFIED: tab layout, references /webview.js
+    └── webview.js              # NEW: extracted + extended JS
 ```
-
----
-
-## File Format Extensions
-
-### What lsd-engineer writes (v8.0 additions to existing format)
-
-```
-; === CONSTRAINT INVENTORY v2 ===
-; {
-;   ...existing fields...
-;   "elim_value": "2 4",
-;   "elim_annotated": ["4 8", "6 9"],
-;   "pylsd_mode": true
-; }
-; === END CONSTRAINT INVENTORY ===
-
-FORM C 13 H 18 O 2   ; pyLSD extension: molecular formula (pyLSD reads this)
-ELIM 2 4             ; pyLSD extension: allow up to 2 correlations as 4J through 4 bonds
-
-MULT 1 C 2 0 ...
-...
-
-HMBC 4 8 2 4 ; ELIM  ; bond range 2-4 (not default 2-3): suspect 4J aromatic-to-benzylic
-HMBC 6 9 2 4 ; ELIM  ; bond range 2-4: suspect 4J aromatic-to-benzylic
-HMBC 3 9             ; normal 3J, no ELIM
-```
-
-**Key additions:**
-- `FORM C 13 H 18 O 2` — pyLSD FORM command. Not used by LSD binary, but harmless (LSD ignores unknown commands). Useful for documentation and future pyLSD compatibility.
-- `ELIM x y` — LSD does understand this. It allows the solver to try excluding up to `x` marked correlations that span up to `y` bonds.
-- `HMBC C H min_bonds max_bonds ; ELIM` — extended HMBC with explicit bond range. The `; ELIM` comment is parsed by `PyLSDOrchestrator` to identify permutable correlations.
-- `SHIX` — already partially supported in `LSDInputGenerator` (lines 74-77 of generator.py). No new work needed.
-
-**Note on LSD vs pyLSD for ELIM:** The LSD binary itself has an `ELIM` command — this was confirmed in the WebSearch result ("ELIM x y" allows LSD to eliminate up to x HMBC correlations). pyLSD adds the `FORM` command and the variable-status atom syntax `MULT N O (2 3) 0`. The ELIM command is a base LSD feature, not pyLSD-specific. This means lucy-ng can use `ELIM` with the existing LSD binary without needing to call pyLSD at all.
-
-**Revised understanding:** The multi-run permutation approach is one strategy. LSD's own `ELIM N N` may already handle this internally in a single run. The `PyLSDOrchestrator` is still useful for explicit control over which correlations to test, producing per-permutation solution reports that the solution-analyst can inspect.
-
----
-
-## Build Order and Phase Dependencies
-
-### Phase Structure Recommendation
-
-The work naturally splits into three waves with clear dependencies:
-
-**Wave 1 — Foundation (no dependencies between phases, run in parallel)**
-
-| Phase | What | Why First |
-|-------|------|-----------|
-| PYLSD-01 | `LSDInputGenerator` extensions: emit `FORM`, `ELIM N N`, extended HMBC bond ranges, parse `; ELIM` annotation | Everything else depends on the file format being correct |
-| PYLSD-02 | `PyLSDOrchestrator` + `SolutionMerger` Python classes | Core new machinery; no CLI until this is tested |
-| PYLSD-03 | Constraint inventory v2 schema: add `elim_value`, `elim_annotated`, `pylsd_mode` fields | Agent team needs the schema before writing updated LSD files |
-
-**Wave 2 — CLI and Agent (depend on Wave 1)**
-
-| Phase | What | Depends On |
-|-------|------|-----------|
-| PYLSD-04 | `lucy pylsd run` CLI command | PYLSD-01, PYLSD-02 |
-| PYLSD-05 | lsd-engineer agent update: `ELIM N N` writing rule, `; ELIM` annotation rule, constraint inventory v2 | PYLSD-03 |
-| PYLSD-06 | case.md orchestrator skill update: `lucy pylsd run` routing when `pylsd_mode: true` in inventory | PYLSD-04, PYLSD-05 |
-
-**Wave 3 — Validation (depend on Wave 2)**
-
-| Phase | What | Depends On |
-|-------|------|-----------|
-| PYLSD-07 | Ibuprofen CASE smoke test with pyLSD mode: verify correct structure found with 4J correlations included | All Wave 2 |
-| PYLSD-08 | `lucy lsd check` extension: report pyLSD mode availability | PYLSD-04 |
-
-### Build Order Rationale
-
-- PYLSD-01 before PYLSD-02: the orchestrator needs the annotation parsing logic from the generator.
-- PYLSD-03 is independent of PYLSD-01/02: schema is agent-facing metadata, not Python runtime.
-- PYLSD-04 before PYLSD-06: the CLI command must exist before the orchestrator skill references it.
-- PYLSD-05 before PYLSD-06: the skill cannot route to pyLSD mode until the agent knows how to set `pylsd_mode: true` in the inventory.
-- PYLSD-07 last: the smoke test exercises the full stack.
 
 ---
 
 ## Architectural Patterns
 
-### Pattern 1: Permutation File Generation
+### Pattern 1: Lazy-import make_router factory (WV-08 — preserved exactly)
 
-**What:** Given a base .lsd file with N `; ELIM`-annotated HMBC lines, generate 2^N permutation files by including/excluding each annotated line. For N <= 4 (typical for 4J aromatic systems) this is 16 files maximum.
+Every new router follows the same pattern as the existing ones: FastAPI imported at module level (permitted — only ever reached from inside `create_app()`), all heavy libraries (matplotlib, BrukerReader) imported INSIDE `make_router()` body.
 
-**When to use:** Whenever `pylsd_mode: true` in constraint inventory.
-
-**Trade-off:** Exponential in N. For N > 4, prune by only generating permutations where exactly 0, 1, or 2 correlations are excluded (not all 2^N combinations). This is `O(N^2)` permutations, sufficient for practical cases.
-
-**Example:**
 ```python
-from itertools import combinations
+# routers/spectra.py — module-level: fastapi only (WV-08 compliant)
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import Response
 
-def generate_permutations(elim_lines: list[int], max_exclude: int = 2) -> list[set[int]]:
-    """Generate sets of line indices to EXCLUDE (not include) from base file."""
-    result: list[set[int]] = [set()]  # always include the all-included case
-    for n in range(1, min(max_exclude + 1, len(elim_lines) + 1)):
-        for excluded in combinations(elim_lines, n):
-            result.append(set(excluded))
-    return result
+def make_router(analysis_dir: Path) -> APIRouter:
+    # Lazy heavy imports — only reached via create_app() (WV-08)
+    import matplotlib                               # noqa: PLC0415
+    matplotlib.use("Agg")                           # non-interactive backend
+    import matplotlib.pyplot as plt                 # noqa: PLC0415
+    from lucy_ng.readers.bruker import BrukerReader # noqa: PLC0415
+
+    router = APIRouter(prefix="/api")
+
+    @router.get("/spectra")
+    def get_spectra() -> dict: ...
+
+    @router.get("/spectrum/{kind}.png")
+    def get_spectrum(kind: str) -> Response: ...
+
+    return router
 ```
 
-### Pattern 2: Run Report for Solution Traceability
+The same pattern applies to `tables.py`: all non-fastapi imports inside `make_router()`.
 
-**What:** `PyLSDOrchestrator` writes `run_report.json` alongside `merged.smi` recording which permutation each SMILES came from, how many raw solutions per run, and which HMBC lines were excluded in each permutation.
+### Pattern 2: Manifest file for cross-boundary path discovery
 
-**Why:** The solution-analyst needs to know whether the correct structure was found with all correlations included (good) or only after excluding suspect 4J ones (signals 4J confirmation). This is directly relevant to the CASE-PROGRESS.md narrative.
+The webview server "knows" only `analysis_dir`. Rendering spectra requires the Bruker experiment root — a path the server cannot infer reliably (the `analysis_dir.parent` heuristic would break for any run where analysis/ is not a direct child of the compound root).
 
-**Format:**
-```json
-{
-  "total_raw_solutions": 47,
-  "unique_solutions": 12,
-  "permutations": [
-    {"id": 0, "excluded_hmbc": [], "solutions": 0},
-    {"id": 1, "excluded_hmbc": ["4 8"], "solutions": 7},
-    {"id": 2, "excluded_hmbc": ["6 9"], "solutions": 0},
-    {"id": 3, "excluded_hmbc": ["4 8", "6 9"], "solutions": 40}
-  ]
+The solution is a manifest file written once by the orchestrator at run start, read by the server on each spectra request:
+
+```
+analysis/.run_manifest.json
+{"bruker_data_dir": "/abs/path/to/compound", "formula": "C13H18O2"}
+```
+
+The `spectra.py` router reads this file inside each route handler. If absent (pre-v9.3 run, or manual `lucy webview serve` without a case.md launch), `GET /api/spectra` returns `{"available": [], "bruker_dir": null}` and `GET /api/spectrum/{kind}.png` returns HTTP 404. No 500, no crash.
+
+This preserves the "dumb server reads files only" boundary: the server reads a file; neither an environment variable nor a constructor argument changes.
+
+**case.md change (one line in the timing step).** The `run_start` block already does `mkdir -p <compound_path>/analysis`. Add immediately after:
+
+```bash
+printf '{"bruker_data_dir":"%s","formula":"%s"}\n' \
+  "$(cd "<compound_path>" && pwd)" "<formula>" \
+  > <compound_path>/analysis/.run_manifest.json
+```
+
+`$(cd ... && pwd)` gives the absolute path robustly (handles symlinks). No CLI signature change. No `WebviewState` model change.
+
+### Pattern 3: Render-on-demand PNG (matplotlib Agg)
+
+Plots are rendered per-request, not pre-rendered to disk. This keeps the server stateless and avoids adding a pre-render step to case.md.
+
+Rationale:
+- 1D spectra render in ~20–80 ms — negligible for a local dashboard
+- 2D contour plots render in ~150–400 ms — acceptable for human interaction rates (tabs clicked manually, not polled every 3 s)
+- Bruker data is immutable once acquired; the rendered image is deterministic per request
+
+Figure lifecycle — `try/finally` is mandatory to prevent matplotlib memory leaks:
+
+```python
+import io
+
+fig, ax = plt.subplots(figsize=(10, 3))
+try:
+    ax.plot(spectrum.ppm_scale[::-1], spectrum.data, lw=0.7, color="#2c5f8a")
+    ax.invert_xaxis()
+    ax.set_xlabel("Chemical shift (ppm)")
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", dpi=100, bbox_inches="tight")
+    buf.seek(0)
+    return Response(buf.read(), media_type="image/png")
+finally:
+    plt.close(fig)   # ALWAYS close — even if an exception is raised above
+```
+
+A raised exception before `plt.close(fig)` leaks a figure. With many requests this accumulates silently. `try/finally` eliminates the risk.
+
+### Pattern 4: Client-side markdown rendering (log tab)
+
+The v9.2 log endpoint (`D-13`) returns raw markdown and the frontend uses `textContent`. Stage 2 reverses D-13 by rendering markdown in the browser — no server change required, no new Python dependency added.
+
+The `/api/log` endpoint is unchanged. The frontend receives `{"state": "ok", "content": "<raw markdown>"}` and passes `content` through a JS markdown parser before setting `innerHTML` on the log panel.
+
+Recommended: bundle **marked.js** (MIT, ~5 KB minified+gzipped) as a vendored copy inside `webview.js` — avoids CDN dependency for a tool that runs locally. The content of CASE-PROGRESS.md is written entirely by the orchestrator (trusted, run-controlled), so `innerHTML` is acceptable.
+
+### Pattern 5: Tab UI without a build step
+
+The current `index.html` is 428 lines. With tabs, markdown rendering, spectra, and table logic it would grow to ~900–1200 lines. Extract JS to `webview.js` for maintainability — both files ship via the existing `artifacts = ["src/lucy_ng/webview/static/*"]` directive with no pyproject.toml change.
+
+To serve `webview.js`, add one explicit route in `create_app()`:
+
+```python
+_webview_js = Path(__file__).parent / "static" / "webview.js"
+
+@app.get("/webview.js")
+def webview_js_file() -> FileResponse:
+    return FileResponse(str(_webview_js), media_type="application/javascript")
+```
+
+Then `index.html` references it as `<script src="/webview.js"></script>`.
+
+Do NOT use `StaticFiles` mount. An explicit route keeps the app structure transparent and avoids an ASGI sub-mount.
+
+Tab switching is pure CSS toggling — no JS framework needed:
+
+```javascript
+function showTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(function(p) {
+    p.style.display = (p.dataset.tab === name) ? '' : 'none';
+  });
+  document.querySelectorAll('.tab-btn').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.tab === name);
+  });
 }
 ```
 
-### Pattern 3: Constraint Inventory v2 Guards
+---
 
-**What:** The `pylsd_mode: true` flag in the constraint inventory is the single routing signal. The orchestrator skill checks this field. If absent or false, `lucy lsd run` is used. If true, `lucy pylsd run` is used.
+## New Endpoint Specification
 
-**Why:** Avoids any ambiguity about which path is taken. The lsd-engineer agent sets this flag explicitly when it detects 4J correlations and writes `ELIM N N`. The devils-advocate agent can verify this field exists when `; ELIM` annotations are present in the file.
+All new endpoints use the same `prefix="/api"` convention. New routers use separate `APIRouter(prefix="/api")` instances; `app.include_router()` merges them without collision.
+
+### spectra.py router
+
+```
+GET /api/spectra
+    → {"available": ["13c", "1h", "dept", "hsqc", "hmbc", "cosy"], "bruker_dir": "<abs>"}
+    → {"available": [], "bruker_dir": null}    (manifest absent — graceful)
+
+GET /api/spectrum/{kind}.png
+    kind ∈ {"13c", "1h", "dept", "hsqc", "hmbc", "cosy"}
+    → 200 image/png      (rendered matplotlib plot)
+    → 404                (manifest absent, experiment not found, or unknown kind)
+```
+
+`GET /api/spectra` logic:
+1. Read `analysis/.run_manifest.json` for `bruker_data_dir`
+2. Scan numbered subdirs of `bruker_data_dir` for `acqus` files
+3. Use NUC1 + PULPROG parameter extraction (same logic as `BrukerReader._detect_experiment_type`) to identify experiment types
+4. Return available kinds
+
+Kind mapping — 1D experiments detected by NUC1, 2D by PULPROG keywords:
+- `"13c"` — 1D, NUC1=13C, PULPROG not containing "dept"
+- `"1h"` — 1D, NUC1=1H
+- `"dept"` — 1D, NUC1=13C, PULPROG containing "dept"
+- `"hsqc"` — 2D, HSQC (as per existing `_detect_experiment_type`)
+- `"hmbc"` — 2D, HMBC
+- `"cosy"` — 2D, COSY
+
+`GET /api/spectrum/{kind}.png` logic:
+1. Find experiment directory for `kind` (same scan)
+2. Call `BrukerReader.read_1d(exp_dir)` for 1D kinds, `BrukerReader.read_2d(exp_dir)` for 2D
+3. Render with matplotlib Agg inside `try/finally plt.close(fig)`
+4. Return PNG bytes
+
+### tables.py router
+
+```
+GET /api/tables
+    → {"available": ["peaks_13c", "peaks_1h", "constraints", "hmbc_usage"]}
+
+GET /api/tables/{name}
+    name ∈ {"peaks_13c", "peaks_1h", "constraints", "hmbc_usage"}
+    → {"state": "ok",      "columns": [...], "rows": [...]}
+    → {"state": "waiting", "columns": [],    "rows": []}
+```
+
+Data source per name:
+
+| Name | File | Format |
+|------|------|--------|
+| `peaks_13c` | `analysis/peaks_13c.json` | Lucy JSON from `lucy pick 13c --format json` |
+| `peaks_1h` | `analysis/peaks_1h.json` | Lucy JSON from `lucy pick 1h --format json` |
+| `constraints` | Newest `analysis/iteration_NN/compound.lsd` | JSON block in LSD header |
+| `hmbc_usage` | `analysis/CASE-PROGRESS.md` | Parsed HMBC table from Setup section |
+
+`GET /api/tables` scans for which source files exist and returns only available names.
+
+The `peaks_13c.json` and `peaks_1h.json` files require a small addition to the nmr-chemist workflow: redirect `lucy pick` JSON output to these files during peak-picking setup. This is a one-line `--format json` redirect per experiment in the nmr-chemist agent prompt; no Python code change.
 
 ---
 
-## Anti-Patterns
+## Data Flow
 
-### Anti-Pattern 1: Installing pyLSD as an External Dependency
+### Spectra request
 
-**What people do:** Try to pip install pyLSD or call the `python lsd.py` script as a subprocess from lucy-ng.
+```
+Browser: GET /api/spectrum/hsqc.png
+    ↓
+spectra.py get_spectrum(kind="hsqc")
+    ↓
+read analysis/.run_manifest.json → bruker_data_dir
+    ↓
+scan bruker_data_dir/*/acqus → find HSQC experiment dir
+    ↓
+BrukerReader.read_2d(exp_dir) → Spectrum2D(f1_ppm_scale, f2_ppm_scale, data)
+    ↓
+matplotlib Agg: contour(f2_ppm, f1_ppm, data) → BytesIO → plt.close(fig)
+    ↓
+Response(png_bytes, media_type="image/png")
+    ↓
+Browser: <img src="/api/spectrum/hsqc.png"> in 2D Spectra tab
+```
 
-**Why wrong:** pyLSD is not pip-installable. It is a research distribution shipped as a compressed archive with hardcoded paths. It has its own nmrshiftdb2-based ranking that duplicates and conflicts with lucy-ng's HOSE-based ranking. It requires Java for structure diagram generation that lucy-ng does not use.
+### Tables request
 
-**Do this instead:** Implement the multi-run orchestration directly in `PyLSDOrchestrator`. This is 150-200 lines of Python and is fully testable. The LSD binary is already available on the system.
+```
+Browser: GET /api/tables/constraints
+    ↓
+tables.py get_table(name="constraints")
+    ↓
+find newest analysis/iteration_NN/compound.lsd
+    ↓
+parse LSD file: extract JSON block between constraint inventory markers
+    ↓
+{"state": "ok", "columns": ["type","atom1","atom2","note"], "rows": [...]}
+    ↓
+Browser: renders HTML <table> in Tables tab
+```
 
-### Anti-Pattern 2: Agent Generates Permutation Files Manually
+### Log markdown rendering
 
-**What people do:** Have lsd-engineer write multiple .lsd variants manually, each with a different HMBC line removed.
-
-**Why wrong:** N correlations = 2^N manual files. The agent has no reliable way to track which permutations were run, and the constraint inventory cannot represent the state cleanly. The agent will lose track after 2-3 iterations.
-
-**Do this instead:** Agent writes one file with `; ELIM` annotations, Python handles permutation generation. This is the division of labour that matches the architecture: agent encodes chemical reasoning, Python handles combinatorial execution.
-
-### Anti-Pattern 3: Deduplicating by SMILES String
-
-**What people do:** Use Python `set()` on SMILES strings to deduplicate across runs.
-
-**Why wrong:** LSD generates structures with arbitrary atom ordering. The same ibuprofen molecule may be `CC(C)Cc1ccc(cc1)C(C)C(=O)O` in one run and `OC(=O)C(C)Cc1ccc(cc1)CC(C)C` in another. String comparison gives false duplicates.
-
-**Do this instead:** Convert each SMILES to InChI key via RDKit and use that as the deduplication key.
-
-### Anti-Pattern 4: Running pyLSD Mode on Every Iteration
-
-**What people do:** Always use `lucy pylsd run` regardless of whether 4J correlations are suspected.
-
-**Why wrong:** Multi-run with N=0 ELIM annotations degenerates to a single LSD run with overhead. More importantly, running permutations when no 4J risk exists obscures the distinction between "correct structure found directly" vs "found only after 4J exclusion". The run report loses meaning.
-
-**Do this instead:** Preserve `lucy lsd run` for the normal case. Route to `lucy pylsd run` only when `pylsd_mode: true` in the constraint inventory.
+```
+Browser: GET /api/log  (3 s poll — endpoint unchanged)
+    ↓
+log.py → {"state": "ok", "content": "<raw markdown>"}
+    ↓
+webview.js: marked.parse(data.content) → HTML string
+    ↓
+logPanel.innerHTML = html   (replaces textContent from v9.2)
+```
 
 ---
 
 ## Integration Points
 
-### Python Layer Boundaries
+### app.py changes
 
-| Boundary | Communication | Notes |
-|----------|---------------|-------|
-| `PyLSDOrchestrator` → `LSDRunner` | Direct instantiation and `run_file()` call | One `LSDRunner` instance, called N times in a loop |
-| `PyLSDOrchestrator` → `SolutionMerger` | Direct: passes list of SMILES strings | No file I/O between these two classes |
-| `SolutionMerger` → `SolutionRanker` | Via CLI: `lucy lsd rank merged.smi` | Ranking is unchanged; merger produces a .smi file |
-| `LSDInputGenerator` → `PyLSDOrchestrator` | `PyLSDOrchestrator` calls `LSDInputGenerator.remove_elim_line(content, line_idx)` | Generator provides the file manipulation helpers |
+Add three blocks inside `create_app()`, after the existing `include_router` calls:
 
-### CLI Boundary
+```python
+# New routers — lazy imports (WV-08)
+from lucy_ng.webview.routers import spectra as _spectra  # noqa: PLC0415
+from lucy_ng.webview.routers import tables  as _tables   # noqa: PLC0415
 
-| Command | Input | Output | Notes |
-|---------|-------|--------|-------|
-| `lucy pylsd run <lsd_file> --shifts <shifts>` | .lsd file with `; ELIM` annotations | `merged.smi`, `run_report.json` | Replaces `lucy lsd run` in 4J case |
-| `lucy lsd run` | .lsd file | .sol, outlsd.out | Preserved unchanged |
-| `lucy lsd rank merged.smi --shifts <shifts>` | merged.smi | ranked solutions | Unchanged; accepts merged.smi directly |
+app.include_router(_spectra.make_router(analysis_dir))
+app.include_router(_tables.make_router(analysis_dir))
 
-### Agent Skill Boundary
+# Serve extracted frontend JS
+_webview_js_file = Path(__file__).parent / "static" / "webview.js"
 
-| Agent | Input trigger | New output | Preserved output |
-|-------|--------------|------------|-----------------|
-| nmr-chemist | aromatic sp2 pattern + benzylic HMBC | `4j_suspects: ["4 8", "6 9"]` in message | All existing NMR analysis |
-| lsd-engineer | `4j_suspects` in coordinator message | `ELIM N N`, `; ELIM` annotations, `pylsd_mode: true` in inventory | All existing LSD writing rules |
-| case.md (orchestrator) | `pylsd_mode: true` in constraint inventory | calls `lucy pylsd run` instead of `lucy lsd run` | All existing loop detection, intervention |
-| solution-analyst | `run_report.json` exists | notes which permutation yielded solution | All existing ranking, aromatic ring check |
-| devils-advocate | `elim_annotated` in inventory | verifies `; ELIM` count matches `elim_annotated` list | All existing pre-run validation |
+@app.get("/webview.js")
+def webview_js() -> FileResponse:
+    return FileResponse(str(_webview_js_file), media_type="application/javascript")
+```
+
+No other changes to `app.py`, `server.py`, or `state.py`.
+
+### case.md change
+
+In the `timing` step, inside the `run_start` block, after `mkdir -p <compound_path>/analysis`:
+
+```bash
+printf '{"bruker_data_dir":"%s","formula":"%s"}\n' \
+  "$(cd "<compound_path>" && pwd)" "<formula>" \
+  > <compound_path>/analysis/.run_manifest.json
+```
+
+One line. No other changes to case.md.
+
+### pyproject.toml change
+
+```toml
+webview = [
+    "fastapi>=0.100",
+    "uvicorn>=0.20",
+    "matplotlib>=3.7",     # new: spectrum rendering (Agg backend)
+]
+```
+
+`nmrglue` and `numpy` are already core dependencies — present on all installs.
 
 ---
 
-## Existing Code Reuse Map
+## Build Order for Phases
 
-| New Component | Reuses |
-|---------------|--------|
-| `PyLSDOrchestrator.run()` | `LSDRunner.run_file()` — no changes needed |
-| `SolutionMerger.deduplicate()` | `LSDOutputParser.parse_smiles_file()` to read SMILES; RDKit (already a dep) for InChI |
-| `pylsd run` CLI | `lsd_run()` pattern in `cli/lsd.py` — copy structure, add permutation loop |
-| `LSDInputGenerator` extensions | Adds `emit_form()`, `emit_elim()`, `parse_elim_annotations()` static methods |
+The four Stage-2 features form a dependency chain. Each phase docks into the frontend established by the previous one.
 
-The only genuinely new code is `PyLSDOrchestrator` (~150 lines) and `SolutionMerger` (~80 lines). Everything else is additive to existing classes.
+### Phase A: Formatted Log
+
+**Changes:** `static/index.html` (tab skeleton, reference `/webview.js`), `static/webview.js` (new file — extracted JS + tab switching + bundled marked.js for log panel)
+
+**Dependencies:** none — uses existing `/api/log` endpoint unchanged
+
+**Why first:** self-contained, frontend-only. Introduces the tab framework that all subsequent phases add tabs into. Zero risk of breaking any existing backend behaviour. The JS extraction also pays a maintainability dividend immediately.
+
+### Phase B: Data Tables
+
+**Changes:** new `routers/tables.py`, `app.py` (include router), `webview.js` (Tables tab), nmr-chemist workflow (write `peaks_13c.json` / `peaks_1h.json` to analysis/)
+
+**Dependencies:** `analysis/` only — no Bruker path wiring, no matplotlib, no pyproject.toml change
+
+**Why second:** data source is entirely within `analysis_dir` (already accessible to the server). Establishes the `tables.py` router pattern and the `{"state", "columns", "rows"}` response shape before the more complex `spectra.py`. The one workflow dependency (peak JSON files) is small and testable with fixtures independently of any live CASE run.
+
+### Phase C: 1D Spectra
+
+**Changes:** new `routers/spectra.py`, `app.py` (include router), `webview.js` (1D Spectra tab), `pyproject.toml` (add matplotlib), `case.md` (write `.run_manifest.json`)
+
+**Dependencies:** Bruker path via manifest (requires case.md change), matplotlib (requires pyproject.toml change), `BrukerReader.read_1d()`
+
+**Why third:** introduces the two cross-cutting concerns that 2D spectra also need — Bruker path wiring and matplotlib Agg pipeline. Doing 1D first validates the manifest → BrukerReader → Agg → PNG chain with a simpler plot (line plot) before tackling 2D contours.
+
+### Phase D: 2D Spectra
+
+**Changes:** extend `routers/spectra.py` (add HSQC/HMBC/COSY kinds), `webview.js` (2D Spectra tab, sub-tabs per experiment)
+
+**Dependencies:** all of Phase C (same router, same manifest, same matplotlib backend, `BrukerReader.read_2d()`)
+
+**Why last:** purely additive to Phase C. Router, manifest, and tab framework are already in place. The only new logic is 2D-specific: contour level computation, two-axis ppm labelling (F1 and F2). Risk is low because the full infrastructure is proven.
+
+```
+Phase A: Formatted Log
+   (frontend-only, tab framework established)
+    ↓
+Phase B: Data Tables
+   (new router, analysis/ data only)
+    ↓
+Phase C: 1D Spectra
+   (manifest wiring + matplotlib + BrukerReader.read_1d)
+    ↓
+Phase D: 2D Spectra
+   (extends Phase C router, BrukerReader.read_2d)
+```
 
 ---
 
-## Confidence Assessment
+## Anti-Patterns to Avoid
 
-| Area | Confidence | Evidence |
-|------|------------|---------|
-| ELIM command syntax | HIGH | Real pyLSD file examined (`ELIM 4 4`, `HMBC 11 10 3 4; ELIM`) |
-| pyLSD as multi-run driver | HIGH | pyLSD documentation fetched, GitHub examined |
-| Multi-run not needing pyLSD binary | HIGH | pyLSD is not pip-installable; LSD binary supports ELIM natively |
-| InChI deduplication approach | HIGH | RDKit InChI confirmed canonical across atom orderings |
-| FORM command behavior | MEDIUM | Documented in pyLSD docs; untested whether LSD binary ignores it harmlessly |
-| Permutation count in practice | MEDIUM | Ibuprofen has 4 suspect 4J correlations → 16 permutations max, likely practical |
-| Agent workflow changes | HIGH | Iteration_07 file shows agents already annotating `; ELIM` informally |
+### Anti-Pattern 1: Pre-rendering plots to disk
+
+**What people do:** write PNG files to `analysis/` during peak-picking (e.g. nmr-chemist runs `lucy pick 13c` then immediately saves a PNG), serve them as static files.
+
+**Why wrong:** couples the CASE workflow to the webview presentation layer. Breaks the separation where the server reads data files (not presentation artefacts). Rendered files become stale if the rendering code is later improved.
+
+**Do this instead:** render on demand inside the route handler. Bruker data is immutable; the ~20–400 ms per request is acceptable for a local human-interaction dashboard.
+
+### Anti-Pattern 2: Adding bruker_data_dir to WebviewState
+
+**What people do:** pass `--bruker-data <path>` to `lucy webview serve`, store it in `.webview.json` alongside PID/port.
+
+**Why wrong:** conflates lifecycle state (PID/port) with data-source config. Changes the CLI signature (case.md update, docs update). Changes the Pydantic model (backward compat concern for existing `.webview.json` files). `server.py` and `state.py` must stay fastapi-free per WV-08; adding path arguments there is additional complexity.
+
+**Do this instead:** `.run_manifest.json` in `analysis_dir`. The `spectra.py` router reads it inside its own route handlers. Lifecycle state stays in `.webview.json` unchanged.
+
+### Anti-Pattern 3: Importing matplotlib at module level in spectra.py
+
+**What people do:** `import matplotlib.pyplot as plt` at the top of `spectra.py`.
+
+**Why wrong:** violates WV-08. Any code path that imports `spectra` — including test imports, type-checker runs, and the router `__init__.py` — would trigger a matplotlib import. On a base `lucy-ng` install without the `[webview]` extra, this raises `ModuleNotFoundError`.
+
+**Do this instead:** import matplotlib INSIDE `make_router()`. Follow the exact pattern of `structures.py` which imports `lucy_ng.webview.depiction` (which loads RDKit) inside `make_router()`.
+
+### Anti-Pattern 4: Calling CLI subprocesses from route handlers
+
+**What people do:** `subprocess.run(["lucy", "pick", "13c", ...])` inside `GET /api/spectrum/13c.png` to regenerate spectra on every request.
+
+**Why wrong:** violates the "dumb server reads files only" boundary, adds seconds of latency, creates a subprocess dependency, and is fragile (PATH, virtual environment, working directory).
+
+**Do this instead:** call `BrukerReader.read_1d()` directly. It reads Bruker binary files from disk (uses nmrglue) without any subprocess. Peak picking is not needed for rendering raw spectra — the raw NMR data in `pdata/1/` is what the plot shows.
 
 ---
 
 ## Sources
 
-- pyLSD official documentation: [https://nuzillard.github.io/PyLSD/](https://nuzillard.github.io/PyLSD/)
-- pyLSD GitHub repository: [https://github.com/nuzillard/PyLSD](https://github.com/nuzillard/PyLSD)
-- Real pyLSD example file: `/Users/steinbeck/Dropbox/Private/Mail/.../C13H6O8_pyLSD_Michael.lsd` (from project email archive)
-- LSD tutorial (Nuzillard 2017, MRC): ELIM command described — "ELIM x y allows LSD to eliminate up to x HMBC correlations that may arise from VLRCs through up to y bonds"
-- Existing LSD file with informal ELIM annotations: `data/nmrdata/active-lucy-ng-testprojects/CASE1/analysis/iteration_07/compound.lsd`
-- `src/lucy_ng/lsd/runner.py` — current `LSDRunner` implementation examined
-- `src/lucy_ng/lsd/generator.py` — current `LSDInputGenerator` examined (SHIX partially supported at lines 73-77)
-- `src/lucy_ng/lsd/models.py` — `LSDProblem`, `LSDCorrelation` models examined
+- Direct code inspection: `src/lucy_ng/webview/app.py`, `routers/status.py`, `routers/log.py`, `routers/structures.py`, `webview/server.py`, `webview/state.py`
+- Direct code inspection: `src/lucy_ng/readers/bruker.py` — `BrukerReader.read_1d()`, `BrukerReader.read_2d()`, `_detect_experiment_type()`
+- Direct code inspection: `.claude/commands/lucy-ng/case.md` — `spawn_case_team` Step 5 (webview launch), `timing` step (`run_start` block)
+- Direct code inspection: `pyproject.toml` — `[webview]` extra (fastapi, uvicorn only), hatch `artifacts = ["src/lucy_ng/webview/static/*"]`
+- Direct code inspection: `static/index.html` — existing 428-line single-file frontend
+- Design spec: `docs/superpowers/specs/2026-07-02-case-webview-design.md` — Stage 2 scope, "dumb server" boundary
+- Project context: `.planning/PROJECT.md` — v9.3 milestone goals, v9.2 decisions WV-01..08
 
 ---
-*Architecture research for: pyLSD integration into lucy-ng CASE pipeline (v8.0)*
-*Researched: 2026-03-13*
+
+*Architecture research for: v9.3 CASE Web-View Stage 2 (rendered spectra, data tables, formatted log)*
+*Researched: 2026-07-07*

@@ -1,393 +1,462 @@
-# Pitfalls Research: pyLSD Integration and 4J HMBC Exploration
+# Pitfalls Research: v9.3 CASE Web-View Stage 2
 
-**Domain:** Adding pyLSD-based solving and systematic 4J HMBC exploration to existing LSD-based CASE system
-**Researched:** 2026-03-13
-**Confidence:** HIGH (v7.0 post-mortem + direct LSD/pyLSD documentation + WebCocon 4J research + existing codebase analysis)
+**Domain:** Server-side matplotlib NMR spectra rendering + markdown log panel + data tables added to existing FastAPI + single-file vanilla-JS webview
+**Researched:** 2026-07-07
+**Confidence:** HIGH (direct codebase read + matplotlib/FastAPI architectural analysis + v9.2 post-mortem encoding)
 
 ---
 
 ## Critical Pitfalls
 
-Mistakes that require rewrites, silently produce wrong structures, or break working ibuprofen-free test cases.
-
-### Pitfall 1: ELIM Command Semantics Are Counterintuitive — `ELIM x y` Explores Elimination, Not Bonds
+### Pitfall 1: matplotlib pyplot State-Machine Is Not Thread-Safe in a Concurrent Server
 
 **What goes wrong:**
-The ELIM command means "allow LSD to eliminate up to x HMBC correlations that may arise from VLRCs through up to y bonds." The second parameter `y` is NOT the maximum allowed bond count — it is the maximum bond count of correlations that may be ELIMINATED. The HMBC correlation is still interpreted as 2J then 3J; it is discarded entirely (not extended to 4J) if that fails and fewer than x correlations have been dropped.
+`import matplotlib.pyplot as plt` and any `plt.*` calls share a global figure-manager state across threads. FastAPI with uvicorn runs multiple async workers; sync route handlers are executed in uvicorn's default thread-pool executor. Two concurrent requests to a spectra endpoint that both call `plt.figure()` / `plt.savefig()` / `plt.close()` can corrupt each other's state, producing garbled images or hard-to-reproduce crashes. The failure is intermittent and environment-dependent, making it difficult to catch in single-request tests.
 
-Concretely:
-- `ELIM 1 0` — LSD may ignore up to 1 HMBC correlation with no bond distance restriction. This is how the existing agent uses ELIM as a last resort for over-constrained problems.
-- `ELIM 1 4` — LSD may ignore up to 1 correlation that passes through 4 bonds. This is NOT the same as "allow HMBC to be 4J."
-
-The correct syntax for allowing 4J HMBC interpretation is NOT ELIM — it is using `HMBC C H 2 4` (the 4-argument form) which explicitly sets min/max bond range per correlation. ELIM causes correlations to be dropped entirely, not extended.
-
-Using `ELIM 1 4` when you intend "allow this correlation to be 4J" causes the correlation to be silently discarded when it cannot be satisfied as 2J/3J, producing structures that ignore genuine 4J-only connections. Solutions found under ELIM may be valid subsets of the over-constrained problem, but the 4J connectivity is missing — not resolved.
+The `matplotlib.use("Agg")` backend call must occur **before** any `import matplotlib.pyplot` anywhere in the process, including in any transitively imported module. Calling it after pyplot has already been imported silently falls back to whatever backend was set at import time (often `TkAgg` or `QtAgg`), which may fail in a headless server.
 
 **Why it happens:**
-The ELIM command looks like it relaxes bond distance constraints ("through up to y bonds") but it actually controls correlation *elimination* not correlation *extension*. The distinction is invisible in the syntax. ELIM is the existing agent's emergency tool for zero solutions — the obvious next step when you know 4J correlations exist is to raise the ELIM distance parameter. That is the wrong approach.
+Developers copy the familiar `import matplotlib.pyplot as plt; fig, ax = plt.subplots(...)` pattern from notebooks. The pyplot API is designed for single-threaded interactive use. The global state includes the current figure, current axes, and the figure registry — all mutable and unprotected by locks.
 
 **How to avoid:**
-Use per-correlation explicit bond range syntax for known 4J correlations:
+Use the fully object-oriented API with the `Agg` backend explicitly. Never import `matplotlib.pyplot` inside any webview module. The safe pattern for a route handler:
+
+```python
+# In spectra.py (a router module, imported only inside create_app())
+import io
+import matplotlib
+matplotlib.use("Agg")  # must precede pyplot import; safe to call multiple times with same backend
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_agg import FigureCanvasAgg
+
+def render_spectrum_1d_png(ppm_scale, intensities, title="") -> bytes:
+    """Render a 1D NMR spectrum to PNG bytes. Never raises."""
+    try:
+        fig = Figure(figsize=(8, 3), dpi=100)
+        canvas = FigureCanvasAgg(fig)
+        ax = fig.add_subplot(111)
+        ax.plot(ppm_scale, intensities, color="black", linewidth=0.8)
+        ax.set_xlabel("ppm")
+        ax.set_xlim(float(ppm_scale[0]), float(ppm_scale[-1]))  # high→low, NMR convention
+        ax.set_title(title)
+        fig.tight_layout()
+        buf = io.BytesIO()
+        canvas.print_png(buf)
+        return buf.getvalue()
+    except Exception:
+        return _placeholder_png()
+    # Figure is garbage-collected when `fig` goes out of scope — no plt.close() needed
+    # with the OO API because there is no global figure registry involved.
 ```
-HMBC 4 8 2 4    ; C4 to H8, allow 2J-4J (explicit range)
-HMBC 6 9 2 3    ; C6 to H9, strict 2J-3J (default range)
+
+Key invariants:
+- `matplotlib.use("Agg")` at the top of the module, before any `from matplotlib.figure import Figure`
+- Use `Figure(...)` not `plt.figure(...)` — the OO path has no global state
+- Use `FigureCanvasAgg` explicitly — do not call `fig.savefig()`  which can invoke the pyplot manager
+- Return `bytes` (PNG via BytesIO), not a path — avoids temp-file race conditions
+
+**Warning signs:**
+- Any `import matplotlib.pyplot as plt` anywhere in `webview/` — immediate red flag
+- `UserWarning: Matplotlib is currently using TkAgg` in server logs — Agg backend was not set before pyplot import
+- Intermittent 500 errors on the spectra endpoint under concurrent load (even 2 simultaneous requests)
+- Image output is all-white, all-black, or cut off — pyplot state corrupted mid-render
+
+**Phase to address:**
+The phase that introduces 1D spectra rendering. The `matplotlib.use("Agg")` + OO API pattern must be established before any 2D work, which inherits from 1D. Add an import-safety test mirroring the existing `test_main_importable_without_fastapi`: confirm that `from lucy_ng.webview import server` does not import matplotlib (which would break on a base install without the `[webview]` extra).
+
+---
+
+### Pitfall 2: 2D Contour Rendering Blocks the Async Event Loop and Exhausts Memory
+
+**What goes wrong:**
+A typical Bruker 2D NMR (e.g. HSQC) has a 1024 × 2048 or larger data matrix (float64 = 16 MB per spectrum). `matplotlib.contour()` on the full matrix with 16 contour levels computes isocontour tessellations across the entire array. On this machine, benchmarks for contour on a 1024×2048 float64 array typically take 500 ms–3 s, consuming 200–500 MB of peak RSS. Per-request, with no caching, a 3-tab webview refreshing every 3 s would issue a new contour render every second.
+
+If the route handler is defined as `async def`, this sync computation runs on the async event loop and blocks all other requests for its duration — a classic event-loop stall. If defined as `def` (sync), FastAPI dispatches it to a thread-pool executor, which is safe for concurrency but still runs the full render every request.
+
+**Why it happens:**
+The naive approach is `ax.contour(f2_ppm, f1_ppm, data, levels=16)` — works fine for a one-off notebook plot, disastrous in a per-request server context. 2D NMR matrices are large by design; they represent the Fourier transform of a time-domain signal sampled at high density.
+
+**How to avoid:**
+Three complementary strategies, all required together:
+
+1. **Downsample before contouring.** Decimate the 2D array to at most 512 × 512 for display. NMR contour plots show where peaks *are*, not fine lineshape — 4× downsampling in each dimension is invisible to a chemist at screen resolution. Use `data[::step_f1, ::step_f2]` with the matching subsampled ppm scales.
+
+2. **Threshold-based contour levels.** Compute a noise floor (the same MAD-based sigma used in `PeakPicker2D._compute_2d_noise_sigma`), then use 8–12 logarithmically spaced positive levels starting at `4 * sigma`. This avoids rendering noise contours (which dominate the plot area and slow contouring) while showing all real peaks. HSQC: positive levels only. COSY: positive only. HMBC: positive only. DEPT-edited HSQC: add symmetric negative levels for CH2.
+
+3. **Cache rendered PNGs keyed by file mtime.** The Bruker 2D data files do not change once written. Cache the rendered PNG bytes in a per-`analysis_dir` dict keyed by `(experiment_path, mtime)`. On a cache hit, serve bytes directly. Cache size: 3 experiments × ~150 KB PNG = ~450 KB — negligible.
+
+4. **Use sync `def` route handlers** (not `async def`) for spectra endpoints — FastAPI routes that are defined as plain `def` are dispatched to the default thread-pool executor automatically, keeping the event loop free. Do NOT use `async def` with a blocking render inside.
+
+```python
+# In the spectra router — sync def, FastAPI runs in thread-pool
+@router.get("/api/spectra/{expno}.png")
+def get_spectrum_png(expno: str) -> Response:
+    result = _render_or_cache(analysis_dir, expno)
+    return Response(content=result, media_type="image/png")
 ```
-Reserve `ELIM x 0` for its intended use: when a small number of correlations are suspected to be spectral artifacts or data entry errors (not genuine 4J). The v8.0 design should use explicit per-correlation ranges for 4J candidates, NOT ELIM.
 
 **Warning signs:**
-- Agent writes `ELIM 1 4` to "allow 4J" and gets solutions, but solutions lack the expected aromatic ring pattern (4J connectivity was dropped rather than satisfied)
-- lsd-engineer skill documentation conflates ELIM's "through y bonds" with explicit bond range syntax
-- Solutions pass with ELIM but fail the aromatic ring sanity check (silent 4J correlation loss)
+- Any `async def` route handler that calls `contour()` or `Figure()` without `run_in_executor` — event-loop blocking
+- No downsampling: `ax.contour(f2_ppm, f1_ppm, data, ...)` where `data.shape` matches the raw Bruker matrix
+- Server log shows render times > 500 ms per request for the 2D endpoints
+- Memory usage climbs monotonically during repeated browser refreshes (no cache, new Figure per request)
 
 **Phase to address:**
-pyLSD integration phase — lsd-engineer knowledge update must distinguish ELIM from per-correlation bond ranges. Add explicit tested examples to agent skill. Document: "ELIM drops correlations entirely. Use `HMBC C H min max` to allow 4J without dropping."
+The phase introducing 2D contour rendering (after 1D is proven). Downsampling and caching must be in the initial implementation, not added as an optimization later. The mtime-keyed cache is a one-liner over a module-level `dict` — no library needed.
 
 ---
 
-### Pitfall 2: FORM Command Specifies Formula Independently of MULT — Mismatch Causes Zero Solutions Without Diagnosis
+### Pitfall 3: ppm Axis Direction Is Reversed — Silent NMR-Domain Correctness Bug
 
 **What goes wrong:**
-pyLSD's FORM command defines the molecular formula of the problem. LSD's MULT commands implicitly define the formula by listing every atom. If FORM specifies `C13H18O2` but the MULT block defines 12 carbons (off-by-one from a typo), pyLSD filters out atom status combinations that don't match FORM — silently producing zero valid LSD input files to run. No LSD run occurs. The agent reports "0 solutions" but the real failure is that pyLSD generated 0 input files before LSD even started.
+NMR convention universally places **high ppm (downfield) on the left** and low ppm (upfield) on the right for the x-axis (F2/direct dimension). For 2D spectra, F1 (indirect dimension, y-axis) also places high ppm at the top. A plot with the axis in the wrong direction looks reasonable to a software developer but is immediately wrong to any chemist — an aromatic carbon at 130 ppm appearing on the far right is a tell that the viewer is broken.
 
-This is worse than a standard 0-solution outcome because:
-- The existing agent diagnostic for 0 solutions (check sp2 parity, H budget, HMBC correctness) is designed for LSD failures, not pyLSD pre-filtering failures.
-- Diagnostic iteration will not help: the problem is upstream of LSD in the pyLSD layer.
-- LSD stderr will not contain informative output because LSD was never called.
+matplotlib's default is to auto-scale axes from the minimum to maximum value of the data arrays, which puts low ppm on the left. `BrukerReader.read_1d` returns `ppm_scale` in the order nmrglue produces it from `uc.ppm_scale()`. For standard Bruker processed data this is high-to-low (index 0 = highest ppm), so `ppm_scale[0] > ppm_scale[-1]`. Passing this to `ax.plot(ppm_scale, data)` would display high-to-low left-to-right IF matplotlib preserves data order in axis limits — but matplotlib sets `xlim` to `(min(ppm_scale), max(ppm_scale))` when auto-scaling, flipping the axis to low-on-left.
 
-**Why it happens:**
-In the current workflow, MULT implicitly defines the formula and there is no FORM command. When migrating to pyLSD, a FORM command is added. If the FORM comes from peak picking (trusted) and MULT comes from agent knowledge (re-derived per iteration), they can diverge. Common divergence points: agent uses FORM formula but adds one extra heteroatom MULT for a hydroxyl oxygen that was already counted; agent updates MULT block in a later iteration but forgets to match FORM.
+For contour plots, the same issue applies to both dimensions.
+
+**DEPT phase-sign convention:** DEPT-135 spectra have positive CH and CH3 signals, negative CH2 signals. The plot must display both; a viewer that clips at zero or uses `np.abs(data)` silently drops all CH2 correlation information.
 
 **How to avoid:**
-1. Make FORM the single source of truth and derive MULT atom count validation from it at write time, not at LSD run time. The agent (or a pyLSD input generator) should verify: `sum(MULT carbon atoms) == FORM carbon count` before writing the file.
-2. Write a `validate_pylsd_input(content: str) -> list[str]` function that checks FORM vs MULT consistency as part of the pre-run validation gate (currently handled by devils-advocate).
-3. Treat pyLSD "0 input files generated" as a distinct error class from LSD "0 solutions" — they require different diagnostic paths.
+Always set axis limits explicitly from the ppm scale arrays, forcing NMR convention:
+
+```python
+# 1D
+ax.set_xlim(float(ppm_scale[0]), float(ppm_scale[-1]))
+# ppm_scale[0] is the highest ppm value (from BrukerReader) -> xlim = (high, low)
+# matplotlib obeys this order, placing high ppm on the left
+
+# 2D contour
+ax.set_xlim(float(f2_ppm[0]), float(f2_ppm[-1]))   # F2 (x): high→low left→right
+ax.set_ylim(float(f1_ppm[0]), float(f1_ppm[-1]))   # F1 (y): high→low top→bottom
+# Do NOT call ax.invert_xaxis() — set limits in the right order from the start
+
+# DEPT: show signed intensities, never np.abs()
+ax.plot(ppm_scale, data, color="black", linewidth=0.8)
+ax.axhline(0, color="#aaa", linewidth=0.5)  # zero line for phase reference
+```
+
+The rendering code must verify that `ppm_scale[0] > ppm_scale[-1]` as a guard, and raise a clear error (or reverse the scale) if the Bruker file was read with an unexpected orientation. Rely on the existing `Spectrum1D.ppm_scale` and `Spectrum2D.f1_ppm_scale`/`f2_ppm_scale` from `BrukerReader` — do not recompute ppm scales inside the rendering code.
 
 **Warning signs:**
-- pyLSD exits without printing any LSD run output (normally prints "Running LSD file 1/N...")
-- 0 solutions with no stderr from LSD process (LSD was never invoked)
-- Agent diagnostic focuses on HMBC correctness but FORM/MULT mismatch is the actual cause
-- After adding FORM command, first pyLSD run produces 0 solutions on a previously-working LSD file
+- On a 1H spectrum, TMS (0 ppm) appears on the LEFT and aromatic protons (7–8 ppm) appear on the RIGHT
+- On a 13C spectrum, the carbonyl region (160–200 ppm) appears on the right
+- CH2 carbons (DEPT-135 negative phase) are absent from DEPT plot — code silenced negative lobe
+- 2D HSQC shows aromatic region in the bottom-right instead of top-left
 
 **Phase to address:**
-pyLSD input file generator phase — FORM/MULT consistency check must be part of the LSD input validation function. Add to devils-advocate pre-run checklist: "FORM carbon count matches MULT carbon atom count."
+1D spectra rendering phase. Axis direction must be a first-class acceptance criterion with a visual check on a known compound (e.g. CASE1 ibuprofen has a carbonyl at ~181 ppm that must appear on the far left, and aliphatic CH3 at ~22 ppm on the right). A test can assert `ax.get_xlim()[0] > ax.get_xlim()[1]` for the spectrum axis.
 
 ---
 
-### Pitfall 3: Combinatorial Explosion from Ambiguous MULT — pyLSD Can Generate Thousands of LSD Files
+### Pitfall 4: Bruker Data Path Is Not Recorded — Spectra Tabs Show "No Data" Silently
 
 **What goes wrong:**
-pyLSD's power is generating multiple LSD files for ambiguous atom states. But the number of LSD files grows combinatorially with the number of ambiguous atoms. The Wenk thesis shows this directly:
+The v9.2 webview server receives only `analysis_dir` at startup (via `lucy webview serve <analysis_dir>`). The Bruker experiment directories (e.g. `../10/`, `../11/`, `../12/` relative to `analysis/`) are not recorded anywhere in `analysis/`. When Stage 2 adds spectra endpoints, the server has no path to the raw Bruker data and cannot render any spectra.
 
-| Constraint added | LSD files created | Solutions |
-|-----------------|-------------------|-----------|
-| NMR correlations only | 56,829 LSD files | 1,607,593 |
-| + HHB forbidden | still many | reduced |
-| + hybridization states | 30 LSD files | 30 |
-| + forbidden/mandatory neighbors | 10 LSD files | 10 |
+The failure mode is silent: the spectra tab would show "spectra unavailable" (or worse, a 500) without any indication that the underlying problem is a missing path, not a rendering bug. A developer testing against the live CASE1 dataset does not notice this because they know the Bruker path manually; the bug surfaces when someone uses the webview on a new dataset.
 
-Without hybridization constraints (MULT with explicit sp state), pyLSD generates ALL combinations of sp1/sp2/sp3 for each atom — `56,829 LSD files for Caripyrin`. At 1-2 seconds per LSD run, 56,829 runs = 15+ hours. This happens silently when the MULT block omits explicit hybridization.
-
-For the v8.0 4J exploration approach (run pyLSD once per suspect-4J-excluded combination), even a 2-atom ELIM combination space generates `C(n,2)` combinations. With 5 suspect 4J correlations, that is `C(5,2) = 10` combinations plus individual and all-in runs — manageable. But if hybridization is also ambiguous in any atom, these multiply.
-
-**Why it happens:**
-The existing agent uses explicit hybridization in every MULT command (sp2/sp3 always specified). When migrating to pyLSD syntax, if any MULT line is written without explicit hybridization (using pyLSD's ambiguous MULT form), the combinatorial count explodes. The pyLSD documentation shows how to write ambiguous MULT commands — the developer may use them without understanding the scale consequence.
+There are two places where the path must be recorded:
+1. **At `lucy webview serve` time** — the CLI should accept a `--bruker-dir` argument (the parent of the experiment folders) or discover it from a manifest.
+2. **At `case.md` run-start time** — the orchestrator currently calls `lucy webview serve <analysis_dir>`; it must also pass the Bruker data path so it is written into `analysis/.webview.json` (which already stores the `port` and `pid`).
 
 **How to avoid:**
-1. Maintain the existing rule: always specify hybridization in MULT. Never use pyLSD's ambiguous MULT form unless you have confirmed the sp state is genuinely unknown AND that the hybridization detector (`lucy detect hybridisation`) was inconclusive.
-2. Add a pre-run check: count the number of MULT lines with ambiguous hybridization. If > 0 for the initial run, reject and require explicit states.
-3. Cap pyLSD's output: if the count of generated LSD files exceeds 50, abort and diagnose before proceeding.
+Extend `.webview.json` (managed by `state.py`) with a `bruker_dir` field written at server start:
+
+```json
+{
+  "pid": 12345,
+  "port": 8765,
+  "analysis_dir": "/path/to/data/analysis",
+  "bruker_dir": "/path/to/data",
+  "started_at": "2026-07-07T..."
+}
+```
+
+The spectra router reads `bruker_dir` from the state file at request time. If `bruker_dir` is absent or points to a non-existent directory, the endpoint returns HTTP 200 with `{"state": "unavailable", "reason": "bruker_dir not configured"}` — never a 500.
+
+`case.md` must be updated to pass the Bruker root (the CASE data directory, which contains both the experiment folders and `analysis/`) to `lucy webview serve`. The case.md orchestrator already knows this path — it is the working directory at run start.
 
 **Warning signs:**
-- pyLSD reports "Generating LSD file N..." where N exceeds 50 on first run
-- Agent omits hybridization state from any MULT line "to let pyLSD figure it out"
-- Run time exceeds 5 minutes on a molecule with < 25 atoms (normal run: < 60 seconds)
-- pyLSD output directory fills with hundreds of `.lsd` intermediate files
+- Spectra endpoints return 200 with "unavailable" state on every request, even during a live run where Bruker data is definitely present
+- `analysis/.webview.json` has no `bruker_dir` field after `lucy webview serve` is called
+- `case.md` calls `lucy webview serve analysis/` without passing a Bruker data path argument
+- Developer discovers the issue only when testing on a dataset they did not manually configure
 
 **Phase to address:**
-pyLSD integration phase — pyLSD wrapper must count generated LSD files and abort if > 50 without explicit user override. Pre-run validation gate must check: all MULT atoms have explicit hybridization.
+The phase that introduces spectra endpoints (earliest spectra phase). Adding `--bruker-dir` to `lucy webview serve` and writing it into `.webview.json` must be the first task of that phase — it is a prerequisite for all spectra work. The `case.md` update to pass the path belongs in the same phase.
 
 ---
 
-### Pitfall 4: 4J Combination Space Grows Faster Than Expected — Systematic Exclusion Without a Cap Becomes Intractable
+### Pitfall 5: Markdown Rendering Reintroduces innerHTML XSS Risk Eliminated by v9.2
 
 **What goes wrong:**
-The v8.0 design uses multiple pyLSD runs with different subsets of suspect 4J correlations included/excluded. For `n` suspect 4J correlations, the naive "try all subsets" strategy generates `2^n` runs. For ibuprofen with 3 suspect 4J correlations (`n=3`): 8 combinations — acceptable. For a compound with 6 suspects: 64 combinations — borderline. For 10 suspects: 1024 combinations — each taking 30-60 seconds = hours of runtime.
+The v9.2 dashboard deliberately used `element.textContent = data.content` to display `CASE-PROGRESS.md` as raw monospace text, explicitly avoiding `innerHTML` to prevent XSS. Stage 2 reverses this by rendering the markdown as formatted HTML. Naively implementing this as:
 
-More subtly, the WebCocon paper documents that allowing unlimited 4J interpretations caused a 1000x increase in calculation time. The pyLSD approach via multiple runs avoids this inside a single LSD call but the explosion reappears at the orchestration level if the combination count is uncapped.
+```js
+logPanel.innerHTML = convertMarkdownToHtml(data.content);
+```
+
+reintroduces HTML injection. Even though `CASE-PROGRESS.md` is server-authored (not user-supplied), any markdown content that includes `<script>`, `<img onerror=...>`, or other injection vectors — e.g. from a SMILES string an agent happened to write with `<` characters, or from a malformed agent message — would execute in the browser.
 
 **Why it happens:**
-Aromatic natural products commonly have 4-8 HMBC correlations through 4 bonds (ortho, meta, para substitution patterns plus benzylic positions). The heuristic 4J flagging in v6.0 flags aromatic HMBC patterns broadly. If all flagged correlations are systematically explored, the combination count grows quickly. The agent has no cap on how many 4J suspects it creates.
+Markdown-to-HTML conversion always produces raw HTML strings. The temptation is to use a CDN markdown library (forbidden by the no-CDN constraint) or to use a simple `marked.js` bundled copy. Without a library, a hand-rolled converter is tempting to implement as regex-replace → innerHTML assignment, which is inherently unsafe.
 
 **How to avoid:**
-1. Implement a strict cap: maximum 3 suspect 4J correlations explored per run. If nmr-chemist flags more than 3, prioritize by aromatic pattern specificity (W-pathway para-substituted benzene > generic aromatic > borderline).
-2. Use a sequential strategy (not exhaustive subset enumeration): first run all suspects excluded, then add back one at a time in order of suspicion. Stop when a run produces solutions that pass the aromatic ring sanity check.
-3. Abort after 8 pyLSD runs without a valid solution and escalate to the diagnostic agent.
+Build the DOM using the DOM API — create elements, set text content, never assign raw HTML strings. The correct pattern for a hand-rolled renderer:
+
+```js
+function renderMarkdown(text, container) {
+  container.innerHTML = "";  // clear only — safe because we built it via DOM API
+  for (const line of text.split("\n")) {
+    const el = parseLine(line);
+    container.appendChild(el);
+  }
+}
+
+function parseLine(line) {
+  if (line.startsWith("### ")) {
+    const h = document.createElement("h3");
+    h.textContent = line.slice(4);  // textContent escapes all HTML
+    return h;
+  }
+  if (line.startsWith("## ")) {
+    const h = document.createElement("h2");
+    h.textContent = line.slice(3);
+    return h;
+  }
+  if (line.startsWith("# ")) {
+    const h = document.createElement("h1");
+    h.textContent = line.slice(2);
+    return h;
+  }
+  // Code fences, tables, bold — all use textContent for text nodes
+  const p = document.createElement("p");
+  p.textContent = line;  // NEVER: p.innerHTML = line
+  return p;
+}
+```
+
+The rule is absolute: **every text node that comes from the server must be set via `textContent`, never `innerHTML`**. The only safe use of `innerHTML` is to clear the container or to insert known-safe structural HTML you wrote yourself (e.g. `container.innerHTML = ""`).
+
+CASE-PROGRESS.md uses: `# ## ###` headings, `**bold**`, `` `code` `` fences, pipe-tables, and plain paragraphs. A 50-line DOM-based renderer covers all of these without innerHTML injection.
 
 **Warning signs:**
-- nmr-chemist flags > 5 correlations as "suspect 4J"
-- Agent plans "try all combinations" without a cap
-- CASE-PROGRESS.md shows pyLSD run count > 10 on a single compound
-- 4J exploration phase of CASE takes > 15 minutes (wall time)
+- Any `element.innerHTML = someStringFromServer` in the Stage 2 JS — immediate red flag regardless of how "safe" the source seems
+- Using a CDN markdown library (forbidden by no-CDN constraint)
+- SMILES strings appearing in CASE-PROGRESS.md trigger XSS in a browser test (SMILES can contain `<` for ring closures in CXSMILES notation)
 
 **Phase to address:**
-4J exploration protocol phase — define the cap and strategy before agent integration. The cap must be in the lsd-engineer skill, not just the orchestrator, because lsd-engineer decides which correlations to defer.
+The markdown log panel phase. The acceptance criterion must include a negative test: inject `# <img src=x onerror=alert(1)>` into a mock `CASE-PROGRESS.md` and confirm the browser does not execute the payload (the heading renders as the literal text `<img src=x onerror=alert(1)>`, not as an image element).
 
 ---
 
-### Pitfall 5: Migrating Working LSD Files to pyLSD Breaks the Existing CASE Pipeline
+### Pitfall 6: Packaging and Import-Safety Regressions from matplotlib Addition
 
-**What goes wrong:**
-The existing `lucy lsd run` command takes an LSD file and invokes the LSD binary directly via stdin. pyLSD is a different program that wraps LSD. Migrating requires:
-1. Writing pyLSD input format (with FORM, PIEC 1, DUPL 1, SHIX) not just LSD input format
-2. Invoking pyLSD executable, not the LSD binary
-3. Parsing pyLSD's output format (combined solutions from multiple LSD runs, ranked by chemical shift fit)
+**What goes wrong: two separate failure modes.**
 
-If the v8.0 migration replaces `lucy lsd run` wholesale with a pyLSD runner, ALL existing LSD functionality — including fragment injection (DEFF/FEXP), constraint inventory, SYME, BOND, LIST/ELEM/PROP — must be verified to work correctly through pyLSD. A single incompatible command in the existing constraint toolkit causes silent zero solutions or outright pyLSD parse errors.
+**6a. matplotlib in core CLI.** Adding `import matplotlib` or `from matplotlib.figure import Figure` at module level in any file in `src/lucy_ng/webview/` that is imported outside `create_app()` (e.g. from `webview/__init__.py` or `webview/server.py`) breaks WV-08: the core CLI becomes importable only when matplotlib is installed. The existing `test_main_importable_without_fastapi` test would catch a fastapi regression but does NOT catch a matplotlib regression unless a parallel test is added.
 
-The known migration risk from pyLSD documentation: pyLSD version a5 had a bug where two-letter atomic symbols (Cl, Br) were not accepted in MULT commands. If any test compound has chlorine or bromine atoms, this bug will surface.
+The spectra router module (`spectra.py`) will import matplotlib at module level (fine — it is only imported inside `create_app()`), but the `matplotlib.use("Agg")` call at the top of the module means that importing that module triggers the backend setting. This is safe IF the module is only reached via `create_app()`.
 
-**Why it happens:**
-LSD and pyLSD share command syntax for the core MULT/HSQC/HMBC/BOND commands but differ in file-level structure (FORM/PIEC required, solution output format differs). The existing LSDRunner assumes stdin-based invocation and stdout/stderr for results. pyLSD outputs to a directory of files and its solution format may differ from the `.sol` format that `outlsd` expects.
+**6b. New static files vanish from wheel.** The v9.2 Pitfall 3 (hatch drops `index.html`) was resolved by adding `src/lucy_ng/webview/static/*` to `pyproject.toml` artifacts. Stage 2 may add additional frontend assets:
+- If a separate CSS file is added outside `index.html` (e.g. `static/style.css`), the existing `static/*` glob covers it.
+- If spectra are pre-rendered and stored under `static/spectra/`, a new artifacts entry `src/lucy_ng/webview/static/spectra/*` is needed — `static/*` does NOT recurse into subdirectories.
+- If any assets are placed outside `webview/static/` (e.g. `webview/templates/`), they need their own artifacts entry.
+
+The symptom — served via `FileResponse` in development but silently 404 after `pip install` — is hard to diagnose without explicitly testing an installed wheel.
 
 **How to avoid:**
-1. Run a regression suite on all existing test compounds through pyLSD before replacing `lucy lsd run`. Confirm: ibuprofen.lsd → pyLSD → same solution count as direct LSD.
-2. Introduce pyLSD as a SEPARATE runner class (`PyLSDRunner`) that wraps `LSDRunner` and adds FORM/PIEC. Do NOT replace `LSDRunner` — keep the original working for non-4J cases.
-3. Verify each constraint type through pyLSD independently: DEFF NOT, DEFF/FEXP, SYME, BOND, LIST/ELEM/PROP, ELIM.
-4. Check pyLSD version — v8.0 should require pyLSD-a8 (Python 3 compatible). Earlier versions may have bugs with multi-character atom symbols.
+
+For 6a: matplotlib must only be imported inside modules that are themselves only imported inside `create_app()`. Add a test:
+```python
+def test_webview_server_importable_without_matplotlib(monkeypatch):
+    """webview.server must not import matplotlib at module level."""
+    import sys
+    sys.modules["matplotlib"] = None  # block matplotlib
+    # Should not raise ImportError
+    import importlib
+    importlib.import_module("lucy_ng.webview.server")
+```
+
+Also: matplotlib must be added to the `[webview]` extra in `pyproject.toml` (it is not there currently):
+```toml
+webview = [
+    "fastapi>=0.100",
+    "uvicorn>=0.20",
+    "matplotlib>=3.7",
+]
+```
+Without this, `pip install lucy-ng[webview]` on a clean environment fails at the first spectra request.
+
+For 6b: maintain the rule "one artifacts entry per static subdirectory pattern used." After adding any non-Python file under `webview/`, verify with:
+```bash
+hatch build && pip install dist/*.whl --target /tmp/wheel_test && \
+  python -c "from pathlib import Path; import lucy_ng.webview.app; \
+  p = Path(lucy_ng.webview.app.__file__).parent; \
+  print(list(p.rglob('*')))"
+```
+Any missing file will be absent from the output.
 
 **Warning signs:**
-- First pyLSD run on `ibuprofen.lsd` produces a different solution count from direct LSD
-- Any command in the existing constraint inventory produces "unknown command" in pyLSD output
-- Fragment library DEFF/FEXP injection (validated in v5.0) stops working after pyLSD migration
-- `outlsd` fails to parse pyLSD's combined solution output (format differs from single-run LSD `.sol`)
+- `from lucy_ng.cli import cli` raises `ModuleNotFoundError: No module named 'matplotlib'` on a base install — matplotlib leaked into the core import path
+- `import lucy_ng.webview.server` raises `ImportError` on a base install (without `[webview]` extra)
+- Browser gets `404 Not Found` for a static asset after `pip install` but the file exists in the source tree
+- `[webview]` extra in pyproject.toml does not list `matplotlib` — users get `ModuleNotFoundError` at runtime after installing the extra
 
 **Phase to address:**
-pyLSD runner implementation phase — regression suite (existing LSD test cases run through pyLSD) must be a BLOCKING acceptance criterion before any agent integration.
+The phase that introduces spectra rendering. Three tasks are non-negotiable at phase start, before any rendering code: (1) add `matplotlib>=3.7` to the `[webview]` extra, (2) confirm existing `test_main_importable_without_fastapi` still passes, (3) add the parallel matplotlib import-safety test.
 
 ---
 
-### Pitfall 6: v7.0 Lesson — Calibrate the New Approach Before Building the Full Pipeline
+### Pitfall 7: Tests That Require Real Bruker Data or a Live CASE Run
 
 **What goes wrong:**
-The v7.0 failure spent multiple development phases (DB schema, generator, detection engine, agent updates) before discovering at calibration that the statistical approach was fundamentally non-viable (100% false positive rate). The failure mode was not a bug — the approach itself did not work. Five phases of work were abandoned.
+A test suite for spectra endpoints that depends on real Bruker experiment directories (e.g. the CASE1 ibuprofen dataset in `~/Dropbox/develop/data/nmrdata/`) cannot run in CI, on Sheldon, or on a clean checkout. If spectra rendering tests are skipped when Bruker data is absent, the spectra endpoint code is never automatically tested, and regressions (wrong axis direction, matplotlib Agg confusion, contour crash on empty data) accumulate undetected.
 
-The v8.0 pyLSD approach must not repeat this pattern. The core hypothesis is: "running pyLSD with 4J suspects excluded will produce solutions, and one of them will pass the aromatic ring sanity check." This hypothesis must be validated on ibuprofen BEFORE building pyLSD infrastructure.
-
-**Why it happens:**
-It is tempting to build the clean abstraction first (pyLSD runner, 4J combination explorer, result merger, agent integration) and validate the approach at the end. This is the wrong order. If the pyLSD-based approach also fails (e.g., excluding 4J correlations still produces zero solutions because the remaining 2J/3J correlations are still ambiguous), the entire infrastructure is wasted.
-
-**How to avoid:**
-Manual validation first, code second:
-1. Run pyLSD manually on ibuprofen.lsd with the 3 suspected 4J correlations (HMBC 4 8, HMBC 6 9, HMBC 8 4) removed from the input.
-2. Check: does this produce solutions? Do those solutions include an aromatic ring (verify with `lucy lsd rank` + aromatic ring check)?
-3. If YES → hypothesis validated → build infrastructure.
-4. If NO → diagnose before committing any code.
-
-This is a 30-minute manual test. It must be Phase 1 of the v8.0 roadmap.
-
-**Warning signs:**
-- Roadmap starts with "implement PyLSDRunner" before manual validation test
-- First phase is infrastructure, not hypothesis validation
-- The approach is justified by "it worked in Sherlock" without direct ibuprofen confirmation
-
-**Phase to address:**
-Phase 1 of v8.0 must be: "Validate 4J-removal hypothesis on ibuprofen manually." This is a non-code phase (or a 1-day phase with a single test). Gate the entire roadmap on this result.
-
----
-
-### Pitfall 7: pyLSD Solution Ranking Uses Its Own NMRShiftDB Algorithm — Conflicts with Existing HOSE-Based Ranker
-
-**What goes wrong:**
-pyLSD has a built-in solution ranking algorithm that uses nmrshiftdb2 predictions to rank solutions by chemical shift fit. This is activated via `SHIX` commands (experimental 13C shifts) in the input file. If SHIX is present, pyLSD's ranking overrides the order of solutions in its combined output.
-
-The existing `lucy lsd rank` uses a HOSE-based ranker with:
-- Two-tier ranking (match count primary, MAE secondary)
-- Per-atom confidence from the 7.9M HOSE statistics database
-- Aromatic ring sanity check post-ranking
-
-If pyLSD's ranking is allowed to run, the combined solution file will be pre-sorted by pyLSD's nmrshiftdb ranking, which may differ from the HOSE-based ranking. Using pyLSD's ranking without understanding its algorithm risks the v4.0 failure mode returning: a wrong structure with coincidentally low MAE outranks the correct structure.
+The v9.2 baseline already solved this correctly for JSON endpoints — fixtures create synthetic `analysis/` directories with minimal files. Stage 2 must extend the same pattern to spectra.
 
 **Why it happens:**
-SHIX commands are recommended by pyLSD documentation as required for solution ranking. A developer following pyLSD documentation will add SHIX commands and assume pyLSD ranking is correct. The project's existing two-tier ranking exists specifically because naive MAE ranking caused the v4.0 UAT failure (solution analyst hallucinated "rank #1 = ibuprofen" for a 7-membered ring isomer).
+`BrukerReader.read_1d()` and `read_2d()` call `nmrglue.bruker.read_pdata()` which requires real Bruker binary files on disk. It is tempting to write tests that call `BrukerReader` directly, which forces a dependency on real data.
 
 **How to avoid:**
-Do NOT rely on pyLSD's built-in ranking. Include SHIX commands for documentation purposes (they also control SYME equivalence detection for identical-status atoms) but post-process all solutions from all pyLSD runs through the existing `lucy lsd rank` command with two-tier ranking. pyLSD's ranking output should be explicitly discarded or treated as advisory only.
+The "dumb server" boundary is the key: rendering functions must accept `Spectrum1D` / `Spectrum2D` model objects (already defined in `lucy_ng.models`), not Bruker directory paths. The `BrukerReader` is called once at the endpoint to load data; the render function takes the model and returns bytes. Tests bypass `BrukerReader` entirely by constructing minimal model objects:
+
+```python
+import numpy as np
+from lucy_ng.models import Spectrum1D, Spectrum2D
+
+@pytest.fixture
+def synthetic_1d() -> Spectrum1D:
+    n = 256
+    ppm = np.linspace(200.0, 0.0, n)  # high→low, Bruker convention
+    data = np.exp(-((ppm - 130.0) ** 2) / 2) + 0.1 * np.random.default_rng(0).standard_normal(n)
+    return Spectrum1D(data=data, ppm_scale=ppm, nucleus="13C", frequency=150.9)
+
+@pytest.fixture
+def synthetic_2d() -> Spectrum2D:
+    f1 = np.linspace(160.0, 0.0, 32)
+    f2 = np.linspace(10.0, 0.0, 64)
+    data = np.zeros((32, 64))
+    data[10, 20] = 1e6  # single peak
+    return Spectrum2D(data=data, f1_ppm_scale=f1, f2_ppm_scale=f2,
+                      f1_nucleus="13C", f2_nucleus="1H", experiment_type="HSQC", frequency=600.0)
+```
+
+The FastAPI endpoint returns `Response(content=render_spectrum_1d_png(spec), media_type="image/png")`. Tests call the render function directly (unit tests) or call the endpoint via `TestClient` with a fixture-backed `analysis_dir` that contains a minimal experiment manifest telling the server which experiment to load (using the synthetic model, not real Bruker files).
+
+For integration tests that DO use real Bruker data: mark them with `@pytest.mark.bruker_required` and a conftest skip guard, exactly like the existing `@pytest.mark.webview_server` skip guard in `test_cli_webview.py`.
 
 **Warning signs:**
-- Solution analyst references "pyLSD ranking" rather than "HOSE-based ranking" in CASE-PROGRESS.md
-- Solutions are processed in pyLSD output order without re-ranking through `lucy lsd rank`
-- Aromatic ring sanity check is not run on pyLSD solutions (it was added post-v4.0 specifically for this failure mode)
+- Any test in `test_webview_spectra.py` calls `BrukerReader.read_1d()` directly without a skip guard
+- Tests pass locally (Bruker data present) but the CI run shows "no tests collected" for the spectra test module
+- The spectra rendering function signature is `render_1d(bruker_dir: Path, expno: int) -> bytes` instead of `render_1d(spec: Spectrum1D) -> bytes` — endpoint logic is not separated from I/O
+- Fake Bruker directories in `tmp_path` fixtures that try to replicate the acqus/pdata structure — these are fragile and break on nmrglue version changes
 
 **Phase to address:**
-pyLSD integration phase — specify explicitly in lsd-engineer and solution-analyst skills: "Use `lucy lsd rank` on combined pyLSD solutions. Do not use pyLSD's pre-sorting. Always run aromatic ring sanity check."
-
----
-
-### Pitfall 8: 4J Heuristic Over-Flags — Agent Defers Too Many Correlations and Misses Correct Structure
-
-**What goes wrong:**
-The v6.0 heuristic flags aromatic HMBC correlations broadly as "suspect 4J." If lsd-engineer defers ALL flagged correlations (safe strategy), the problem becomes under-constrained: not enough HMBC correlations to uniquely determine the structure, producing hundreds of solutions. If the agent defers only "high confidence" flags but the 4J signals were genuinely 3J, the over-constrained problem persists.
-
-The WebCocon paper documents the opposite failure: "if actual 4J correlations exist but the 4J-Flag is zero, the process will fail entirely." The danger here is setting 4J-Flag too high (deferring valid 3J correlations), not too low.
-
-**Why it happens:**
-W-pathway 4J correlations through aromatic rings are visually indistinguishable from 3J correlations in HMBC spectra. The heuristic (shift range + aromatic neighborhood) cannot distinguish them from genuine 3J correlations without structural knowledge. Without the correct structure, you cannot know which correlations are 4J.
-
-**How to avoid:**
-Use a conservative deferral strategy: defer only correlations that satisfy ALL of these criteria simultaneously:
-1. Both carbons are in aromatic sp2 shift range (120-145 ppm)
-2. The HMBC spectrum shows a well-defined aromatic region
-3. The compound has a substituted benzene ring based on HSQC (2+ aromatic CH peaks with quaternary carbons)
-4. Zero solutions are obtained when the correlation is included
-
-Never pre-emptively defer correlations without first running with all correlations included. If you have 12 solutions with all correlations, there is no need to investigate 4J.
-
-**Warning signs:**
-- Agent defers 4+ correlations before any LSD run
-- First LSD run is run with correlations missing (agent didn't run with full set first)
-- Solution count explodes to > 100 after deferral (under-constrained)
-- CASE-PROGRESS.md shows "4J deferred" but no zero-solution evidence justifying the deferral
-
-**Phase to address:**
-4J exploration protocol definition phase — lsd-engineer skill must mandate: "Run with all correlations first. Defer correlations only if zero solutions. Defer minimum number."
+Established in the first spectra phase as a hard architectural rule: rendering functions accept `Spectrum1D`/`Spectrum2D`, not paths. TestClient fixture pattern (from Phase 91's research) extended with `synthetic_1d`/`synthetic_2d` fixtures. No spectra tests use real Bruker data without an explicit skip guard.
 
 ---
 
 ## Technical Debt Patterns
 
-Shortcuts that seem reasonable but create long-term problems.
-
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
 |----------|-------------------|----------------|-----------------|
-| Replace `LSDRunner` directly with `PyLSDRunner` | Single code path | Breaks regression on non-4J compounds; no fallback if pyLSD unavailable | Never — keep both runners |
-| Use pyLSD's built-in ranking | No ranking code needed | Two-tier ranking lost; v4.0 MAE-hallucination failure mode returns | Never — always use `lucy lsd rank` |
-| Add `FORM` to existing LSD files without validation | Minimal file change | FORM/MULT mismatch causes zero LSD files generated, no diagnostic | Never — validate consistency first |
-| Try all 2^n 4J subsets | Complete coverage | Combinatorial explosion for n > 4 | Acceptable only for n ≤ 3 |
-| Rely on ELIM for 4J handling | Simple change to existing workflow | Correlations dropped rather than satisfied as 4J; aromatic connectivity silently missing | Never — use per-correlation bond ranges |
-| Run full pyLSD without checking generated file count | Simpler orchestration | 10,000+ LSD runs without notice | Never — abort if > 50 generated files |
+| `import matplotlib.pyplot as plt` in route handler | Familiar API | Non-thread-safe global state; intermittent corruption under concurrent load | Never in server code |
+| No downsampling for 2D contour | Simpler code | 500 ms–3 s per request; 200–500 MB peak RSS; event-loop blocking | Never for server-rendered PNGs |
+| `element.innerHTML = markdownToHtml(text)` | One-line rendering | XSS injection from any server-authored content with `<` chars | Never — use DOM API |
+| `matplotlib` not in `[webview]` extra | Smaller extra metadata | `ModuleNotFoundError` at first spectra request on clean install | Never |
+| Rendering functions accept Bruker paths not models | Simpler endpoint code | Tests require real Bruker files; CI cannot run spectra tests | Never |
+| No mtime-keyed PNG cache | Simpler code | Full re-render every 3 s (browser polling interval); ~500 ms latency per refresh | Acceptable for 1D (fast); unacceptable for 2D |
 
 ---
 
 ## Integration Gotchas
 
-Common mistakes when connecting pyLSD to the existing CASE system.
-
 | Integration | Common Mistake | Correct Approach |
 |-------------|----------------|------------------|
-| pyLSD executable invocation | Run pyLSD like LSD (`lsd < input.lsd`) | pyLSD is a Python script, not a binary; invoke with `python pylsd.py input.pylsd` or equivalent wrapper |
-| Solution file format | Assume pyLSD outputs single `.sol` file like LSD | pyLSD combines solutions from multiple LSD runs; the combined output format may differ from single-run `.sol` — verify `outlsd` compatibility |
-| SHIX vs. HOSE ranking | Use pyLSD's SHIX-based ranking as final answer | Run all combined solutions through `lucy lsd rank` with two-tier ranking; treat pyLSD ordering as input, not output |
-| DUPL command | Omit DUPL (default behavior) | Default DUPL 2 removes duplicates — may combine identical structures from different LSD runs. Use `DUPL 1` to preserve all solutions before ranking |
-| PIEC command | Omit PIEC | Without `PIEC 1`, pyLSD may produce solutions with disconnected fragments. Always include `PIEC 1` |
-| Fragment library DEFF/FEXP | Assume DEFF/FEXP works the same in pyLSD | Test DEFF/FEXP through pyLSD on a known compound before assuming it functions identically |
-| Constraint inventory across iterations | Rebuild pyLSD-specific lines (FORM, PIEC) from memory each iteration | Treat FORM and PIEC as fixed constants; copy them from previous iteration file like other constraints |
+| matplotlib + FastAPI | `async def` route with sync `contour()` call inside | `def` (sync) route — FastAPI dispatches to thread-pool executor automatically |
+| BrukerReader ppm scale | Assume `ppm_scale[0]` is always the smallest value | `ppm_scale[0]` is the highest ppm (Bruker convention); set `xlim(ppm_scale[0], ppm_scale[-1])` |
+| matplotlib Agg backend | Call `matplotlib.use("Agg")` after `import matplotlib.pyplot` | Call `use("Agg")` before any pyplot import, at module-level in the spectra module |
+| Bruker path at webview serve | Pass only `analysis_dir` to `lucy webview serve` | Pass both `analysis_dir` and `bruker_dir` (CASE data root); write to `.webview.json` |
+| Markdown → DOM | `innerHTML = convertedHtml` | Build DOM via `createElement` + `textContent` for all text from server |
+| hatch artifacts | Assume `static/*` glob covers subdirectories | Glob is flat; `static/spectra/*` needs its own artifacts entry if spectra subdirectory is used |
 
 ---
 
 ## Performance Traps
 
-Patterns that work at small scale but fail with pyLSD's multi-run approach.
-
 | Trap | Symptoms | Prevention | When It Breaks |
 |------|----------|------------|----------------|
-| Ambiguous MULT hybridization | pyLSD generates 1000+ LSD files silently | Require explicit hybridization in every MULT; abort if generated file count > 50 | Immediately with any ambiguous atom |
-| Exhaustive 4J subset search | 2^n combinations for n suspect correlations | Cap at 3 suspects max; use sequential not exhaustive strategy | n > 4 suspects (16+ combinations × 30s = 8+ minutes) |
-| Per-run timeout too short | LSD runs hit timeout before finding solutions | pyLSD runs individual LSD files sequentially; each may need up to 60s; total budget = files × 60s | Multi-file runs without cumulative timeout budget |
-| No results-merger for combined outlsd parsing | `outlsd` called once on combined `.sol` fails | Merge solutions before calling `outlsd` or call `outlsd` per-run and aggregate SMILES | Always — pyLSD multi-run needs explicit merging |
-| Diagnostic iteration continues after pyLSD structural failure | Agent escalates HMBC constraints when FORM/MULT mismatch is the real issue | Add pyLSD-specific pre-diagnostic (check generated file count before LSD run diagnostic) | Zero pyLSD-generated files (FORM/MULT mismatch) |
+| Full-res 2D contour per request | 500 ms+ response time; memory growth | Decimate to max 512×512; mtime-keyed cache | Every request on a 1024×2048 HMBC |
+| No PNG cache | 3 s re-render every browser polling cycle | Cache bytes keyed by `(exp_path, mtime)` | Always on 3 s polling with 2D spectra |
+| Blocking event loop with `async def` render | All other endpoints stall during spectra render | Use `def` (sync) for spectra routes | Every request while rendering |
+| DEPT without negative levels | No CH2 peaks shown (they are negative phase) | Include symmetric negative contour levels for DEPT/HSQC-edited | Every DEPT plot |
+
+---
+
+## Security Mistakes
+
+| Mistake | Risk | Prevention |
+|---------|------|------------|
+| `innerHTML` for markdown-rendered log | Script injection from `<script>` or event-handler attributes in CASE-PROGRESS.md | `textContent` for all server text; DOM API for structure |
+| Path traversal via experiment number | Reading arbitrary files via constructed Bruker path | Validate experiment path is within `bruker_dir`; reject `..` components |
 
 ---
 
 ## "Looks Done But Isn't" Checklist
 
-Critical checks that indicate pyLSD integration is genuinely functional vs. appearing to work.
-
-- [ ] **Regression test passes:** `ibuprofen.lsd` through pyLSD produces same solution count as direct LSD (before 4J handling changes). If count differs, pyLSD is changing behavior on known-working files.
-- [ ] **FORM/MULT consistency verified:** For every test compound, `sum(MULT carbons) == FORM carbon count`. Failures = FORM/MULT mismatch pitfall.
-- [ ] **Aromatic ring check runs on combined output:** After pyLSD 4J exploration, `lucy lsd rank` is called on the combined SMILES, and the aromatic ring sanity check field is present in the JSON output. If missing, v4.0 failure mode is undetected.
-- [ ] **Fragment library still works:** After pyLSD migration, DEFF/FEXP goodlist (v5.0 feature) reduces solution count on a test compound. If fragment injection has no effect, pyLSD broke DEFF/FEXP handling.
-- [ ] **4J suspect deferral only after zero-solution evidence:** CASE-PROGRESS.md shows: first run included all correlations, zero solutions, THEN 4J deferral. If the first iteration already has deferred correlations, the protocol is inverted.
-- [ ] **Generated file count is bounded:** pyLSD run log shows "Generating N LSD files" where N is < 50. If N > 50, combinatorial explosion is occurring.
-- [ ] **ELIM is not used for 4J:** No `ELIM` command appears in pyLSD files for 4J handling. ELIM should only appear as a last-resort for suspected spectral artifacts. Per-correlation ranges (`HMBC C H 2 4`) are used for 4J.
-- [ ] **Two-tier ranking applied to combined output:** `lucy lsd rank` output shows `matched_count` as the primary sort criterion (not MAE). If solutions are sorted by MAE only, the v4.0 ranking regression has occurred.
+- [ ] **1D axis direction:** Plot of 1H spectrum shows TMS (0 ppm) on the RIGHT and aromatics (7–8 ppm) on the LEFT — verify `ax.get_xlim()[0] > ax.get_xlim()[1]`
+- [ ] **2D axis direction:** HSQC aromatic region is in the TOP-LEFT (high F2-1H ≈ 7 ppm, high F1-13C ≈ 130 ppm) not bottom-right
+- [ ] **DEPT CH2 visible:** Negative-phase CH2 peaks appear below the zero line (not absent)
+- [ ] **Spectra tab on fresh checkout:** `pip install lucy-ng[webview]` on a clean venv can serve a spectra tab (matplotlib is listed in the extra)
+- [ ] **No matplotlib in core:** `python -c "import sys; sys.modules['matplotlib']=None; from lucy_ng.cli import cli"` does not raise
+- [ ] **Bruker path in .webview.json:** After `lucy webview serve`, `cat analysis/.webview.json` shows a `bruker_dir` field
+- [ ] **Markdown XSS test:** `# <img src=x onerror=alert(1)>` in mock CASE-PROGRESS.md renders as literal text, not an image element
+- [ ] **Wheel contains static assets:** After `hatch build`, confirm all static files exist in the installed wheel (not just in the source tree)
+- [ ] **Spectra tests run without Bruker files:** `pytest tests/test_webview_spectra.py -x` passes on a checkout with no `~/Dropbox/develop/data/` path present
 
 ---
 
 ## Recovery Strategies
 
-When pitfalls occur despite prevention, how to recover.
-
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|---------------|----------------|
-| ELIM used for 4J (correlations silently dropped) | MEDIUM | 1. Identify all LSD files where ELIM was used with 4J intent, 2. Replace ELIM with per-correlation range syntax `HMBC C H 2 4`, 3. Re-run and compare solution count |
-| FORM/MULT mismatch (0 pyLSD files) | LOW | 1. Count MULT atoms by element, 2. Compare to FORM string, 3. Fix discrepancy (usually heteroatom double-count), 4. Re-run pyLSD |
-| Combinatorial explosion (1000+ LSD files) | LOW | 1. Kill pyLSD, 2. Identify which MULT atoms have ambiguous hybridization, 3. Specify explicit sp state for each, 4. Re-run |
-| 4J combination space too large | MEDIUM | 1. Cut suspect list to top-3 by chemical evidence, 2. Switch from exhaustive subset search to sequential, 3. Re-run |
-| pyLSD migration broke fragment library | HIGH | 1. Revert to `LSDRunner` for fragment injection, 2. Use pyLSD only for 4J exploration phase, 3. Merge solutions from both runs |
-| Solution analyst uses pyLSD ranking instead of HOSE ranking | LOW | 1. Re-run `lucy lsd rank` on combined SMILES file, 2. Update solution-analyst skill with explicit instruction |
-| Regression: pyLSD changes behavior on existing cases | HIGH | 1. Identify which commands differ in pyLSD vs. LSD, 2. Maintain `LSDRunner` as fallback, 3. Route non-4J cases through LSDRunner |
+| pyplot global state corruption (live) | MEDIUM | 1. Locate `import matplotlib.pyplot` in webview, 2. Replace with OO `Figure` API, 3. Restart server |
+| 2D render blocking event loop | LOW | 1. Change `async def` to `def` for spectra routes, 2. Redeploy |
+| Wrong ppm axis direction | LOW | 1. Fix `set_xlim`/`set_ylim` calls to use `(ppm_scale[0], ppm_scale[-1])`, 2. Add axis-direction assertions to tests |
+| Bruker path missing (spectra unavailable) | LOW | 1. Add `--bruker-dir` arg to `lucy webview serve`, 2. Write to `.webview.json`, 3. Update `case.md` |
+| XSS via innerHTML | LOW | 1. Replace `innerHTML = html` with DOM API construction, 2. Add negative XSS test |
+| matplotlib missing from wheel | LOW | 1. Add `matplotlib>=3.7` to `[webview]` extra, 2. `hatch build` + verify |
+| Static assets missing from installed wheel | LOW | 1. Add missing path to `artifacts` in pyproject.toml, 2. `hatch build` + verify |
 
 ---
 
 ## Pitfall-to-Phase Mapping
 
-How roadmap phases should address these pitfalls.
-
 | Pitfall | Prevention Phase | Verification |
 |---------|------------------|--------------|
-| ELIM semantics confusion | pyLSD input format phase — update lsd-engineer skill | Agent uses `HMBC C H 2 4` for 4J, never ELIM for bond extension |
-| FORM/MULT mismatch | pyLSD input generator phase — add consistency validator | `validate_pylsd_input()` catches discrepancy before run |
-| Combinatorial explosion from ambiguous MULT | pyLSD runner phase — add generated-file count abort | pyLSD wrapper aborts if N > 50 files |
-| 4J combination space | 4J exploration protocol phase | Cap defined in lsd-engineer skill; sequential strategy |
-| Migration regression | pyLSD runner phase — regression suite | `ibuprofen.lsd` through pyLSD matches direct LSD solution count |
-| pyLSD ranking overrides HOSE ranking | Agent integration phase | All runs go through `lucy lsd rank`; aromatic ring check present in output |
-| v7.0 recurrence — build before validate | Phase 1 gate | Manual ibuprofen test PASSES before any code is written |
-| 4J over-deferral | 4J protocol phase | First iteration always includes all correlations |
-
----
-
-## v7.0 Lessons Applied
-
-These are directly extracted from the v7.0 post-mortem and mapped to v8.0 risks.
-
-| v7.0 Lesson | v8.0 Risk | Prevention |
-|-------------|-----------|------------|
-| 100% false positive rate from aggregate statistics | pyLSD multi-run may also fail to find correct structure (different approach, same underlying problem) | Validate on ibuprofen manually before building infrastructure |
-| Spent 5 phases building before calibrating | v8.0 could spend phases building pyLSD runner before knowing it works | Phase 1 = manual validation test; gate entire roadmap on result |
-| j5_plus dominates regardless of environment — statistics cannot discriminate | Per-correlation HMBC ranges also risk false positives if 4J/3J discrimination is wrong | The 4J identification still relies on heuristics; wrong identification = wrong deferral |
-| Schema migration was rolled back entirely | pyLSD integration risks requiring rollback if it breaks existing cases | `PyLSDRunner` is additive (new class), never replaces `LSDRunner` |
-| Agent skill updates were written for a detection CLI that turned out non-viable | Agent updates for pyLSD 4J protocol may be written before confirming pyLSD produces correct structures | Agent skill updates come AFTER successful manual test AND regression suite |
+| matplotlib pyplot thread-safety (P1) | 1D spectra rendering phase | Import-safety test passes; OO API used throughout; no `plt.*` in webview |
+| 2D contour perf/memory (P2) | 2D contour rendering phase | Render time < 100 ms with caching; memory stable over 10 requests |
+| ppm axis direction (P3) | 1D spectra rendering phase (AC on 1D; re-verified on 2D) | `ax.get_xlim()[0] > ax.get_xlim()[1]` assertion in tests; visual check on CASE1 |
+| Bruker path location (P4) | First spectra phase (prerequisite) | `.webview.json` contains `bruker_dir`; spectra tab shows data on CASE1 |
+| Markdown XSS (P5) | Markdown log panel phase | Negative XSS test passes; no `innerHTML` of server content in JS |
+| Packaging/import-safety regressions (P6) | First spectra phase (prerequisite) | Core import test passes; matplotlib in `[webview]` extra; wheel contains all static files |
+| Test fixture boundary (P7) | First spectra phase (architectural rule at phase start) | All spectra tests pass on clean checkout without Bruker data |
 
 ---
 
 ## Sources
 
-### Primary: Project Post-Mortem
-- `/Users/steinbeck/Dropbox/develop/lucy-ng/.planning/milestones/v7.0-ROADMAP.md` — v7.0 failure analysis, 100% false positive rate, pyLSD as next approach
-- `/Users/steinbeck/Dropbox/develop/lucy-ng/.planning/PROJECT.md` — v4.0 UAT findings (4J root cause), v3.0 constraint-loss bugs, architecture decisions
-
-### Primary: Project Memory (MEMORY.md)
-- v4.0 UAT: all 7 solutions wrong due to 4J HMBC through aromatic ring; solution analyst hallucinated correct answer
-- v7.0 abandonment at calibration after full database generation
-
-### Primary: Wenk Thesis
-- `background/wenk-thesis.txt` lines 4666-4744 — Caripyrin example showing 56,829 LSD files → 30 files with hybridization constraints. Demonstrates combinatorial explosion risk without explicit sp states.
-
-### Primary: LSD Manual
-- [LSD MANUAL_ENG.html](https://nuzillard.github.io/LSD/MANUAL_ENG.html) — ELIM command semantics (HIGH confidence): `ELIM P1 P2` means eliminate up to P1 correlations through up to P2 bonds. DUPL 0/1/2 semantics. SHIX/SHIH documentation.
-
-### Primary: pyLSD Documentation
-- [PyLSD official site](https://nuzillard.github.io/PyLSD/) — FORM command, PIEC 1, MULT ambiguous forms, SHIX for ranking, migration path from LSD (MEDIUM confidence: documentation sparse on edge cases)
-- [PyLSD HISTORY.html](https://nuzillard.github.io/PyLSD/HISTORY.html) — version history, a5 bug: two-letter atomic symbols (Cl, Br) not accepted in MULT
-
-### Supporting: 4J HMBC Research
-- [WebCocon paper: Incorporation of 4J-HMBC and NOE Data (PMC8398166)](https://pmc.ncbi.nlm.nih.gov/articles/PMC8398166/) — 4J-Flag semantics, 1000x explosion when unlimited 4J allowed, step-by-step addition strategy (MEDIUM confidence)
-
-### Supporting: lucy-ng Codebase
-- `/Users/steinbeck/Dropbox/develop/lucy-ng/src/lucy_ng/lsd/runner.py` — LSDRunner implementation, outlsd invocation, solution counting
-- `/Users/steinbeck/Dropbox/develop/lucy-ng/src/lucy_ng/lsd/cli/lsd.py` — `lucy lsd run` and `lucy lsd rank` CLI (existing pipeline to preserve)
-- `/Users/steinbeck/.claude/agents/lucy-lsd-engineer.md` — current ELIM usage (last-resort, not 4J), constraint inventory rules
+- `src/lucy_ng/webview/depiction.py` — v9.2 "never raises" + lazy import pattern; mirror for matplotlib OO API
+- `src/lucy_ng/readers/bruker.py` — `ppm_scale` ordering from `ng.fileiobase.uc_from_udic`; F1/F2 dimension conventions
+- `src/lucy_ng/processing/peak_picker_2d.py` — `_compute_2d_noise_sigma` MAD estimator; reuse for contour level thresholding
+- `.planning/milestones/v9.2-phases/91-api-endpoints-depictions-and-static-frontend/91-RESEARCH.md` — Pitfall 2 (WV-08 lazy import), Pitfall 3 (hatch artifacts `static/*`), Pitfall 6 (MolDraw2DSVG per-call instance) — all apply by analogy to matplotlib
+- `pyproject.toml` — current `[webview]` extra (fastapi + uvicorn only; matplotlib absent), current `artifacts` list
+- `src/lucy_ng/webview/app.py` + `server.py` + `state.py` — WV-08 boundary; `.webview.json` schema
+- matplotlib documentation: `matplotlib.use()` must precede pyplot import; `Figure`/`FigureCanvasAgg` OO API for thread-safe headless rendering
+- FastAPI documentation: sync `def` route handlers run in thread-pool executor; `async def` handlers block the event loop if they perform sync I/O
 
 ---
-*Pitfalls research for: pyLSD integration and 4J HMBC exploration — v8.0 milestone*
-*Researched: 2026-03-13*
+*Pitfalls research for: v9.3 CASE Web-View Stage 2 — server-side NMR spectra rendering, data tables, markdown log*
+*Researched: 2026-07-07*
