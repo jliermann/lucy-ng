@@ -54,7 +54,10 @@ all organized in tabs. Builds on the v9.2 architecture where "tabs dock in witho
   3. Injecting `# <img src=x onerror=alert(1)>` into a mock CASE-PROGRESS.md renders as literal escaped text in the browser, not as an HTML element — the v9.2 XSS discipline (textContent throughout, never innerHTML of server content) is preserved.
   4. `static/webview.js` is extracted from `index.html`, served via an explicit `/webview.js` route in `app.py`, and present in the installed wheel (existing `src/lucy_ng/webview/static/*` hatch artifact glob covers it).
 
-**Plans**: TBD
+**Plans**: 3 plans
+- [ ] 93-01-PLAN.md — Extract webview.js + `/webview.js` route + Wave 0 route/packaging tests
+- [ ] 93-02-PLAN.md — Tab bar (4 tabs) + hand-rolled markdown-to-DOM renderer + innerHTML XSS-guard test
+- [ ] 93-03-PLAN.md — Manual browser checkpoint: XSS escaping + tab switching + typography hierarchy
 
 **UI hint**: yes
 
@@ -115,7 +118,7 @@ all organized in tabs. Builds on the v9.2 architecture where "tabs dock in witho
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 93. Formatted Log + Tab Framework | 0/TBD | Not started | - |
+| 93. Formatted Log + Tab Framework | 0/3 | Planned | - |
 | 94. Data Tables | 0/TBD | Not started | - |
 | 95. 1D Real Spectra + Peak Overlay | 0/TBD | Not started | - |
 | 96. 2D Real Spectra + Peak Overlay | 0/TBD | Not started | - |
