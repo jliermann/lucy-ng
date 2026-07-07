@@ -560,9 +560,12 @@ the raw log proves hard to read" trigger that STATE.md records as now met).
 | A2 | No real `CASE-PROGRESS.md` from a completed run exists in this repo/data tree to inspect directly; the markdown subset used in this research is derived entirely from `.claude/commands/lucy-ng/references/progress-format.md` (the authoritative writer spec) plus the `conftest.py` test fixture snippet, both of which are first-party project sources, not external/training-data guesses. | Summary, Architecture Pattern 3 | If the coordinator's actual runtime output drifts from the documented spec (e.g., a field value that legitimately starts with `#` or contains a raw `|`), the block parser's heuristics (Pitfall 4) should still degrade gracefully to a paragraph rather than crash, but visual formatting could look wrong for that one line. |
 | A3 | `FileResponse(..., media_type="application/javascript")` is accepted by browsers as a valid classic-script MIME type. This is standard/uncontroversial browser behavior, not a project-specific claim, but is not independently verified against a live browser in this research session. | Common Pitfalls #5, Code Examples | Extremely low risk — this is one of the two IANA-registered/commonly-accepted MIME types for JavaScript; if a stricter policy is ever encountered, `text/javascript` (the WHATWG-recommended modern alternative) is the fallback. |
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+> Both questions were resolved during plan-phase and carried into the plans. See CONTEXT.md.
 
 1. **Tab naming/scope discrepancy between REQUIREMENTS.md and ROADMAP.md.**
+   **RESOLVED — see CONTEXT.md D-01 (user-confirmed 2026-07-07):** ROADMAP's 4-tab set is authoritative for this phase (Run Log / 1D Spectra / 2D Spectra / Tables); Overview + Structures stay as the persistent left column, not tabs.
    - What we know: `REQUIREMENTS.md` TAB-01 names 5 tabs — "Overview / Structures /
      Spectra / Tables / Log". `ROADMAP.md`'s Phase 93 success criterion #1 names 4 tabs —
      "Run Log / 1D Spectra / 2D Spectra / Tables" — and does not mention a
@@ -581,6 +584,7 @@ the raw log proves hard to read" trigger that STATE.md records as now met).
      technically implies a 5th tab.
 
 2. **Automated verification of the browser-rendered-escaping acceptance criterion (#3).**
+   **RESOLVED — see CONTEXT.md D-04:** two-layer approach adopted — automatable pytest static-source-scan (no `innerHTML` of server content) + a manual `checkpoint:human-verify` task (plan 93-03). No Node/jsdom dependency introduced.
    - What we know: The project has no JS test runtime/browser-automation tool in its
      dependency stack (no `package.json`, no Playwright/Selenium/jsdom in `pyproject.toml`
      `dev` extras). `node` (v19.9.0) happens to be present on this development machine but
