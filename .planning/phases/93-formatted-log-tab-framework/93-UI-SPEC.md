@@ -34,6 +34,8 @@ created: 2026-07-07
 | Font (body/UI) | `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif` — existing `body` rule, unchanged |
 | Font (code/monospace) | `"SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace` — existing `#log-panel` rule, reused for inline `code` spans and fenced code blocks only |
 
+**Primary visual focal point:** The rendered Run Log / active-tab content is the eye's first stop — it occupies the right column at full panel size and is where formatting (headings, bold labels, tables) draws attention; this preserves the v9.2 balance where the structure grid (left) and log panel (right) share visual weight equally, with the log's newly-structured content becoming the primary reading surface during a live run.
+
 ---
 
 ## Spacing Scale
@@ -42,7 +44,7 @@ Declared values (must be multiples of 4). Values marked "existing" are extracted
 
 | Token | Value | Usage | Source |
 |-------|-------|-------|--------|
-| xs | 4px | Tile-label internal gaps, tab-button row gap, inline code padding-y | existing (`.tile-label` gap) |
+| xs | 4px | Tile-label internal gaps, tab-button row gap, inline code padding-x, paragraph block margins | existing (`.tile-label` gap) |
 | sm | 8px | Compact spacing — status-bar padding-y, tab-button padding-y, block margins (h3, hr) | existing (`#status-bar` padding) |
 | md | 16px | Default element spacing — status-bar padding-x, tab-button padding-x, h1/h2 block margins, hr margin | existing (`#status-bar` padding-x) |
 | lg | 24px | Reserved for future denser sub-sections; not used by this phase's markup | new, consistent with scale |
@@ -75,6 +77,8 @@ Existing base sizes/weights (unchanged, for reference):
 | Log code (inline + fenced) | 12px | 400 | 1.6 (fenced) / inline | Monospace stack, see Component Specifications |
 
 Two weights in active use for new markdown content: **400 (regular)** and **600 (semibold)**. No new 700-weight usage is introduced by this phase.
+
+**Manual hierarchy check:** h3=13px vs body/bold=12px is only a 1px difference — during browser verification confirm the h3 agent-name headings read as a distinguishable level above body text (the 600 weight + 1.2 line-height + `#495057` color combine with the 1px size bump to carry the hierarchy; if it reads flat in the browser, this must be flagged rather than shipped).
 
 ---
 
@@ -147,12 +151,12 @@ The panel container itself is now a `<div>` (was `<pre>`); it does NOT set a pag
 | `## heading` (e.g. "## Setup", "## Iteration N", "## Timing Summary") | `<h2>` | `font-size: 14px; font-weight: 600; line-height: 1.2; color: #212529; margin: 16px 0 8px;` |
 | `### heading` (e.g. "### NMR-Chemist", agent names) | `<h3>` | `font-size: 13px; font-weight: 600; line-height: 1.2; color: #495057; margin: 12px 0 4px;` |
 | `**bold**` span (mostly `**Field:** value` labels) | `<strong>` | `font-weight: 600; color: #212529;` inline, no block change |
-| `` `code` `` inline span | `<code>` | `font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; font-size: 12px; background: #f8f9fa; padding: 1px 4px; border-radius: 4px; color: #212529;` |
+| `` `code` `` inline span | `<code>` | `font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; font-size: 12px; background: #f8f9fa; padding: 0 4px; border-radius: 4px; color: #212529;` |
 | ` ```fenced``` ` code block | `<pre><code>` | `<pre>`: `background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 8px 12px; overflow-x: auto; margin: 8px 0;`; `<code>`: same monospace stack, `font-size: 12px; line-height: 1.6; white-space: pre;` |
 | `---` horizontal rule | `<hr>` | `border: none; border-top: 1px solid #dee2e6; margin: 16px 0;` |
 | Pipe table (Timing Summary) | `<table><thead><tbody>` | `table`: `border-collapse: collapse; width: 100%; font-size: 12px; margin: 8px 0;`; `th`: `background: #f8f9fa; color: #495057; font-weight: 600; text-align: left; padding: 4px 8px; border: 1px solid #dee2e6;`; `td`: `padding: 4px 8px; border: 1px solid #dee2e6; color: #212529;` |
 | Bullet list (`- item`, e.g. Team Models) | `<ul><li>` | `ul`: `margin: 4px 0 4px 20px;`; `li`: `font-size: 12px; color: #212529; line-height: 1.6;` |
-| Default paragraph line (dense `**Field:** value` lines) | `<p>` | `font-size: 12px; color: #212529; line-height: 1.6; margin: 2px 0;` — tight margin matches the old `#log-panel`'s dense single-spaced feel |
+| Default paragraph line (dense `**Field:** value` lines) | `<p>` | `font-size: 12px; color: #212529; line-height: 1.6; margin: 4px 0;` — tight margin (the declared `xs` token) matches the old `#log-panel`'s dense single-spaced feel |
 
 Scroll-preserve behavior (D-13, existing) is unchanged in contract terms: capture `atBottom` before `renderLog()` runs, restore `scrollTop` after — see 93-RESEARCH.md Pitfall 3 and the `refreshLog()` call-site pattern. This is a behavioral/interaction contract, not a visual one, but is recorded here because it directly affects whether the panel "flickers" during the ~3 s refresh — a visual quality concern.
 
