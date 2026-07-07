@@ -151,6 +151,40 @@ Three "clean-but-wrong" CASE failure classes closed with verification gates: RAN
 
 ---
 
+## Milestone: v9.2 — CASE Web-View
+
+**Shipped:** 2026-07-07
+**Phases:** 3 (90–92) | **Plans:** 10 | **Tasks:** 17
+
+### What Was Built
+A read-only web dashboard for CASE runs: `lucy webview serve/stop/status` (FastAPI, optional `lucy-ng[webview]` extra), four JSON/SVG endpoints with graceful degradation, RDKit SVG depictions, a single-file vanilla-JS auto-refresh frontend (no build step), and orchestrator auto-launch from `case.md`. Live-validated on a CASE1 run (ibuprofen, Rank 1 MAE 0.25).
+
+### What Worked
+- **Nyquist test-first (Wave 0) throughout.** Every phase opened with a RED grep/contract or API-contract test scaffold, so the implementation waves had an executable target and the plan-checker could verify coverage before execution.
+- **`--chain` plan→execute pipeline** ran each phase end-to-end with sub-agents (research→plan→verify→execute→verify), the human validating live in-browser at the phase checkpoints.
+- **Design-spec discipline:** the milestone's Stage-1/Stage-2 split was fixed in the design spec up front, so "what's missing" at close (formatted log, spectra tabs) was already a documented deferral, not a surprise gap.
+- **Live human-verify caught real issues** the automated gates could not: the empty-log-at-t=0 finding (fixed `f782ea8`) came only from watching a real run.
+
+### What Was Inefficient
+- **The decision-coverage gate false-negatived** on Phase 91 because plans cited `D-NN` in task bodies (stripped code fences / non-designated sections) rather than in `must_haves`/`truths`; needed a manual truths-citation pass. Worth teaching the planner to cite decisions in designated sections.
+- **`case.md` edits can only be verified in a fresh session**, so Phase 92's live behavior was a manual gate — one round-trip of "edit → user runs fresh CASE → feedback" per finding.
+- **Post-code-review blockers on Phase 91** (null-rank tier drop, kekulize-500, empty-SMILES refetch) were real and only surfaced by the adversarial code-review agent after execution — earlier review in-wave might have caught them cheaper.
+
+### Patterns Established
+- **Grep-contract tests over markdown skill files** (`test_case_md_wv07.py`) as the automatable half of verifying `case.md` edits, paired with an explicit manual fresh-session verify item.
+- **Server survival by OS, not orchestration:** `subprocess.Popen(start_new_session=True)` lets a launched server outlive the agent team with zero keep-alive logic.
+- **Import-safety invariant** (`[webview]` optional extra kept out of the core import path; fastapi/RDKit imported lazily inside `create_app()`), verified by a `sys.modules` assertion test.
+
+### Key Lessons
+- A dev-tool dashboard's design contract can live in CONTEXT.md + the design spec; a separate UI-SPEC added little for a single-file monitor. Skipping it was correct.
+- When a phase edits a sensitive shared skill file, budget for a fresh-session manual verify loop and lean on grep-contract tests for the rest.
+
+### Cost Observations
+- Model mix: opus for planning, sonnet for research/executors/verifiers/checker.
+- Notable: the whole milestone ran as three `--chain` pipelines (one per phase) plus an interactive live-verify + fix loop; the largest single cost was executor waves, not planning.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
