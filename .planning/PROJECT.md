@@ -10,20 +10,26 @@ Lucy-ng is an AI-agent skill for Computer-Assisted Structure Elucidation (CASE) 
 
 An AI agent can autonomously determine the structure of an unknown organic compound from its NMR spectra, with a multi-agent architecture that prevents unproductive loops and keeps the elucidation on track.
 
-## Current Milestone: v9.2 CASE Web-View
+## Current Milestone: v9.3 CASE Web-View Stage 2
 
-**Goal:** A read-only web dashboard makes a CASE run observable live (and after the fact) — purely informative, no control functions.
+**Goal:** Grow the read-only CASE webview from a status monitor into a full run inspector — a formatted run log plus rendered spectra and data tables in tabs.
 
 **Target features:**
-- `lucy webview serve/stop/status` — standalone FastAPI server (optional extra `lucy-ng[webview]`) rendering any `analysis/` folder read-only with auto-refresh
-- Run-status widget (iteration / active phase / elapsed)
-- Top-structures widget (RDKit depiction + MAE/rank)
-- Scrollable log widget (`CASE-PROGRESS.md`)
-- `case.md` integration: orchestrator starts the server at run start and reports the URL
-- Server outlives `terminate_team` (user stops it via `lucy webview stop`)
+- **Formatted run log** — render `CASE-PROGRESS.md` markdown in the log panel (headings, bold, tables, monospace code) instead of raw text (reverses v9.2 D-13; deferred-with-trigger in Phase 91, trigger met on the live CASE1 run).
+- **1D spectra tabs** — non-interactive rendered ¹³C/¹H/DEPT plots from the Bruker data via the existing readers.
+- **2D spectra tabs** — HSQC/HMBC/COSY contour plots (builds on the 1D plotting infrastructure).
+- **Data tables** — peak lists, LSD constraint inventory, HMBC usage as tabbed tables.
 
-Design spec: `docs/superpowers/specs/2026-07-02-case-webview-design.md`. Stage 2 (deferred, NOT this milestone): rendered spectra tabs + data tables.
+**Key context:**
+- Builds on the v9.2 architecture (design spec: "*endpoint structure scales cleanly to Stage 2*", "*tabs dock in without a rewrite*"). Design spec: `docs/superpowers/specs/2026-07-02-case-webview-design.md` § Stage 2.
+- Spectra rendering needs **new plotting infrastructure** from Bruker data (new endpoints serving plot images + a tabbed frontend); 2D builds on 1D. The "dumb server" boundary holds — unit-testable from fixtures, no live agent-team run needed.
+- **Deferred (not this milestone):** SSE/WebSocket live push to replace 3 s polling (optional optimization, no functional gain).
 
+### v9.2 CASE Web-View — SHIPPED ✅ (2026-07-07)
+
+**Goal (met):** A read-only web dashboard makes a CASE run observable live and after the fact — purely informative, no control functions.
+
+**Outcome:** Stage 1 shipped and live-validated (CASE1: ibuprofen, Rank 1 MAE 0.25). `lucy webview serve/stop/status` (FastAPI, optional `lucy-ng[webview]` extra, core CLI dependency-free); four JSON/SVG endpoints with graceful degradation (200 not 500 on partial files); RDKit SVG depictions; single-file vanilla-JS auto-refresh dashboard (no build step); `case.md` auto-launches the dashboard at run-start and the detached server outlives the team. WV-01..08 all met. Full archive: `milestones/v9.2-ROADMAP.md`. Stage 2 (this milestone) carries the deferred formatted-log + spectra-tabs + data-tables work.
 
 **Carried seed:** CASE4 azulene-regiochemistry-enumeration gap (4th defect class surfaced by the v9.1 blind UAT) — the di-methyl-ethyl class is now searched, but the exact chamazulene regiochemistry is not enumerated. See `.planning/todos/pending/2026-06-25-case4-azulene-regiochemistry-enumeration-gap.md`.
 

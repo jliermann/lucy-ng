@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v9.2
-milestone_name: CASE Web-View
-status: Awaiting next milestone
-stopped_at: Completed 91-01 test scaffold
-last_updated: "2026-07-07T08:28:11.074Z"
-last_activity: 2026-07-07 — Milestone v9.2 completed and archived
+milestone: v9.3
+milestone_name: CASE Web-View Stage 2
+status: planning
+last_updated: "2026-07-07T08:54:34.928Z"
+last_activity: 2026-07-07
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 10
-  completed_plans: 10
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # lucy-ng State
@@ -25,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-06-29)
 
 ## Current Position
 
-Phase: Milestone v9.2 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-07-07 — Milestone v9.2 completed and archived
+Status: Defining requirements
+Last activity: 2026-07-07 — Milestone v9.3 started
 
 ## Milestone v9.2 Phases
 
