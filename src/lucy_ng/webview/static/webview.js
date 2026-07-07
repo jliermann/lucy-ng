@@ -178,10 +178,152 @@
   }
 
   // ------------------------------------------------------------------
+  // renderLog  — markdown-to-DOM block parser (LOG-01 / D-02)
+  //
+  // Converts the closed CASE-PROGRESS.md subset (headings, bold labels,
+  // inline code, pipe-tables, hr, bullets, fenced code) into DOM nodes.
+  // NEVER builds an HTML string / assigns the DOM's dangerous markup-injection
+  // property — every leaf is set via textContent/createTextNode. This satisfies
+  // the phase's mandatory XSS acceptance criterion by construction (T-93-01).
+  // ------------------------------------------------------------------
+  function renderLog(rawText, container) {
+    // Clear existing children via removeChild loop, not markup-injection
+    // (preserves D-13 scroll-restore contract at the refreshLog() call site).
+    while (container.firstChild) { container.removeChild(container.firstChild); }
+
+    var lines = rawText.split('\n');
+    var i = 0;
+    while (i < lines.length) {
+      var line = lines[i];
+
+      // Fenced code block: ```...```
+      if (/^```/.test(line)) {
+        var codeLines = [];
+        i++;
+        while (i < lines.length && !/^```/.test(lines[i])) { codeLines.push(lines[i]); i++; }
+        i++; // skip closing fence
+        var pre = document.createElement('pre');
+        var codeEl = document.createElement('code');
+        codeEl.textContent = codeLines.join('\n');
+        pre.appendChild(codeEl);
+        container.appendChild(pre);
+        continue;
+      }
+
+      // Heading: #, ##, ### (only levels used by the coordinator's writer)
+      var headingMatch = /^(#{1,3})\s+(.*)$/.exec(line);
+      if (headingMatch) {
+        var tag = 'h' + headingMatch[1].length;
+        var hEl = document.createElement(tag);
+        appendInline(hEl, headingMatch[2]);
+        container.appendChild(hEl);
+        i++;
+        continue;
+      }
+
+      // Horizontal rule
+      if (/^---+\s*$/.test(line)) {
+        container.appendChild(document.createElement('hr'));
+        i++;
+        continue;
+      }
+
+      // Pipe table: header row + separator row (e.g. |---|---|) required before
+      // treating as a table — avoids false positives on stray '|' chars in body text.
+      if (/^\|.*\|\s*$/.test(line) && i + 1 < lines.length
+          && /^\|[\s:|-]+\|\s*$/.test(lines[i + 1])) {
+        var headerCells = line.split('|').slice(1, -1).map(function (s) { return s.trim(); });
+        i += 2; // skip header + separator
+        var rows = [];
+        while (i < lines.length && /^\|.*\|\s*$/.test(lines[i])) {
+          rows.push(lines[i].split('|').slice(1, -1).map(function (s) { return s.trim(); }));
+          i++;
+        }
+        container.appendChild(buildTable(headerCells, rows));
+        continue;
+      }
+
+      // Bullet list item: - text  (used in ### Team Models)
+      if (/^-\s+/.test(line)) {
+        var ul = document.createElement('ul');
+        while (i < lines.length && /^-\s+/.test(lines[i])) {
+          var li = document.createElement('li');
+          appendInline(li, lines[i].replace(/^-\s+/, ''));
+          ul.appendChild(li);
+          i++;
+        }
+        container.appendChild(ul);
+        continue;
+      }
+
+      // Blank line: skip
+      if (line.trim() === '') { i++; continue; }
+
+      // Default: paragraph line (covers **Field:** value lines)
+      var p = document.createElement('p');
+      appendInline(p, line);
+      container.appendChild(p);
+      i++;
+    }
+  }
+
+  function buildTable(headerCells, rows) {
+    var table = document.createElement('table');
+    var thead = document.createElement('thead');
+    var headRow = document.createElement('tr');
+    headerCells.forEach(function (cell) {
+      var th = document.createElement('th');
+      appendInline(th, cell);
+      headRow.appendChild(th);
+    });
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+
+    var tbody = document.createElement('tbody');
+    rows.forEach(function (rowCells) {
+      var tr = document.createElement('tr');
+      rowCells.forEach(function (cell) {
+        var td = document.createElement('td');
+        appendInline(td, cell);
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    return table;
+  }
+
+  // Inline tokenizer: splits on **bold** and `code` spans, appends child nodes
+  // via textContent / createElement ONLY — never markup-injection.
+  function appendInline(parent, text) {
+    var tokenRe = /\*\*(.+?)\*\*|`(.+?)`/g;
+    var lastIndex = 0;
+    var match;
+    while ((match = tokenRe.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        parent.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+      }
+      if (match[1] !== undefined) {
+        var strong = document.createElement('strong');
+        strong.textContent = match[1];
+        parent.appendChild(strong);
+      } else {
+        var code = document.createElement('code');
+        code.textContent = match[2];
+        parent.appendChild(code);
+      }
+      lastIndex = tokenRe.lastIndex;
+    }
+    if (lastIndex < text.length) {
+      parent.appendChild(document.createTextNode(text.slice(lastIndex)));
+    }
+  }
+
+  // ------------------------------------------------------------------
   // refreshLog  — D-13: preserve scroll unless user is at bottom
   // ------------------------------------------------------------------
   function refreshLog() {
-    var logEl = document.getElementById('log-panel');
+    var logEl = document.getElementById('log-panel'); // now a <div>, was <pre>
     // Capture scroll position BEFORE the update
     var atBottom = (logEl.scrollHeight - logEl.scrollTop) <= (logEl.clientHeight + 5);
 
@@ -189,14 +331,45 @@
       .then(function (r) { return r.json(); })
       .then(function (data) {
         var content = data.content || '';
-        // Use textContent (T-91-09: XSS guard — run-controlled content must not reach the DOM as markup)
-        logEl.textContent = content || 'Waiting for log data...';
+        if (!content) {
+          while (logEl.firstChild) { logEl.removeChild(logEl.firstChild); }
+          logEl.appendChild(document.createTextNode('Waiting for log data...'));
+        } else {
+          renderLog(content, logEl);
+        }
         if (atBottom) {
           logEl.scrollTop = logEl.scrollHeight;
         }
-        // (else: preserve current scrollTop — browser keeps it unchanged after textContent set)
+        // (else: preserve current scrollTop — browser keeps it unchanged)
       })
       .catch(function (e) { console.warn('log fetch failed:', e); });
+  }
+
+  // ------------------------------------------------------------------
+  // initTabs — plain class/display toggling, no fetch triggered (D-01)
+  // ------------------------------------------------------------------
+  function initTabs() {
+    var buttons = document.querySelectorAll('#tab-bar [data-tab]');
+    var panels = document.querySelectorAll('[data-panel]');
+
+    function activate(tabName) {
+      for (var i = 0; i < panels.length; i++) {
+        panels[i].style.display = (panels[i].getAttribute('data-panel') === tabName)
+          ? 'flex' : 'none';
+      }
+      for (var j = 0; j < buttons.length; j++) {
+        var isActive = buttons[j].getAttribute('data-tab') === tabName;
+        buttons[j].classList.toggle('active', isActive);
+      }
+    }
+
+    for (var k = 0; k < buttons.length; k++) {
+      buttons[k].addEventListener('click', function (evt) {
+        activate(evt.currentTarget.getAttribute('data-tab'));
+      });
+    }
+
+    activate('log');  // default tab on load
   }
 
   // ------------------------------------------------------------------
@@ -219,6 +392,7 @@
   // ------------------------------------------------------------------
   // Bootstrap
   // ------------------------------------------------------------------
+  initTabs();  // one-time: click-driven, not polled
   tick();  // immediate load
   setInterval(tick, REFRESH_MS);  // D-15: ~3 s polling
 
