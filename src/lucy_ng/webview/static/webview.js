@@ -355,7 +355,7 @@
     function activate(tabName) {
       for (var i = 0; i < panels.length; i++) {
         panels[i].style.display = (panels[i].getAttribute('data-panel') === tabName)
-          ? 'flex' : 'none';
+          ? 'block' : 'none';
       }
       for (var j = 0; j < buttons.length; j++) {
         var isActive = buttons[j].getAttribute('data-tab') === tabName;
