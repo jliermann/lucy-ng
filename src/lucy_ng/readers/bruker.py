@@ -76,6 +76,9 @@ def _detect_experiment_type(pulse_program: str, f1_nucleus: str, f2_nucleus: str
         return "HSQC"
     if "hsqc" in pp_lower:
         return "HSQC"
+    # HMQC is a one-bond heteronuclear correlation, treated as HSQC for picking
+    if "hmqc" in pp_lower:
+        return "HSQC"
     if "cosy" in pp_lower:
         return "COSY"
     if "tocsy" in pp_lower or "mlev" in pp_lower or "dipsi" in pp_lower:
