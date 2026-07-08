@@ -36,7 +36,7 @@ all organized in tabs. Builds on the v9.2 architecture where "tabs dock in witho
 
 ### Phases
 
-- [ ] **Phase 93: Formatted Log + Tab Framework** — tab navigation bar + hand-rolled markdown renderer for the run log; pure frontend, no new backend
+- [x] **Phase 93: Formatted Log + Tab Framework** — tab navigation bar + hand-rolled markdown renderer for the run log; pure frontend, no new backend (completed 2026-07-08)
 - [ ] **Phase 94: Data Tables** — new `tables.py` router reading `analysis/peaks/*.json` + `iteration_NN/compound.lsd`; ¹³C signals, correlations, and LSD constraint inventory tables
 - [ ] **Phase 95: 1D Real Spectra + Peak Overlay** — new `spectra.py` router; real Bruker 1D traces via BrukerReader/nmrglue with picked peaks overlaid; matplotlib added to `[webview]` extra; Bruker-path wiring via `.run_manifest.json`
 - [ ] **Phase 96: 2D Real Spectra + Peak Overlay** — extends `spectra.py` with HSQC/HMBC/COSY contour plots + cross-peak overlay; decimation + threshold levels + mtime PNG cache
@@ -57,7 +57,7 @@ all organized in tabs. Builds on the v9.2 architecture where "tabs dock in witho
 **Plans**: 3 plans
 - [x] 93-01-PLAN.md — Extract webview.js + `/webview.js` route + Wave 0 route/packaging tests
 - [x] 93-02-PLAN.md — Tab bar (4 tabs) + hand-rolled markdown-to-DOM renderer + innerHTML XSS-guard test
-- [ ] 93-03-PLAN.md — Manual browser checkpoint: XSS escaping + tab switching + typography hierarchy
+- [x] 93-03-PLAN.md — Manual browser checkpoint: XSS escaping + tab switching + typography hierarchy
 
 **UI hint**: yes
 
@@ -118,7 +118,7 @@ all organized in tabs. Builds on the v9.2 architecture where "tabs dock in witho
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 93. Formatted Log + Tab Framework | 2/3 | In Progress|  |
+| 93. Formatted Log + Tab Framework | 3/3 | Complete   | 2026-07-08 |
 | 94. Data Tables | 0/TBD | Not started | - |
 | 95. 1D Real Spectra + Peak Overlay | 0/TBD | Not started | - |
 | 96. 2D Real Spectra + Peak Overlay | 0/TBD | Not started | - |
