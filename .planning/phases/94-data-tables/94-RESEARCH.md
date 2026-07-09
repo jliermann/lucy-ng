@@ -461,14 +461,15 @@ Location: `schemas/constraint_inventory_v2.json` (also mirrored at `src/lucy_ng/
 
 **If this table is empty:** N/A — see entries above. The TBL-03 (LSD constraint inventory) side of this phase has **no** assumptions log entries — it was independently re-verified against a real, currently-on-disk file (CASE4) in this session.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Does the exact `analysis/peaks/{carbon_signals,hsqc,hmbc,cosy}.json` schema in CONTEXT.md actually match what the current nmr-chemist agent writes today?**
+   - **RESOLVED (adopted in planning):** CONTEXT.md's schema is the authoritative locked build target; Wave-0 fixtures in plan 94-01 are hand-authored to that schema (never copied from any on-disk `analysis/` dir), per the recommendation below. Re-verify against a real current-schema CASE run at the 94-04 manual checkpoint if one becomes available.
    - What we know: CONTEXT.md (locked decision from discuss-phase) and prior v9.3 research both state this schema with high confidence and cite a real CASE1 run. The LSD-side schema (TBL-03) was independently re-verified in this session against real, current data and matches exactly.
    - What's unclear: No locally-accessible file matches the peaks-JSON schema's exact filenames or field names. The closest real analogues on this machine use different names (`13c_curated.json`, `hmbc_curated.json` with `c_ppm`/`h_ppm`/`snr`, `cosy_raw.json` with `f1_position`/`f2_position`) that appear to be an earlier/parallel convention, not the target schema.
    - Recommendation: Treat CONTEXT.md's schema as the authoritative build target (it is a locked decision — the planner should not re-litigate it), but the planner MUST build Wave-0 test fixtures by hand to match that exact schema rather than pointing tests at any existing `analysis/` directory on this machine. If a real CASE run using the exact new schema becomes available before/during execution (e.g. from Sheldon, or a fresh local run under the current nmr-chemist skill version), re-verify the manual browser checkpoint against it — this is the single highest-value verification step available for this phase.
 
-2. **Is `cosy_equiv_pairs` guaranteed to exist in every `compound.lsd`'s inventory block, or only sometimes (as an optional/newer field)?**
+2. **RESOLVED (adopted in planning):** Is `cosy_equiv_pairs` guaranteed to exist in every `compound.lsd`'s inventory block, or only sometimes (as an optional/newer field)? Plans parse defensively with `.get("cosy_equiv_pairs", [])` (94-02), so presence is never assumed regardless.
    - What we know: it appears (empty) in the one real file inspected (CASE4, iteration 7, `"cosy_equiv_pairs": []`). It is not in the schema's `required` list and not explicitly typed in `schemas/constraint_inventory_v2.json`'s `properties` (falls under `additionalProperties: true`).
    - What's unclear: whether older `compound.lsd` files (e.g. CASE1-3, pre-dating this field's introduction) omit it entirely.
    - Recommendation: parse with `.get("cosy_equiv_pairs", [])` — never assume presence.
