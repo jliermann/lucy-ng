@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v9.3
 milestone_name: CASE Web-View Stage 2
 status: executing
-stopped_at: Phase 94 context gathered
-last_updated: "2026-07-09T08:11:40.232Z"
-last_activity: 2026-07-09 -- Phase 94 planning complete
+stopped_at: Completed 94-01-PLAN.md
+last_updated: "2026-07-09T08:18:52.276Z"
+last_activity: 2026-07-09
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 7
-  completed_plans: 3
+  completed_plans: 4
   percent: 25
 ---
 
@@ -21,17 +21,18 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-07)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a multi-agent team that uses the intended solver pipeline — not a manual bypass
-**Current focus:** Phase 94 — Data Tables (next; Phase 93 complete)
+**Current focus:** Phase 94 — data-tables
 
 ## Current Position
 
-Phase: 93 (Formatted Log + Tab Framework) — COMPLETE (3/3 plans)
-Next: Phase 94 (Data Tables)
-Status: Ready to execute
-Last activity: 2026-07-09 -- Phase 94 planning complete
+Phase: 94 (data-tables) — EXECUTING
+Plan: 2 of 4
+Next: Plan 94-02 (tables.py router — must satisfy TestTablesEndpoint from 94-01)
+Status: Executing Phase 94
+Last activity: 2026-07-09 -- Plan 94-01 (Wave-0 test scaffold) complete
 
 ```
-Progress: [█████░░░░░░░░░░░░░░░░] 25% (1/4 phases)
+Progress: [██████░░░░] 57%
 ```
 
 ## Milestone v9.3 Phases
@@ -91,7 +92,8 @@ Items acknowledged and deferred at **v9.1 milestone close on 2026-06-29**:
 - Total plans completed: 183 across 12 milestones (11 shipped + 1 abandoned) at v9.2 close
   - v9.2: 3 phases (90-92), 10 plans, shipped 2026-07-07; tests: 1174 passing at close
   - v9.1: 4 phases (86-89), 9 plans, shipped 2026-06-29; tests: 1131 passing at close
-- v9.3: 4 phases planned (93-96); 0 plans complete
+- v9.3: 4 phases planned (93-96); 4 plans complete (Phase 93: 3/3, Phase 94: 1/4)
+  - Phase 94 Plan 01 (Wave-0 test scaffold): 4 min, 2 tasks, 1 file (`tests/test_webview_api.py`, +542 lines)
 
 ## Accumulated Context
 
@@ -116,6 +118,8 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [v9.2-roadmap]: FastAPI + uvicorn shipped as `lucy-ng[webview]` optional extra; core `lucy` CLI stays dependency-free. Frontend is static HTML + vanilla JS — no build toolchain. Server is "dumb" (reads files only, no agent-team coupling).
 - [Phase 91]: All fastapi/webview imports in test files are inside test function bodies (WV-08 collect-safety).
 - [Phase 91]: Epoch values in timing.jsonl test fixtures are JSON strings matching case.md shell printf %s output.
+- [Phase 94 Plan 01]: `tables_analysis_dir`/`tables_iterations_dir` fixtures in `tests/test_webview_api.py` are hand-authored to CONTEXT.md's LOCKED peaks-JSON schema — no on-disk `analysis/` run on this machine currently matches those exact field names (RESEARCH.md Assumptions A1-A5), so no existing file could be used as a template.
+- [Phase 94 Plan 01]: TBL-01/02/03 remain Pending in REQUIREMENTS.md — Plan 01 only ships the Wave-0 RED-by-skip test scaffold (`TestTablesEndpoint`, 14 methods); requirements complete only once Plan 02's `tables.py` router makes all 14 pass.
 
 ### Pending Todos
 
@@ -133,9 +137,9 @@ Key v9.0 constraint (still in force): SYME and DEFF NOT are lucy-ng abstractions
 
 ## Session Continuity
 
-Last session: 2026-07-09T05:15:38.739Z
-Stopped at: Phase 94 context gathered
-Resume with: `/gsd-plan-phase 93` (Formatted Log + Tab Framework)
+Last session: 2026-07-09T08:18:52.271Z
+Stopped at: Completed 94-01-PLAN.md
+Resume with: `/gsd-execute-phase 94` (continue with Plan 94-02 — tables.py router)
 
 ---
 *Last updated: 2026-07-07 — v9.3 roadmap created (4 phases, 8 requirements mapped)*

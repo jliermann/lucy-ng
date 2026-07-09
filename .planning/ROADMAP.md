@@ -75,7 +75,7 @@ all organized in tabs. Builds on the v9.2 architecture where "tabs dock in witho
   4. When any peak JSON file or `compound.lsd` is absent or partially written during a live run, the corresponding table panel shows a "waiting for data" state — HTTP 200 response, never a 500 error.
 
 **Plans**: 4 plans
-- [ ] 94-01-PLAN.md — Wave 0: hand-authored peaks/compound.lsd fixtures + TestTablesEndpoint (RED-by-skip)
+- [x] 94-01-PLAN.md — Wave 0: hand-authored peaks/compound.lsd fixtures + TestTablesEndpoint (RED-by-skip)
 - [ ] 94-02-PLAN.md — Backend: tables.py router (5 /api/tables routes, never-500) + app.py docking
 - [ ] 94-03-PLAN.md — Frontend: 5 Tables-tab sections, HMBC flag colouring, compact intensity, TBL-03 structured view
 - [ ] 94-04-PLAN.md — Manual browser checkpoint: HMBC colours + captions + intensity + TBL-03 layout
@@ -123,6 +123,6 @@ all organized in tabs. Builds on the v9.2 architecture where "tabs dock in witho
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 93. Formatted Log + Tab Framework | 3/3 | Complete   | 2026-07-08 |
-| 94. Data Tables | 0/4 | Not started | - |
+| 94. Data Tables | 1/4 | In Progress|  |
 | 95. 1D Real Spectra + Peak Overlay | 0/TBD | Not started | - |
 | 96. 2D Real Spectra + Peak Overlay | 0/TBD | Not started | - |
