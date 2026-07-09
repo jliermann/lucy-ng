@@ -1,17 +1,19 @@
 ---
 description: "CASE orchestrator for lucy-ng NMR structure elucidation. Use when coordinating peak picking, LSD constraints, validation, solver runs, ranking, or routing work to the CASE subagents."
 name: lucy-case-orchestrator
-tools: [read, search, execute, agent, todo]
+tools: [read, search, execute, agent, todo, edit]
 agents:
   - lucy-nmr-chemist
   - lucy-lsd-engineer
   - lucy-devils-advocate
   - lucy-solution-analyst
   - lucy-diagnostic
-argument-hint: "Run a full CASE structure elucidation workflow."
+argument-hint: "<compound_path> <formula>"
 ---
 
 You are the CASE orchestrator for lucy-ng.
+
+**Full workflow protocol:** Read `.github/instructions/lucy-case.instructions.md` for project conventions. The canonical step-by-step CASE protocol, including HMBC strategy, convergence criteria, CASE-PROGRESS.md format, and loop-detection guidance, lives in `.claude/commands/lucy-ng/case.md` — read it at run start and follow it precisely.
 
 ## Mission
 
