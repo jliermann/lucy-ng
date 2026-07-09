@@ -15,9 +15,9 @@
 
 ### Data Tables
 
-- [ ] **TBL-01**: User sees the ¹³C signal table (ppm, multiplicity, nC, assignment) from the curated `analysis/peaks/carbon_signals.json`.
-- [ ] **TBL-02**: User sees the correlation tables — HSQC (one-bond), HMBC (long-range), COSY — from `analysis/peaks/{hsqc,hmbc,cosy}.json`, with shifts and flags.
-- [ ] **TBL-03**: User sees the LSD constraint inventory (the constraints fed to the solver — MULT/HSQC/HMBC/BOND/etc.) parsed from the latest `iteration_NN/compound.lsd`.
+- [x] **TBL-01**: User sees the ¹³C signal table (ppm, multiplicity, nC, assignment) from the curated `analysis/peaks/carbon_signals.json`.
+- [x] **TBL-02**: User sees the correlation tables — HSQC (one-bond), HMBC (long-range), COSY — from `analysis/peaks/{hsqc,hmbc,cosy}.json`, with shifts and flags.
+- [x] **TBL-03**: User sees the LSD constraint inventory (the constraints fed to the solver — MULT/HSQC/HMBC/BOND/etc.) parsed from the latest `iteration_NN/compound.lsd`.
 
 ### Spectra (real trace + peak overlay)
 
@@ -48,9 +48,9 @@
 |--------|-------|--------|
 | LOG-01 | Phase 93 | Pending |
 | TAB-01 | Phase 93 | Pending |
-| TBL-01 | Phase 94 | Pending |
-| TBL-02 | Phase 94 | Pending |
-| TBL-03 | Phase 94 | Pending |
+| TBL-01 | Phase 94 | Complete |
+| TBL-02 | Phase 94 | Complete |
+| TBL-03 | Phase 94 | Complete |
 | SP1-01 | Phase 95 | Pending |
 | SP-02  | Phase 95 | Pending |
 | SP2-01 | Phase 96 | Pending |

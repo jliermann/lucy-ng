@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v9.3
 milestone_name: CASE Web-View Stage 2
 status: executing
-stopped_at: Completed 94-01-PLAN.md
-last_updated: "2026-07-09T08:18:52.276Z"
+stopped_at: Completed 94-02-PLAN.md
+last_updated: "2026-07-09T08:27:37.211Z"
 last_activity: 2026-07-09
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 7
-  completed_plans: 4
+  completed_plans: 5
   percent: 25
 ---
 
@@ -26,13 +26,13 @@ See: .planning/PROJECT.md (updated 2026-07-07)
 ## Current Position
 
 Phase: 94 (data-tables) — EXECUTING
-Plan: 2 of 4
-Next: Plan 94-02 (tables.py router — must satisfy TestTablesEndpoint from 94-01)
-Status: Executing Phase 94
-Last activity: 2026-07-09 -- Plan 94-01 (Wave-0 test scaffold) complete
+Plan: 3 of 4
+Next: Plan 94-03 (frontend — fetch 5 /api/tables/* endpoints, render Tables tab)
+Status: Ready to execute
+Last activity: 2026-07-09 -- Plan 94-02 (tables.py router) complete, TestTablesEndpoint 14/14 GREEN
 
 ```
-Progress: [██████░░░░] 57%
+Progress: [███████░░░] 71%
 ```
 
 ## Milestone v9.3 Phases
@@ -92,8 +92,9 @@ Items acknowledged and deferred at **v9.1 milestone close on 2026-06-29**:
 - Total plans completed: 183 across 12 milestones (11 shipped + 1 abandoned) at v9.2 close
   - v9.2: 3 phases (90-92), 10 plans, shipped 2026-07-07; tests: 1174 passing at close
   - v9.1: 4 phases (86-89), 9 plans, shipped 2026-06-29; tests: 1131 passing at close
-- v9.3: 4 phases planned (93-96); 4 plans complete (Phase 93: 3/3, Phase 94: 1/4)
+- v9.3: 4 phases planned (93-96); 5 plans complete (Phase 93: 3/3, Phase 94: 2/4)
   - Phase 94 Plan 01 (Wave-0 test scaffold): 4 min, 2 tasks, 1 file (`tests/test_webview_api.py`, +542 lines)
+  - Phase 94 Plan 02 (tables.py router): 25 min, 2 tasks, 2 files (`webview/routers/tables.py` NEW, `webview/app.py` modified)
 
 ## Accumulated Context
 
@@ -120,6 +121,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Phase 91]: Epoch values in timing.jsonl test fixtures are JSON strings matching case.md shell printf %s output.
 - [Phase 94 Plan 01]: `tables_analysis_dir`/`tables_iterations_dir` fixtures in `tests/test_webview_api.py` are hand-authored to CONTEXT.md's LOCKED peaks-JSON schema — no on-disk `analysis/` run on this machine currently matches those exact field names (RESEARCH.md Assumptions A1-A5), so no existing file could be used as a template.
 - [Phase 94 Plan 01]: TBL-01/02/03 remain Pending in REQUIREMENTS.md — Plan 01 only ships the Wave-0 RED-by-skip test scaffold (`TestTablesEndpoint`, 14 methods); requirements complete only once Plan 02's `tables.py` router makes all 14 pass.
+- [Phase 94 Plan 02]: `tables.py` router ships all 5 GET routes (carbon/hsqc/hmbc/cosy/constraints), never-500, docked in `app.py`; `TestTablesEndpoint` (14/14) now GREEN — TBL-01/02/03 complete. Constraints route selects highest numeric `iteration_(\d+)` across family-suffixed dirs (mtime tiebreak, D-02); inventory parser reimplemented webview-local (never imports `cli/lsd.py`, whose validator raises SystemExit).
 
 ### Pending Todos
 
@@ -137,9 +139,9 @@ Key v9.0 constraint (still in force): SYME and DEFF NOT are lucy-ng abstractions
 
 ## Session Continuity
 
-Last session: 2026-07-09T08:18:52.271Z
-Stopped at: Completed 94-01-PLAN.md
-Resume with: `/gsd-execute-phase 94` (continue with Plan 94-02 — tables.py router)
+Last session: 2026-07-09T08:26:27.258Z
+Stopped at: Completed 94-02-PLAN.md
+Resume with: `/gsd-execute-phase 94` (continue with Plan 94-03 — frontend Tables tab)
 
 ---
 *Last updated: 2026-07-07 — v9.3 roadmap created (4 phases, 8 requirements mapped)*
