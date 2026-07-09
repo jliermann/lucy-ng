@@ -34,7 +34,11 @@ Extract compound path and molecular formula from user input.
 
 **Resolution logic:**
 
-1. **If both provided:** Use them directly.
+1. **If both provided:** Resolve the compound_path before use:
+   - If the path exists as given, use it directly.
+   - If the path starts with `\data\` or `data\` (Windows-relative), also try
+     `C:\Git\lucy-ng\data\<basename>` as a fallback (the repo's local data directory).
+   - If neither resolves to an existing directory, stop and report the exact paths checked.
 
 2. **If compound_path missing:** Check if cwd looks like a Bruker compound directory:
    ```bash
