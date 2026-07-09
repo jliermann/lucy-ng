@@ -1,0 +1,28 @@
+##TITLE= Parameter file, TopSpin 4.1.1
+##JCAMPDX= 5.0
+##DATATYPE= Parameter Values
+##NPOINTS= 8	$$ modification sequence number
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= Homeoffice
+$$ 2021-08-11 18:02:36.388 +0200  Homeoffice@CIERVO
+$$ D:/Users/Homeoffice/Seafile/chemikalienlager/cmpd_JL_20260701/6/pdata/1/clevels
+$$ process C:\Bruker\TopSpin4.1.1\prog\mod\dataserver.exe
+##$LEVELS= (0..255)
+-4921269.5052288 -2734038.614016 -1518910.34112 -843839.0784 -468799.488
+-260444.16 -144691.2 -80384 80384 144691.2 260444.16 468799.488 843839.0784
+1518910.34112 2734038.614016 4921269.5052288 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0
+##$LEVSIGN= 3
+##$MAXLEV= 8
+##$METHOD= 0
+##$NEGBASE= -80384
+##$NEGINCR= 1.8
+##$POSBASE= 80384
+##$POSINCR= 1.8
+##END=

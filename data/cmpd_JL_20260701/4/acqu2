@@ -1,0 +1,23 @@
+##TITLE= Parameter file, TopSpin 3.5 pl 4
+##JCAMPDX= 5.0
+##DATATYPE= Parameter Values
+##NPOINTS= 1	$$ modification sequence number
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= nmrsu
+$$ 2016-03-04 18:02:51.530 +0100  nmrsu@av3-600
+$$ C:/Bruker/av3-600/av600/AV600-1603A4/4/acqu2
+$$ process C:\Bruker\TopSpin3.5pl4\prog\mod\xwish3.exe
+##$ACQT0= 0
+##$BF1= 600.13
+##$FnMODE= 1
+##$NUC1= <1H>
+##$NusJSP= 0
+##$NusT2= 1
+##$NusTD= 0
+##$O1= 3608.09671451534
+##$ProjAngle= 0
+##$SFO1= 600.133608096715
+##$SW= 13.3517276898267
+##$SW_h= 8012.82051282051
+##$TD= 256
+##END=

@@ -1,0 +1,47 @@
+##TITLE= Audit trail, TopSpin 4.1.1
+##JCAMPDX= 5.01
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= Homeoffice
+$$ D:/Users/Homeoffice/Seafile/chemikalienlager/cmpd_JL_20260701/5/pdata/1/auditp.txt
+##AUDIT TRAIL=  $$ (NUMBER, WHEN, WHO, WHERE, PROCESS, VERSION, WHAT)
+(   1,<2016-03-04 18:45:04.038 +0100>,<nmrsu>,<av3-600>,<go4>,<TopSpin 3.5.4>,
+      <created by zg
+	started at 2016-03-04 18:24:57.407 +0100,
+	POWCHK enabled, PULCHK disabled,
+       configuration hash MD5:
+       0E 6B 10 07 3B 74 35 87 64 B9 C0 87 16 B6 69 62
+       data hash MD5: 2K * 256
+       6F 57 90 71 2E 4C 76 60 EB DF D0 7D DA 9F C5 1A>)
+(   2,<2016-03-04 18:45:04.100 +0100>,<nmrsu>,<av3-600>,<audit>,<TopSpin 3.5.4>,
+      <user comment:
+       ICON-NMR User ID: nmrsu
+       data hash MD5: 2K * 256
+       6F 57 90 71 2E 4C 76 60 EB DF D0 7D DA 9F C5 1A>)
+(   3,<2021-08-11 18:02:01.257 +0200>,<Homeoffice>,<CIERVO>,<proc2d>,<TopSpin 4.1.1>,
+      <Start of raw data processing
+       xfb F2: SI = 1K WDW = 4 SSB = 2 FT_mod = 6 PKNL = 1 PHC0 = 0 PHC1 = 0 F1: SI = 1K ME_mod = 2 NCOEF = 32 WDW = 4 SSB = 2 FT_mod = 6 FCOR = 0.5
+       data hash MD5: 1K * 1K
+       5E 3D BA 8A F6 7D 2C 05 F9 BC D4 33 BD 2A 60 06>)
+(   4,<2021-08-11 18:02:03.032 +0200>,<Homeoffice>,<CIERVO>,<apkm>,<TopSpin 4.1.1>,
+      <apkm 
+       data hash MD5: 1K * 1K
+       59 CA 9D 15 C7 3C 36 10 FB DA 63 79 D1 E4 37 C9>)
+(   5,<2021-08-11 18:02:03.201 +0200>,<Homeoffice>,<CIERVO>,<proc2d>,<TopSpin 4.1.1>,
+      <abs2 F2: ABSG = 5 ABSF1 = 9.506928 ABSF2 = -0.5069275
+       data hash MD5: 1K * 1K
+       B3 C8 11 1D 14 9A 04 70 64 BD 64 CE 1F AB 71 38>)
+(   6,<2021-08-11 18:02:03.373 +0200>,<Homeoffice>,<CIERVO>,<proc2d>,<TopSpin 4.1.1>,
+      <abs1 F1: ABSG = 5 ABSF1 = 152.827 ABSF2 = -12.84255
+       data hash MD5: 1K * 1K
+       D4 11 3E 63 94 21 1D BF BF DF B5 05 95 64 15 BA>)
+(   7,<2021-08-11 18:02:18.975 +0200>,<Homeoffice>,<CIERVO>,<proc2d>,<TopSpin 4.1.1>,
+      <pk1 fgphup F1: PHC0 = -180 PHC1 = 0
+       data hash MD5: 1K * 1K
+       BB 28 93 1F A6 A6 D2 D2 83 20 2C 1B A9 01 5D FE>)
+$$ E:/Users/liermann/Seafile/NMR-Archiv/chemikalienlager/cmpd_JL_20260701/5/pdata/1/auditp.txt
+(   8,<2021-09-10 18:43:46.422 +0200>,<UNI-MAINZ\liermann>,<OCNMR99>,<disknew>,<TopSpin 4.1.3>,
+      <processed data deleted by del2d>)
+##END=
+
+$$ hash MD5
+$$ 5E 8A FD 17 AD EA 0E DF F1 3D BE F2 B9 F9 47 07

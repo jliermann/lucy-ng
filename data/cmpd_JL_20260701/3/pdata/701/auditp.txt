@@ -1,0 +1,14 @@
+##TITLE= Audit trail, TopSpin 3.5 pl 4
+##JCAMPDX= 5.01
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= nmrsu
+$$ C:/Bruker/av3-600/av600/AV600-1603A4/3/pdata/701/auditp.txt
+##AUDIT TRAIL=  $$ (NUMBER, WHEN, WHO, WHERE, PROCESS, VERSION, WHAT)
+(   1,<2016-03-04 17:58:58.637 +0100>,<nmrsu>,<av3-600>,<go4>,<TopSpin 3.5.4>,
+      <1H wobble curve at 600.132 MHz
+       data hash MD5: 512
+       9E D3 B1 13 67 E1 00 3A F5 C4 C2 32 29 6E 2A 08>)
+##END=
+
+$$ hash MD5
+$$ 18 70 60 FE 04 89 80 93 32 6C 78 74 3D 27 9E 54

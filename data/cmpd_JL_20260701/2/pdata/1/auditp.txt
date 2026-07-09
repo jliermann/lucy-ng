@@ -1,0 +1,45 @@
+##TITLE= Audit trail, TopSpin 3.5 pl 4
+##JCAMPDX= 5.01
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= nmrsu
+$$ C:\Bruker\av3-600\av600/AV600-1603A4/2/pdata/1/auditp.txt
+##AUDIT TRAIL=  $$ (NUMBER, WHEN, WHO, WHERE, PROCESS, VERSION, WHAT)
+(   1,<2016-03-04 17:58:12.430 +0100>,<nmrsu>,<av3-600>,<go4>,<TopSpin 3.5.4>,
+      <created by zg
+	started at 2016-03-04 17:50:47.423 +0100,
+	POWCHK enabled, PULCHK disabled,
+       configuration hash MD5:
+       0E 6B 10 07 3B 74 35 87 64 B9 C0 87 16 B6 69 62
+       data hash MD5: 64K
+       6C AE 25 DA 06 BF 6B 99 DC A4 23 D7 EB 72 A3 B5>)
+(   2,<2016-03-04 17:58:12.492 +0100>,<nmrsu>,<av3-600>,<audit>,<TopSpin 3.5.4>,
+      <user comment:
+       ICON-NMR User ID: nmrsu
+       data hash MD5: 64K
+       6C AE 25 DA 06 BF 6B 99 DC A4 23 D7 EB 72 A3 B5>)
+(   3,<2016-03-09 17:38:18.024 +0100>,<nmrsu>,<av3-600>,<proc1d>,<TopSpin 3.5.4>,
+      <Start of raw data processing
+       efp LB = 1 FT_mod = 6 PKNL = 1 PHC0 = 234.69 PHC1 = -220.3899 SI = 32K 
+       data hash MD5: 32K
+       AD 72 50 C9 80 D7 B4 E7 D1 8C 4C E5 F5 CA 60 55>)
+$$ D:/Users/Homeoffice/Seafile/chemikalienlager/cmpd_JL_20260701/2/pdata/1/auditp.txt
+(   4,<2021-08-11 18:01:21.607 +0200>,<Homeoffice>,<CIERVO>,<proc1d>,<TopSpin 4.1.1>,
+      <apk 
+       data hash MD5: 32K
+       EC CD 2A 02 C4 1D 3E DB 4E 19 77 6F 93 08 55 05>)
+(   5,<2021-08-11 18:01:23.082 +0200>,<Homeoffice>,<CIERVO>,<proc1d>,<TopSpin 4.1.1>,
+      <abs n ABSG = 5 
+       data hash MD5: 32K
+       FE EF 3C 48 F5 6D 9C 32 86 79 59 07 46 F9 51 6B>)
+(   6,<2021-08-11 18:01:24.648 +0200>,<Homeoffice>,<CIERVO>,<proc1d>,<TopSpin 4.1.1>,
+      <apks 
+       data hash MD5: 32K
+       B9 65 EB 8C 1D 74 4F 4A F4 E2 C0 66 86 6B 91 84>)
+(   7,<2021-08-11 18:01:25.770 +0200>,<Homeoffice>,<CIERVO>,<proc1d>,<TopSpin 4.1.1>,
+      <abs n ABSG = 5 
+       data hash MD5: 32K
+       74 54 63 40 BF F6 55 87 93 E6 16 0D 1E AA F4 81>)
+##END=
+
+$$ hash MD5
+$$ BC 13 CC 2A C2 FF 58 20 55 E2 DB 38 AC 81 B9 4D
