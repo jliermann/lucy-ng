@@ -278,6 +278,96 @@
     line-height: 1.6;
   }
 
+  /* ---- Tables tab (Phase 94: TBL-01/02/03) ---- */
+  .tables-section {
+    margin-bottom: 16px;
+  }
+  .tables-section:last-child {
+    margin-bottom: 0;
+  }
+  .tables-heading {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.2;
+    color: #212529;
+    margin-bottom: 4px;
+  }
+  .tables-display-heading {
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.2;
+    color: #212529;
+    margin-bottom: 4px;
+  }
+  .tables-caption {
+    font-size: 12px;
+    color: #6c757d;
+    padding: 4px 0;
+  }
+  .tables-subsection {
+    margin-top: 24px;
+  }
+  .tables-subsection:first-child {
+    margin-top: 0;
+  }
+  .tables-subheading {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.2;
+    color: #495057;
+    margin-bottom: 4px;
+  }
+  .data-table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 12px;
+    margin: 8px 0;
+  }
+  .data-table th {
+    background: #f8f9fa;
+    color: #495057;
+    font-weight: 600;
+    text-align: left;
+    padding: 4px 8px;
+    border: 1px solid #dee2e6;
+  }
+  .data-table td {
+    padding: 4px 8px;
+    border: 1px solid #dee2e6;
+    color: #212529;
+  }
+  /* HMBC flag row colouring (D-03 — exact tokens, applied via post-process
+     .className assignment in webview.js, never innerHTML). */
+  .row-ok {
+    border-left: 3px solid #28a745;
+  }
+  .row-potential-4j {
+    background: #fff3cd;
+    color: #856404;
+    border-left: 3px solid #ffc107;
+  }
+  .row-1j-artifact {
+    background: #f1f3f5;
+    color: #adb5bd;
+    border-left: 3px solid #adb5bd;
+  }
+  /* Per-table "waiting for data" state (SC4 — independent per table; distinct
+     from the whole-tab [data-panel].placeholder class from Phase 93). */
+  .table-waiting {
+    font-size: 12px;
+    font-style: italic;
+    color: #6c757d;
+    padding: 12px 0;
+  }
+  #table-constraints ul {
+    margin: 4px 0 4px 20px;
+  }
+  #table-constraints li {
+    font-size: 12px;
+    color: #212529;
+    line-height: 1.6;
+  }
+
   /* ---- Responsive: narrow windows collapse to stacked ---- */
   @media (max-width: 700px) {
     #main { flex-direction: column; }
@@ -320,7 +410,33 @@
     <div id="log-panel" data-panel="log">Waiting for log data...</div>
     <div class="placeholder" data-panel="spectra-1d">1D Spectra — coming in Phase 95</div>
     <div class="placeholder" data-panel="spectra-2d">2D Spectra — coming in Phase 96</div>
-    <div class="placeholder" data-panel="tables">Tables — coming in Phase 94</div>
+    <div data-panel="tables">
+    <section class="tables-section" id="table-carbon">
+      <h2 class="tables-heading">&sup1;&sup3;C Signals</h2>
+      <div class="tables-caption" id="table-carbon-caption"></div>
+      <div id="table-carbon-body"></div>
+    </section>
+    <section class="tables-section" id="table-hsqc">
+      <h2 class="tables-heading">HSQC</h2>
+      <div class="tables-caption" id="table-hsqc-caption"></div>
+      <div id="table-hsqc-body"></div>
+    </section>
+    <section class="tables-section" id="table-hmbc">
+      <h2 class="tables-heading">HMBC</h2>
+      <div class="tables-caption" id="table-hmbc-caption"></div>
+      <div id="table-hmbc-body"></div>
+    </section>
+    <section class="tables-section" id="table-cosy">
+      <h2 class="tables-heading">COSY</h2>
+      <div class="tables-caption" id="table-cosy-caption"></div>
+      <div id="table-cosy-body"></div>
+    </section>
+    <section class="tables-section" id="table-constraints">
+      <h1 class="tables-display-heading">LSD Constraint Inventory</h1>
+      <div class="tables-caption" id="table-constraints-caption"></div>
+      <div id="table-constraints-body"></div>
+    </section>
+  </div>
   </div>
 
 </div>
