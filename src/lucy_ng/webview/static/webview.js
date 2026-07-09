@@ -4,10 +4,11 @@
   var STATUS_URL     = '/api/status';
   var STRUCTURES_URL = '/api/structures';
   var LOG_URL        = '/api/log';
-  var CARBON_URL     = '/api/tables/carbon';
-  var HSQC_URL       = '/api/tables/hsqc';
-  var HMBC_URL       = '/api/tables/hmbc';
-  var COSY_URL       = '/api/tables/cosy';
+  var CARBON_URL      = '/api/tables/carbon';
+  var HSQC_URL        = '/api/tables/hsqc';
+  var HMBC_URL        = '/api/tables/hmbc';
+  var COSY_URL        = '/api/tables/cosy';
+  var CONSTRAINTS_URL = '/api/tables/constraints';
   var REFRESH_MS     = 3000;
 
   // Track last-seen SMILES per index to avoid SVG flicker (D-10)
@@ -583,6 +584,135 @@
   }
 
   // ------------------------------------------------------------------
+  // refreshConstraints / renderConstraints — TBL-03 (D-01: structured
+  // 3-subsection view, not a single flat table)
+  // ------------------------------------------------------------------
+  function refreshConstraints() {
+    fetch(CONSTRAINTS_URL)
+      .then(function (r) { return r.json(); })
+      .then(function (data) { renderConstraints(data); })
+      .catch(function (e) { console.warn('constraints fetch failed:', e); });
+  }
+
+  function renderConstraints(data) {
+    var bodyEl = document.getElementById('table-constraints-body');
+    var captionEl = document.getElementById('table-constraints-caption');
+
+    if (!data || data.state !== 'ok' || !data.inventory) {
+      showTableWaiting(bodyEl, captionEl, 'Waiting for LSD constraint data...');
+      return;
+    }
+
+    var inv = data.inventory;
+    if (captionEl) {
+      captionEl.textContent = 'Iteration ' + cellText(inv.iteration) + ' · '
+        + cellText(inv.formula) + ' · ' + cellText(inv.timestamp);
+    }
+
+    clearChildren(bodyEl);
+    bodyEl.appendChild(buildAppliedConstraintsSection(inv));
+    bodyEl.appendChild(buildConstraintSummarySection(inv));
+    bodyEl.appendChild(buildDeferredPendingSection(inv));
+  }
+
+  function buildTablesSubsection(headingText) {
+    var section = document.createElement('div');
+    section.className = 'tables-subsection';
+    var heading = document.createElement('h3');
+    heading.className = 'tables-subheading';
+    heading.textContent = headingText;
+    section.appendChild(heading);
+    return section;
+  }
+
+  // "Applied Constraints" — one row per per-atom-index constraint instance
+  // (BOND / HMBC / COSY-equiv). The Note column would draw from the matching
+  // `applied_from_detection` narrative, but the schema carries that as a flat
+  // list with no per-row index back to a specific constraint — so every row
+  // gets a genuinely empty Note cell (never a placeholder dash) until the
+  // backend schema exposes an explicit mapping.
+  function buildAppliedConstraintsSection(inv) {
+    var section = buildTablesSubsection('Applied Constraints');
+
+    var rows = [];
+    var bondConstraints = inv.bond_constraints || [];
+    bondConstraints.forEach(function (indices) {
+      rows.push(['BOND', cellText(indices), '']);
+    });
+
+    var hmbcBatches = inv.hmbc_batches || [];
+    hmbcBatches.forEach(function (batch) {
+      var correlations = (batch && batch.correlations) || [];
+      correlations.forEach(function (indices) {
+        rows.push(['HMBC', cellText(indices), '']);
+      });
+    });
+
+    var cosyEquivPairs = inv.cosy_equiv_pairs || [];
+    cosyEquivPairs.forEach(function (indices) {
+      rows.push(['COSY-equiv', cellText(indices), '']);
+    });
+
+    var table;
+    if (rows.length === 0) {
+      table = buildTable(['Type', 'Atom Indices', 'Note'], []);
+      var tbody = table.querySelector('tbody');
+      var emptyRow = document.createElement('tr');
+      var emptyCell = document.createElement('td');
+      emptyCell.colSpan = 3;
+      emptyCell.textContent = 'No applied constraints recorded';
+      emptyRow.appendChild(emptyCell);
+      tbody.appendChild(emptyRow);
+    } else {
+      table = buildTable(['Type', 'Atom Indices', 'Note'], rows);
+    }
+    table.className = 'data-table';
+    section.appendChild(table);
+    return section;
+  }
+
+  // "Constraint Summary" — fixed row order, count/summary-only fields.
+  function buildConstraintSummarySection(inv) {
+    var section = buildTablesSubsection('Constraint Summary');
+
+    var deffFexp = inv.deff_fexp || {};
+    var rows = [
+      ['MULT', cellText(inv.mult_count)],
+      ['HSQC', cellText(inv.hsqc_count)],
+      ['HMBC total', cellText(inv.hmbc_total)],
+      ['ELIM budget', cellText(inv.elim_budget)],
+      ['Ring exclusion', formatBool(inv.ring_exclusion_enabled)],
+      ['DEFF/FEXP status', cellText(deffFexp.status)],
+    ];
+
+    var table = buildTable(['Constraint', 'Value'], rows);
+    table.className = 'data-table';
+    section.appendChild(table);
+    return section;
+  }
+
+  // "Deferred / Pending" — reasoning narrative list, plain <ul>/<li>.
+  function buildDeferredPendingSection(inv) {
+    var section = buildTablesSubsection('Deferred / Pending');
+
+    var pending = inv.pending_from_detection || [];
+    var ul = document.createElement('ul');
+    if (pending.length === 0) {
+      var emptyLi = document.createElement('li');
+      emptyLi.textContent = 'Nothing deferred this iteration.';
+      ul.appendChild(emptyLi);
+    } else {
+      pending.forEach(function (item) {
+        var li = document.createElement('li');
+        li.textContent = item;
+        ul.appendChild(li);
+      });
+    }
+    section.appendChild(ul);
+    return section;
+  }
+
+  // ------------------------------------------------------------------
   // initTabs — plain class/display toggling, no fetch triggered (D-01)
   // ------------------------------------------------------------------
   function initTabs() {
@@ -627,6 +757,7 @@
     refreshHsqc();
     refreshHmbc();
     refreshCosy();
+    refreshConstraints();
     flashDot();
   }
 
