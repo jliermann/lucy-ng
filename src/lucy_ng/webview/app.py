@@ -33,6 +33,7 @@ def create_app(analysis_dir: Path) -> FastAPI:
         - ``GET /api/tables/hsqc`` → HSQC correlation table (TBL-02, Phase 94)
         - ``GET /api/tables/hmbc`` → HMBC correlation table (TBL-02, Phase 94)
         - ``GET /api/tables/cosy`` → COSY correlation table (TBL-02, Phase 94)
+        - ``GET /api/tables/constraints`` → LSD constraint inventory (TBL-03, Phase 94)
         - ``GET /`` → single-file dashboard (index.html, WV-06)
         - ``GET /webview.js`` → extracted dashboard script (Phase 93)
         - Swagger/ReDoc UI suppressed (``docs_url=None``, ``redoc_url=None``)
