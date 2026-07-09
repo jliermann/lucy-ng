@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v9.3
 milestone_name: CASE Web-View Stage 2
 status: completed
-stopped_at: Completed 94-03-PLAN.md
+stopped_at: Phase 94 complete (4/4 plans, VERIFICATION passed SC1-SC4)
 last_updated: "2026-07-09T10:35:53.980Z"
 last_activity: 2026-07-09 -- Phase 94 marked complete
 progress:
@@ -21,18 +21,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-07)
 
 **Core value:** AI agent autonomously determines compound structures from NMR, with a multi-agent team that uses the intended solver pipeline — not a manual bypass
-**Current focus:** Phase 94 — data-tables
+**Current focus:** Phase 95 — 1D Real Spectra + Peak Overlay (next)
 
 ## Current Position
 
-Phase: 94 — COMPLETE
-Plan: 4 of 4
-Next: Plan 94-04 (phase close / verification)
-Status: Phase 94 complete
-Last activity: 2026-07-09 -- Phase 94 marked complete
+Phase: 94 (Data Tables) — COMPLETE (4/4 plans, VERIFICATION passed SC1-SC4)
+Next: Phase 95 (1D Real Spectra + Peak Overlay) — introduces Bruker-path wiring + matplotlib Agg
+Status: Phase 94 shipped; Tables tab renders ¹³C/HSQC/HMBC/COSY + LSD inventory; 94-04 human browser checkpoint APPROVED
+Last activity: 2026-07-09 -- Phase 94 complete; tables.py router + frontend + Nyquist tests, verification passed
 
 ```
-Progress: [█████████░] 86%
+Progress: [██████████░░░░░░░░░░] 50% (2/4 phases)
 ```
 
 ## Milestone v9.3 Phases
