@@ -59,6 +59,23 @@ python build.py
   `.planning/CASE-DATASET-IDENTITIES.md` + `PROJECT.md`/`STATE.md` — update there first,
   then mirror here.
 
+## When to update (recurring maintenance)
+
+The deck bakes in **project facts** that drift over time. Refresh it when they change —
+most commonly at **milestone close** (`/gsd-complete-milestone`), or when a CASE result
+flips solved↔partial. This is also flagged as a maintenance pointer in the repo `CLAUDE.md`.
+
+Things that go stale, and where they live in the source:
+
+| Fact | Source of truth | In this deck |
+|------|-----------------|--------------|
+| CASE1–9 identities / structures | `.planning/CASE-DATASET-IDENTITIES.md` | `gen_structures.py` (SMILES) + `build.py` (`CASES`) |
+| solved / partial status | blind-UAT log + `STATE.md` | `build.py` `CASES` status field + slide-7 "8/9" tile |
+| headline numbers (DB, HOSE, fragments, tests, milestones) | `PROJECT.md` / `STATE.md` | `build.py` slide-7 `.stats` |
+| agent-team roster | `.claude/agents/lucy-*.md` | `build.py` slide-4 |
+
+Update the source first, then mirror into `build.py`, then rebuild (steps above).
+
 ## Live version
 
 Published as a private Claude artifact (viewer can toggle light/dark):

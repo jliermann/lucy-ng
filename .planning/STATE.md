@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v9.3
 milestone_name: CASE Web-View Stage 2
-status: completed
-stopped_at: Phase 94 complete (4/4 plans, VERIFICATION passed SC1-SC4)
-last_updated: "2026-07-09T10:35:53.980Z"
-last_activity: 2026-07-09 -- Phase 94 marked complete
+status: Phase 94 shipped; Tables tab renders ¹³C/HSQC/HMBC/COSY + LSD inventory; 94-04 human browser checkpoint APPROVED
+stopped_at: Phase 95 context gathered
+last_updated: "2026-07-09T12:26:23.489Z"
+last_activity: 2026-07-09 -- Phase 94 complete; tables.py router + frontend + Nyquist tests, verification passed
 progress:
   total_phases: 4
   completed_phases: 2
@@ -138,8 +138,8 @@ Key v9.0 constraint (still in force): SYME and DEFF NOT are lucy-ng abstractions
 
 ## Session Continuity
 
-Last session: 2026-07-09T08:37:33.008Z
-Stopped at: Completed 94-03-PLAN.md
+Last session: 2026-07-09T12:26:23.481Z
+Stopped at: Phase 95 context gathered
 Resume with: `/gsd-execute-phase 94` (continue with Plan 94-03 — frontend Tables tab)
 
 ---

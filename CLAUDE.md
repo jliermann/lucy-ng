@@ -106,3 +106,17 @@ The autonomous CASE workflow lives under `.claude/` in this repo and is symlinke
 - `.claude/agents/lucy-*.md` — the specialist team spawned by `case.md` (`lucy-nmr-chemist`, `lucy-lsd-engineer`, `lucy-solution-analyst`, `lucy-devils-advocate`) and `lucy-diagnostic` (escalation only).
 
 Edit those files to change CASE behaviour. A **fresh Claude Code session** is required to reload edited agents/commands. All operational and domain-strategy knowledge belongs there — keep this CLAUDE.md free of it.
+
+---
+
+## Infographic deck (keep in sync at milestone close)
+
+`docs/infographics/` holds the project slide deck (7× 16:9, for talking to colleagues). It bakes in **project facts** — the CASE1–9 test-set structures + solved status, the agent-team roster, and the headline numbers (DB size, HOSE/fragment counts, test count, milestones shipped).
+
+**Recurring maintenance:** when those facts change — most commonly at **milestone close** (`/gsd-complete-milestone`), or when a CASE test result flips solved↔partial — refresh the deck so it does not go stale:
+
+1. Update the ground truth first in its source (`.planning/CASE-DATASET-IDENTITIES.md`, `PROJECT.md`, `STATE.md`).
+2. Mirror the changed values into `docs/infographics/build.py` (and `gen_structures.py` if a molecule changed).
+3. Rebuild: `cd docs/infographics && python build.py` (+ optional PDF export — see its `README.md`).
+
+The deck is generated: **edit `build.py`, never `deck.html`.** Full build/edit instructions live in `docs/infographics/README.md`.
