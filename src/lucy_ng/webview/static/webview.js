@@ -4,6 +4,11 @@
   var STATUS_URL     = '/api/status';
   var STRUCTURES_URL = '/api/structures';
   var LOG_URL        = '/api/log';
+  var CARBON_URL      = '/api/tables/carbon';
+  var HSQC_URL        = '/api/tables/hsqc';
+  var HMBC_URL        = '/api/tables/hmbc';
+  var COSY_URL        = '/api/tables/cosy';
+  var CONSTRAINTS_URL = '/api/tables/constraints';
   var REFRESH_MS     = 3000;
 
   // Track last-seen SMILES per index to avoid SVG flicker (D-10)
@@ -346,6 +351,368 @@
   }
 
   // ------------------------------------------------------------------
+  // Tables tab — shared helpers (Phase 94: TBL-01/02/03)
+  // ------------------------------------------------------------------
+
+  // Compact intensity formatting (D-04 — exact algorithm, UI-SPEC verbatim).
+  function formatIntensity(v) {
+    if (v == null) { return ''; }
+    var abs = Math.abs(v);
+    if (abs >= 1e6) { return (v / 1e6).toFixed(1) + 'M'; }
+    if (abs >= 1e3) { return (v / 1e3).toFixed(1) + 'K'; }
+    return String(Math.trunc(v));
+  }
+
+  // "Yes"/"No" for booleans — never raw true/false (mirrors the TBL-03
+  // ring_exclusion_enabled rule, applied consistently to boolean QC columns).
+  function formatBool(v) {
+    if (v == null) { return ''; }
+    return v ? 'Yes' : 'No';
+  }
+
+  // Defensive string coercion for table cells — null/undefined -> ''.
+  function cellText(v) {
+    if (v == null) { return ''; }
+    return String(v);
+  }
+
+  // Per-table caption (D-05): "{note} — {counts}", dropping the dangling
+  // em-dash when note is absent/empty. textContent-only assignment (D-02).
+  function setCaption(el, note, counts) {
+    if (!el) { return; }
+    el.textContent = note ? (note + ' — ' + counts) : counts;
+  }
+
+  function clearChildren(el) {
+    while (el.firstChild) { el.removeChild(el.firstChild); }
+  }
+
+  // Per-table "waiting for data" state (SC4 — independent per table).
+  function showTableWaiting(bodyEl, captionEl, message) {
+    clearChildren(bodyEl);
+    if (captionEl) { captionEl.textContent = ''; }
+    var waiting = document.createElement('div');
+    waiting.className = 'table-waiting';
+    waiting.textContent = message;
+    bodyEl.appendChild(waiting);
+  }
+
+  // ------------------------------------------------------------------
+  // refreshCarbon / renderCarbon — TBL-01
+  // ------------------------------------------------------------------
+  function refreshCarbon() {
+    fetch(CARBON_URL)
+      .then(function (r) { return r.json(); })
+      .then(function (data) { renderCarbon(data); })
+      .catch(function (e) { console.warn('carbon fetch failed:', e); });
+  }
+
+  function renderCarbon(data) {
+    var bodyEl = document.getElementById('table-carbon-body');
+    var captionEl = document.getElementById('table-carbon-caption');
+    var rows = (data && data.rows) || [];
+
+    if (!data || data.state !== 'ok' || rows.length === 0) {
+      showTableWaiting(bodyEl, captionEl, 'Waiting for ¹³C signal data...');
+      return;
+    }
+
+    var counts = data.counts || {};
+    setCaption(
+      captionEl,
+      data.note,
+      cellText(counts.formula) + ', DBE ' + cellText(counts.dbe) + ', ' + cellText(counts.solvent)
+    );
+
+    var tableRows = rows.map(function (row) {
+      return [
+        cellText(row.ppm),
+        cellText(row.mult),
+        cellText(row.nC),
+        cellText(row.assignment),
+        cellText(row.confidence),
+      ];
+    });
+    var table = buildTable(
+      ['δC (ppm)', 'Mult', 'nC', 'Assignment', 'Confidence'],
+      tableRows
+    );
+    table.className = 'data-table';
+    clearChildren(bodyEl);
+    bodyEl.appendChild(table);
+  }
+
+  // ------------------------------------------------------------------
+  // refreshHsqc / renderHsqc — TBL-02
+  // ------------------------------------------------------------------
+  function refreshHsqc() {
+    fetch(HSQC_URL)
+      .then(function (r) { return r.json(); })
+      .then(function (data) { renderHsqc(data); })
+      .catch(function (e) { console.warn('hsqc fetch failed:', e); });
+  }
+
+  function renderHsqc(data) {
+    var bodyEl = document.getElementById('table-hsqc-body');
+    var captionEl = document.getElementById('table-hsqc-caption');
+    var rows = (data && data.rows) || [];
+
+    if (!data || data.state !== 'ok' || rows.length === 0) {
+      showTableWaiting(bodyEl, captionEl, 'Waiting for HSQC correlation data...');
+      return;
+    }
+
+    var counts = data.counts || {};
+    setCaption(captionEl, data.note, cellText(counts.count) + ' correlations');
+
+    var tableRows = rows.map(function (row) {
+      return [
+        cellText(row.carbon_ppm),
+        cellText(row.proton_ppm),
+        formatBool(row.matched_real_carbon),
+        formatBool(row.one_bond),
+        formatIntensity(row.intensity),
+      ];
+    });
+    var table = buildTable(
+      ['δC (ppm)', 'δH (ppm)', 'Matched Real C', '1-Bond', 'Intensity'],
+      tableRows
+    );
+    table.className = 'data-table';
+    clearChildren(bodyEl);
+    bodyEl.appendChild(table);
+  }
+
+  // ------------------------------------------------------------------
+  // refreshHmbc / renderHmbc — TBL-02 (D-03: show all rows, colour by flag)
+  // ------------------------------------------------------------------
+  var HMBC_FLAG_CLASS = {
+    ok: 'row-ok',
+    potential_4J: 'row-potential-4j',
+    '1J_artifact': 'row-1j-artifact',
+  };
+
+  function refreshHmbc() {
+    fetch(HMBC_URL)
+      .then(function (r) { return r.json(); })
+      .then(function (data) { renderHmbc(data); })
+      .catch(function (e) { console.warn('hmbc fetch failed:', e); });
+  }
+
+  function renderHmbc(data) {
+    var bodyEl = document.getElementById('table-hmbc-body');
+    var captionEl = document.getElementById('table-hmbc-caption');
+    var rows = (data && data.rows) || [];
+
+    if (!data || data.state !== 'ok' || rows.length === 0) {
+      showTableWaiting(bodyEl, captionEl, 'Waiting for HMBC correlation data...');
+      return;
+    }
+
+    var counts = data.counts || {};
+    setCaption(
+      captionEl,
+      data.note,
+      cellText(counts.kept_count) + ' kept of ' + cellText(counts.raw_count)
+    );
+
+    var tableRows = rows.map(function (row) {
+      return [
+        cellText(row.carbon_ppm),
+        cellText(row.carbon_ppm_observed),
+        cellText(row.proton_ppm),
+        cellText(row.flag),
+        formatIntensity(row.intensity),
+      ];
+    });
+    var table = buildTable(
+      ['δC (ppm)', 'δC observed (ppm)', 'δH (ppm)', 'Flag', 'Intensity'],
+      tableRows
+    );
+    table.className = 'data-table';
+
+    // D-03: colour every kept row by its `flag` value — post-process only,
+    // matching the fetched row order; never fork buildTable, no markup-injection.
+    var trs = table.querySelectorAll('tbody tr');
+    for (var i = 0; i < trs.length; i++) {
+      var flag = rows[i] && rows[i].flag;
+      var cls = HMBC_FLAG_CLASS[flag];
+      if (cls) { trs[i].className = cls; }
+    }
+
+    clearChildren(bodyEl);
+    bodyEl.appendChild(table);
+  }
+
+  // ------------------------------------------------------------------
+  // refreshCosy / renderCosy — TBL-02
+  // ------------------------------------------------------------------
+  function refreshCosy() {
+    fetch(COSY_URL)
+      .then(function (r) { return r.json(); })
+      .then(function (data) { renderCosy(data); })
+      .catch(function (e) { console.warn('cosy fetch failed:', e); });
+  }
+
+  function renderCosy(data) {
+    var bodyEl = document.getElementById('table-cosy-body');
+    var captionEl = document.getElementById('table-cosy-caption');
+    var rows = (data && data.rows) || [];
+
+    if (!data || data.state !== 'ok' || rows.length === 0) {
+      showTableWaiting(bodyEl, captionEl, 'Waiting for COSY correlation data...');
+      return;
+    }
+
+    var counts = data.counts || {};
+    setCaption(captionEl, data.note, cellText(counts.count) + ' correlations');
+
+    var tableRows = rows.map(function (row) {
+      return [
+        cellText(row.proton_a_ppm),
+        cellText(row.proton_b_ppm),
+        formatIntensity(row.intensity),
+      ];
+    });
+    var table = buildTable(
+      ['δH-a (ppm)', 'δH-b (ppm)', 'Intensity'],
+      tableRows
+    );
+    table.className = 'data-table';
+    clearChildren(bodyEl);
+    bodyEl.appendChild(table);
+  }
+
+  // ------------------------------------------------------------------
+  // refreshConstraints / renderConstraints — TBL-03 (D-01: structured
+  // 3-subsection view, not a single flat table)
+  // ------------------------------------------------------------------
+  function refreshConstraints() {
+    fetch(CONSTRAINTS_URL)
+      .then(function (r) { return r.json(); })
+      .then(function (data) { renderConstraints(data); })
+      .catch(function (e) { console.warn('constraints fetch failed:', e); });
+  }
+
+  function renderConstraints(data) {
+    var bodyEl = document.getElementById('table-constraints-body');
+    var captionEl = document.getElementById('table-constraints-caption');
+
+    if (!data || data.state !== 'ok' || !data.inventory) {
+      showTableWaiting(bodyEl, captionEl, 'Waiting for LSD constraint data...');
+      return;
+    }
+
+    var inv = data.inventory;
+    if (captionEl) {
+      captionEl.textContent = 'Iteration ' + cellText(inv.iteration) + ' · '
+        + cellText(inv.formula) + ' · ' + cellText(inv.timestamp);
+    }
+
+    clearChildren(bodyEl);
+    bodyEl.appendChild(buildAppliedConstraintsSection(inv));
+    bodyEl.appendChild(buildConstraintSummarySection(inv));
+    bodyEl.appendChild(buildDeferredPendingSection(inv));
+  }
+
+  function buildTablesSubsection(headingText) {
+    var section = document.createElement('div');
+    section.className = 'tables-subsection';
+    var heading = document.createElement('h3');
+    heading.className = 'tables-subheading';
+    heading.textContent = headingText;
+    section.appendChild(heading);
+    return section;
+  }
+
+  // "Applied Constraints" — one row per per-atom-index constraint instance
+  // (BOND / HMBC / COSY-equiv). The Note column would draw from the matching
+  // `applied_from_detection` narrative, but the schema carries that as a flat
+  // list with no per-row index back to a specific constraint — so every row
+  // gets a genuinely empty Note cell (never a placeholder dash) until the
+  // backend schema exposes an explicit mapping.
+  function buildAppliedConstraintsSection(inv) {
+    var section = buildTablesSubsection('Applied Constraints');
+
+    var rows = [];
+    var bondConstraints = inv.bond_constraints || [];
+    bondConstraints.forEach(function (indices) {
+      rows.push(['BOND', cellText(indices), '']);
+    });
+
+    var hmbcBatches = inv.hmbc_batches || [];
+    hmbcBatches.forEach(function (batch) {
+      var correlations = (batch && batch.correlations) || [];
+      correlations.forEach(function (indices) {
+        rows.push(['HMBC', cellText(indices), '']);
+      });
+    });
+
+    var cosyEquivPairs = inv.cosy_equiv_pairs || [];
+    cosyEquivPairs.forEach(function (indices) {
+      rows.push(['COSY-equiv', cellText(indices), '']);
+    });
+
+    var table;
+    if (rows.length === 0) {
+      table = buildTable(['Type', 'Atom Indices', 'Note'], []);
+      var tbody = table.querySelector('tbody');
+      var emptyRow = document.createElement('tr');
+      var emptyCell = document.createElement('td');
+      emptyCell.colSpan = 3;
+      emptyCell.textContent = 'No applied constraints recorded';
+      emptyRow.appendChild(emptyCell);
+      tbody.appendChild(emptyRow);
+    } else {
+      table = buildTable(['Type', 'Atom Indices', 'Note'], rows);
+    }
+    table.className = 'data-table';
+    section.appendChild(table);
+    return section;
+  }
+
+  // "Constraint Summary" — fixed row order, count/summary-only fields.
+  function buildConstraintSummarySection(inv) {
+    var section = buildTablesSubsection('Constraint Summary');
+
+    var deffFexp = inv.deff_fexp || {};
+    var rows = [
+      ['MULT', cellText(inv.mult_count)],
+      ['HSQC', cellText(inv.hsqc_count)],
+      ['HMBC total', cellText(inv.hmbc_total)],
+      ['ELIM budget', cellText(inv.elim_budget)],
+      ['Ring exclusion', formatBool(inv.ring_exclusion_enabled)],
+      ['DEFF/FEXP status', cellText(deffFexp.status)],
+    ];
+
+    var table = buildTable(['Constraint', 'Value'], rows);
+    table.className = 'data-table';
+    section.appendChild(table);
+    return section;
+  }
+
+  // "Deferred / Pending" — reasoning narrative list, plain <ul>/<li>.
+  function buildDeferredPendingSection(inv) {
+    var section = buildTablesSubsection('Deferred / Pending');
+
+    var pending = inv.pending_from_detection || [];
+    var ul = document.createElement('ul');
+    if (pending.length === 0) {
+      var emptyLi = document.createElement('li');
+      emptyLi.textContent = 'Nothing deferred this iteration.';
+      ul.appendChild(emptyLi);
+    } else {
+      pending.forEach(function (item) {
+        var li = document.createElement('li');
+        li.textContent = item;
+        ul.appendChild(li);
+      });
+    }
+    section.appendChild(ul);
+    return section;
+  }
+
+  // ------------------------------------------------------------------
   // initTabs — plain class/display toggling, no fetch triggered (D-01)
   // ------------------------------------------------------------------
   function initTabs() {
@@ -386,6 +753,11 @@
     refreshStatus();
     refreshStructures();
     refreshLog();
+    refreshCarbon();
+    refreshHsqc();
+    refreshHmbc();
+    refreshCosy();
+    refreshConstraints();
     flashDot();
   }
 
