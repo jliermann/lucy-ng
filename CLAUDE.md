@@ -45,6 +45,7 @@ tests/               # pytest suite
 data/                # local test NMR datasets (Bruker format)
 .claude/             # CASE skill + team agents (symlinked into ~/.claude) — see below
 .planning/           # GSD planning files (PROJECT.md, ROADMAP.md, STATE.md, phases/)
+docs/                # human docs (ARCHITECTURE, USER_GUIDE, …); docs/infographics/ = editable project slide deck (regenerate via build.py — see its README)
 ```
 
 The package exposes a `lucy` CLI; every subcommand supports `--format json`. Command and flag definitions live in `src/lucy_ng/cli/` — use `lucy --help` rather than duplicating a command catalogue here.
