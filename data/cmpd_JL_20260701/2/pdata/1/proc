@@ -121,7 +121,6 @@ $$ process C:\Bruker\TopSpin4.1.1\prog\mod\proc1d.exe
 ##$TI= <AK nmr
 Name schenk
 Code cmpd_JL_20260701
-CAS: 76-22-2
 ca. 23 mg
 c13.tci CDCl3 {C>
 ##$TILT= no

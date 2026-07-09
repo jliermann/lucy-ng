@@ -1,0 +1,16 @@
+##TITLE= Parameter file, TopSpin 3.7.0
+##JCAMPDX= 5.0
+##DATATYPE= Parameter Values
+##NPOINTS= 1	$$ modification sequence number
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= nmrsu
+$$ 2024-03-29 23:45:03.344 +0100  nmrsu@av3-600
+$$ /opt/av3-600/av600/AV600-2404A10/6/pdata/1/outd
+$$ process /opt/topspin3.7.0/prog/mod/xwish3
+##$CURPLOT= <Lexmark C734 PS3>
+##$CURPRIN= <$Lexmark C734 PS3>
+##$DFORMAT= <normdp>
+##$LAYOUT= <+/2D_hom.xwp>
+##$LFORMAT= <normlp>
+##$PFORMAT= <normpl>
+##END=
