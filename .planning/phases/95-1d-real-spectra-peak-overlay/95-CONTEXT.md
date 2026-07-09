@@ -67,16 +67,23 @@ uncached here — see D-06).
   `C=O`, `ArCH₃`) when the signal carries one. Subtle colour that respects the existing
   v9.2/9.3 visual language. The trace is a continuous **line plot** with the ppm axis
   **reversed** (high ppm on the left) — `ax.get_xlim()[0] > ax.get_xlim()[1]` must hold.
+  Reversed-axis handling goes through a **shared `_apply_nmr_axes()` helper** (locked
+  v9.3-roadmap decision, STATE.md) so Phase 96's 2D axes reuse it and no axis is left
+  un-reversed by omission.
 
 ### Packaging & rendering
-- **D-04 (matplotlib in `[webview]` extra, lazy imports, PNG image endpoint):** Add
-  `matplotlib` to the `[webview]` optional-dependency extra only (NOT base). Every
-  matplotlib import is lazy, inside `make_router()` / the request handler — never at
+- **D-04 (matplotlib `>=3.7` in `[webview]` extra, OO-API only, lazy imports, PNG image
+  endpoint):** Add `matplotlib>=3.7` to the `[webview]` optional-dependency extra only
+  (NOT base). Use the **matplotlib object-oriented API exclusively — `Figure` +
+  `FigureCanvasAgg`; NEVER `matplotlib.pyplot`** in any webview module (locked v9.3-roadmap
+  decision, STATE.md — pyplot's global state is unsafe under the threaded FastAPI server).
+  Every matplotlib import is lazy, inside `make_router()` / the request handler — never at
   module top or in `webview/__init__`/`server`/`state` (WV-08). `from lucy_ng.cli import
-  cli` on a base install (no `[webview]`) must not raise ImportError. Rendering is
-  **server-side matplotlib with the Agg backend**, served as a **PNG image endpoint**
-  (forced by the no-build/no-CDN constraint — no client-side charting). Close figures
-  after each render (`try/finally`) to avoid Figure leaks.
+  cli` on a base install (no `[webview]`) must not raise ImportError. Served as a **PNG
+  image endpoint** (forced by the no-build/no-CDN constraint — no client-side charting).
+  Close figures after each render (`try/finally`) to avoid Figure leaks. Route handlers may
+  be sync `def` (FastAPI dispatches them to a threadpool, so the CPU-bound render never
+  blocks the event loop).
 - **D-06 (No render caching in Phase 95):** 1D rendering is cheap; do not build a cache
   here. Phase 96 introduces the mtime-keyed PNG cache for the expensive 2D contours; if
   the planner wants a trivial 1D cache it is discretionary, but the phase does not require
