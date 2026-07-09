@@ -357,6 +357,21 @@ ruff check src tests      # linting
 hatch build               # build the package
 ```
 
+### Copilot / VS Code Agents
+
+If you use Copilot instead of Claude Code, the CASE workflow is also available as
+Copilot custom agents:
+
+- `.github/agents/lucy-case-orchestrator.agent.md`
+- `.github/agents/lucy-nmr-chemist.agent.md`
+- `.github/agents/lucy-lsd-engineer.agent.md`
+- `.github/agents/lucy-devils-advocate.agent.md`
+- `.github/agents/lucy-solution-analyst.agent.md`
+- `.github/agents/lucy-diagnostic.agent.md`
+
+Shared CASE instructions live in `.github/instructions/lucy-case.instructions.md`.
+Start with `lucy-case-orchestrator`.
+
 ---
 
 ## License & Citation

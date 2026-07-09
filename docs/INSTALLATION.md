@@ -463,6 +463,15 @@ After restarting Claude Code, the commands are available:
 | `lucy-devils-advocate` | Pre-run validation + post-solution G-IDENT/G-MULT gates |
 | `lucy-diagnostic` | Deep LSD-failure diagnosis (escalation only) |
 
+### Copilot / VS Code agents
+
+If you want to use the CASE workflow without Claude Code, the ported Copilot
+custom agents live in the repo under `.github/agents/`, with shared conventions
+in `.github/instructions/lucy-case.instructions.md`.
+
+Start with `lucy-case-orchestrator`, which can delegate to the specialist
+agents listed above.
+
 ## Next Steps
 
 After installation:
