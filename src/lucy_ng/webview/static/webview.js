@@ -4,6 +4,10 @@
   var STATUS_URL     = '/api/status';
   var STRUCTURES_URL = '/api/structures';
   var LOG_URL        = '/api/log';
+  var CARBON_URL     = '/api/tables/carbon';
+  var HSQC_URL       = '/api/tables/hsqc';
+  var HMBC_URL       = '/api/tables/hmbc';
+  var COSY_URL       = '/api/tables/cosy';
   var REFRESH_MS     = 3000;
 
   // Track last-seen SMILES per index to avoid SVG flicker (D-10)
@@ -346,6 +350,239 @@
   }
 
   // ------------------------------------------------------------------
+  // Tables tab — shared helpers (Phase 94: TBL-01/02/03)
+  // ------------------------------------------------------------------
+
+  // Compact intensity formatting (D-04 — exact algorithm, UI-SPEC verbatim).
+  function formatIntensity(v) {
+    if (v == null) { return ''; }
+    var abs = Math.abs(v);
+    if (abs >= 1e6) { return (v / 1e6).toFixed(1) + 'M'; }
+    if (abs >= 1e3) { return (v / 1e3).toFixed(1) + 'K'; }
+    return String(Math.trunc(v));
+  }
+
+  // "Yes"/"No" for booleans — never raw true/false (mirrors the TBL-03
+  // ring_exclusion_enabled rule, applied consistently to boolean QC columns).
+  function formatBool(v) {
+    if (v == null) { return ''; }
+    return v ? 'Yes' : 'No';
+  }
+
+  // Defensive string coercion for table cells — null/undefined -> ''.
+  function cellText(v) {
+    if (v == null) { return ''; }
+    return String(v);
+  }
+
+  // Per-table caption (D-05): "{note} — {counts}", dropping the dangling
+  // em-dash when note is absent/empty. textContent-only assignment (D-02).
+  function setCaption(el, note, counts) {
+    if (!el) { return; }
+    el.textContent = note ? (note + ' — ' + counts) : counts;
+  }
+
+  function clearChildren(el) {
+    while (el.firstChild) { el.removeChild(el.firstChild); }
+  }
+
+  // Per-table "waiting for data" state (SC4 — independent per table).
+  function showTableWaiting(bodyEl, captionEl, message) {
+    clearChildren(bodyEl);
+    if (captionEl) { captionEl.textContent = ''; }
+    var waiting = document.createElement('div');
+    waiting.className = 'table-waiting';
+    waiting.textContent = message;
+    bodyEl.appendChild(waiting);
+  }
+
+  // ------------------------------------------------------------------
+  // refreshCarbon / renderCarbon — TBL-01
+  // ------------------------------------------------------------------
+  function refreshCarbon() {
+    fetch(CARBON_URL)
+      .then(function (r) { return r.json(); })
+      .then(function (data) { renderCarbon(data); })
+      .catch(function (e) { console.warn('carbon fetch failed:', e); });
+  }
+
+  function renderCarbon(data) {
+    var bodyEl = document.getElementById('table-carbon-body');
+    var captionEl = document.getElementById('table-carbon-caption');
+    var rows = (data && data.rows) || [];
+
+    if (!data || data.state !== 'ok' || rows.length === 0) {
+      showTableWaiting(bodyEl, captionEl, 'Waiting for ¹³C signal data...');
+      return;
+    }
+
+    var counts = data.counts || {};
+    setCaption(
+      captionEl,
+      data.note,
+      cellText(counts.formula) + ', DBE ' + cellText(counts.dbe) + ', ' + cellText(counts.solvent)
+    );
+
+    var tableRows = rows.map(function (row) {
+      return [
+        cellText(row.ppm),
+        cellText(row.mult),
+        cellText(row.nC),
+        cellText(row.assignment),
+        cellText(row.confidence),
+      ];
+    });
+    var table = buildTable(
+      ['δC (ppm)', 'Mult', 'nC', 'Assignment', 'Confidence'],
+      tableRows
+    );
+    table.className = 'data-table';
+    clearChildren(bodyEl);
+    bodyEl.appendChild(table);
+  }
+
+  // ------------------------------------------------------------------
+  // refreshHsqc / renderHsqc — TBL-02
+  // ------------------------------------------------------------------
+  function refreshHsqc() {
+    fetch(HSQC_URL)
+      .then(function (r) { return r.json(); })
+      .then(function (data) { renderHsqc(data); })
+      .catch(function (e) { console.warn('hsqc fetch failed:', e); });
+  }
+
+  function renderHsqc(data) {
+    var bodyEl = document.getElementById('table-hsqc-body');
+    var captionEl = document.getElementById('table-hsqc-caption');
+    var rows = (data && data.rows) || [];
+
+    if (!data || data.state !== 'ok' || rows.length === 0) {
+      showTableWaiting(bodyEl, captionEl, 'Waiting for HSQC correlation data...');
+      return;
+    }
+
+    var counts = data.counts || {};
+    setCaption(captionEl, data.note, cellText(counts.count) + ' correlations');
+
+    var tableRows = rows.map(function (row) {
+      return [
+        cellText(row.carbon_ppm),
+        cellText(row.proton_ppm),
+        formatBool(row.matched_real_carbon),
+        formatBool(row.one_bond),
+        formatIntensity(row.intensity),
+      ];
+    });
+    var table = buildTable(
+      ['δC (ppm)', 'δH (ppm)', 'Matched Real C', '1-Bond', 'Intensity'],
+      tableRows
+    );
+    table.className = 'data-table';
+    clearChildren(bodyEl);
+    bodyEl.appendChild(table);
+  }
+
+  // ------------------------------------------------------------------
+  // refreshHmbc / renderHmbc — TBL-02 (D-03: show all rows, colour by flag)
+  // ------------------------------------------------------------------
+  var HMBC_FLAG_CLASS = {
+    ok: 'row-ok',
+    potential_4J: 'row-potential-4j',
+    '1J_artifact': 'row-1j-artifact',
+  };
+
+  function refreshHmbc() {
+    fetch(HMBC_URL)
+      .then(function (r) { return r.json(); })
+      .then(function (data) { renderHmbc(data); })
+      .catch(function (e) { console.warn('hmbc fetch failed:', e); });
+  }
+
+  function renderHmbc(data) {
+    var bodyEl = document.getElementById('table-hmbc-body');
+    var captionEl = document.getElementById('table-hmbc-caption');
+    var rows = (data && data.rows) || [];
+
+    if (!data || data.state !== 'ok' || rows.length === 0) {
+      showTableWaiting(bodyEl, captionEl, 'Waiting for HMBC correlation data...');
+      return;
+    }
+
+    var counts = data.counts || {};
+    setCaption(
+      captionEl,
+      data.note,
+      cellText(counts.kept_count) + ' kept of ' + cellText(counts.raw_count)
+    );
+
+    var tableRows = rows.map(function (row) {
+      return [
+        cellText(row.carbon_ppm),
+        cellText(row.carbon_ppm_observed),
+        cellText(row.proton_ppm),
+        cellText(row.flag),
+        formatIntensity(row.intensity),
+      ];
+    });
+    var table = buildTable(
+      ['δC (ppm)', 'δC observed (ppm)', 'δH (ppm)', 'Flag', 'Intensity'],
+      tableRows
+    );
+    table.className = 'data-table';
+
+    // D-03: colour every kept row by its `flag` value — post-process only,
+    // matching the fetched row order; never fork buildTable, no markup-injection.
+    var trs = table.querySelectorAll('tbody tr');
+    for (var i = 0; i < trs.length; i++) {
+      var flag = rows[i] && rows[i].flag;
+      var cls = HMBC_FLAG_CLASS[flag];
+      if (cls) { trs[i].className = cls; }
+    }
+
+    clearChildren(bodyEl);
+    bodyEl.appendChild(table);
+  }
+
+  // ------------------------------------------------------------------
+  // refreshCosy / renderCosy — TBL-02
+  // ------------------------------------------------------------------
+  function refreshCosy() {
+    fetch(COSY_URL)
+      .then(function (r) { return r.json(); })
+      .then(function (data) { renderCosy(data); })
+      .catch(function (e) { console.warn('cosy fetch failed:', e); });
+  }
+
+  function renderCosy(data) {
+    var bodyEl = document.getElementById('table-cosy-body');
+    var captionEl = document.getElementById('table-cosy-caption');
+    var rows = (data && data.rows) || [];
+
+    if (!data || data.state !== 'ok' || rows.length === 0) {
+      showTableWaiting(bodyEl, captionEl, 'Waiting for COSY correlation data...');
+      return;
+    }
+
+    var counts = data.counts || {};
+    setCaption(captionEl, data.note, cellText(counts.count) + ' correlations');
+
+    var tableRows = rows.map(function (row) {
+      return [
+        cellText(row.proton_a_ppm),
+        cellText(row.proton_b_ppm),
+        formatIntensity(row.intensity),
+      ];
+    });
+    var table = buildTable(
+      ['δH-a (ppm)', 'δH-b (ppm)', 'Intensity'],
+      tableRows
+    );
+    table.className = 'data-table';
+    clearChildren(bodyEl);
+    bodyEl.appendChild(table);
+  }
+
+  // ------------------------------------------------------------------
   // initTabs — plain class/display toggling, no fetch triggered (D-01)
   // ------------------------------------------------------------------
   function initTabs() {
@@ -386,6 +623,10 @@
     refreshStatus();
     refreshStructures();
     refreshLog();
+    refreshCarbon();
+    refreshHsqc();
+    refreshHmbc();
+    refreshCosy();
     flashDot();
   }
 
