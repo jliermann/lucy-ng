@@ -1,16 +1,16 @@
-##TITLE= Parameter file, TopSpin 3.7.0
+##TITLE= Parameter file, TopSpin 3.8.0
 ##JCAMPDX= 5.0
 ##DATATYPE= Parameter Values
-##NPOINTS= 3	$$ modification sequence number
+##NPOINTS= 9	$$ modification sequence number
 ##ORIGIN= Bruker BioSpin GmbH
 ##OWNER= nmrsu
-$$ 2024-03-29 23:36:15.318 +0100  nmrsu@av3-600
-$$ /opt/av3-600/av600/AV600-2404A10/5/pdata/1/procs
-$$ process /opt/topspin3.7.0/prog/mod/xwish3
-##$ABSF1= 1000
-##$ABSF2= -1000
+$$ 2026-07-15 17:56:41.312 +0200  UNI-MAINZ\liermann@OCNMR60
+$$ C:/Git/lucy-ng/data/alh-l6/5/pdata/1/procs
+$$ process C:\Bruker\TopSpin3.8.0\prog\mod\proc2d.exe
+##$ABSF1= 12.809
+##$ABSF2= -0.2090032
 ##$ABSG= 5
-##$ABSL= 3
+##$ABSL= 0
 ##$ALPHA= 0
 ##$AQORDER= 0
 ##$ASSFAC= 0
@@ -19,29 +19,29 @@ $$ process /opt/topspin3.7.0/prog/mod/xwish3
 ##$ASSWID= 0
 ##$AUNMP= <proc_2dpl>
 ##$AXLEFT= 0
-##$AXNAME= <>
-##$AXNUC= <off>
+##$AXNAME= <F2>
+##$AXNUC= <1H>
 ##$AXRIGHT= 0
 ##$AXTYPE= 0
 ##$AXUNIT= <>
 ##$AZFE= 0.1
 ##$AZFW= 0.5
-##$BCFW= 1
-##$BC_mod= 2
+##$BCFW= 0
+##$BC_mod= 0
 ##$BYTORDP= 0
 ##$COROFFS= 0
 ##$CY= -3
 ##$DATMOD= 1
-##$DC= 1
+##$DC= 0
 ##$DFILT= <>
 ##$DTYPP= 0
 ##$ERETIC= no
 ##$F1P= 0
 ##$F2P= 0
-##$FCOR= 0.5
-##$FTSIZE= 0
-##$FT_mod= 0
-##$GAMMA= 1
+##$FCOR= 1
+##$FTSIZE= 2048
+##$FT_mod= 6
+##$GAMMA= 0
 ##$GB= 0
 ##$INTBC= 1
 ##$INTSCL= 1
@@ -59,16 +59,16 @@ $$ process /opt/topspin3.7.0/prog/mod/xwish3
 ##$MddF180= no
 ##$MddLAMBDA= 0
 ##$MddMEMORY= 0
-##$MddMERGE= 23
+##$MddMERGE= 0
 ##$MddNCOMP= 0
 ##$MddNITER= 0
-##$MddNOISE= 0.8
+##$MddNOISE= 0
 ##$MddPHASE= 0
 ##$MddSEED= 0
-##$MddSRSIZE= 0
+##$MddSRSIZE= 0.15
 ##$Mdd_CsALG= 1
 ##$Mdd_CsLAMBDA= 1
-##$Mdd_CsNITER= 0
+##$Mdd_CsNITER= 200
 ##$Mdd_CsNORM= 0
 ##$Mdd_CsVE= no
 ##$Mdd_CsZF= 0
@@ -78,13 +78,13 @@ $$ process /opt/topspin3.7.0/prog/mod/xwish3
 ##$Mdd_LrZF= 0
 ##$Mdd_mod= 1
 ##$NCOEF= 0
-##$NC_proc= 0
+##$NC_proc= -4
 ##$NLEV= 6
 ##$NOISF1= 0
 ##$NOISF2= 0
-##$NSP= 1
+##$NSP= 0
 ##$NTH_PI= 0
-##$NZP= 1
+##$NZP= 0
 ##$OFFSET= 12.80901
 ##$PC= 1.4
 ##$PHC0= 0
@@ -107,20 +107,20 @@ $$ process /opt/topspin3.7.0/prog/mod/xwish3
 ##$REVERSE= no
 ##$SF= 600.13
 ##$SI= 2048
-##$SIGF1= 0
-##$SIGF2= 0
+##$SIGF1= 12.809
+##$SIGF2= -0.2090032
 ##$SINO= 0
 ##$SIOLD= 2048
 ##$SPECTYP= <>
 ##$SREF_mod= 1
 ##$SREGLST= <1H.D2O>
 ##$SSB= 2
-##$STSI= 0
+##$STSI= 2048
 ##$STSR= 0
 ##$SW_p= 7812.5
 ##$SYMM= 0
-##$S_DEV= 0
-##$TDeff= 0
+##$S_DEV= 55434
+##$TDeff= 2048
 ##$TDoff= 0
 ##$TI= <AK opatz
 Name tsamo
@@ -138,7 +138,7 @@ hmbcgp_nus_kurz.tci D2O /opt/av3-60>
 ##$USERP5= <>
 ##$USERP6= <userUSERP5 DEF user processing parameter 5$80004 255>
 ##$WDW= 4
-##$XDIM= 0
-##$YMAX_p= 0
+##$XDIM= 128
+##$YMAX_p= 398474121
 ##$YMIN_p= 0
 ##END=

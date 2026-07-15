@@ -1,12 +1,12 @@
-##TITLE= Parameter file, TopSpin 4.1.1
+##TITLE= Parameter file, TopSpin 3.8.0
 ##JCAMPDX= 5.0
 ##DATATYPE= Parameter Values
-##NPOINTS= 11	$$ modification sequence number
+##NPOINTS= 16	$$ modification sequence number
 ##ORIGIN= Bruker BioSpin GmbH
 ##OWNER= nmrsu
-$$ 2021-08-11 18:03:35.779 +0200  Homeoffice@CIERVO
-$$ D:/Users/Homeoffice/Seafile/chemikalienlager/cmpd_JL_20260701/12/pdata/1/proc2s
-$$ process C:\Bruker\TopSpin4.1.1\prog\mod\proc2d.exe
+$$ 2026-07-15 17:53:46.175 +0200  UNI-MAINZ\liermann@OCNMR60
+$$ C:/Git/lucy-ng/data/cmpd_JL_20260701/12/pdata/1/proc2s
+$$ process C:\Bruker\TopSpin3.8.0\prog\mod\proc2d.exe
 ##$ABSF1= 9.708253
 ##$ABSF2= -0.5019532
 ##$ABSG= 5
@@ -87,7 +87,7 @@ $$ process C:\Bruker\TopSpin4.1.1\prog\mod\proc2d.exe
 ##$NZP= 0
 ##$OFFSET= 9.708253
 ##$PC= 4
-##$PHC0= 267.6635
+##$PHC0= 87.78296
 ##$PHC1= -180
 ##$PH_mod= 1
 ##$PKNL= no
@@ -119,7 +119,7 @@ $$ process C:\Bruker\TopSpin4.1.1\prog\mod\proc2d.exe
 ##$STSR= 0
 ##$SW_p= 6127.45098039219
 ##$SYMM= 0
-##$S_DEV= 267
+##$S_DEV= 256
 ##$TDeff= 256
 ##$TDoff= 0
 ##$TI= <>
@@ -128,12 +128,14 @@ $$ process C:\Bruker\TopSpin4.1.1\prog\mod\proc2d.exe
 ##$TM2= 0
 ##$TOPLEV= 0
 ##$USERP1= <>
+##$USERP10= <user>
 ##$USERP2= <>
 ##$USERP3= <>
 ##$USERP4= <>
 ##$USERP5= <>
+##$USERP6= <userUSERP5 DEF user processing parameter 5$80004 255>
 ##$WDW= 4
 ##$XDIM= 1024
-##$YMAX_p= 436326464
-##$YMIN_p= -14187444
+##$YMAX_p= 14190997
+##$YMIN_p= -436123099
 ##END=

@@ -1,12 +1,12 @@
-##TITLE= Parameter file, TopSpin 4.1.1
+##TITLE= Parameter file, TopSpin 3.8.0
 ##JCAMPDX= 5.0
 ##DATATYPE= Parameter Values
-##NPOINTS= 5	$$ modification sequence number
+##NPOINTS= 6	$$ modification sequence number
 ##ORIGIN= Bruker BioSpin GmbH
 ##OWNER= nmrsu
-$$ 2021-08-11 18:02:02.989 +0200  Homeoffice@CIERVO
-$$ D:/Users/Homeoffice/Seafile/chemikalienlager/cmpd_JL_20260701/5/pdata/1/proc
-$$ process C:\Bruker\TopSpin4.1.1\prog\mod\apkm.exe
+$$ 2026-07-15 17:52:42.913 +0200  UNI-MAINZ\liermann@OCNMR60
+$$ C:/Git/lucy-ng/data/cmpd_JL_20260701/5/pdata/1/proc
+$$ process C:\Bruker\TopSpin3.8.0\prog\mod\apkm.exe
 ##$ABSF1= 1000
 ##$ABSF2= -1000
 ##$ABSG= 5
@@ -83,8 +83,8 @@ $$ process C:\Bruker\TopSpin4.1.1\prog\mod\apkm.exe
 ##$NZP= 1
 ##$OFFSET= 4.11471
 ##$PC= 1.4
-##$PHC0= -2.197635
-##$PHC1= -2.349034
+##$PHC0= -2.251456
+##$PHC1= -2.308748
 ##$PH_mod= 1
 ##$PKNL= yes
 ##$PPARMOD= 1

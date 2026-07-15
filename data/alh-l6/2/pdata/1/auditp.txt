@@ -1,0 +1,67 @@
+##TITLE= Audit trail, TopSpin 3.8.0
+##JCAMPDX= 5.01
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= liermann
+$$ C:/Git/lucy-ng/data/alh-l6/2/pdata/1/auditp.txt
+##AUDIT TRAIL=  $$ (NUMBER, WHEN, WHO, WHERE, PROCESS, VERSION, WHAT)
+(   1,<2026-07-15 17:54:15.059 +0200>,<UNI-MAINZ\liermann>,<OCNMR60>,<proc1d>,<TopSpin 3.8.0>,
+      <Start of raw data processing
+       em LB = 1 SI = 32K 
+       data hash MD5: 32K
+       50 6C 22 27 E5 F1 38 39 50 FF DF 91 A1 E9 42 D3>)
+(   2,<2026-07-15 17:54:15.255 +0200>,<UNI-MAINZ\liermann>,<OCNMR60>,<proc1d>,<TopSpin 3.8.0>,
+      <ft FT_mod = 6 PKNL = 1 SI = 32K 
+       data hash MD5: 32K
+       B8 11 C0 2E 79 CB 89 3D 7C 8C F9 C1 2E 74 5C 71>)
+(   3,<2026-07-15 17:54:15.560 +0200>,<UNI-MAINZ\liermann>,<OCNMR60>,<proc1d>,<TopSpin 3.8.0>,
+      <apk 
+       data hash MD5: 32K
+       E6 85 20 AC 1F 1F B6 0C CD 95 DE CC 94 F7 B5 97>)
+(   4,<2026-07-15 17:54:15.772 +0200>,<UNI-MAINZ\liermann>,<OCNMR60>,<proc1d>,<TopSpin 3.8.0>,
+      <abs n ABSG = 5 
+       data hash MD5: 32K
+       E8 32 AA 53 7A 60 F9 0A FF 94 9B BA 0D FE 02 C5>)
+(   5,<2026-07-15 17:54:17.328 +0200>,<UNI-MAINZ\liermann>,<OCNMR60>,<proc1d>,<TopSpin 3.8.0>,
+      <apks 
+       data hash MD5: 32K
+       E3 DF 03 8E 63 6B A1 6A C2 84 93 90 59 43 06 68>)
+(   6,<2026-07-15 17:54:20.571 +0200>,<UNI-MAINZ\liermann>,<OCNMR60>,<dataserver>,<TopSpin 3.8.0>,
+      <apbk
+       data hash MD5: 32K
+       ED 4D 92 38 82 9B 64 97 53 6B A4 30 A1 45 94 1F>)
+(   7,<2026-07-15 17:54:20.833 +0200>,<UNI-MAINZ\liermann>,<OCNMR60>,<proc1d>,<TopSpin 3.8.0>,
+      <ht 
+       data hash MD5: 32K
+       ED 4D 92 38 82 9B 64 97 53 6B A4 30 A1 45 94 1F>)
+(   8,<2026-07-15 17:54:37.505 +0200>,<UNI-MAINZ\liermann>,<OCNMR60>,<proc1d>,<TopSpin 3.8.0>,
+      <apks 
+       data hash MD5: 32K
+       1C A8 39 D5 68 C5 3E 25 8E 25 8B B4 45 A4 52 B3>)
+(   9,<2026-07-15 17:54:39.132 +0200>,<UNI-MAINZ\liermann>,<OCNMR60>,<proc1d>,<TopSpin 3.8.0>,
+      <apks 
+       data hash MD5: 32K
+       C6 2F D4 8F B5 06 4B 81 58 A3 B5 85 E1 39 AA 8C>)
+(  10,<2026-07-15 17:54:40.728 +0200>,<UNI-MAINZ\liermann>,<OCNMR60>,<proc1d>,<TopSpin 3.8.0>,
+      <apk 
+       data hash MD5: 32K
+       D6 47 8F C5 A8 C4 02 1C DA BC 60 57 13 86 1F 42>)
+(  11,<2026-07-15 17:54:42.678 +0200>,<UNI-MAINZ\liermann>,<OCNMR60>,<apkm>,<TopSpin 3.8.0>,
+      <apkm
+       data hash MD5: 32K
+       0C 01 50 DD 28 F7 B0 95 80 51 C0 7F 53 C1 F3 20>)
+(  12,<2026-07-15 17:54:44.351 +0200>,<UNI-MAINZ\liermann>,<OCNMR60>,<proc1d>,<TopSpin 3.8.0>,
+      <apks 
+       data hash MD5: 32K
+       27 29 7F 9A 27 C7 FD 83 6E 5E 49 49 45 10 2C 1D>)
+(  13,<2026-07-15 17:54:46.985 +0200>,<UNI-MAINZ\liermann>,<OCNMR60>,<proc1d>,<TopSpin 3.8.0>,
+      <apks 
+       data hash MD5: 32K
+       EB B5 E3 78 AF 42 C1 50 5A 9C 69 52 15 91 0F 76>)
+(  14,<2026-07-15 17:54:48.434 +0200>,<UNI-MAINZ\liermann>,<OCNMR60>,<proc1d>,<TopSpin 3.8.0>,
+      <abs n ABSG = 5 
+       data hash MD5: 32K
+       28 AA 30 3B 8A 11 AB 38 6D A2 70 18 89 AD 89 55>)
+##END=
+
+$$ hash MD5
+$$ D5 63 FD 33 3C 8D 85 E0 FC 75 1E 28 F7 06 B1 72

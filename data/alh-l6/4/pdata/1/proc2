@@ -1,12 +1,12 @@
-##TITLE= Parameter file, TopSpin 3.7.0
+##TITLE= Parameter file, TopSpin 3.8.0
 ##JCAMPDX= 5.0
 ##DATATYPE= Parameter Values
-##NPOINTS= 1	$$ modification sequence number
+##NPOINTS= 2	$$ modification sequence number
 ##ORIGIN= Bruker BioSpin GmbH
 ##OWNER= nmrsu
-$$ 2024-03-29 23:28:29.440 +0100  nmrsu@av3-600
-$$ /opt/av3-600/av600/AV600-2404A10/4/pdata/1/proc2
-$$ process /opt/topspin3.7.0/prog/mod/xwish3
+$$ 2026-07-15 17:55:57.408 +0200  UNI-MAINZ\liermann@OCNMR60
+$$ C:/Git/lucy-ng/data/alh-l6/4/pdata/1/proc2
+$$ process C:\Bruker\TopSpin3.8.0\prog\mod\apkm.exe
 ##$ABSF1= 1000
 ##$ABSF2= -1000
 ##$ABSG= 5
@@ -87,7 +87,7 @@ $$ process /opt/topspin3.7.0/prog/mod/xwish3
 ##$NZP= 1
 ##$OFFSET= 152.827
 ##$PC= 4
-##$PHC0= 0
+##$PHC0= 359.4941
 ##$PHC1= 0
 ##$PH_mod= 0
 ##$PKNL= yes
